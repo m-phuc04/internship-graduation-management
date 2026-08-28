@@ -177,11 +177,17 @@ const MyInternshipPage = () => {
 
   const syncRecreateRequest = useCallback(() => {
     const internId = data?.internship?._id || data?._id;
-    if (internId) {
+    if (evalData?.request?.recreateStatus && evalData?.request?.recreateStatus !== 'NONE') {
+      setRecreateRequestState({
+        status: evalData.request.recreateStatus,
+        reason: evalData.request.recreateReason,
+        rejectReason: evalData.request.recreateRejectReason,
+      });
+    } else if (internId) {
       const req = evaluationRecreateService.getRequestByInternshipId(internId);
       setRecreateRequestState(req);
     }
-  }, [data]);
+  }, [data, evalData]);
 
   useEffect(() => {
     syncRecreateRequest();
@@ -196,25 +202,34 @@ const MyInternshipPage = () => {
 
     setSubmittingRecreate(true);
     try {
-      const intern = rawInternship;
-      const created = evaluationRecreateService.createRequest({
-        internshipId: intern._id,
-        studentId: student?._id,
-        studentCode: student?.studentCode,
-        studentName: student?.userId?.fullName,
-        className: student?.className,
-        companyName: intern?.companyId?.name || intern?.companyId?.companyName || 'Doanh nghiệp',
-        position: intern?.position,
-        termName: currentTerm?.termName || 'Học kỳ hiện tại',
-        score: activeEvaluation?.score,
-        evaluationDate: activeEvaluation?.submittedAt || activeRequest?.submittedAt || new Date().toISOString(),
+      const res = await evaluationApi.studentRequestRecreateLink({
         reason: recreateReason.trim(),
       });
 
-      setRecreateRequestState(created);
-      setRecreateModalOpen(false);
-      setRecreateReason('');
-      showToast('Đã gửi yêu cầu tạo lại link đánh giá tới Trưởng Bộ Môn.', 'success');
+      if (res?.success || res?.status === 200 || !res?.error) {
+        setRecreateRequestState({
+          status: 'PENDING',
+          reason: recreateReason.trim(),
+        });
+        const intern = rawInternship;
+        evaluationRecreateService.createRequest({
+          internshipId: intern?._id,
+          studentId: student?._id,
+          studentCode: student?.studentCode,
+          studentName: student?.userId?.fullName,
+          className: student?.className,
+          companyName: intern?.companyId?.name || intern?.companyId?.companyName || 'Doanh nghiệp',
+          position: intern?.position,
+          termName: currentTerm?.termName || 'Học kỳ hiện tại',
+          score: activeEvaluation?.score,
+          evaluationDate: activeEvaluation?.submittedAt || activeRequest?.submittedAt || new Date().toISOString(),
+          reason: recreateReason.trim(),
+        });
+        setRecreateModalOpen(false);
+        setRecreateReason('');
+        showToast('Đã gửi yêu cầu tạo lại link đánh giá tới Trưởng Bộ Môn.', 'success');
+        fetchMyInternship();
+      }
     } catch (err) {
       showToast(err.message || 'Không thể gửi yêu cầu', 'error');
     } finally {

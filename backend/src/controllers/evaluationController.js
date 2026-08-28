@@ -240,6 +240,86 @@ const tbmGetAllEvaluationRequests = async (req, res, next) => {
   }
 };
 
+// ====================
+// Student Requests Recreating Evaluation Link
+// ====================
+const studentRequestRecreateLink = async (req, res, next) => {
+  try {
+    const result = await evaluationService.studentRequestRecreateLink(
+      req.user.userId,
+      req.body,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.request,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// TBM Gets All Recreate Link Requests
+// ====================
+const tbmGetRecreateRequests = async (req, res, next) => {
+  try {
+    const { search, status } = req.query;
+
+    const result = await evaluationService.tbmGetRecreateRequests({
+      search: search || "",
+      status: status || "",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách yêu cầu tạo lại link thành công",
+      data: result.data,
+      total: result.total,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// TBM Approves Recreate Link Request
+// ====================
+const tbmApproveRecreateRequest = async (req, res, next) => {
+  try {
+    const result = await evaluationService.tbmApproveRecreateRequest(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.request,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// TBM Rejects Recreate Link Request
+// ====================
+const tbmRejectRecreateRequest = async (req, res, next) => {
+  try {
+    const result = await evaluationService.tbmRejectRecreateRequest(
+      req.params.id,
+      req.body,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result.request,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getCompanyInternships,
   createOrUpdateEvaluation,
@@ -252,5 +332,9 @@ export default {
   submitPublicEvaluation,
   tbmResetEvaluationRequest,
   tbmGetAllEvaluationRequests,
+  studentRequestRecreateLink,
+  tbmGetRecreateRequests,
+  tbmApproveRecreateRequest,
+  tbmRejectRecreateRequest,
 };
 

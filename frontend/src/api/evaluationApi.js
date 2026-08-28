@@ -42,6 +42,22 @@ export const evaluationApi = {
   // TBM: Reset request to allow student to re-create
   tbmResetEvaluationRequest: (id) =>
     axiosClient.post(`/evaluations/tbm/reset-request/${id}`),
+
+  // Student: Request recreate evaluation link
+  studentRequestRecreateLink: (data) =>
+    axiosClient.post('/evaluations/student/request-recreate', data),
+
+  // TBM: Get all recreate requests
+  tbmGetRecreateRequests: (params) =>
+    axiosClient.get('/evaluations/tbm/recreate-requests', { params }),
+
+  // TBM: Approve recreate request
+  tbmApproveRecreateRequest: (id) =>
+    axiosClient.post(`/evaluations/tbm/approve-recreate/${id}`),
+
+  // TBM: Reject recreate request
+  tbmRejectRecreateRequest: (id, data) =>
+    axiosClient.post(`/evaluations/tbm/reject-recreate/${id}`, data),
 };
 
 export default evaluationApi;

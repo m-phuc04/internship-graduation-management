@@ -42,6 +42,38 @@ const companyEvaluationRequestSchema = new mongoose.Schema(
       default: false,
     },
 
+    recreateStatus: {
+      type: String,
+      enum: ["NONE", "PENDING", "APPROVED", "REJECTED"],
+      default: "NONE",
+      index: true,
+    },
+
+    recreateReason: {
+      type: String,
+      default: "",
+    },
+
+    recreateRejectReason: {
+      type: String,
+      default: "",
+    },
+
+    recreateRequestedAt: {
+      type: Date,
+      default: null,
+    },
+
+    recreateApprovedAt: {
+      type: Date,
+      default: null,
+    },
+
+    recreateRejectedAt: {
+      type: Date,
+      default: null,
+    },
+
     expiresAt: {
       type: Date,
       default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days

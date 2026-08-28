@@ -69,6 +69,14 @@ router.get(
   evaluationController.getStudentEvaluationRequest,
 );
 
+// Student: Request Re-creating Evaluation Link
+router.post(
+  "/student/request-recreate",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  evaluationController.studentRequestRecreateLink,
+);
+
 // ==========================================
 // 6. Public Evaluation Endpoints (No Auth / No Login Required)
 // ==========================================
@@ -95,6 +103,30 @@ router.get(
   authMiddleware,
   authorizeRoles("TBM", "ADMIN"),
   evaluationController.tbmGetAllEvaluationRequests,
+);
+
+// TBM: Get all re-create evaluation link requests
+router.get(
+  "/tbm/recreate-requests",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.tbmGetRecreateRequests,
+);
+
+// TBM: Approve re-create evaluation link request
+router.post(
+  "/tbm/approve-recreate/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.tbmApproveRecreateRequest,
+);
+
+// TBM: Reject re-create evaluation link request
+router.post(
+  "/tbm/reject-recreate/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.tbmRejectRecreateRequest,
 );
 
 // TBM: Reset request to allow student to re-create

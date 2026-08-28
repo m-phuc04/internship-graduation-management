@@ -187,27 +187,49 @@ const TbmEvaluationManagement = () => {
     }
   }, [reqPage, reqSearch, reqStatus, showToast]);
 
-  const fetchRecreateRequests = useCallback(() => {
-    const all = evaluationRecreateService.getAllRequests();
-    console.log('[TBM RECREATE LINK] requests from storage:', all);
-    let filtered = all;
-    if (recreateSearch && recreateSearch.trim()) {
-      const q = recreateSearch.toLowerCase().trim();
-      filtered = filtered.filter(
-        (r) =>
-          r.studentName?.toLowerCase().includes(q) ||
-          r.studentCode?.toLowerCase().includes(q) ||
-          r.companyName?.toLowerCase().includes(q) ||
-          r.reason?.toLowerCase().includes(q)
-      );
+  const fetchRecreateRequests = useCallback(async () => {
+    try {
+      // 1. Fetch from Backend API
+      const res = await evaluationApi.tbmGetRecreateRequests({
+        search: recreateSearch,
+        status: recreateStatus,
+      });
+
+      let list = [];
+      if (res?.success && Array.isArray(res?.data)) {
+        list = res.data;
+      }
+
+      // 2. Merge any local requests if not already in list
+      const localAll = evaluationRecreateService.getAllRequests();
+      localAll.forEach((loc) => {
+        if (!list.some((it) => String(it._id) === String(loc._id) || String(it.internshipId) === String(loc.internshipId))) {
+          list.push(loc);
+        }
+      });
+
+      if (recreateSearch && recreateSearch.trim()) {
+        const q = recreateSearch.toLowerCase().trim();
+        list = list.filter(
+          (r) =>
+            r.studentName?.toLowerCase().includes(q) ||
+            r.studentCode?.toLowerCase().includes(q) ||
+            r.companyName?.toLowerCase().includes(q) ||
+            r.reason?.toLowerCase().includes(q)
+        );
+      }
+      if (recreateStatus && recreateStatus.trim()) {
+        list = list.filter(
+          (r) => String(r.status).toUpperCase() === String(recreateStatus).toUpperCase().trim()
+        );
+      }
+
+      setRecreateRequests(list);
+    } catch (err) {
+      console.error('Failed to fetch recreate requests from backend:', err);
+      const localAll = evaluationRecreateService.getAllRequests();
+      setRecreateRequests(localAll);
     }
-    if (recreateStatus && recreateStatus.trim()) {
-      filtered = filtered.filter(
-        (r) => String(r.status).toUpperCase() === String(recreateStatus).toUpperCase().trim()
-      );
-    }
-    console.log('[TBM RECREATE LINK] filtered requests:', filtered);
-    setRecreateRequests(filtered);
   }, [recreateSearch, recreateStatus]);
 
   useEffect(() => {
@@ -257,20 +279,14 @@ const TbmEvaluationManagement = () => {
     if (!selectedRecreateReq) return;
     setActionLoading(true);
     try {
+      try {
+        await evaluationApi.tbmApproveRecreateRequest(selectedRecreateReq._id);
+      } catch (e) {
+        console.warn('Backend approve fallback:', e);
+      }
+
       evaluationRecreateService.approveRequest(selectedRecreateReq._id);
       evaluationRecreateService.deleteEvaluation(selectedRecreateReq.internshipId);
-
-      // If there's an active request on backend, reset it
-      try {
-        const foundReq = requests.find(
-          (r) => String(r.internshipId?._id || r.internshipId) === String(selectedRecreateReq.internshipId)
-        );
-        if (foundReq?._id) {
-          await evaluationApi.tbmResetEvaluationRequest(foundReq._id);
-        }
-      } catch {
-        // ignore
-      }
 
       showToast('Đã duyệt yêu cầu tạo lại link đánh giá cho sinh viên thành công!', 'success');
       setApproveModalOpen(false);
@@ -299,6 +315,14 @@ const TbmEvaluationManagement = () => {
 
     setActionLoading(true);
     try {
+      try {
+        await evaluationApi.tbmRejectRecreateRequest(selectedRecreateReq._id, {
+          rejectReason: rejectReason.trim(),
+        });
+      } catch (e) {
+        console.warn('Backend reject fallback:', e);
+      }
+
       evaluationRecreateService.rejectRequest(selectedRecreateReq._id, rejectReason.trim());
       showToast('Đã từ chối yêu cầu tạo lại link đánh giá.', 'success');
       setRejectModalOpen(false);

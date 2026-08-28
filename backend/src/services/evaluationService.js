@@ -8,6 +8,7 @@ import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import notificationService from "./notificationService.js";
 
 // ====================
 // Company Gets Internships with Evaluation Status
@@ -876,6 +877,219 @@ const tbmGetAllEvaluationRequests = async ({
   };
 };
 
+// ==========================================
+// 11. Student: Request Re-creation of Evaluation Link
+// ==========================================
+const studentRequestRecreateLink = async (userId, { reason } = {}) => {
+  if (!reason || !reason.trim()) {
+    throw new AppError("Vui lòng nhập lý do yêu cầu tạo lại link đánh giá.", 400);
+  }
+
+  const student = await Student.findOne({ userId }).populate({
+    path: "userId",
+    select: "fullName email",
+  });
+  if (!student) {
+    throw new AppError("Không tìm thấy thông tin sinh viên.", 404);
+  }
+
+  const internship = await Internship.findOne({
+    studentId: student._id,
+    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
+  }).sort({ createdAt: -1 });
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy đợt thực tập hợp lệ của bạn.", 404);
+  }
+
+  if (internship.status === "COMPLETED") {
+    throw new AppError("Đợt thực tập đã hoàn tất, không thể yêu cầu tạo lại link đánh giá.", 400);
+  }
+
+  let request = await CompanyEvaluationRequest.findOne({
+    studentId: student._id,
+    internshipId: internship._id,
+  });
+
+  if (!request) {
+    const token = crypto.randomBytes(24).toString("hex");
+    request = await CompanyEvaluationRequest.create({
+      token,
+      studentId: student._id,
+      internshipId: internship._id,
+      companyId: internship.companyId,
+      status: "SUBMITTED",
+      recreateStatus: "PENDING",
+      recreateReason: reason.trim(),
+      recreateRequestedAt: new Date(),
+    });
+  } else {
+    request.recreateStatus = "PENDING";
+    request.recreateReason = reason.trim();
+    request.recreateRequestedAt = new Date();
+    await request.save();
+  }
+
+  // Send notification to TBM
+  const studentName = student.userId?.fullName || "Sinh viên";
+  const studentCode = student.studentCode || "";
+  await notificationService.createNotificationForRole("TBM", {
+    title: "Yêu cầu tạo lại link đánh giá",
+    message: `Sinh viên ${studentName} (${studentCode}) đã yêu cầu tạo lại link đánh giá thực tập doanh nghiệp. Lý do: ${reason.trim()}.`,
+    type: "EVALUATION",
+    link: "/tbm/evaluations",
+  });
+
+  return {
+    message: "Gửi yêu cầu tạo lại link đánh giá thành công. Vui lòng chờ Trưởng Bộ Môn xét duyệt.",
+    request,
+  };
+};
+
+// ==========================================
+// 12. TBM: Get Re-creation Requests
+// ==========================================
+const tbmGetRecreateRequests = async ({ search = "", status = "" } = {}) => {
+  const query = {
+    recreateStatus: { $in: ["PENDING", "APPROVED", "REJECTED"] },
+  };
+
+  if (status && status.trim() && status !== "ALL") {
+    query.recreateStatus = status.trim().toUpperCase();
+  }
+
+  const requests = await CompanyEvaluationRequest.find(query)
+    .sort({ recreateRequestedAt: -1, updatedAt: -1 })
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("companyId", "name companyName address email phone contactPerson")
+    .populate({
+      path: "internshipId",
+      populate: {
+        path: "lecturerId",
+        populate: { path: "userId", select: "fullName email phone" },
+      },
+    })
+    .lean();
+
+  const result = await Promise.all(
+    requests.map(async (req) => {
+      let evaluation = null;
+      if (req.internshipId?._id || req.internshipId) {
+        evaluation = await Evaluation.findOne({
+          evaluationType: "INTERNSHIP",
+          targetId: req.internshipId?._id || req.internshipId,
+        }).select("score comments submittedAt status");
+      }
+      return {
+        _id: req._id,
+        internshipId: req.internshipId?._id || req.internshipId,
+        studentId: req.studentId?._id,
+        studentCode: req.studentId?.studentCode || "—",
+        studentName: req.studentId?.userId?.fullName || req.studentId?.fullName || "Sinh viên",
+        className: req.studentId?.className || "—",
+        companyName: req.companyId?.companyName || req.companyId?.name || "Doanh nghiệp",
+        position: req.internshipId?.position || "Thực tập sinh",
+        score: evaluation?.score ?? null,
+        evaluationDate: evaluation?.submittedAt || req.submittedAt || req.createdAt,
+        reason: req.recreateReason || "—",
+        rejectReason: req.recreateRejectReason || "",
+        status: req.recreateStatus,
+        createdAt: req.recreateRequestedAt || req.updatedAt || req.createdAt,
+      };
+    })
+  );
+
+  let filtered = result;
+  if (search && search.trim()) {
+    const q = search.toLowerCase().trim();
+    filtered = filtered.filter(
+      (r) =>
+        r.studentName?.toLowerCase().includes(q) ||
+        r.studentCode?.toLowerCase().includes(q) ||
+        r.companyName?.toLowerCase().includes(q) ||
+        r.reason?.toLowerCase().includes(q)
+    );
+  }
+
+  return {
+    data: filtered,
+    total: filtered.length,
+  };
+};
+
+// ==========================================
+// 13. TBM: Approve Re-creation Request
+// ==========================================
+const tbmApproveRecreateRequest = async (requestId) => {
+  const request = await CompanyEvaluationRequest.findById(requestId).populate({
+    path: "studentId",
+    populate: { path: "userId", select: "fullName _id" },
+  });
+
+  if (!request) {
+    throw new AppError("Không tìm thấy yêu cầu tạo lại link.", 404);
+  }
+
+  request.recreateStatus = "APPROVED";
+  request.allowRecreate = true;
+  request.recreateApprovedAt = new Date();
+  await request.save();
+
+  // Send notification to student
+  if (request.studentId?.userId?._id) {
+    await notificationService.createNotification({
+      recipientId: request.studentId.userId._id,
+      title: "Duyệt yêu cầu tạo lại link đánh giá",
+      message: "Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link đánh giá của bạn. Bạn có thể tạo link đánh giá mới ngay bây giờ.",
+      type: "EVALUATION",
+      link: "/student/internship",
+    });
+  }
+
+  return {
+    message: "Đã phê duyệt yêu cầu tạo lại link đánh giá thành công.",
+    request,
+  };
+};
+
+// ==========================================
+// 14. TBM: Reject Re-creation Request
+// ==========================================
+const tbmRejectRecreateRequest = async (requestId, { rejectReason } = {}) => {
+  const request = await CompanyEvaluationRequest.findById(requestId).populate({
+    path: "studentId",
+    populate: { path: "userId", select: "fullName _id" },
+  });
+
+  if (!request) {
+    throw new AppError("Không tìm thấy yêu cầu tạo lại link.", 404);
+  }
+
+  request.recreateStatus = "REJECTED";
+  request.recreateRejectReason = (rejectReason || "").trim() || "Trưởng Bộ Môn không chấp thuận yêu cầu.";
+  request.recreateRejectedAt = new Date();
+  await request.save();
+
+  // Send notification to student
+  if (request.studentId?.userId?._id) {
+    await notificationService.createNotification({
+      recipientId: request.studentId.userId._id,
+      title: "Từ chối yêu cầu tạo lại link đánh giá",
+      message: `Trưởng Bộ Môn đã từ chối yêu cầu tạo lại link đánh giá. Lý do: ${request.recreateRejectReason}`,
+      type: "EVALUATION",
+      link: "/student/internship",
+    });
+  }
+
+  return {
+    message: "Đã từ chối yêu cầu tạo lại link đánh giá.",
+    request,
+  };
+};
+
 export default {
   getCompanyInternships,
   createOrUpdateEvaluation,
@@ -888,5 +1102,9 @@ export default {
   submitPublicEvaluation,
   tbmResetEvaluationRequest,
   tbmGetAllEvaluationRequests,
+  studentRequestRecreateLink,
+  tbmGetRecreateRequests,
+  tbmApproveRecreateRequest,
+  tbmRejectRecreateRequest,
 };
 
