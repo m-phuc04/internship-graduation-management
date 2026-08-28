@@ -23,6 +23,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
 
   if (!internship) return null;
   const ev = internship.evaluation;
+  const isCompleted = internship?.status === 'COMPLETED' || ev?.status === 'CONFIRMED' || ev?.status === 'COMPLETED';
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -275,7 +276,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
               </button>
             )}
 
-            {ev && onDeleteEvaluation && (
+            {!isCompleted && ev && onDeleteEvaluation && (
               <button
                 type="button"
                 onClick={() => {

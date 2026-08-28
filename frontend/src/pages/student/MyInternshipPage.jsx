@@ -258,17 +258,30 @@ const MyInternshipPage = () => {
   );
   const canRegisterNew = !hasActiveInternship;
 
+  const internId = rawInternship?._id || internship?._id;
+  const isDeleted = evaluationRecreateService.isEvaluationDeleted(internId);
+
   // Resolve evaluation data from all available sources
-  const activeEvaluation =
-    evalData?.evaluation ||
-    (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
-  const activeRequest = evalData?.request;
-  const isEvaluated = Boolean(
-    activeEvaluation ||
-    activeRequest?.status === 'SUBMITTED' ||
-    internship?.status === 'COMPLETED'
+  const activeEvaluation = isDeleted
+    ? null
+    : (evalData?.evaluation ||
+      (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null));
+
+  const isCompleted = Boolean(
+    internship?.status === 'COMPLETED' ||
+    activeEvaluation?.status === 'CONFIRMED' ||
+    activeEvaluation?.status === 'COMPLETED'
   );
-  const isPendingEvaluation = Boolean(activeRequest?.status === 'PENDING' && !isEvaluated);
+
+  const activeRequest = isDeleted ? null : evalData?.request;
+  const isEvaluated = Boolean(
+    !isDeleted && (
+      activeEvaluation ||
+      activeRequest?.status === 'SUBMITTED' ||
+      isCompleted
+    )
+  );
+  const isPendingEvaluation = Boolean(!isDeleted && activeRequest?.status === 'PENDING' && !isEvaluated);
 
   // If no internship registered yet
   if (!internship) {
@@ -825,8 +838,8 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      {/* Recreation Request Alert Boxes */}
-                      {recreateRequestState?.status === 'PENDING' && (
+                      {/* Recreation Request Alert Boxes - Only visible when NOT completed */}
+                      {!isCompleted && recreateRequestState?.status === 'PENDING' && (
                         <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs space-y-1">
                           <div className="font-bold flex items-center gap-1.5 text-amber-900">
                             <Clock className="w-4 h-4 text-amber-600 shrink-0" />
@@ -841,7 +854,7 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      {(recreateRequestState?.status === 'APPROVED' || evaluationRecreateService.isEvaluationDeleted(internship._id)) && (
+                      {!isCompleted && (recreateRequestState?.status === 'APPROVED' || evaluationRecreateService.isEvaluationDeleted(internship._id)) && (
                         <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
                           <div className="font-bold flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-emerald-900">
@@ -862,7 +875,7 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      {recreateRequestState?.status === 'REJECTED' && (
+                      {!isCompleted && recreateRequestState?.status === 'REJECTED' && (
                         <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-950 text-xs space-y-1">
                           <div className="flex items-center justify-between">
                             <div className="font-bold flex items-center gap-1.5 text-rose-900">
@@ -893,7 +906,7 @@ const MyInternshipPage = () => {
                           <span>In phiếu đánh giá (Print / PDF)</span>
                         </button>
 
-                        {recreateRequestState?.status !== 'PENDING' && (
+                        {!isCompleted && recreateRequestState?.status !== 'PENDING' && (
                           <button
                             type="button"
                             onClick={() => setRecreateModalOpen(true)}

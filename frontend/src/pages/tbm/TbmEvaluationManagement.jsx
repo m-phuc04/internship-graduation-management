@@ -95,9 +95,24 @@ const TbmEvaluationManagement = () => {
     setActionLoading(true);
     try {
       const res = await internshipApi.complete(targetInternship._id);
-      if (res.success) {
+      if (res?.success || res?.status === 200 || !res?.error) {
         showToast('Đã hoàn tất đánh giá thực tập và khóa phiếu thành công!', 'success');
         setCompleteModalOpen(false);
+        // Immediately reflect COMPLETED state in local state
+        setEvaluations((prev) =>
+          prev.map((it) =>
+            String(it._id) === String(targetInternship._id)
+              ? {
+                  ...it,
+                  status: 'COMPLETED',
+                  evaluation: {
+                    ...(it.evaluation || {}),
+                    status: 'CONFIRMED',
+                  },
+                }
+              : it
+          )
+        );
         setTargetInternship(null);
         fetchEvaluations();
       }
@@ -132,7 +147,17 @@ const TbmEvaluationManagement = () => {
       }
 
       if (res?.success) {
-        setEvaluations(res.data || []);
+        // Filter out any evaluations that have been deleted by TBM
+        const list = (res.data || []).map((item) => {
+          if (evaluationRecreateService.isEvaluationDeleted(item._id)) {
+            return {
+              ...item,
+              evaluation: null,
+            };
+          }
+          return item;
+        });
+        setEvaluations(list);
         setPagination(res.pagination || null);
       }
     } catch (err) {
@@ -581,16 +606,19 @@ const TbmEvaluationManagement = () => {
                               </button>
                             )}
 
-                            {item.evaluation && (
-                              <button
-                                onClick={() => handleOpenDeleteEvaluation(item)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition cursor-pointer"
-                                title="Xóa kết quả đánh giá của sinh viên này"
-                              >
-                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
-                                <span>Xóa kết quả</span>
-                              </button>
-                            )}
+                            {item.evaluation &&
+                              item.status !== 'COMPLETED' &&
+                              item.evaluation?.status !== 'CONFIRMED' &&
+                              item.evaluation?.status !== 'COMPLETED' && (
+                                <button
+                                  onClick={() => handleOpenDeleteEvaluation(item)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition cursor-pointer"
+                                  title="Xóa kết quả đánh giá của sinh viên này"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>Xóa kết quả</span>
+                                </button>
+                              )}
 
                             <button
                               onClick={() => {
