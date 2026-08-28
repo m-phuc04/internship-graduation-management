@@ -217,6 +217,10 @@ const TbmEvaluationManagement = () => {
   }, [location.state, fetchRecreateRequests]);
 
   useEffect(() => {
+    fetchRecreateRequests();
+  }, [fetchRecreateRequests]);
+
+  useEffect(() => {
     if (activeTab === 'evaluations') {
       fetchEvaluations();
     } else if (activeTab === 'recreate_requests') {
@@ -433,6 +437,37 @@ const TbmEvaluationManagement = () => {
       {/* TAB 1: EVALUATIONS LIST */}
       {activeTab === 'evaluations' && (
         <>
+          {/* Pending Recreate Requests Notification Banner */}
+          {recreateRequests.filter((r) => r.status === 'PENDING').length > 0 && (
+            <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-xs">
+                  <RotateCcw className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <span>Có {recreateRequests.filter((r) => r.status === 'PENDING').length} yêu cầu tạo lại link đánh giá đang chờ bạn xét duyệt</span>
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  </div>
+                  <p className="text-[11.5px] text-amber-900/80 mt-0.5">
+                    Sinh viên đã gửi yêu cầu và đang chờ Trưởng Bộ Môn phê duyệt để tạo liên kết mới.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('recreate_requests');
+                  fetchRecreateRequests();
+                }}
+                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <span>Xem & Duyệt ngay</span>
+                <span className="text-amber-200">→</span>
+              </button>
+            </div>
+          )}
+
           {/* Filters Bar */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="w-full sm:w-80">
