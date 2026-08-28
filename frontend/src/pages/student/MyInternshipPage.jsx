@@ -845,123 +845,151 @@ const MyInternshipPage = () => {
                 {/* Case 3: Submitted Evaluation Result */}
                 {isEvaluated && (
                   <div className="space-y-4 text-xs">
-                    <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-emerald-950 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="font-bold flex items-center gap-2 text-sm">
-                          <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                          <span>Kết quả đánh giá từ Doanh nghiệp</span>
+                    <div className="p-5 rounded-2xl bg-gradient-to-b from-emerald-50/70 to-emerald-50/30 border border-emerald-200/90 text-emerald-950 space-y-3.5 shadow-2xs">
+                      {/* Header & Score Badge */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-100">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-sm">Kết quả đánh giá từ Doanh nghiệp</h4>
+                            <p className="text-[11px] text-slate-500">Doanh nghiệp đã hoàn thành biểu mẫu đánh giá thực tập</p>
+                          </div>
                         </div>
-                        <div className="text-lg font-black text-emerald-700 font-mono">
-                          {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null
-                            ? `${Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score).toFixed(1) : activeEvaluation.score} / 10 điểm`
-                            : '— / 10 điểm'}
+                        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-700 text-white px-4 py-1.5 rounded-xl shadow-xs">
+                          <span className="text-base font-black font-mono tracking-tight">
+                            {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null
+                              ? `${Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score).toFixed(1) : activeEvaluation.score}`
+                              : '—'}
+                          </span>
+                          <span className="text-[11px] font-semibold text-emerald-200">/ 10 điểm</span>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] pt-1 text-slate-700">
-                        <div>Doanh nghiệp: <strong className="text-slate-900">{internship.companyId?.name || internship.companyId?.companyName || 'TDSOUTH'}</strong></div>
-                        <div>Người đánh giá: <strong>{activeEvaluation?.evaluatorInfo?.name || internship.mentorName || 'Cán bộ DN'}</strong></div>
-                        <div>Chức vụ: <strong>{activeEvaluation?.evaluatorInfo?.position || internship.mentorPosition || '—'}</strong></div>
-                        <div>Ngày nộp: <strong>{formatDate(activeEvaluation?.submittedAt || activeRequest?.submittedAt || activeEvaluation?.createdAt)}</strong></div>
+                      {/* Metadata Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-0.5">
+                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
+                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Doanh nghiệp</span>
+                          <span className="font-bold text-slate-900 text-xs block truncate">{internship.companyId?.name || internship.companyId?.companyName || 'TDSOUTH'}</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
+                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Người đánh giá</span>
+                          <span className="font-bold text-slate-900 text-xs block truncate">{activeEvaluation?.evaluatorInfo?.name || internship.mentorName || 'Cán bộ DN'}</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
+                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Chức vụ</span>
+                          <span className="font-bold text-slate-900 text-xs block truncate">{activeEvaluation?.evaluatorInfo?.position || internship.mentorPosition || '—'}</span>
+                        </div>
+                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
+                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Ngày nộp</span>
+                          <span className="font-bold text-slate-900 text-xs font-mono block">{formatDate(activeEvaluation?.submittedAt || activeRequest?.submittedAt || activeEvaluation?.createdAt)}</span>
+                        </div>
                       </div>
 
+                      {/* Comments */}
                       {activeEvaluation?.comments && (
-                        <div className="pt-2 border-t border-emerald-200/60 text-slate-700">
-                          <span className="font-bold block mb-0.5">Nhận xét của Doanh nghiệp:</span>
-                          <p className="whitespace-pre-line leading-relaxed italic bg-white/70 p-2.5 rounded-xl border border-emerald-100 font-medium">
+                        <div className="p-3.5 rounded-xl bg-white/90 border border-emerald-100 text-slate-700 space-y-1">
+                          <span className="font-bold text-[11.5px] text-slate-900 block">Nhận xét của Doanh nghiệp:</span>
+                          <p className="whitespace-pre-line leading-relaxed italic text-slate-600 text-xs pl-2.5 border-l-2 border-emerald-500">
                             "{activeEvaluation.comments}"
                           </p>
                         </div>
                       )}
 
-                      {/* Recreation Request Alert Boxes - Only visible when NOT completed */}
-                      {/* Recreation Request Alert Boxes - Only visible when NOT completed */}
+                      {/* Recreation Request Alert Boxes */}
                       {isRecreatePending && (
-                        <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs space-y-1">
-                          <div className="font-bold flex items-center gap-1.5 text-amber-900">
-                            <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-                            <span>Yêu cầu tạo lại link đang chờ Trưởng Bộ Môn xét duyệt</span>
+                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 flex items-start gap-3 shadow-2xs">
+                          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <Clock className="w-4 h-4" />
                           </div>
-                          <p className="text-slate-700 pl-5.5 text-[11.5px]">
-                            Lý do yêu cầu: <em>"{recreateRequestState?.reason || reqObj?.recreateReason || '—'}"</em>
-                          </p>
-                          <div className="text-[11px] text-amber-800 pl-5.5 font-medium">
-                            • Bạn không thể gửi thêm yêu cầu mới khi đang có 1 yêu cầu ở trạng thái chờ duyệt.
+                          <div className="space-y-1 min-w-0">
+                            <div className="font-bold text-amber-950 text-xs sm:text-sm">
+                              Yêu cầu tạo lại link đang chờ Trưởng Bộ Môn xét duyệt
+                            </div>
+                            <p className="text-slate-700 text-[11.5px]">
+                              Lý do yêu cầu: <em className="font-semibold text-slate-900">"{recreateRequestState?.reason || reqObj?.recreateReason || '—'}"</em>
+                            </p>
+                            <div className="text-[11px] text-amber-800 font-medium">
+                              • Bạn không thể gửi thêm yêu cầu mới khi đang có 1 yêu cầu ở trạng thái chờ duyệt.
+                            </div>
                           </div>
                         </div>
                       )}
 
                       {canCreateNewLink && (
-                        <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
-                          <div className="font-bold flex items-center justify-between">
-                            <div className="flex items-center gap-1.5 text-emerald-900">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-                              <span>Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link</span>
+                        <div className="p-4 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                              <CheckCircle2 className="w-4 h-4" />
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => setCreateLinkModalOpen(true)}
-                              className="px-3.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] rounded-lg transition cursor-pointer shrink-0"
-                            >
-                              Tạo link mới ngay
-                            </button>
-                          </div>
-                          <p className="text-slate-700 text-[11.5px]">
-                            Bạn đã được cấp quyền tạo lại link đánh giá mới cho đợt thực tập này.
-                          </p>
-                        </div>
-                      )}
-
-                      {isRecreateRejected && (
-                        <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-950 text-xs space-y-1">
-                          <div className="flex items-center justify-between">
-                            <div className="font-bold flex items-center gap-1.5 text-rose-900">
-                              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                              <span>Yêu cầu tạo lại link đã bị từ chối</span>
+                            <div>
+                              <div className="font-bold text-emerald-950 text-xs sm:text-sm">
+                                Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link
+                              </div>
+                              <p className="text-slate-600 text-[11.5px] mt-0.5">
+                                Bạn đã được cấp quyền tạo lại link đánh giá mới cho đợt thực tập này.
+                              </p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => setRecreateModalOpen(true)}
-                              className="text-[11px] font-bold text-rose-700 underline hover:text-rose-800 cursor-pointer"
-                            >
-                              Gửi lại yêu cầu khác
-                            </button>
                           </div>
-                          <p className="text-slate-700 pl-5.5 text-[11.5px]">
-                            Lý do từ TBM: <em>"{recreateRequestState?.rejectReason || reqObj?.recreateRejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="pt-2 flex flex-wrap items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setDocModalOpen(true)}
-                          className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer text-xs"
-                        >
-                          <Printer className="w-4 h-4" />
-                          <span>In phiếu đánh giá (Print / PDF)</span>
-                        </button>
-
-                        {canCreateNewLink ? (
                           <button
                             type="button"
                             onClick={() => setCreateLinkModalOpen(true)}
-                            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer text-xs"
+                            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
                           >
                             <Plus className="w-4 h-4" />
                             <span>Tạo link mới ngay</span>
                           </button>
-                        ) : !isCompleted && !isRecreatePending ? (
+                        </div>
+                      )}
+
+                      {isRecreateRejected && (
+                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                          <div className="flex items-start gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                              <AlertCircle className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <div className="font-bold text-rose-950 text-xs sm:text-sm">
+                                Yêu cầu tạo lại link đã bị từ chối
+                              </div>
+                              <p className="text-slate-700 text-[11.5px] mt-0.5">
+                                Lý do từ TBM: <em className="font-semibold text-rose-900">"{recreateRequestState?.rejectReason || reqObj?.recreateRejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
+                              </p>
+                            </div>
+                          </div>
                           <button
                             type="button"
                             onClick={() => setRecreateModalOpen(true)}
-                            className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer text-xs"
+                            className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Gửi lại yêu cầu khác</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="pt-2 flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setDocModalOpen(true)}
+                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition inline-flex items-center gap-2 shadow-xs cursor-pointer text-xs"
+                        >
+                          <Printer className="w-4 h-4 text-emerald-400" />
+                          <span>In phiếu đánh giá (Print / PDF)</span>
+                        </button>
+
+                        {!isCompleted && !isRecreatePending && !canCreateNewLink && (
+                          <button
+                            type="button"
+                            onClick={() => setRecreateModalOpen(true)}
+                            className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition inline-flex items-center gap-2 shadow-2xs cursor-pointer text-xs"
                           >
                             <RotateCcw className="w-4 h-4 text-slate-500" />
                             <span>Yêu cầu tạo lại link đánh giá</span>
                           </button>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </div>
