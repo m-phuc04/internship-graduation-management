@@ -14,6 +14,7 @@ import ApproveModal from '../../components/internships/ApproveModal';
 import RejectModal from '../../components/internships/RejectModal';
 import AssignLecturerModal from '../../components/internships/AssignLecturerModal';
 import ExportModal from '../../components/common/ExportModal';
+import InternshipTimelineModal from '../../components/internships/InternshipTimelineModal';
 import UserNameClickable from '../../components/common/UserNameClickable';
 
 import {
@@ -60,6 +61,7 @@ const InternshipManagement = () => {
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
   const [exportModalOpen, setExportModalOpen] = useState(false);
+  const [timelineModalOpen, setTimelineModalOpen] = useState(false);
 
   const { showToast } = useToast();
 
@@ -103,6 +105,28 @@ const InternshipManagement = () => {
     });
   };
 
+  // Get TTDN Window Badge for current term
+  const getInternshipWindowBadge = () => {
+    if (!currentTerm?.internship?.registrationStart && !currentTerm?.internship?.registrationEnd) {
+      return { text: 'Mở tự do', color: 'bg-slate-100 text-slate-700' };
+    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const start = currentTerm?.internship?.registrationStart ? new Date(currentTerm.internship.registrationStart) : null;
+    const end = currentTerm?.internship?.registrationEnd ? new Date(currentTerm.internship.registrationEnd) : null;
+    if (end) end.setHours(23, 59, 59, 999);
+
+    if (start && now < start) {
+      return { text: 'Sắp mở', color: 'bg-amber-100 text-amber-800' };
+    }
+    if (end && now > end) {
+      return { text: 'Đã đóng', color: 'bg-rose-100 text-rose-800' };
+    }
+    return { text: 'Đang mở', color: 'bg-emerald-100 text-emerald-800' };
+  };
+
+  const windowBadge = getInternshipWindowBadge();
+
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
@@ -115,11 +139,25 @@ const InternshipManagement = () => {
             Quản lý Thực tập Doanh nghiệp (TTDN)
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Xét duyệt hồ sơ đăng ký thực tập của sinh viên và phân công Giảng viên hướng dẫn
+            Xét duyệt hồ sơ đăng ký thực tập của sinh viên, cấu hình mốc thời gian mở cổng và phân công GVHD
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Configure Timeline Window Button */}
+          <button
+            type="button"
+            onClick={() => setTimelineModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer shadow-2xs"
+            title="Cấu hình thời gian mở cổng đăng ký & nộp báo cáo TTDN"
+          >
+            <Clock className="w-3.5 h-3.5 text-indigo-600" />
+            <span>Thời gian mở TTDN</span>
+            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color}`}>
+              {windowBadge.text}
+            </span>
+          </button>
+
           <button
             onClick={() => fetchInternships()}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer"
@@ -399,6 +437,11 @@ const InternshipManagement = () => {
         type="INTERNSHIP"
         currentFilters={{ academicTermId: currentTerm?._id, status, search }}
         onExport={(params) => internshipApi.exportExcel(params)}
+      />
+
+      <InternshipTimelineModal
+        isOpen={timelineModalOpen}
+        onClose={() => setTimelineModalOpen(false)}
       />
     </div>
   );

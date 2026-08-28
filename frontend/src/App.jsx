@@ -152,7 +152,7 @@ function App() {
               >
                 <Route index element={<Navigate to="/tbm/dashboard" replace />} />
                 <Route path="dashboard" element={<TbmDashboard />} />
-                <Route path="academic-terms" element={<AcademicTermManagement />} />
+                <Route path="academic-terms" element={<Navigate to="/tbm/dashboard" replace />} />
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="lecturers" element={<LecturerManagement />} />
                 <Route path="companies" element={<CompanyManagement />} />

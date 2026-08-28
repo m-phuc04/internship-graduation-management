@@ -5,6 +5,7 @@ import StudentSidebar from './StudentSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
 import Modal from '../common/Modal';
 import ScheduleModal from '../common/ScheduleModal';
+import Footer from './Footer';
 import {
   GraduationCap,
   LogOut,
@@ -50,7 +51,7 @@ const StudentLayout = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex">
       {/* Desktop Sidebar (Fixed Left) */}
-      <div className="hidden lg:block shrink-0 sticky top-0 h-screen overflow-hidden">
+      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-white border-r border-slate-200/80">
         <StudentSidebar onOpenScheduleModal={() => setScheduleModalOpen(true)} />
       </div>
 
@@ -71,7 +72,7 @@ const StudentLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header */}
         <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-white/95">
           <div className="px-3 sm:px-6 lg:px-8">
@@ -202,6 +203,7 @@ const StudentLayout = () => {
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto min-w-0">
           <Outlet />
         </main>
+        <Footer />
       </div>
 
       {/* Training Milestones & Schedule Modal */}

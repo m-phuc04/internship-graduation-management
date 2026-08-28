@@ -11,6 +11,7 @@ import {
   User,
 } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
+import Footer from './Footer';
 
 const CompanyLayout = () => {
   const { user, logout } = useAuth();
@@ -147,6 +148,7 @@ const CompanyLayout = () => {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         <Outlet />
       </main>
+      <Footer />
     </div>
   );
 };

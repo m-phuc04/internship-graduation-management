@@ -36,14 +36,8 @@ const Sidebar = ({ onCloseMobile }) => {
     badge: 'TQ',
   };
 
-  // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ 5 mục nghiệp vụ chính)
+  // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ 4 mục nghiệp vụ chính)
   const tbmBusinessItems = [
-    {
-      to: '/tbm/academic-terms',
-      label: 'Học kỳ & Năm học',
-      icon: Calendar,
-      badge: 'HK',
-    },
     {
       to: '/tbm/internships',
       label: 'Quản lý Thực tập',
@@ -89,6 +83,12 @@ const Sidebar = ({ onCloseMobile }) => {
   // 4. Dành cho ADMIN: Dữ liệu Nền tảng (Master Data)
   const adminMasterDataItems = [
     {
+      to: '/admin/academic-terms',
+      label: 'Học kỳ & Năm học',
+      icon: Calendar,
+      badge: 'MASTER',
+    },
+    {
       to: '/admin/students',
       label: 'Quản lý Sinh viên',
       icon: Users,
@@ -109,7 +109,7 @@ const Sidebar = ({ onCloseMobile }) => {
   ];
 
   return (
-    <aside className="w-64 max-w-[85vw] bg-[#0B1E48] text-slate-300 flex flex-col shrink-0 h-full min-h-screen border-r border-[#132c66] select-none">
+    <aside className="w-64 max-w-[85vw] bg-[#0B1E48] text-slate-300 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-4 sm:px-5 border-b border-[#132c66] bg-[#071638]/60">
         <Link

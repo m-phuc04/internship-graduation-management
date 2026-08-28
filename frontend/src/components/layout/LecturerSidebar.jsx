@@ -77,7 +77,7 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
   const isTbm = user?.role === 'TBM';
 
   return (
-    <aside className="w-64 bg-white text-slate-800 flex flex-col shrink-0 min-h-screen border-r border-slate-200/80 select-none shadow-2xs">
+    <aside className="w-64 bg-white text-slate-800 flex flex-col shrink-0 h-full select-none shadow-2xs">
       {/* Brand Header */}
       <Link
         to="/"

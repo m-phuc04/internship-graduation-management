@@ -6,6 +6,8 @@ import { Lock, KeyRound, ArrowRight, ArrowLeft, RotateCw, ShieldCheck } from 'lu
 import authApi from '../api/authApi';
 import IUHLogo from '../components/common/IUHLogo';
 
+import Footer from '../components/layout/Footer';
+
 const LoginPage = () => {
   const [accountCode, setAccountCode] = useState('');
   const [password, setPassword] = useState('');
@@ -236,6 +238,8 @@ const LoginPage = () => {
           </div>
         </div>
       </div>
+
+      <Footer dark className="mt-auto border-t-0 bg-transparent z-10" />
     </div>
   );
 };

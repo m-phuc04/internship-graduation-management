@@ -22,6 +22,13 @@ import {
   X,
 } from 'lucide-react';
 
+import {
+  formatDateVN,
+  formatFullDateVN,
+  formatDateForInput,
+  parseLocalDate,
+} from '../../utils/dateUtils';
+
 const STATUS_CONFIG = {
   ACTIVE: {
     label: 'Đang diễn ra',
@@ -45,23 +52,7 @@ const STATUS_CONFIG = {
   },
 };
 
-const formatDate = (d) => {
-  if (!d) return '—';
-  try {
-    return new Date(d).toLocaleDateString('vi-VN');
-  } catch {
-    return '—';
-  }
-};
-
-const formatDateForInput = (d) => {
-  if (!d) return '';
-  try {
-    return new Date(d).toISOString().split('T')[0];
-  } catch {
-    return '';
-  }
-};
+const formatDate = (d) => formatDateVN(d);
 
 const AcademicTermManagement = () => {
   const { terms, refreshTerms, setCurrentTerm, currentTerm } = useAcademicTerm();
@@ -88,20 +79,6 @@ const AcademicTermManagement = () => {
     endDate: '',
     status: 'DRAFT',
     description: '',
-    internship: {
-      registrationStart: '',
-      registrationEnd: '',
-      reportStart: '',
-      reportDeadline: '',
-    },
-    thesis: {
-      registrationStart: '',
-      registrationEnd: '',
-      assignmentStart: '',
-      assignmentEnd: '',
-      defenseStart: '',
-      defenseEnd: '',
-    },
   });
 
   // Auto-generate Code suggestion
@@ -125,20 +102,6 @@ const AcademicTermManagement = () => {
       endDate: '',
       status: 'UPCOMING',
       description: '',
-      internship: {
-        registrationStart: '',
-        registrationEnd: '',
-        reportStart: '',
-        reportDeadline: '',
-      },
-      thesis: {
-        registrationStart: '',
-        registrationEnd: '',
-        assignmentStart: '',
-        assignmentEnd: '',
-        defenseStart: '',
-        defenseEnd: '',
-      },
     });
     setModalOpen(true);
   };
@@ -154,20 +117,6 @@ const AcademicTermManagement = () => {
       endDate: formatDateForInput(term.endDate),
       status: term.status || 'DRAFT',
       description: term.description || '',
-      internship: {
-        registrationStart: formatDateForInput(term.internship?.registrationStart),
-        registrationEnd: formatDateForInput(term.internship?.registrationEnd),
-        reportStart: formatDateForInput(term.internship?.reportStart),
-        reportDeadline: formatDateForInput(term.internship?.reportDeadline),
-      },
-      thesis: {
-        registrationStart: formatDateForInput(term.thesis?.registrationStart),
-        registrationEnd: formatDateForInput(term.thesis?.registrationEnd),
-        assignmentStart: formatDateForInput(term.thesis?.assignmentStart),
-        assignmentEnd: formatDateForInput(term.thesis?.assignmentEnd),
-        defenseStart: formatDateForInput(term.thesis?.defenseStart),
-        defenseEnd: formatDateForInput(term.thesis?.defenseEnd),
-      },
     });
     setModalOpen(true);
   };
@@ -183,41 +132,6 @@ const AcademicTermManagement = () => {
     if (new Date(formData.endDate) <= new Date(formData.startDate)) {
       showError('Ngày kết thúc học kỳ phải sau ngày bắt đầu học kỳ');
       return;
-    }
-
-    // Validate TTDN milestone dates
-    const { internship, thesis } = formData;
-    if (internship.registrationStart && internship.registrationEnd) {
-      if (new Date(internship.registrationEnd) < new Date(internship.registrationStart)) {
-        showError('Hạn chót đăng ký TTDN phải sau ngày bắt đầu đăng ký');
-        return;
-      }
-    }
-    if (internship.reportStart && internship.reportDeadline) {
-      if (new Date(internship.reportDeadline) < new Date(internship.reportStart)) {
-        showError('Hạn chót nộp báo cáo TTDN phải sau ngày bắt đầu nộp báo cáo');
-        return;
-      }
-    }
-
-    // Validate KLTN milestone dates
-    if (thesis.registrationStart && thesis.registrationEnd) {
-      if (new Date(thesis.registrationEnd) < new Date(thesis.registrationStart)) {
-        showError('Hạn chót đăng ký đề tài KLTN phải sau ngày bắt đầu đăng ký');
-        return;
-      }
-    }
-    if (thesis.assignmentStart && thesis.assignmentEnd) {
-      if (new Date(thesis.assignmentEnd) < new Date(thesis.assignmentStart)) {
-        showError('Hạn chót phân công GVHD/PB phải sau ngày bắt đầu phân công');
-        return;
-      }
-    }
-    if (thesis.defenseStart && thesis.defenseEnd) {
-      if (new Date(thesis.defenseEnd) < new Date(thesis.defenseStart)) {
-        showError('Hạn chót bảo vệ khóa luận phải sau ngày bắt đầu bảo vệ');
-        return;
-      }
     }
 
     try {
@@ -329,7 +243,7 @@ const AcademicTermManagement = () => {
                 Quản lý Học kỳ & Năm học
               </h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Cấu hình niên khóa, thời hạn đăng ký Thực tập (TTDN) và Khóa luận Tốt nghiệp (KLTN).
+                Quản lý danh sách các học kỳ, niên khóa đào tạo và trạng thái hoạt động của hệ thống.
               </p>
             </div>
           </div>
@@ -655,6 +569,12 @@ const AcademicTermManagement = () => {
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                     />
+                    {formData.startDate && (
+                      <div className="text-[11px] font-semibold text-indigo-700 mt-1 flex items-center gap-1 bg-indigo-50/80 px-2 py-0.5 rounded-md">
+                        <span>📅</span>
+                        <span>{formatFullDateVN(formData.startDate)} ({formatDateVN(formData.startDate)})</span>
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -668,6 +588,12 @@ const AcademicTermManagement = () => {
                       onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
                     />
+                    {formData.endDate && (
+                      <div className="text-[11px] font-semibold text-indigo-700 mt-1 flex items-center gap-1 bg-indigo-50/80 px-2 py-0.5 rounded-md">
+                        <span>📅</span>
+                        <span>{formatFullDateVN(formData.endDate)} ({formatDateVN(formData.endDate)})</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -715,193 +641,11 @@ const AcademicTermManagement = () => {
                 </div>
               </div>
 
-              {/* Section 2: Internship Milestones */}
-              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100">
-                <div className="text-xs font-bold uppercase tracking-wider text-blue-700 mb-3 flex items-center gap-1.5">
-                  <Briefcase className="w-4 h-4" />
-                  2. Mốc thời gian Thực tập Doanh nghiệp (TTDN)
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Mở đăng ký TTDN từ ngày:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.internship.registrationStart}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          internship: { ...formData.internship, registrationStart: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Hạn chót đăng ký TTDN:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.internship.registrationEnd}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          internship: { ...formData.internship, registrationEnd: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Bắt đầu nộp báo cáo thực tập:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.internship.reportStart}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          internship: { ...formData.internship, reportStart: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Hạn chót nộp báo cáo thực tập:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.internship.reportDeadline}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          internship: { ...formData.internship, reportDeadline: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 3: Thesis Milestones */}
-              <div className="p-4 rounded-2xl bg-purple-50/50 border border-purple-100">
-                <div className="text-xs font-bold uppercase tracking-wider text-purple-700 mb-3 flex items-center gap-1.5">
-                  <Layers className="w-4 h-4" />
-                  3. Mốc thời gian Khóa luận Tốt nghiệp (KLTN)
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Mở đăng ký đề tài KLTN:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.thesis.registrationStart}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          thesis: { ...formData.thesis, registrationStart: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Hạn chót đăng ký đề tài:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.thesis.registrationEnd}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          thesis: { ...formData.thesis, registrationEnd: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Bắt đầu phân công GVHD / PB:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.thesis.assignmentStart}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          thesis: { ...formData.thesis, assignmentStart: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Hạn chót phân công GVHD / PB:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.thesis.assignmentEnd}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          thesis: { ...formData.thesis, assignmentEnd: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Bắt đầu đợt bảo vệ khóa luận:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.thesis.defenseStart}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          thesis: { ...formData.thesis, defenseStart: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      Kết thúc đợt bảo vệ khóa luận:
-                    </label>
-                    <input
-                      type="date"
-                      value={formData.thesis.defenseEnd}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          thesis: { ...formData.thesis, defenseEnd: e.target.value },
-                        })
-                      }
-                      className="w-full px-3 py-1.5 rounded-lg text-xs bg-white border border-slate-200"
-                    />
-                  </div>
+              {/* Note about TTDN & KLTN Timelines */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-600 flex items-start gap-2.5">
+                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-bold text-slate-800">Quản lý đợt mở đăng ký:</span> Thời gian mở cổng đăng ký Thực tập Doanh nghiệp (TTDN) và Khóa luận Tốt nghiệp (KLTN) được thiết lập và kích hoạt linh hoạt trực tiếp tại menu <strong className="text-indigo-600">Quản lý Thực tập</strong> và <strong className="text-purple-600">Quản lý Khóa luận</strong>.
                 </div>
               </div>
 
