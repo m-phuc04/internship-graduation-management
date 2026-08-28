@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import internshipApi from '../../api/internshipApi';
+import dashboardApi from '../../api/dashboardApi';
 import evaluationApi from '../../api/evaluationApi';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
@@ -31,6 +32,7 @@ import {
 
 const MyInternshipPage = () => {
   const { currentTerm } = useAcademicTerm();
+  const location = useLocation();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [docModalOpen, setDocModalOpen] = useState(false);
@@ -44,19 +46,62 @@ const MyInternshipPage = () => {
   const fetchMyInternship = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await internshipApi.getMyInternship({
+      // 1. Try fetching with currentTerm filter
+      let res = await internshipApi.getMyInternship({
         academicTermId: currentTerm?._id || '',
       });
-      if (res.success) {
-        setData(res.data);
+
+      // 2. If no internship found under currentTerm, fallback to fetching without term constraint
+      if ((!res?.success || !res?.data?.internship) && currentTerm?._id) {
+        const fallbackRes = await internshipApi.getMyInternship();
+        if (fallbackRes?.success && fallbackRes?.data?.internship) {
+          res = fallbackRes;
+        }
+      }
+
+      // 3. Fallback to student dashboard API to guarantee sync across modules
+      let resolvedInternship = res?.data?.internship || (res?.data?._id ? res.data : null);
+      let resolvedStudent = res?.data?.student || resolvedInternship?.studentId;
+
+      if (!resolvedInternship) {
+        try {
+          const dashRes = await dashboardApi.getStudentDashboard();
+          if (dashRes?.success && dashRes.data?.internship) {
+            resolvedInternship = dashRes.data.internship;
+            resolvedStudent = dashRes.data.student || resolvedStudent;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (res?.success && res.data) {
+        setData({
+          ...res.data,
+          student: resolvedStudent || res.data.student,
+          internship: resolvedInternship,
+        });
+      } else if (resolvedInternship) {
+        setData({
+          student: resolvedStudent,
+          internship: resolvedInternship,
+          hasActiveInternship: true,
+          canRegisterNew: false,
+        });
       }
 
       // Fetch evaluation request state
       const evalRes = await evaluationApi.getStudentEvaluationRequest({
         academicTermId: currentTerm?._id || '',
       });
-      if (evalRes.success) {
+      if (evalRes?.success) {
         setEvalData(evalRes.data);
+      } else {
+        // Fallback evaluation without term
+        const evalFallback = await evaluationApi.getStudentEvaluationRequest();
+        if (evalFallback?.success) {
+          setEvalData(evalFallback.data);
+        }
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải thông tin hồ sơ thực tập', 'error');
@@ -100,6 +145,18 @@ const MyInternshipPage = () => {
     fetchMyInternship();
   }, [fetchMyInternship]);
 
+  // Smooth scroll to evaluation section when ?view=evaluation is present
+  useEffect(() => {
+    if (location.search.includes('view=evaluation')) {
+      const el = document.getElementById('evaluation-section');
+      if (el) {
+        setTimeout(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 250);
+      }
+    }
+  }, [location.search, data]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -110,7 +167,15 @@ const MyInternshipPage = () => {
     );
   }
 
-  const { student, internship, hasActiveInternship, canRegisterNew } = data || {};
+  const rawInternship = data?.internship !== undefined ? data.internship : (data?._id ? data : null);
+  const student = data?.student || rawInternship?.studentId;
+  const internship = rawInternship;
+  
+  const isRejected = internship?.status === 'REJECTED';
+  const hasActiveInternship = Boolean(
+    internship && !isRejected && internship.status !== 'INACTIVE'
+  );
+  const canRegisterNew = !hasActiveInternship;
 
   // If no internship registered yet
   if (!internship) {
@@ -124,14 +189,14 @@ const MyInternshipPage = () => {
             </div>
             <div>
               <h2 className="text-lg font-bold text-slate-900 leading-tight">
-                Xin chào, {student?.userId?.fullName}!
+                Xin chào, {student?.userId?.fullName || 'Sinh viên'}!
               </h2>
               <div className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2">
-                <span>MSSV: <strong>{student?.studentCode}</strong></span>
+                <span>MSSV: <strong>{student?.studentCode || '—'}</strong></span>
                 <span>•</span>
-                <span>Lớp: <strong>{student?.className}</strong></span>
+                <span>Lớp: <strong>{student?.className || '—'}</strong></span>
                 <span>•</span>
-                <span>GPA: <strong>{Number(student?.gpa).toFixed(2)}</strong></span>
+                <span>GPA: <strong>{student?.gpa !== undefined ? Number(student.gpa).toFixed(2) : '—'}</strong></span>
               </div>
             </div>
           </div>
@@ -204,7 +269,7 @@ const MyInternshipPage = () => {
                 <StatusBadge status={internship.status} size="md" />
               </div>
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
-                <span>Doanh nghiệp: <strong className="text-slate-800">{internship.companyId?.name}</strong></span>
+                <span>Doanh nghiệp: <strong className="text-slate-800">{internship.companyId?.name || internship.companyId?.companyName || '—'}</strong></span>
                 <span>•</span>
                 <span>Mã hồ sơ: <strong className="font-mono text-indigo-600">{internship._id}</strong></span>
               </div>
@@ -330,7 +395,7 @@ const MyInternshipPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-slate-400 block mb-0.5">Tên công ty / Doanh nghiệp</span>
-                <span className="font-bold text-slate-900 text-sm">{internship.companyId?.name}</span>
+                <span className="font-bold text-slate-900 text-sm">{internship.companyId?.name || internship.companyId?.companyName || '—'}</span>
               </div>
 
               <div>
