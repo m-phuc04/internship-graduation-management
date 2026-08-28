@@ -90,18 +90,25 @@ const MyInternshipPage = () => {
         });
       }
 
-      // Fetch evaluation request state
-      const evalRes = await evaluationApi.getStudentEvaluationRequest({
-        academicTermId: currentTerm?._id || '',
-      });
-      if (evalRes?.success) {
-        setEvalData(evalRes.data);
-      } else {
-        // Fallback evaluation without term
-        const evalFallback = await evaluationApi.getStudentEvaluationRequest();
-        if (evalFallback?.success) {
-          setEvalData(evalFallback.data);
+      // Fetch evaluation request state with fallback
+      try {
+        let evalRes = await evaluationApi.getStudentEvaluationRequest({
+          academicTermId: currentTerm?._id || '',
+        });
+
+        // If currentTerm didn't return an evaluation or request, try without term constraint
+        if (!evalRes?.success || !evalRes?.data?.hasInternship || (!evalRes?.data?.request && !evalRes?.data?.evaluation)) {
+          const evalFallback = await evaluationApi.getStudentEvaluationRequest();
+          if (evalFallback?.success && (evalFallback.data?.hasInternship || evalFallback.data?.evaluation || evalFallback.data?.request)) {
+            evalRes = evalFallback;
+          }
         }
+
+        if (evalRes?.success && evalRes.data) {
+          setEvalData(evalRes.data);
+        }
+      } catch {
+        // Safe ignore
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải thông tin hồ sơ thực tập', 'error');
@@ -197,6 +204,18 @@ const MyInternshipPage = () => {
     internship && !isRejected && internship.status !== 'INACTIVE'
   );
   const canRegisterNew = !hasActiveInternship;
+
+  // Resolve evaluation data from all available sources
+  const activeEvaluation =
+    evalData?.evaluation ||
+    (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
+  const activeRequest = evalData?.request;
+  const isEvaluated = Boolean(
+    activeEvaluation ||
+    activeRequest?.status === 'SUBMITTED' ||
+    internship?.status === 'COMPLETED'
+  );
+  const isPendingEvaluation = Boolean(activeRequest?.status === 'PENDING' && !isEvaluated);
 
   // If no internship registered yet
   if (!internship) {
@@ -299,10 +318,10 @@ const MyInternshipPage = () => {
 
           {/* Action button if rejected/completed or info banner */}
           <div className="flex items-center gap-2">
-            {internship.evaluation && (
+            {isEvaluated && (
               <button
                 onClick={() => setDocModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
                 title="In phiếu đánh giá kết quả thực tập từ Doanh nghiệp"
               >
                 <Printer className="w-4 h-4" />
@@ -608,12 +627,12 @@ const MyInternshipPage = () => {
                   Đánh Giá Thực Tập Doanh Nghiệp
                 </h3>
               </div>
-              {evalData?.request?.status === 'SUBMITTED' || evalData?.evaluation ? (
+              {isEvaluated ? (
                 <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Doanh nghiệp đã đánh giá
                 </span>
-              ) : evalData?.request?.status === 'PENDING' ? (
+              ) : isPendingEvaluation ? (
                 <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-amber-600" />
                   Đã tạo link — Chờ DN đánh giá
@@ -655,7 +674,7 @@ const MyInternshipPage = () => {
             {['PENDING_SUPERVISOR_ACCEPTANCE', 'APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status) && (
               <>
                 {/* Case 1: No Evaluation Request Created Yet */}
-                {!evalData?.request && (
+                {!isEvaluated && !isPendingEvaluation && (
                   <div className="py-4 text-center space-y-3">
                     <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-left text-xs text-indigo-900 space-y-1">
                       <div className="font-bold">Quy trình đánh giá thực tập:</div>
@@ -678,7 +697,7 @@ const MyInternshipPage = () => {
                 )}
 
                 {/* Case 2: Link Created (Pending Submission) */}
-                {evalData?.request?.status === 'PENDING' && (
+                {isPendingEvaluation && activeRequest?.token && (
                   <div className="space-y-3 text-xs">
                     <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5 text-amber-950">
                       <div className="font-bold flex items-center gap-2">
@@ -690,18 +709,18 @@ const MyInternshipPage = () => {
                         <input
                           type="text"
                           readOnly
-                          value={`${window.location.origin}/company-evaluation/${evalData.request.token}`}
+                          value={`${window.location.origin}/company-evaluation/${activeRequest.token}`}
                           className="flex-1 bg-transparent font-mono text-xs text-slate-700 outline-none select-all"
                         />
                         <button
                           type="button"
-                          onClick={() => handleCopyLink(`${window.location.origin}/company-evaluation/${evalData.request.token}`)}
+                          onClick={() => handleCopyLink(`${window.location.origin}/company-evaluation/${activeRequest.token}`)}
                           className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] rounded-lg transition shrink-0 cursor-pointer"
                         >
                           {copied ? 'Đã sao chép!' : 'Sao chép link'}
                         </button>
                         <a
-                          href={`${window.location.origin}/company-evaluation/${evalData.request.token}`}
+                          href={`${window.location.origin}/company-evaluation/${activeRequest.token}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition shrink-0 inline-flex items-center gap-1 cursor-pointer"
@@ -722,7 +741,7 @@ const MyInternshipPage = () => {
                 )}
 
                 {/* Case 3: Submitted Evaluation Result */}
-                {(evalData?.request?.status === 'SUBMITTED' || evalData?.evaluation) && (
+                {isEvaluated && (
                   <div className="space-y-4 text-xs">
                     <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200 text-emerald-950 space-y-2">
                       <div className="flex items-center justify-between">
@@ -731,24 +750,24 @@ const MyInternshipPage = () => {
                           <span>Kết quả đánh giá từ Doanh nghiệp</span>
                         </div>
                         <div className="text-lg font-black text-emerald-700 font-mono">
-                          {evalData.evaluation?.score !== undefined && evalData.evaluation?.score !== null
-                            ? `${Number(evalData.evaluation.score) % 1 === 0 ? Number(evalData.evaluation.score).toFixed(1) : evalData.evaluation.score} / 10 điểm`
+                          {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null
+                            ? `${Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score).toFixed(1) : activeEvaluation.score} / 10 điểm`
                             : '— / 10 điểm'}
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] pt-1 text-slate-700">
-                        <div>Người đánh giá: <strong>{evalData.evaluation?.evaluatorInfo?.name || 'Cán bộ DN'}</strong></div>
-                        <div>Chức vụ: <strong>{evalData.evaluation?.evaluatorInfo?.position || '—'}</strong></div>
-                        <div>Ngày nộp: <strong>{formatDate(evalData.evaluation?.submittedAt || evalData.request?.submittedAt)}</strong></div>
-                        <div>Làm việc nhóm: <strong>{evalData.evaluation?.teamworkEvaluation || '—'}</strong></div>
+                        <div>Doanh nghiệp: <strong className="text-slate-900">{internship.companyId?.name || internship.companyId?.companyName || 'TDSOUTH'}</strong></div>
+                        <div>Người đánh giá: <strong>{activeEvaluation?.evaluatorInfo?.name || internship.mentorName || 'Cán bộ DN'}</strong></div>
+                        <div>Chức vụ: <strong>{activeEvaluation?.evaluatorInfo?.position || internship.mentorPosition || '—'}</strong></div>
+                        <div>Ngày nộp: <strong>{formatDate(activeEvaluation?.submittedAt || activeRequest?.submittedAt || activeEvaluation?.createdAt)}</strong></div>
                       </div>
 
-                      {evalData.evaluation?.comments && (
+                      {activeEvaluation?.comments && (
                         <div className="pt-2 border-t border-emerald-200/60 text-slate-700">
                           <span className="font-bold block mb-0.5">Nhận xét của Doanh nghiệp:</span>
-                          <p className="whitespace-pre-line leading-relaxed italic bg-white/70 p-2.5 rounded-xl border border-emerald-100">
-                            "{evalData.evaluation.comments}"
+                          <p className="whitespace-pre-line leading-relaxed italic bg-white/70 p-2.5 rounded-xl border border-emerald-100 font-medium">
+                            "{activeEvaluation.comments}"
                           </p>
                         </div>
                       )}
@@ -848,7 +867,7 @@ const MyInternshipPage = () => {
       >
         <InternshipEvaluationDoc
           internship={internship}
-          evaluation={evalData?.evaluation || internship?.evaluation}
+          evaluation={activeEvaluation || evalData?.evaluation || internship?.evaluation}
         />
       </DocumentViewerModal>
     </div>

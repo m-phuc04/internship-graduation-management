@@ -95,7 +95,7 @@ const TbmEvaluationManagement = () => {
   const fetchEvaluations = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await evaluationApi.getForTbm({
+      let res = await evaluationApi.getForTbm({
         page,
         limit: 10,
         search,
@@ -103,7 +103,19 @@ const TbmEvaluationManagement = () => {
         academicTermId: currentTerm?._id || '',
       });
 
-      if (res.success) {
+      if ((!res?.success || !res?.data?.length) && currentTerm?._id && !search && !status) {
+        const fallbackRes = await evaluationApi.getForTbm({
+          page,
+          limit: 10,
+          search,
+          status,
+        });
+        if (fallbackRes?.success && fallbackRes?.data?.length) {
+          res = fallbackRes;
+        }
+      }
+
+      if (res?.success) {
         setEvaluations(res.data || []);
         setPagination(res.pagination || null);
       }
