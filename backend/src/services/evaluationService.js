@@ -891,25 +891,31 @@ const studentRequestRecreateLink = async (userId, { reason } = {}) => {
     throw new AppError("Không tìm thấy thông tin sinh viên.", 404);
   }
 
-  const internship = await Internship.findOne({
+  // Try to find existing CompanyEvaluationRequest for this student first
+  let request = await CompanyEvaluationRequest.findOne({
     studentId: student._id,
-    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
   }).sort({ createdAt: -1 });
 
-  if (!internship) {
-    throw new AppError("Không tìm thấy đợt thực tập hợp lệ của bạn.", 404);
+  let internship = null;
+  if (request?.internshipId) {
+    internship = await Internship.findById(request.internshipId);
   }
 
-  if (internship.status === "COMPLETED") {
+  if (!internship) {
+    internship = await Internship.findOne({
+      studentId: student._id,
+      status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
+    }).sort({ createdAt: -1 });
+  }
+
+  if (internship?.status === "COMPLETED") {
     throw new AppError("Đợt thực tập đã hoàn tất, không thể yêu cầu tạo lại link đánh giá.", 400);
   }
 
-  let request = await CompanyEvaluationRequest.findOne({
-    studentId: student._id,
-    internshipId: internship._id,
-  });
-
   if (!request) {
+    if (!internship) {
+      throw new AppError("Không tìm thấy đợt thực tập hợp lệ của bạn.", 404);
+    }
     const token = crypto.randomBytes(24).toString("hex");
     request = await CompanyEvaluationRequest.create({
       token,
