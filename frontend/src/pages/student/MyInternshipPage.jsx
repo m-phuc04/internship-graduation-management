@@ -918,73 +918,75 @@ const MyInternshipPage = () => {
                       )}
 
                       {canCreateNewLink && (
-                        <div className="p-4 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                          <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                              <CheckCircle2 className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-emerald-950 text-xs sm:text-sm">
-                                Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link
-                              </div>
-                              <p className="text-slate-600 text-[11.5px] mt-0.5">
-                                Bạn đã được cấp quyền tạo lại link đánh giá mới cho đợt thực tập này.
-                              </p>
-                            </div>
+                        <div className="p-4 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-emerald-950 flex items-start gap-3 shadow-2xs">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <CheckCircle2 className="w-4 h-4" />
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => setCreateLinkModalOpen(true)}
-                            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Tạo link mới ngay</span>
-                          </button>
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="font-bold text-emerald-950 text-xs sm:text-sm">
+                              Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link
+                            </div>
+                            <p className="text-slate-700 text-[11.5px] leading-relaxed">
+                              Bạn đã được cấp quyền tạo lại link đánh giá mới cho đợt thực tập này.
+                            </p>
+                          </div>
                         </div>
                       )}
 
                       {isRecreateRejected && (
-                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
-                          <div className="flex items-start gap-3 min-w-0">
-                            <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                              <AlertCircle className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <div className="font-bold text-rose-950 text-xs sm:text-sm">
-                                Yêu cầu tạo lại link đã bị từ chối
-                              </div>
-                              <p className="text-slate-700 text-[11.5px] mt-0.5">
-                                Lý do từ TBM: <em className="font-semibold text-rose-900">"{recreateRequestState?.rejectReason || reqObj?.recreateRejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
-                              </p>
-                            </div>
+                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 flex items-start gap-3 shadow-2xs">
+                          <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
+                            <AlertCircle className="w-4 h-4" />
                           </div>
-                          <button
-                            type="button"
-                            onClick={() => setRecreateModalOpen(true)}
-                            className="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            <span>Gửi lại yêu cầu khác</span>
-                          </button>
+                          <div className="space-y-0.5 min-w-0">
+                            <div className="font-bold text-rose-950 text-xs sm:text-sm">
+                              Yêu cầu tạo lại link đã bị từ chối
+                            </div>
+                            <p className="text-slate-700 text-[11.5px] leading-relaxed">
+                              Lý do từ TBM: <em className="font-semibold text-rose-900">"{recreateRequestState?.rejectReason || reqObj?.recreateRejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
+                            </p>
+                          </div>
                         </div>
                       )}
 
                       {/* Action buttons */}
-                      <div className="pt-2 flex flex-wrap items-center gap-3">
+                      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
                         <button
                           type="button"
                           onClick={() => setDocModalOpen(true)}
-                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition inline-flex items-center gap-2 shadow-xs cursor-pointer text-xs"
+                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
                         >
                           <Printer className="w-4 h-4 text-emerald-400" />
                           <span>In phiếu đánh giá (Print / PDF)</span>
                         </button>
 
-                        {!isCompleted && !isRecreatePending && !canCreateNewLink && (
+                        {canCreateNewLink && (
+                          <button
+                            type="button"
+                            onClick={() => setCreateLinkModalOpen(true)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Tạo link mới ngay</span>
+                          </button>
+                        )}
+
+                        {isRecreateRejected && (
                           <button
                             type="button"
                             onClick={() => setRecreateModalOpen(true)}
-                            className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition inline-flex items-center gap-2 shadow-2xs cursor-pointer text-xs"
+                            className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                            <span>Gửi lại yêu cầu khác</span>
+                          </button>
+                        )}
+
+                        {!isCompleted && !isRecreatePending && !canCreateNewLink && !isRecreateRejected && (
+                          <button
+                            type="button"
+                            onClick={() => setRecreateModalOpen(true)}
+                            className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-2xs cursor-pointer text-xs"
                           >
                             <RotateCcw className="w-4 h-4 text-slate-500" />
                             <span>Yêu cầu tạo lại link đánh giá</span>
