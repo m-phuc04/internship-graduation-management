@@ -67,9 +67,38 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
   const month = currentDate.getMonth() + 1;
   const year = currentDate.getFullYear();
 
-  const workFields = ev?.workFields || [];
+  const workFields = Array.isArray(ev?.workFields) ? ev.workFields : [];
   const currentSize = ev?.companyInfo?.companySize || 'Từ 50 đến 100 người';
   const currentTeamwork = ev?.teamworkEvaluation || 'Tốt';
+
+  const companyName =
+    internship?.companyId?.name ||
+    internship?.companyId?.companyName ||
+    internship?.company?.companyName ||
+    internship?.company?.name ||
+    '—';
+
+  const companyAddress =
+    internship?.companyId?.address ||
+    internship?.company?.address ||
+    '—';
+
+  const studentFullName =
+    internship?.studentId?.userId?.fullName ||
+    internship?.studentId?.fullName ||
+    internship?.student?.fullName ||
+    internship?.student?.userId?.fullName ||
+    '—';
+
+  const studentCode =
+    internship?.studentId?.studentCode ||
+    internship?.student?.studentCode ||
+    '—';
+
+  const studentClassName =
+    internship?.studentId?.className ||
+    internship?.student?.className ||
+    '—';
 
   return (
     <div
@@ -116,16 +145,16 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
 
         <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pl-2">
           <div className="col-span-2">
-            1. Tên Doanh nghiệp: <strong>{internship.companyId?.name || internship.companyId?.companyName || '—'}</strong>
+            1. Tên Doanh nghiệp: <strong>{companyName}</strong>
           </div>
           <div className="col-span-2">
-            2. Địa chỉ: <span>{internship.companyId?.address || '—'}</span>
+            2. Địa chỉ: <span>{companyAddress}</span>
           </div>
           <div>
-            3. Tên sinh viên thực tập: <strong className="text-sm">{internship.studentId?.userId?.fullName || '—'}</strong>
+            3. Tên sinh viên thực tập: <strong className="text-sm">{studentFullName}</strong>
           </div>
           <div>
-            MSSV: <strong className="font-mono">{internship.studentId?.studentCode || '—'}</strong> — Lớp: <span>{internship.studentId?.className || '—'}</span>
+            MSSV: <strong className="font-mono">{studentCode}</strong> — Lớp: <span>{studentClassName}</span>
           </div>
           <div className="col-span-2">
             4. Lĩnh vực hoạt động chính của Doanh nghiệp:{' '}
@@ -157,10 +186,7 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
           {ALL_WORK_FIELDS.map((f) => {
             const isChecked =
               workFields.includes(f) ||
-              (f === 'Khác (ghi rõ công việc)' && (workFields.includes('Khác') || Boolean(ev?.workFieldOther))) ||
-              (f === 'Lập trình' && (internship.position?.toLowerCase().includes('lập trình') || internship.position?.toLowerCase().includes('developer') || internship.position?.toLowerCase().includes('dev'))) ||
-              (f === 'Quản trị mạng' && internship.position?.toLowerCase().includes('mạng')) ||
-              (f === 'Quản trị máy chủ' && (internship.position?.toLowerCase().includes('server') || internship.position?.toLowerCase().includes('system')));
+              (f === 'Khác (ghi rõ công việc)' && (workFields.includes('Khác') || Boolean(ev?.workFieldOther)));
             return (
               <div key={f} className="flex items-center gap-1.5 font-medium">
                 <span className="font-mono font-bold text-sm">

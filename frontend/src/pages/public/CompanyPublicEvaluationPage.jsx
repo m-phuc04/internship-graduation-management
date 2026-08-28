@@ -268,16 +268,12 @@ const CompanyPublicEvaluationPage = () => {
 
       const res = await evaluationApi.submitPublicEvaluation(token, payload);
       if (res.success) {
-        if (res.data?.evaluation) {
-          setSubmittedEvaluation(res.data.evaluation);
-        } else {
-          setSubmittedEvaluation({
-            score: Number(formData.score),
-            comments: formData.comments.trim(),
-            evaluatorInfo: payload.evaluatorInfo,
-            submittedAt: new Date(),
-          });
-        }
+        const fullEval = {
+          ...payload,
+          ...(res.data?.evaluation || {}),
+          submittedAt: res.data?.evaluation?.submittedAt || new Date(),
+        };
+        setSubmittedEvaluation(fullEval);
         setSubmittedSuccess(true);
         showToast('Gửi phiếu đánh giá thành công! Cảm ơn Quý Doanh nghiệp.', 'success');
       }
@@ -437,7 +433,24 @@ const CompanyPublicEvaluationPage = () => {
           title="Phiếu Đánh Giá Kết Quả Thực Tập Doanh Nghiệp"
         >
           <InternshipEvaluationDoc
-            internship={data?.internship || data}
+            internship={{
+              ...(data?.internship || {}),
+              _id: data?.internship?._id || data?._id,
+              position: data?.internship?.position || data?.position,
+              companyId: {
+                name: data?.company?.companyName || data?.company?.name || data?.internship?.companyId?.name || data?.internship?.companyId?.companyName,
+                companyName: data?.company?.companyName || data?.company?.name || data?.internship?.companyId?.name || data?.internship?.companyId?.companyName,
+                address: data?.company?.address || data?.internship?.companyId?.address,
+              },
+              studentId: {
+                studentCode: data?.student?.studentCode || data?.internship?.studentId?.studentCode,
+                className: data?.student?.className || data?.internship?.studentId?.className,
+                userId: {
+                  fullName: data?.student?.fullName || data?.internship?.studentId?.userId?.fullName,
+                },
+              },
+              mentorName: data?.internship?.mentorName || activeEval?.evaluatorInfo?.name || formData.evaluatorName,
+            }}
             evaluation={activeEval}
           />
         </DocumentViewerModal>
