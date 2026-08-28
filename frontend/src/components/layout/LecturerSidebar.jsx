@@ -282,24 +282,6 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
             Tiện ích cá nhân
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (onOpenNotifications) onOpenNotifications();
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 hover:text-violet-600 hover:bg-violet-50/60 transition cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <Bell className="w-4 h-4 text-violet-500" />
-              <span>Thông báo</span>
-            </div>
-            {unreadCount > 0 && (
-              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white font-bold text-[10px] leading-none">
-                {unreadCount}
-              </span>
-            )}
-          </button>
 
           <button
             type="button"
