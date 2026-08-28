@@ -250,7 +250,7 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
         {/* 4. Common Module Group */}
         <div className="pt-2 border-t border-slate-100 space-y-0.5">
           <div className="px-3 pb-1.5 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
-            Tiện ích sinh viên
+            Tiện ích cá nhân
           </div>
 
           <button
