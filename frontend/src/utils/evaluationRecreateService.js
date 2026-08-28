@@ -59,6 +59,10 @@ export const evaluationRecreateService = {
 
     filtered.unshift(newReq);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('eval_recreate_updated'));
+    }
 
     return newReq;
   },
@@ -80,6 +84,10 @@ export const evaluationRecreateService = {
     });
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('eval_recreate_updated'));
+    }
     return updatedItem;
   },
 
@@ -101,6 +109,10 @@ export const evaluationRecreateService = {
     });
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('eval_recreate_updated'));
+    }
     return updatedItem;
   },
 
@@ -123,6 +135,10 @@ export const evaluationRecreateService = {
         return r;
       });
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedReqs));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('eval_recreate_updated'));
+      }
     } catch {
       // ignore
     }

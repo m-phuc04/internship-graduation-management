@@ -189,6 +189,7 @@ const TbmEvaluationManagement = () => {
 
   const fetchRecreateRequests = useCallback(() => {
     const all = evaluationRecreateService.getAllRequests();
+    console.log('[TBM RECREATE LINK] requests from storage:', all);
     let filtered = all;
     if (recreateSearch && recreateSearch.trim()) {
       const q = recreateSearch.toLowerCase().trim();
@@ -200,11 +201,28 @@ const TbmEvaluationManagement = () => {
           r.reason?.toLowerCase().includes(q)
       );
     }
-    if (recreateStatus) {
-      filtered = filtered.filter((r) => r.status === recreateStatus);
+    if (recreateStatus && recreateStatus.trim()) {
+      filtered = filtered.filter(
+        (r) => String(r.status).toUpperCase() === String(recreateStatus).toUpperCase().trim()
+      );
     }
+    console.log('[TBM RECREATE LINK] filtered requests:', filtered);
     setRecreateRequests(filtered);
   }, [recreateSearch, recreateStatus]);
+
+  useEffect(() => {
+    const handleSync = () => {
+      fetchRecreateRequests();
+    };
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('eval_recreate_updated', handleSync);
+    window.addEventListener('focus', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('eval_recreate_updated', handleSync);
+      window.removeEventListener('focus', handleSync);
+    };
+  }, [fetchRecreateRequests]);
 
   useEffect(() => {
     if (location.state?.activeTab === 'recreate_requests') {
