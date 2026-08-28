@@ -452,8 +452,16 @@ const createStudentEvaluationLink = async (userId, academicTermId = null) => {
 
   if (existingRequest) {
     if (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") {
-      // Re-create permission granted by TBM: remove old request and allow creating 1 fresh link
+      // Re-create permission granted by TBM: remove old request and clean up old evaluation
       await CompanyEvaluationRequest.findByIdAndDelete(existingRequest._id);
+      await Evaluation.deleteMany({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      });
+      if (internship.evaluation) {
+        internship.evaluation = null;
+        await internship.save();
+      }
     } else if (existingRequest.status === "SUBMITTED") {
       throw new AppError("Doanh nghiệp đã hoàn thành đánh giá cho đợt thực tập này. Nếu cần tạo lại link, vui lòng gửi yêu cầu tới Trưởng Bộ Môn.", 400);
     } else if (existingRequest.status === "PENDING") {

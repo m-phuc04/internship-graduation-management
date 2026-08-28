@@ -282,14 +282,19 @@ const MyInternshipPage = () => {
   );
 
   const activeRequest = isDeleted ? null : evalData?.request;
+  const isPendingEvaluation = Boolean(
+    !isDeleted &&
+    activeRequest?.status === 'PENDING' &&
+    Boolean(activeRequest?.token)
+  );
   const isEvaluated = Boolean(
-    !isDeleted && (
+    !isDeleted &&
+    !isPendingEvaluation && (
       activeEvaluation ||
       activeRequest?.status === 'SUBMITTED' ||
       isCompleted
     )
   );
-  const isPendingEvaluation = Boolean(!isDeleted && activeRequest?.status === 'PENDING' && !isEvaluated);
 
   const reqObj = evalData?.request;
   const canCreateNewLink = Boolean(
