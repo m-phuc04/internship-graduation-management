@@ -934,16 +934,22 @@ const TbmEvaluationManagement = () => {
 
                         {/* TBM Actions */}
                         <td className="py-3.5 px-4 pr-6 text-right">
-                          <button
-                            type="button"
-                            disabled={resettingId === req._id}
-                            onClick={() => handleResetRequest(req._id, req.studentId?.userId?.fullName)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-50"
-                            title="Cho phép sinh viên tạo lại link đánh giá mới"
-                          >
-                            <RotateCcw className={`w-3.5 h-3.5 ${resettingId === req._id ? 'animate-spin' : ''}`} />
-                            <span>Cho phép tạo lại</span>
-                          </button>
+                          {req.internshipId?.status === 'COMPLETED' ? (
+                            <span className="text-[11px] font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                              Đã hoàn tất (Khóa)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              disabled={resettingId === req._id}
+                              onClick={() => handleResetRequest(req._id, req.studentId?.userId?.fullName)}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-50"
+                              title="Cho phép sinh viên tạo lại link đánh giá mới"
+                            >
+                              <RotateCcw className={`w-3.5 h-3.5 ${resettingId === req._id ? 'animate-spin' : ''}`} />
+                              <span>Cho phép tạo lại</span>
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}

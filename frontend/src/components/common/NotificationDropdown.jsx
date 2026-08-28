@@ -107,8 +107,14 @@ const NotificationDropdown = () => {
     }
     setOpen(false);
 
-    // If Recreate Evaluation request notification
-    if (item.type === 'EVALUATION_RECREATE' || item.title?.includes('tạo lại link')) {
+    // If Recreate Evaluation request notification -> Always navigate to Tab 2 "Yêu cầu tạo lại link"
+    const isRecreateReq =
+      item.type === 'EVALUATION_RECREATE' ||
+      item.type === 'RECREATE_REQUEST' ||
+      item.title?.toLowerCase().includes('tạo lại link') ||
+      item.message?.toLowerCase().includes('tạo lại link');
+
+    if (isRecreateReq && user?.role === 'TBM') {
       navigate('/tbm/evaluations', {
         state: {
           activeTab: 'recreate_requests',
