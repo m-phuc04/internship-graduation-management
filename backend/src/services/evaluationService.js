@@ -451,23 +451,21 @@ const createStudentEvaluationLink = async (userId, academicTermId = null) => {
   });
 
   if (existingRequest) {
-    if (existingRequest.status === "SUBMITTED") {
-      throw new AppError("Doanh nghiệp đã hoàn thành đánh giá cho đợt thực tập này.", 400);
-    }
-    if (existingRequest.status === "PENDING") {
+    if (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") {
+      // Re-create permission granted by TBM: remove old request and allow creating 1 fresh link
+      await CompanyEvaluationRequest.findByIdAndDelete(existingRequest._id);
+    } else if (existingRequest.status === "SUBMITTED") {
+      throw new AppError("Doanh nghiệp đã hoàn thành đánh giá cho đợt thực tập này. Nếu cần tạo lại link, vui lòng gửi yêu cầu tới Trưởng Bộ Môn.", 400);
+    } else if (existingRequest.status === "PENDING") {
       return {
         message: "Bạn đã tạo link đánh giá cho đợt thực tập này.",
         request: existingRequest,
         token: existingRequest.token,
         isExisting: true,
       };
-    }
-    if (existingRequest.allowRecreate) {
-      // Re-create permission granted by TBM: remove old and create fresh
-      await CompanyEvaluationRequest.findByIdAndDelete(existingRequest._id);
     } else {
       throw new AppError(
-        "Bạn đã sử dụng quyền tạo link đánh giá cho đợt thực tập này. Nếu cần tạo lại link, vui lòng liên hệ Trưởng Bộ Môn.",
+        "Bạn đã sử dụng quyền tạo link đánh giá cho đợt thực tập này. Nếu cần tạo lại link, vui lòng gửi yêu cầu tới Trưởng Bộ Môn.",
         403,
       );
     }

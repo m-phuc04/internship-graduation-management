@@ -869,7 +869,7 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      {!isCompleted && (recreateRequestState?.status === 'APPROVED' || evaluationRecreateService.isEvaluationDeleted(internship._id)) && (
+                      {!isCompleted && recreateRequestState?.status === 'APPROVED' && (
                         <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
                           <div className="font-bold flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-emerald-900">
