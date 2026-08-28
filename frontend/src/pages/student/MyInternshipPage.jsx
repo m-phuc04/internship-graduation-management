@@ -22,6 +22,7 @@ import {
   Clock,
   AlertCircle,
   PlusCircle,
+  Plus,
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
