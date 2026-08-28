@@ -3,6 +3,7 @@ import { Outlet, Link } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { useAuth } from '../../context/AuthContext';
 import { ShieldCheck, Menu, X, Bell } from 'lucide-react';
+import Footer from './Footer';
 
 const AdminLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -11,7 +12,7 @@ const AdminLayout = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop Sidebar (Fixed) */}
-      <div className="hidden lg:block w-64 shrink-0 h-screen sticky top-0">
+      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-white border-r border-slate-200/80">
         <AdminSidebar />
       </div>
 
@@ -29,7 +30,7 @@ const AdminLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header */}
         <header className="h-16 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6">
           <div className="flex items-center gap-3">
@@ -67,6 +68,7 @@ const AdminLayout = () => {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
+        <Footer />
       </div>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   LogOut,
   LayoutDashboard,
   Award,
+  Calendar,
 } from 'lucide-react';
 
 const AdminSidebar = ({ onCloseMobile }) => {
@@ -70,6 +71,16 @@ const AdminSidebar = ({ onCloseMobile }) => {
           >
             <Users className="w-4 h-4 text-slate-500" />
             <span>Quản lý người dùng</span>
+          </Link>
+
+          {/* Item 3: Học kỳ & Năm học */}
+          <Link
+            to="/admin/academic-terms"
+            onClick={onCloseMobile}
+            className={getSubLinkClass(isItemActive('/admin/academic-terms'))}
+          >
+            <Calendar className="w-4 h-4 text-indigo-600" />
+            <span>Học kỳ & Năm học</span>
           </Link>
         </nav>
       </div>

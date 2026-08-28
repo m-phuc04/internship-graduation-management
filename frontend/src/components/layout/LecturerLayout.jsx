@@ -5,6 +5,7 @@ import notificationApi from '../../api/notificationApi';
 import LecturerSidebar from './LecturerSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
 import ScheduleModal from '../common/ScheduleModal';
+import Footer from './Footer';
 
 import {
   Menu,
@@ -58,7 +59,7 @@ const LecturerLayout = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* 1. Desktop Fixed Sidebar */}
-      <div className="hidden lg:block shrink-0 sticky top-0 h-screen overflow-y-auto">
+      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-white border-r border-slate-200/80">
         <LecturerSidebar
           unreadCount={unreadCount}
           onOpenNotifications={() => {}}
@@ -90,7 +91,7 @@ const LecturerLayout = () => {
       )}
 
       {/* 3. Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
         {/* Top Header */}
         <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 backdrop-blur-md bg-white/95 shadow-2xs">
           {/* Left: Mobile Toggle & Breadcrumb Title */}
@@ -247,6 +248,7 @@ const LecturerLayout = () => {
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
+        <Footer />
       </div>
 
       {/* Training Milestones & Schedule Modal */}

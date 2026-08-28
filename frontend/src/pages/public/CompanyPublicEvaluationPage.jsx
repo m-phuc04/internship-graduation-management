@@ -4,6 +4,7 @@ import evaluationApi from '../../api/evaluationApi';
 import { useToast } from '../../context/ToastContext';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import IUHLogo from '../../components/common/IUHLogo';
+import Footer from '../../components/layout/Footer';
 
 import {
   Building2,
@@ -979,6 +980,7 @@ const CompanyPublicEvaluationPage = () => {
           </div>
         </form>
       </div>
+      <Footer className="print:hidden mt-8" />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import Footer from './Footer';
 
 const TbmLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -29,9 +30,9 @@ const TbmLayout = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-[#F4F7FC] text-slate-900 w-full overflow-x-hidden">
+    <div className="flex min-h-screen bg-[#F4F7FC] text-slate-900 w-full">
       {/* Desktop Sidebar (Fixed Left, visible ONLY on >= 1024px) */}
-      <div className="hidden lg:block shrink-0 sticky top-0 h-screen overflow-y-auto z-20">
+      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-[#0B1E48] border-r border-[#132c66]">
         <Sidebar />
       </div>
 
@@ -53,11 +54,12 @@ const TbmLayout = () => {
       )}
 
       {/* Main Content Area: 100% width on Mobile, flex-1 on Desktop */}
-      <div className="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+      <div className="flex-1 flex flex-col min-w-0 w-full min-h-screen">
         <Header onOpenMobile={() => setMobileOpen(true)} />
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto overflow-y-auto">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
           <Outlet />
         </main>
+        <Footer />
       </div>
     </div>
   );

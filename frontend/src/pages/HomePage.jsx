@@ -868,17 +868,8 @@ const HomePage = () => {
       </main>
 
       {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-10 text-xs text-slate-500">
+      <footer className="bg-white border-t border-slate-200 py-8 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5 font-medium">
-            <img
-              src="https://iuh.edu.vn/assets/images/iuh.png?v=51"
-              alt="IUH Logo"
-              className="h-5 w-auto object-contain"
-            />
-            <span>© 2026 Hệ Thống Quản Lý Thực Tập & Khóa Luận Tốt Nghiệp. Bản quyền thuộc Khoa CNTT - IUH.</span>
-          </div>
-
           <div className="flex items-center gap-6 font-semibold text-slate-600">
             <Link to={getInternshipUrl()} className="hover:text-indigo-600">Thực tập DN</Link>
             <Link to={getThesisUrl()} className="hover:text-indigo-600">Khóa luận TN</Link>
@@ -888,6 +879,15 @@ const HomePage = () => {
             ) : (
               <Link to="/login" className="hover:text-indigo-600 font-bold text-indigo-600">Đăng nhập</Link>
             )}
+          </div>
+
+          <div className="flex items-center gap-2.5 font-medium text-slate-700">
+            <img
+              src="https://iuh.edu.vn/assets/images/iuh.png?v=51"
+              alt="IUH Logo"
+              className="h-5 w-auto object-contain"
+            />
+            <span>© Đại học Công nghiệp TP.HCM - IUH</span>
           </div>
         </div>
       </footer>
