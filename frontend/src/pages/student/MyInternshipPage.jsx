@@ -144,22 +144,7 @@ const MyInternshipPage = () => {
       if (res?.success) {
         showToast(res.message || 'Tạo link đánh giá thành công!', 'success');
         setCreateLinkModalOpen(false);
-        // Refresh eval data
-        try {
-          const evalRes = await evaluationApi.getStudentEvaluationRequest({
-            academicTermId: termId,
-          });
-          if (evalRes?.success) {
-            setEvalData(evalRes.data);
-          } else {
-            const evalFallback = await evaluationApi.getStudentEvaluationRequest();
-            if (evalFallback?.success) {
-              setEvalData(evalFallback.data);
-            }
-          }
-        } catch {
-          // ignore
-        }
+        await fetchMyInternship();
       }
     } catch (err) {
       showToast(err.message || 'Không thể tạo link đánh giá', 'error');
@@ -177,11 +162,18 @@ const MyInternshipPage = () => {
 
   const syncRecreateRequest = useCallback(() => {
     const internId = data?.internship?._id || data?._id;
-    if (evalData?.request?.recreateStatus && evalData?.request?.recreateStatus !== 'NONE') {
+    const reqObj = evalData?.request;
+    if (reqObj?.recreateStatus && reqObj?.recreateStatus !== 'NONE') {
       setRecreateRequestState({
-        status: evalData.request.recreateStatus,
-        reason: evalData.request.recreateReason,
-        rejectReason: evalData.request.recreateRejectReason,
+        status: reqObj.recreateStatus,
+        reason: reqObj.recreateReason,
+        rejectReason: reqObj.recreateRejectReason,
+      });
+    } else if (reqObj?.allowRecreate === true) {
+      setRecreateRequestState({
+        status: 'APPROVED',
+        reason: reqObj.recreateReason,
+        rejectReason: reqObj.recreateRejectReason,
       });
     } else if (internId) {
       const req = evaluationRecreateService.getRequestByInternshipId(internId);
@@ -297,6 +289,27 @@ const MyInternshipPage = () => {
     )
   );
   const isPendingEvaluation = Boolean(!isDeleted && activeRequest?.status === 'PENDING' && !isEvaluated);
+
+  const reqObj = evalData?.request;
+  const canCreateNewLink = Boolean(
+    !isCompleted && (
+      recreateRequestState?.status === 'APPROVED' ||
+      reqObj?.recreateStatus === 'APPROVED' ||
+      reqObj?.allowRecreate === true
+    )
+  );
+  const isRecreatePending = Boolean(
+    !isCompleted && (
+      recreateRequestState?.status === 'PENDING' ||
+      reqObj?.recreateStatus === 'PENDING'
+    ) && !canCreateNewLink
+  );
+  const isRecreateRejected = Boolean(
+    !isCompleted && (
+      recreateRequestState?.status === 'REJECTED' ||
+      reqObj?.recreateStatus === 'REJECTED'
+    ) && !canCreateNewLink && !isRecreatePending
+  );
 
   // If no internship registered yet
   if (!internship) {
@@ -854,14 +867,15 @@ const MyInternshipPage = () => {
                       )}
 
                       {/* Recreation Request Alert Boxes - Only visible when NOT completed */}
-                      {!isCompleted && recreateRequestState?.status === 'PENDING' && (
+                      {/* Recreation Request Alert Boxes - Only visible when NOT completed */}
+                      {isRecreatePending && (
                         <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs space-y-1">
                           <div className="font-bold flex items-center gap-1.5 text-amber-900">
                             <Clock className="w-4 h-4 text-amber-600 shrink-0" />
                             <span>Yêu cầu tạo lại link đang chờ Trưởng Bộ Môn xét duyệt</span>
                           </div>
                           <p className="text-slate-700 pl-5.5 text-[11.5px]">
-                            Lý do yêu cầu: <em>"{recreateRequestState.reason}"</em>
+                            Lý do yêu cầu: <em>"{recreateRequestState?.reason || reqObj?.recreateReason || '—'}"</em>
                           </p>
                           <div className="text-[11px] text-amber-800 pl-5.5 font-medium">
                             • Bạn không thể gửi thêm yêu cầu mới khi đang có 1 yêu cầu ở trạng thái chờ duyệt.
@@ -869,7 +883,7 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      {!isCompleted && recreateRequestState?.status === 'APPROVED' && (
+                      {canCreateNewLink && (
                         <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
                           <div className="font-bold flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-emerald-900">
@@ -890,7 +904,7 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      {!isCompleted && recreateRequestState?.status === 'REJECTED' && (
+                      {isRecreateRejected && (
                         <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-950 text-xs space-y-1">
                           <div className="flex items-center justify-between">
                             <div className="font-bold flex items-center gap-1.5 text-rose-900">
@@ -906,7 +920,7 @@ const MyInternshipPage = () => {
                             </button>
                           </div>
                           <p className="text-slate-700 pl-5.5 text-[11.5px]">
-                            Lý do từ TBM: <em>"{recreateRequestState.rejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
+                            Lý do từ TBM: <em>"{recreateRequestState?.rejectReason || reqObj?.recreateRejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
                           </p>
                         </div>
                       )}
@@ -921,7 +935,16 @@ const MyInternshipPage = () => {
                           <span>In phiếu đánh giá (Print / PDF)</span>
                         </button>
 
-                        {!isCompleted && recreateRequestState?.status !== 'PENDING' && (
+                        {canCreateNewLink ? (
+                          <button
+                            type="button"
+                            onClick={() => setCreateLinkModalOpen(true)}
+                            className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer text-xs"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Tạo link mới ngay</span>
+                          </button>
+                        ) : !isCompleted && !isRecreatePending ? (
                           <button
                             type="button"
                             onClick={() => setRecreateModalOpen(true)}
@@ -930,7 +953,7 @@ const MyInternshipPage = () => {
                             <RotateCcw className="w-4 h-4 text-slate-500" />
                             <span>Yêu cầu tạo lại link đánh giá</span>
                           </button>
-                        )}
+                        ) : null}
                       </div>
                     </div>
                   </div>
