@@ -1,7 +1,6 @@
 // Service managing evaluation re-creation requests and TBM evaluation resets
 const STORAGE_KEY = 'eval_recreate_requests';
 const DELETED_EVALS_KEY = 'tbm_deleted_evaluations';
-const NOTIFICATIONS_KEY = 'eval_recreate_notifications';
 
 export const evaluationRecreateService = {
   // Get all re-creation requests
@@ -60,28 +59,6 @@ export const evaluationRecreateService = {
 
     filtered.unshift(newReq);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-
-    // Create Notification for TBM in system
-    try {
-      const noti = {
-        _id: `noti_recreate_${reqId}`,
-        recipientRole: 'TBM',
-        title: 'Yêu cầu tạo lại link đánh giá',
-        message: `Sinh viên ${studentName || 'Sinh viên'} (${studentCode || '—'}) đã gửi yêu cầu tạo lại link đánh giá TTDN tại doanh nghiệp ${companyName || 'Doanh nghiệp'}.`,
-        type: 'EVALUATION_RECREATE',
-        referenceId: reqId,
-        referenceModel: 'CompanyEvaluationRequest',
-        link: '/tbm/evaluations',
-        isRead: false,
-        createdAt: new Date().toISOString(),
-      };
-
-      const existingNotis = evaluationRecreateService.getTbmNotifications();
-      const updatedNotis = [noti, ...existingNotis.filter((n) => n.referenceId !== reqId)];
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updatedNotis));
-    } catch {
-      // ignore
-    }
 
     return newReq;
   },
@@ -160,41 +137,6 @@ export const evaluationRecreateService = {
       return list.includes(String(internshipId));
     } catch {
       return false;
-    }
-  },
-
-  // TBM Notifications for Re-creation requests
-  getTbmNotifications: () => {
-    try {
-      const data = localStorage.getItem(NOTIFICATIONS_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch {
-      return [];
-    }
-  },
-
-  getUnreadTbmCount: () => {
-    const list = evaluationRecreateService.getTbmNotifications();
-    return list.filter((n) => !n.isRead).length;
-  },
-
-  markNotificationAsRead: (id) => {
-    try {
-      const list = evaluationRecreateService.getTbmNotifications();
-      const updated = list.map((n) => (n._id === id ? { ...n, isRead: true } : n));
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
-  },
-
-  markAllNotificationsAsRead: () => {
-    try {
-      const list = evaluationRecreateService.getTbmNotifications();
-      const updated = list.map((n) => ({ ...n, isRead: true }));
-      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(updated));
-    } catch {
-      // ignore
     }
   },
 };
