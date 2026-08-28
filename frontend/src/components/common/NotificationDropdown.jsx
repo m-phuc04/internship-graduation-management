@@ -209,20 +209,22 @@ const NotificationDropdown = () => {
     }
   };
 
-  const getIconForType = (type) => {
+  const getIconForType = (type, title = '') => {
+    if (type === 'EVALUATION_RECREATE' || title?.toLowerCase().includes('tạo lại link')) {
+      return <RotateCcw className="w-4 h-4 text-amber-600" />;
+    }
     switch (type) {
-      case 'EVALUATION_RECREATE':
-        return <RotateCcw className="w-4 h-4 text-amber-600" />;
+      case 'EVALUATION':
+        return <Award className="w-4 h-4 text-emerald-600" />;
       case 'INTERNSHIP':
       case 'INTERNSHIP_REPORT':
         return <Briefcase className="w-4 h-4 text-blue-600" />;
       case 'THESIS':
       case 'THESIS_PROGRESS':
         return <GraduationCap className="w-4 h-4 text-indigo-600" />;
-      case 'EVALUATION':
-        return <Award className="w-4 h-4 text-amber-600" />;
+      case 'SYSTEM':
       default:
-        return <BookOpen className="w-4 h-4 text-slate-600" />;
+        return <BookOpen className="w-4 h-4 text-purple-600" />;
     }
   };
 
@@ -299,7 +301,7 @@ const NotificationDropdown = () => {
                   }`}
                 >
                   <div className="p-2 rounded-xl bg-slate-100 shrink-0 mt-0.5">
-                    {getIconForType(item.type)}
+                    {getIconForType(item.type, item.title)}
                   </div>
 
                   <div className="flex-1 min-w-0">
