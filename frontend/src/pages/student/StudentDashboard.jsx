@@ -43,10 +43,33 @@ const StudentDashboard = () => {
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await dashboardApi.getStudentDashboard({
+      let res = await dashboardApi.getStudentDashboard({
         academicTermId: currentTerm?._id || '',
       });
-      if (res.success) {
+
+      // If no internship found under currentTerm, fallback to dashboard without term constraint
+      if ((!res?.success || !res?.data?.internship) && currentTerm?._id) {
+        const fallbackRes = await dashboardApi.getStudentDashboard();
+        if (fallbackRes?.success && fallbackRes?.data?.internship) {
+          res = fallbackRes;
+        }
+      }
+
+      // If still no internship found, sync directly with internshipApi.getMyInternship()
+      if (!res?.data?.internship) {
+        try {
+          const internRes = await internshipApi.getMyInternship();
+          if (internRes?.success && internRes.data?.internship) {
+            if (res?.data) {
+              res.data.internship = internRes.data.internship;
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      if (res?.success) {
         setData(res.data);
       }
     } catch (err) {

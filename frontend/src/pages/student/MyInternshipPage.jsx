@@ -113,18 +113,39 @@ const MyInternshipPage = () => {
   const handleCreateEvaluationLink = async () => {
     setCreatingLink(true);
     try {
-      const res = await evaluationApi.createStudentEvaluationLink({
-        academicTermId: currentTerm?._id || '',
-      });
-      if (res.success) {
+      const termId = internship?.academicTermId?._id || internship?.academicTermId || '';
+      let res;
+      try {
+        res = await evaluationApi.createStudentEvaluationLink({
+          academicTermId: termId,
+        });
+      } catch (err) {
+        // If failed with term constraint, retry with empty academicTermId
+        if (termId) {
+          res = await evaluationApi.createStudentEvaluationLink({});
+        } else {
+          throw err;
+        }
+      }
+
+      if (res?.success) {
         showToast(res.message || 'Tạo link đánh giá thành công!', 'success');
         setCreateLinkModalOpen(false);
         // Refresh eval data
-        const evalRes = await evaluationApi.getStudentEvaluationRequest({
-          academicTermId: currentTerm?._id || '',
-        });
-        if (evalRes.success) {
-          setEvalData(evalRes.data);
+        try {
+          const evalRes = await evaluationApi.getStudentEvaluationRequest({
+            academicTermId: termId,
+          });
+          if (evalRes?.success) {
+            setEvalData(evalRes.data);
+          } else {
+            const evalFallback = await evaluationApi.getStudentEvaluationRequest();
+            if (evalFallback?.success) {
+              setEvalData(evalFallback.data);
+            }
+          }
+        } catch {
+          // ignore
         }
       }
     } catch (err) {
