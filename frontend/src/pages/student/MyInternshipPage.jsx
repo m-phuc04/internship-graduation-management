@@ -28,7 +28,9 @@ import {
   FileText,
   Printer,
   Award,
+  RotateCcw,
 } from 'lucide-react';
+import evaluationRecreateService from '../../utils/evaluationRecreateService';
 
 const MyInternshipPage = () => {
   const { currentTerm } = useAcademicTerm();
@@ -40,6 +42,10 @@ const MyInternshipPage = () => {
   const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
   const [creatingLink, setCreatingLink] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [recreateModalOpen, setRecreateModalOpen] = useState(false);
+  const [recreateReason, setRecreateReason] = useState('');
+  const [submittingRecreate, setSubmittingRecreate] = useState(false);
+  const [recreateRequestState, setRecreateRequestState] = useState(null);
   const { showToast } = useToast();
   const navigate = useNavigate();
 
@@ -167,6 +173,53 @@ const MyInternshipPage = () => {
     setCopied(true);
     showToast('Đã sao chép link đánh giá vào clipboard.', 'success');
     setTimeout(() => setCopied(false), 3000);
+  };
+
+  const syncRecreateRequest = useCallback(() => {
+    const internId = data?.internship?._id || data?._id;
+    if (internId) {
+      const req = evaluationRecreateService.getRequestByInternshipId(internId);
+      setRecreateRequestState(req);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    syncRecreateRequest();
+  }, [syncRecreateRequest]);
+
+  const handleSendRecreateRequest = async (e) => {
+    e?.preventDefault();
+    if (!recreateReason || !recreateReason.trim()) {
+      showToast('Vui lòng nhập lý do yêu cầu tạo lại link đánh giá.', 'error');
+      return;
+    }
+
+    setSubmittingRecreate(true);
+    try {
+      const intern = rawInternship;
+      const created = evaluationRecreateService.createRequest({
+        internshipId: intern._id,
+        studentId: student?._id,
+        studentCode: student?.studentCode,
+        studentName: student?.userId?.fullName,
+        className: student?.className,
+        companyName: intern?.companyId?.name || intern?.companyId?.companyName || 'Doanh nghiệp',
+        position: intern?.position,
+        termName: currentTerm?.termName || 'Học kỳ hiện tại',
+        score: activeEvaluation?.score,
+        evaluationDate: activeEvaluation?.submittedAt || activeRequest?.submittedAt || new Date().toISOString(),
+        reason: recreateReason.trim(),
+      });
+
+      setRecreateRequestState(created);
+      setRecreateModalOpen(false);
+      setRecreateReason('');
+      showToast('Đã gửi yêu cầu tạo lại link đánh giá tới Trưởng Bộ Môn.', 'success');
+    } catch (err) {
+      showToast(err.message || 'Không thể gửi yêu cầu', 'error');
+    } finally {
+      setSubmittingRecreate(false);
+    }
   };
 
   useEffect(() => {
@@ -772,15 +825,84 @@ const MyInternshipPage = () => {
                         </div>
                       )}
 
-                      <div className="pt-2">
+                      {/* Recreation Request Alert Boxes */}
+                      {recreateRequestState?.status === 'PENDING' && (
+                        <div className="p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs space-y-1">
+                          <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                            <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                            <span>Yêu cầu tạo lại link đang chờ Trưởng Bộ Môn xét duyệt</span>
+                          </div>
+                          <p className="text-slate-700 pl-5.5 text-[11.5px]">
+                            Lý do yêu cầu: <em>"{recreateRequestState.reason}"</em>
+                          </p>
+                          <div className="text-[11px] text-amber-800 pl-5.5 font-medium">
+                            • Bạn không thể gửi thêm yêu cầu mới khi đang có 1 yêu cầu ở trạng thái chờ duyệt.
+                          </div>
+                        </div>
+                      )}
+
+                      {(recreateRequestState?.status === 'APPROVED' || evaluationRecreateService.isEvaluationDeleted(internship._id)) && (
+                        <div className="p-3.5 rounded-2xl bg-emerald-50/90 border border-emerald-200 text-emerald-950 text-xs space-y-1.5">
+                          <div className="font-bold flex items-center justify-between">
+                            <div className="flex items-center gap-1.5 text-emerald-900">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setCreateLinkModalOpen(true)}
+                              className="px-3.5 py-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-[11px] rounded-lg transition cursor-pointer shrink-0"
+                            >
+                              Tạo link mới ngay
+                            </button>
+                          </div>
+                          <p className="text-slate-700 text-[11.5px]">
+                            Bạn đã được cấp quyền tạo lại link đánh giá mới cho đợt thực tập này.
+                          </p>
+                        </div>
+                      )}
+
+                      {recreateRequestState?.status === 'REJECTED' && (
+                        <div className="p-3.5 rounded-2xl bg-rose-50/90 border border-rose-200 text-rose-950 text-xs space-y-1">
+                          <div className="flex items-center justify-between">
+                            <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                              <span>Yêu cầu tạo lại link đã bị từ chối</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setRecreateModalOpen(true)}
+                              className="text-[11px] font-bold text-rose-700 underline hover:text-rose-800 cursor-pointer"
+                            >
+                              Gửi lại yêu cầu khác
+                            </button>
+                          </div>
+                          <p className="text-slate-700 pl-5.5 text-[11.5px]">
+                            Lý do từ TBM: <em>"{recreateRequestState.rejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="pt-2 flex flex-wrap items-center gap-2.5">
                         <button
                           type="button"
                           onClick={() => setDocModalOpen(true)}
-                          className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer"
+                          className="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer text-xs"
                         >
                           <Printer className="w-4 h-4" />
                           <span>In phiếu đánh giá (Print / PDF)</span>
                         </button>
+
+                        {recreateRequestState?.status !== 'PENDING' && (
+                          <button
+                            type="button"
+                            onClick={() => setRecreateModalOpen(true)}
+                            className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition inline-flex items-center gap-1.5 shadow-2xs cursor-pointer text-xs"
+                          >
+                            <RotateCcw className="w-4 h-4 text-slate-500" />
+                            <span>Yêu cầu tạo lại link đánh giá</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -853,6 +975,91 @@ const MyInternshipPage = () => {
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
               >
                 {creatingLink ? 'Đang tạo...' : 'Xác nhận tạo link'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Yêu Cầu Tạo Lại Link Đánh Giá */}
+      {recreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="bg-white max-w-lg w-full p-6 sm:p-7 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 text-slate-900 pb-3 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-base">Yêu cầu tạo lại link đánh giá</h3>
+                <p className="text-xs text-slate-500">Gửi yêu cầu tới Trưởng Bộ Môn để xin cấp quyền tạo lại link mới</p>
+              </div>
+            </div>
+
+            {/* Readonly Evaluation Info */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sinh viên:</span>
+                <strong className="text-slate-900">{student?.userId?.fullName || 'Sinh viên'}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">MSSV:</span>
+                <strong className="text-slate-900 font-mono">{student?.studentCode || '—'}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Doanh nghiệp:</span>
+                <strong className="text-slate-900">{internship.companyId?.name || internship.companyId?.companyName || 'TDSOUTH'}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Đợt thực tập:</span>
+                <strong className="text-slate-900">{internship.position || 'Thực tập sinh'}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Điểm hiện tại:</span>
+                <strong className="text-indigo-700 font-mono font-bold">
+                  {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null
+                    ? `${Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score).toFixed(1) : activeEvaluation.score} / 10`
+                    : '—'}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Ngày đánh giá:</span>
+                <strong className="text-slate-900">{formatDate(activeEvaluation?.submittedAt || activeRequest?.submittedAt || activeEvaluation?.createdAt)}</strong>
+              </div>
+            </div>
+
+            {/* Textarea Reason */}
+            <div className="space-y-1.5 text-xs">
+              <label className="font-bold text-slate-800 flex items-center justify-between">
+                <span>Lý do yêu cầu tạo lại (*):</span>
+                <span className="text-[11px] text-slate-400 font-normal">Bắt buộc</span>
+              </label>
+              <textarea
+                rows={3}
+                value={recreateReason}
+                onChange={(e) => setRecreateReason(e.target.value)}
+                placeholder="Vui lòng nhập lý do cụ thể (Ví dụ: Doanh nghiệp gửi nhầm điểm số, thay đổi người đánh giá trực tiếp, v.v.)..."
+                className="w-full p-3 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setRecreateModalOpen(false);
+                  setRecreateReason('');
+                }}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={submittingRecreate || !recreateReason.trim()}
+                onClick={handleSendRecreateRequest}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
+              >
+                {submittingRecreate ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>
             </div>
           </div>

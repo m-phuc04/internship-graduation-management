@@ -15,9 +15,10 @@ import {
   FileText,
   Briefcase,
   User,
+  Trash2,
 } from 'lucide-react';
 
-const EvaluationDetailModal = ({ isOpen, onClose, internship }) => {
+const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation }) => {
   const [showPrintDoc, setShowPrintDoc] = useState(false);
 
   if (!internship) return null;
@@ -261,17 +262,33 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship }) => {
         )}
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-          {ev && !showPrintDoc && (
-            <button
-              type="button"
-              onClick={() => setShowPrintDoc(true)}
-              className="px-4 py-2 font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer text-xs"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Xem biểu mẫu in chính thức</span>
-            </button>
-          )}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
+          <div className="flex items-center gap-2">
+            {ev && !showPrintDoc && (
+              <button
+                type="button"
+                onClick={() => setShowPrintDoc(true)}
+                className="px-4 py-2 font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer text-xs"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Xem biểu mẫu in chính thức</span>
+              </button>
+            )}
+
+            {ev && onDeleteEvaluation && (
+              <button
+                type="button"
+                onClick={() => {
+                  onDeleteEvaluation(internship);
+                }}
+                className="px-3.5 py-2 font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer text-xs"
+                title="Xóa kết quả đánh giá của sinh viên này"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Xóa kết quả</span>
+              </button>
+            )}
+          </div>
 
           <div className="ml-auto flex items-center gap-2">
             <button

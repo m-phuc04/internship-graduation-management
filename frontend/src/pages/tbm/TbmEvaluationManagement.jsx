@@ -27,7 +27,11 @@ import {
   RotateCcw,
   ShieldAlert,
   AlertCircle,
+  Trash2,
+  Check,
+  X,
 } from 'lucide-react';
+import evaluationRecreateService from '../../utils/evaluationRecreateService';
 
 const EVAL_STATUS_FILTERS = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -40,7 +44,7 @@ const EVAL_STATUS_FILTERS = [
 const TbmEvaluationManagement = () => {
   const location = useLocation();
   const { currentTerm } = useAcademicTerm();
-  const [activeTab, setActiveTab] = useState('evaluations'); // 'evaluations' | 'requests'
+  const [activeTab, setActiveTab] = useState('evaluations'); // 'evaluations' | 'recreate_requests' | 'requests'
 
   // Tab 1: Evaluations State
   const [evaluations, setEvaluations] = useState([]);
@@ -50,7 +54,17 @@ const TbmEvaluationManagement = () => {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
 
-  // Tab 2: Evaluation Requests State
+  // Tab 2: Recreate Link Requests State
+  const [recreateRequests, setRecreateRequests] = useState([]);
+  const [recreateSearch, setRecreateSearch] = useState('');
+  const [recreateStatus, setRecreateStatus] = useState('');
+  const [selectedRecreateReq, setSelectedRecreateReq] = useState(null);
+  const [viewRecreateModalOpen, setViewRecreateModalOpen] = useState(false);
+  const [approveModalOpen, setApproveModalOpen] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+
+  // Tab 3: Evaluation Requests State
   const [requests, setRequests] = useState([]);
   const [reqPagination, setReqPagination] = useState(null);
   const [reqLoading, setReqLoading] = useState(false);
@@ -59,12 +73,14 @@ const TbmEvaluationManagement = () => {
   const [reqPage, setReqPage] = useState(1);
   const [resettingId, setResettingId] = useState(null);
 
-  // Modal
+  // Modals
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [targetInternship, setTargetInternship] = useState(null);
+  const [deleteEvalModalOpen, setDeleteEvalModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const { showToast } = useToast();
@@ -146,13 +162,146 @@ const TbmEvaluationManagement = () => {
     }
   }, [reqPage, reqSearch, reqStatus, showToast]);
 
+  const fetchRecreateRequests = useCallback(() => {
+    const all = evaluationRecreateService.getAllRequests();
+    let filtered = all;
+    if (recreateSearch && recreateSearch.trim()) {
+      const q = recreateSearch.toLowerCase().trim();
+      filtered = filtered.filter(
+        (r) =>
+          r.studentName?.toLowerCase().includes(q) ||
+          r.studentCode?.toLowerCase().includes(q) ||
+          r.companyName?.toLowerCase().includes(q) ||
+          r.reason?.toLowerCase().includes(q)
+      );
+    }
+    if (recreateStatus) {
+      filtered = filtered.filter((r) => r.status === recreateStatus);
+    }
+    setRecreateRequests(filtered);
+  }, [recreateSearch, recreateStatus]);
+
   useEffect(() => {
     if (activeTab === 'evaluations') {
       fetchEvaluations();
+    } else if (activeTab === 'recreate_requests') {
+      fetchRecreateRequests();
     } else {
       fetchRequests();
     }
-  }, [activeTab, fetchEvaluations, fetchRequests, location.key, location.state]);
+  }, [activeTab, fetchEvaluations, fetchRecreateRequests, fetchRequests, location.key, location.state]);
+
+  const handleOpenApproveRecreate = (req) => {
+    setSelectedRecreateReq(req);
+    setApproveModalOpen(true);
+  };
+
+  const handleConfirmApproveRecreate = async () => {
+    if (!selectedRecreateReq) return;
+    setActionLoading(true);
+    try {
+      evaluationRecreateService.approveRequest(selectedRecreateReq._id);
+      evaluationRecreateService.deleteEvaluation(selectedRecreateReq.internshipId);
+
+      // If there's an active request on backend, reset it
+      try {
+        const foundReq = requests.find(
+          (r) => String(r.internshipId?._id || r.internshipId) === String(selectedRecreateReq.internshipId)
+        );
+        if (foundReq?._id) {
+          await evaluationApi.tbmResetEvaluationRequest(foundReq._id);
+        }
+      } catch {
+        // ignore
+      }
+
+      showToast('Đã duyệt yêu cầu tạo lại link đánh giá cho sinh viên thành công!', 'success');
+      setApproveModalOpen(false);
+      setSelectedRecreateReq(null);
+      fetchRecreateRequests();
+      fetchEvaluations();
+    } catch (err) {
+      showToast(err.message || 'Không thể duyệt yêu cầu', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenRejectRecreate = (req) => {
+    setSelectedRecreateReq(req);
+    setRejectReason('');
+    setRejectModalOpen(true);
+  };
+
+  const handleConfirmRejectRecreate = async () => {
+    if (!selectedRecreateReq) return;
+    if (!rejectReason || !rejectReason.trim()) {
+      showToast('Vui lòng nhập lý do từ chối yêu cầu.', 'error');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      evaluationRecreateService.rejectRequest(selectedRecreateReq._id, rejectReason.trim());
+      showToast('Đã từ chối yêu cầu tạo lại link đánh giá.', 'success');
+      setRejectModalOpen(false);
+      setSelectedRecreateReq(null);
+      fetchRecreateRequests();
+    } catch (err) {
+      showToast(err.message || 'Không thể từ chối yêu cầu', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenDeleteEvaluation = (item) => {
+    setDeleteTarget(item);
+    setDeleteEvalModalOpen(true);
+  };
+
+  const handleConfirmDeleteEvaluation = async () => {
+    if (!deleteTarget) return;
+    setActionLoading(true);
+    try {
+      evaluationRecreateService.deleteEvaluation(deleteTarget._id);
+
+      // If there's an evaluation request on backend, reset it
+      try {
+        const foundReq = requests.find(
+          (r) => String(r.internshipId?._id || r.internshipId) === String(deleteTarget._id)
+        );
+        if (foundReq?._id) {
+          await evaluationApi.tbmResetEvaluationRequest(foundReq._id);
+        }
+      } catch {
+        // ignore
+      }
+
+      // Filter or clear evaluation locally in evaluations list
+      setEvaluations((prev) =>
+        prev.map((it) => {
+          if (String(it._id) === String(deleteTarget._id)) {
+            return {
+              ...it,
+              evaluation: null,
+              status: 'INTERNING',
+            };
+          }
+          return it;
+        })
+      );
+
+      showToast('Đã xóa kết quả đánh giá của sinh viên thành công!', 'success');
+      setDeleteEvalModalOpen(false);
+      setDetailModalOpen(false);
+      setDeleteTarget(null);
+      fetchEvaluations();
+    } catch (err) {
+      showToast(err.message || 'Không thể xóa kết quả đánh giá', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const handleResetRequest = async (requestId, studentName) => {
     if (!window.confirm(`Bạn có chắc chắn muốn cấp quyền cho sinh viên "${studentName}" tạo lại link đánh giá mới?`)) {
@@ -199,7 +348,7 @@ const TbmEvaluationManagement = () => {
         </div>
 
         {/* Tab Selector */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 rounded-xl border border-slate-200 shrink-0">
           <button
             type="button"
             onClick={() => setActiveTab('evaluations')}
@@ -213,6 +362,26 @@ const TbmEvaluationManagement = () => {
           </button>
           <button
             type="button"
+            onClick={() => {
+              setActiveTab('recreate_requests');
+              fetchRecreateRequests();
+            }}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              activeTab === 'recreate_requests'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            <RotateCcw className="w-3.5 h-3.5 text-amber-600" />
+            <span>Yêu cầu tạo lại link</span>
+            {recreateRequests.filter((r) => r.status === 'PENDING').length > 0 && (
+              <span className="w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-bold">
+                {recreateRequests.filter((r) => r.status === 'PENDING').length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('requests')}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
               activeTab === 'requests'
@@ -221,7 +390,7 @@ const TbmEvaluationManagement = () => {
             }`}
           >
             <Link2 className="w-3.5 h-3.5 text-indigo-600" />
-            <span>Yêu cầu link & Cấp quyền</span>
+            <span>Quản lý link đánh giá</span>
           </button>
         </div>
       </div>
@@ -402,12 +571,23 @@ const TbmEvaluationManagement = () => {
                               </button>
                             )}
 
+                            {item.evaluation && (
+                              <button
+                                onClick={() => handleOpenDeleteEvaluation(item)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition cursor-pointer"
+                                title="Xóa kết quả đánh giá của sinh viên này"
+                              >
+                                <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Xóa kết quả</span>
+                              </button>
+                            )}
+
                             <button
                               onClick={() => {
                                 setSelectedInternship(item);
                                 setDetailModalOpen(true);
                               }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-800 bg-amber-50 hover:bg-amber-100 rounded-xl transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition cursor-pointer"
                               title="Xem chi tiết phiếu đánh giá"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -426,6 +606,171 @@ const TbmEvaluationManagement = () => {
             <div className="border-t border-slate-100 bg-slate-50/50 px-4">
               <Pagination pagination={pagination} onPageChange={setPage} />
             </div>
+          </div>
+        </>
+      )}
+
+      {/* TAB 2: RECREATE LINK REQUESTS */}
+      {activeTab === 'recreate_requests' && (
+        <>
+          {/* Filters Bar */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="w-full sm:w-80">
+              <SearchInput
+                value={recreateSearch}
+                onChange={(val) => setRecreateSearch(val)}
+                placeholder="Tìm kiếm MSSV, họ tên, lý do..."
+              />
+            </div>
+
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <select
+                value={recreateStatus}
+                onChange={(e) => setRecreateStatus(e.target.value)}
+                className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
+              >
+                <option value="">Tất cả trạng thái yêu cầu</option>
+                <option value="PENDING">Chờ TBM duyệt (PENDING)</option>
+                <option value="APPROVED">Đã duyệt (APPROVED)</option>
+                <option value="REJECTED">Từ chối (REJECTED)</option>
+              </select>
+
+              <button
+                onClick={fetchRecreateRequests}
+                className="p-2 text-slate-500 hover:text-amber-800 hover:bg-amber-50 rounded-xl transition cursor-pointer"
+                title="Tải lại danh sách"
+              >
+                <RefreshCw className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* Requests Table */}
+          <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            {recreateRequests.length === 0 ? (
+              <EmptyState
+                icon={RotateCcw}
+                title="Chưa có yêu cầu tạo lại link nào"
+                description="Khi sinh viên gửi yêu cầu tạo lại link đánh giá, danh sách sẽ hiển thị tại đây để bạn xét duyệt."
+              />
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4 pl-6">Sinh viên</th>
+                      <th className="py-3.5 px-4">Doanh nghiệp</th>
+                      <th className="py-3.5 px-4">Điểm cũ / Ngày đánh giá</th>
+                      <th className="py-3.5 px-4">Lý do yêu cầu</th>
+                      <th className="py-3.5 px-4">Trạng thái</th>
+                      <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 text-sm">
+                    {recreateRequests.map((req) => (
+                      <tr key={req._id} className="hover:bg-amber-50/30 transition">
+                        {/* Student */}
+                        <td className="py-3.5 px-4 pl-6">
+                          <div className="font-bold text-slate-900">{req.studentName}</div>
+                          <div className="text-xs text-slate-400 font-mono">
+                            {req.studentCode} • {req.className}
+                          </div>
+                        </td>
+
+                        {/* Company */}
+                        <td className="py-3.5 px-4 text-xs text-slate-700">
+                          <div className="font-semibold text-slate-800">{req.companyName}</div>
+                          <div className="text-[11px] text-slate-400">{req.position}</div>
+                        </td>
+
+                        {/* Old Score */}
+                        <td className="py-3.5 px-4 text-xs">
+                          {req.score !== null && req.score !== undefined ? (
+                            <span className="font-bold text-amber-800 font-mono bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                              {req.score} / 10
+                            </span>
+                          ) : (
+                            <span className="text-slate-400">—</span>
+                          )}
+                          <div className="text-[11px] text-slate-400 mt-1">
+                            {formatDate(req.evaluationDate)}
+                          </div>
+                        </td>
+
+                        {/* Reason */}
+                        <td className="py-3.5 px-4 text-xs text-slate-700 max-w-xs">
+                          <div className="line-clamp-2 italic" title={req.reason}>
+                            "{req.reason}"
+                          </div>
+                          {req.rejectReason && req.status === 'REJECTED' && (
+                            <div className="text-[11px] text-rose-600 mt-1">
+                              Lý do từ chối: <em>"{req.rejectReason}"</em>
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4">
+                          {req.status === 'PENDING' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-lg">
+                              <Clock className="w-3 h-3 text-amber-600" /> Chờ TBM duyệt
+                            </span>
+                          ) : req.status === 'APPROVED' ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Đã duyệt
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg">
+                              <AlertCircle className="w-3 h-3 text-rose-600" /> Từ chối
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 pr-6 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedRecreateReq(req);
+                                setViewRecreateModalOpen(true);
+                              }}
+                              className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition cursor-pointer"
+                              title="Xem chi tiết yêu cầu"
+                            >
+                              Xem
+                            </button>
+
+                            {req.status === 'PENDING' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenApproveRecreate(req)}
+                                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition inline-flex items-center gap-1 cursor-pointer"
+                                  title="Duyệt yêu cầu tạo lại link"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Duyệt</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenRejectRecreate(req)}
+                                  className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition inline-flex items-center gap-1 cursor-pointer"
+                                  title="Từ chối yêu cầu tạo lại link"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Từ chối</span>
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         </>
       )}
@@ -577,7 +922,7 @@ const TbmEvaluationManagement = () => {
         </>
       )}
 
-      {/* Detail Modal */}
+      {/* Evaluation Detail Modal */}
       <EvaluationDetailModal
         isOpen={detailModalOpen}
         onClose={() => {
@@ -585,6 +930,7 @@ const TbmEvaluationManagement = () => {
           setSelectedInternship(null);
         }}
         internship={selectedInternship}
+        onDeleteEvaluation={handleOpenDeleteEvaluation}
       />
 
       {/* Document B Viewer Modal */}
@@ -598,6 +944,292 @@ const TbmEvaluationManagement = () => {
       >
         <InternshipEvaluationDoc internship={selectedInternship} />
       </DocumentViewerModal>
+
+      {/* Delete Evaluation Confirmation Modal */}
+      {deleteEvalModalOpen && deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 font-bold">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Xóa kết quả đánh giá?</h3>
+                <p className="text-xs text-slate-500">Chức năng quản lý dành riêng cho Trưởng Bộ Môn</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 text-xs space-y-2 text-rose-950">
+              <p className="text-rose-900 font-semibold mb-1">
+                Bạn có chắc chắn muốn xóa kết quả đánh giá của sinh viên này không?
+              </p>
+              <div>
+                <span className="text-slate-500">Sinh viên:</span>
+                <strong className="block text-slate-900 mt-0.5">
+                  {deleteTarget.studentId?.userId?.fullName} ({deleteTarget.studentId?.studentCode})
+                </strong>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-rose-200/60">
+                <div>
+                  <span className="text-slate-500">Doanh nghiệp:</span>
+                  <div className="font-semibold text-slate-800">
+                    {deleteTarget.companyId?.name || deleteTarget.companyId?.companyName || 'TDSOUTH'}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-500">Điểm hiện tại:</span>
+                  <div className="font-bold text-rose-700 font-mono">
+                    {deleteTarget.evaluation?.score !== undefined && deleteTarget.evaluation?.score !== null
+                      ? `${deleteTarget.evaluation.score} / 10`
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+              <div className="pt-1">
+                <span className="text-slate-500">Ngày đánh giá:</span>
+                <strong className="ml-1 text-slate-800">
+                  {formatDate(deleteTarget.evaluation?.submittedAt || deleteTarget.evaluation?.createdAt)}
+                </strong>
+              </div>
+            </div>
+
+            <p className="text-[11.5px] text-slate-500 italic">
+              Sau khi xóa, kết quả đánh giá cũ sẽ không còn hiệu lực và sinh viên có thể gửi yêu cầu tạo lại link đánh giá mới.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setDeleteEvalModalOpen(false);
+                  setDeleteTarget(null);
+                }}
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteEvaluation}
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{actionLoading ? 'Đang xóa...' : 'Xóa kết quả'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Recreate Modal */}
+      {approveModalOpen && selectedRecreateReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 font-bold">
+                <Check className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Xác nhận duyệt yêu cầu tạo lại link?</h3>
+                <p className="text-xs text-slate-500">Cho phép sinh viên tạo lại liên kết đánh giá mới</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sinh viên:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.studentName} ({selectedRecreateReq.studentCode})</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Doanh nghiệp:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.companyName}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Điểm cũ:</span>
+                <strong className="text-amber-800 font-mono font-bold">
+                  {selectedRecreateReq.score !== null ? `${selectedRecreateReq.score} / 10` : '—'}
+                </strong>
+              </div>
+              <div className="pt-2 border-t border-slate-200/60">
+                <span className="text-slate-500 font-semibold block mb-0.5">Lý do sinh viên:</span>
+                <p className="italic bg-white p-2.5 rounded-xl border border-slate-200 text-slate-800">
+                  "{selectedRecreateReq.reason}"
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setApproveModalOpen(false);
+                  setSelectedRecreateReq(null);
+                }}
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmApproveRecreate}
+                disabled={actionLoading}
+                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>{actionLoading ? 'Đang duyệt...' : 'Xác nhận duyệt'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Recreate Modal */}
+      {rejectModalOpen && selectedRecreateReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 font-bold">
+                <X className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Từ chối yêu cầu tạo lại link</h3>
+                <p className="text-xs text-slate-500">Nhập lý do từ chối gửi tới sinh viên</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sinh viên:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.studentName} ({selectedRecreateReq.studentCode})</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Doanh nghiệp:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.companyName}</strong>
+              </div>
+              <div className="pt-2 border-t border-slate-200/60">
+                <span className="text-slate-500 font-semibold block mb-0.5">Lý do sinh viên:</span>
+                <p className="italic bg-white p-2 rounded-xl border border-slate-200 text-slate-800 text-[11.5px]">
+                  "{selectedRecreateReq.reason}"
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1.5 text-xs">
+              <label className="font-bold text-slate-800 flex items-center justify-between">
+                <span>Lý do từ chối của TBM (*):</span>
+                <span className="text-[11px] text-slate-400 font-normal">Bắt buộc</span>
+              </label>
+              <textarea
+                rows={3}
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Nhập lý do từ chối cụ thể..."
+                className="w-full p-2.5 rounded-xl border border-slate-300 focus:border-rose-600 focus:ring-1 focus:ring-rose-600 outline-none text-xs text-slate-800 placeholder:text-slate-400"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectModalOpen(false);
+                  setSelectedRecreateReq(null);
+                  setRejectReason('');
+                }}
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading || !rejectReason.trim()}
+                onClick={handleConfirmRejectRecreate}
+                className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+                <span>{actionLoading ? 'Đang từ chối...' : 'Xác nhận từ chối'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Recreate Request Detail Modal */}
+      {viewRecreateModalOpen && selectedRecreateReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">
+                <RotateCcw className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Chi tiết yêu cầu tạo lại link</h3>
+                <p className="text-xs text-slate-500">Thông tin phiếu yêu cầu từ sinh viên</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500">Sinh viên:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.studentName} ({selectedRecreateReq.studentCode})</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Lớp:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.className}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Doanh nghiệp:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.companyName}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Vị trí:</span>
+                <strong className="text-slate-900">{selectedRecreateReq.position}</strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Điểm hiện tại:</span>
+                <strong className="text-indigo-700 font-mono font-bold">
+                  {selectedRecreateReq.score !== null ? `${selectedRecreateReq.score} / 10` : '—'}
+                </strong>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500">Ngày đánh giá:</span>
+                <strong className="text-slate-900">{formatDate(selectedRecreateReq.evaluationDate)}</strong>
+              </div>
+              <div className="pt-2 border-t border-slate-200/60">
+                <span className="text-slate-500 font-semibold block mb-0.5">Lý do yêu cầu:</span>
+                <p className="italic bg-white p-2.5 rounded-xl border border-slate-200 text-slate-800">
+                  "{selectedRecreateReq.reason}"
+                </p>
+              </div>
+              {selectedRecreateReq.rejectReason && (
+                <div className="pt-2 border-t border-slate-200/60">
+                  <span className="text-rose-600 font-semibold block mb-0.5">Lý do từ chối của TBM:</span>
+                  <p className="italic bg-rose-50 p-2.5 rounded-xl border border-rose-200 text-rose-900">
+                    "{selectedRecreateReq.rejectReason}"
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewRecreateModalOpen(false);
+                  setSelectedRecreateReq(null);
+                }}
+                className="px-5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Complete Confirmation Modal */}
       {completeModalOpen && targetInternship && (
