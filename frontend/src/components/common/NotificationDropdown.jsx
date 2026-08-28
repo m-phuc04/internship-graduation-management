@@ -11,7 +11,9 @@ import {
   GraduationCap,
   Briefcase,
   Award,
+  RotateCcw,
 } from 'lucide-react';
+import evaluationRecreateService from '../../utils/evaluationRecreateService';
 
 const NotificationDropdown = () => {
   const { user } = useAuth();
@@ -30,11 +32,15 @@ const NotificationDropdown = () => {
     }
     try {
       const res = await notificationApi.getUnreadCount();
-      if (res?.success) {
-        setUnreadCount(res.data?.unreadCount || 0);
+      let count = res?.success ? (res.data?.unreadCount || 0) : 0;
+      if (user?.role === 'TBM') {
+        count += evaluationRecreateService.getUnreadTbmCount();
       }
+      setUnreadCount(count);
     } catch {
-      // ignore
+      if (user?.role === 'TBM') {
+        setUnreadCount(evaluationRecreateService.getUnreadTbmCount());
+      }
     }
   }, [user]);
 
@@ -46,14 +52,22 @@ const NotificationDropdown = () => {
     setLoading(true);
     try {
       const res = await notificationApi.getNotifications({ limit: 15 });
-      if (res?.success) {
-        setNotifications(res.data || []);
-        if (res.unreadCount !== undefined) {
-          setUnreadCount(res.unreadCount);
-        }
+      let list = res?.success ? (res.data || []) : [];
+      if (user?.role === 'TBM') {
+        const localNotis = evaluationRecreateService.getTbmNotifications();
+        list = [...localNotis, ...list.filter((n) => !localNotis.some((ln) => ln._id === n._id))];
+        list.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       }
+      setNotifications(list);
+
+      const unreadList = list.filter((n) => !n.isRead);
+      setUnreadCount(unreadList.length);
     } catch {
-      // ignore
+      if (user?.role === 'TBM') {
+        const localNotis = evaluationRecreateService.getTbmNotifications();
+        setNotifications(localNotis);
+        setUnreadCount(localNotis.filter((n) => !n.isRead).length);
+      }
     } finally {
       setLoading(false);
     }
@@ -90,7 +104,11 @@ const NotificationDropdown = () => {
   const handleMarkAsRead = async (id, e) => {
     if (e) e.stopPropagation();
     try {
-      await notificationApi.markAsRead(id);
+      if (String(id).startsWith('noti_recreate_')) {
+        evaluationRecreateService.markNotificationAsRead(id);
+      } else {
+        await notificationApi.markAsRead(id);
+      }
       setNotifications((prev) =>
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
       );
@@ -105,6 +123,18 @@ const NotificationDropdown = () => {
       await handleMarkAsRead(item._id);
     }
     setOpen(false);
+
+    // If Recreate Evaluation request notification
+    if (item.type === 'EVALUATION_RECREATE' || item.title?.includes('tạo lại link')) {
+      navigate('/tbm/evaluations', {
+        state: {
+          activeTab: 'recreate_requests',
+          requestId: item.referenceId,
+          refreshedAt: Date.now(),
+        },
+      });
+      return;
+    }
 
     // Determine target URL based on notification type and title/message
     let targetLink = item.link;
@@ -182,6 +212,9 @@ const NotificationDropdown = () => {
 
   const handleMarkAllAsRead = async () => {
     try {
+      if (user?.role === 'TBM') {
+        evaluationRecreateService.markAllNotificationsAsRead();
+      }
       await notificationApi.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
@@ -192,6 +225,8 @@ const NotificationDropdown = () => {
 
   const getIconForType = (type) => {
     switch (type) {
+      case 'EVALUATION_RECREATE':
+        return <RotateCcw className="w-4 h-4 text-amber-600" />;
       case 'INTERNSHIP':
       case 'INTERNSHIP_REPORT':
         return <Briefcase className="w-4 h-4 text-blue-600" />;

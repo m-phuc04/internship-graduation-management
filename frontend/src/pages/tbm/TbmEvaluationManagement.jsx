@@ -182,6 +182,16 @@ const TbmEvaluationManagement = () => {
   }, [recreateSearch, recreateStatus]);
 
   useEffect(() => {
+    if (location.state?.activeTab === 'recreate_requests') {
+      setActiveTab('recreate_requests');
+      fetchRecreateRequests();
+      if (location.state?.requestId) {
+        evaluationRecreateService.markNotificationAsRead(`noti_recreate_${location.state.requestId}`);
+      }
+    }
+  }, [location.state, fetchRecreateRequests]);
+
+  useEffect(() => {
     if (activeTab === 'evaluations') {
       fetchEvaluations();
     } else if (activeTab === 'recreate_requests') {
