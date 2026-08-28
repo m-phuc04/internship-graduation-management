@@ -747,6 +747,9 @@ const submitPublicEvaluation = async (token, payload) => {
 
   // Update request status
   request.status = "SUBMITTED";
+  request.recreateStatus = "NONE";
+  request.recreateReason = "";
+  request.allowRecreate = false;
   request.submittedAt = new Date();
   await request.save();
 

@@ -162,25 +162,27 @@ const MyInternshipPage = () => {
   };
 
   const syncRecreateRequest = useCallback(() => {
-    const internId = data?.internship?._id || data?._id;
     const reqObj = evalData?.request;
-    if (reqObj?.recreateStatus && reqObj?.recreateStatus !== 'NONE') {
-      setRecreateRequestState({
-        status: reqObj.recreateStatus,
-        reason: reqObj.recreateReason,
-        rejectReason: reqObj.recreateRejectReason,
-      });
-    } else if (reqObj?.allowRecreate === true) {
-      setRecreateRequestState({
-        status: 'APPROVED',
-        reason: reqObj.recreateReason,
-        rejectReason: reqObj.recreateRejectReason,
-      });
-    } else if (internId) {
-      const req = evaluationRecreateService.getRequestByInternshipId(internId);
-      setRecreateRequestState(req);
+    if (reqObj) {
+      if (reqObj.recreateStatus && reqObj.recreateStatus !== 'NONE') {
+        setRecreateRequestState({
+          status: reqObj.recreateStatus,
+          reason: reqObj.recreateReason,
+          rejectReason: reqObj.recreateRejectReason,
+        });
+      } else if (reqObj.allowRecreate === true) {
+        setRecreateRequestState({
+          status: 'APPROVED',
+          reason: reqObj.recreateReason,
+          rejectReason: reqObj.recreateRejectReason,
+        });
+      } else {
+        setRecreateRequestState(null);
+      }
+    } else {
+      setRecreateRequestState(null);
     }
-  }, [data, evalData]);
+  }, [evalData]);
 
   useEffect(() => {
     syncRecreateRequest();
