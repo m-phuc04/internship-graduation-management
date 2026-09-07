@@ -232,27 +232,25 @@ const AcademicTermManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100">
-              <GraduationCap className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                Quản lý Học kỳ & Năm học
-              </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Quản lý danh sách các học kỳ, niên khóa đào tạo và trạng thái hoạt động của hệ thống.
-              </p>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+            <Calendar className="w-7 h-7" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              Quản lý Học kỳ & Năm học
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Quản lý danh sách các học kỳ, niên khóa đào tạo và trạng thái hoạt động của hệ thống
+            </p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-md shadow-indigo-600/20 transition-all cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B4DB7] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Học Kỳ Mới</span>
@@ -310,6 +308,7 @@ const AcademicTermManagement = () => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <th className="py-3.5 px-4 text-center w-14">STT</th>
                 <th className="py-3.5 px-4">Học kỳ / Mã</th>
                 <th className="py-3.5 px-4">Năm học</th>
                 <th className="py-3.5 px-4">Thời gian học kỳ</th>
@@ -322,18 +321,23 @@ const AcademicTermManagement = () => {
             <tbody className="divide-y divide-slate-100 text-xs">
               {filteredTerms.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-slate-400">
+                  <td colSpan={7} className="py-12 text-center text-slate-400">
                     Không tìm thấy học kỳ nào phù hợp với bộ lọc.
                   </td>
                 </tr>
               ) : (
-                filteredTerms.map((term) => {
+                filteredTerms.map((term, idx) => {
                   const statusConf = STATUS_CONFIG[term.status] || STATUS_CONFIG.DRAFT;
                   const StatusIcon = statusConf.icon;
                   const isCurrentActive = term.status === 'ACTIVE';
 
                   return (
                     <tr key={term._id} className="hover:bg-slate-50/60 transition-colors">
+                      {/* STT */}
+                      <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                        {idx + 1}
+                      </td>
+
                       {/* Name & Code */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">{term.name}</div>
@@ -638,14 +642,6 @@ const AcademicTermManagement = () => {
                       Áp dụng mẫu HK2
                     </button>
                   </div>
-                </div>
-              </div>
-
-              {/* Note about TTDN & KLTN Timelines */}
-              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-slate-600 flex items-start gap-2.5">
-                <Sparkles className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
-                <div className="text-[11px] leading-relaxed">
-                  <span className="font-bold text-slate-800">Quản lý đợt mở đăng ký:</span> Thời gian mở cổng đăng ký Thực tập Doanh nghiệp (TTDN) và Khóa luận Tốt nghiệp (KLTN) được thiết lập và kích hoạt linh hoạt trực tiếp tại menu <strong className="text-indigo-600">Quản lý Thực tập</strong> và <strong className="text-purple-600">Quản lý Khóa luận</strong>.
                 </div>
               </div>
 

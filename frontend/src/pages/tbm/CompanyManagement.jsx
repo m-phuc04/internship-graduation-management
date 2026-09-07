@@ -111,19 +111,20 @@ const CompanyManagement = () => {
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs tracking-wider uppercase">
-            <Building2 className="w-4 h-4" /> Danh mục Master Data
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+            <Building2 className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1">
-            Quản lý Danh sách Doanh nghiệp Đối tác
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Quản lý đơn vị hợp tác tiếp nhận thực tập, người phụ trách và tình trạng liên kết
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              Quản lý Danh sách Doanh nghiệp Đối tác
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Quản lý đơn vị hợp tác tiếp nhận thực tập, người phụ trách và tình trạng liên kết
+            </p>
+          </div>
         </div>
-
         <div className="flex items-center gap-2.5">
           <button
             onClick={() => fetchCompanies()}
@@ -194,7 +195,8 @@ const CompanyManagement = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 pl-6">Doanh nghiệp</th>
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
+                  <th className="py-3.5 px-4">Doanh nghiệp</th>
                   <th className="py-3.5 px-4">Địa chỉ</th>
                   <th className="py-3.5 px-4">Liên hệ & Email</th>
                   <th className="py-3.5 px-4">Người đại diện</th>
@@ -204,13 +206,18 @@ const CompanyManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {companies.map((comp) => (
+                {companies.map((comp, idx) => (
                   <tr
                     key={comp._id}
                     className="hover:bg-slate-50/80 transition-colors group"
                   >
+                    {/* STT */}
+                    <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                      {(page - 1) * 10 + idx + 1}
+                    </td>
+
                     {/* Company Info */}
-                    <td className="py-3.5 px-4 pl-6">
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 text-sky-700 font-bold text-xs flex items-center justify-center shrink-0 shadow-2xs">
                           <Building2 className="w-4 h-4" />

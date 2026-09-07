@@ -130,17 +130,19 @@ const InternshipManagement = () => {
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
-        <div>
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs tracking-wider uppercase">
-            <Briefcase className="w-4 h-4" /> Phân hệ Quản lý Nghiệp vụ
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+            <Briefcase className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1">
-            Quản lý Thực tập Doanh nghiệp (TTDN)
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Xét duyệt hồ sơ đăng ký thực tập của sinh viên, cấu hình mốc thời gian mở cổng và phân công GVHD
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              Quản lý Thực tập Doanh nghiệp (TTDN)
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Xét duyệt hồ sơ đăng ký thực tập của sinh viên, cấu hình mốc thời gian mở cổng và phân công GVHD
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
@@ -223,7 +225,8 @@ const InternshipManagement = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 pl-6">Sinh viên</th>
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
+                  <th className="py-3.5 px-4">Sinh viên</th>
                   <th className="py-3.5 px-4">Doanh nghiệp</th>
                   <th className="py-3.5 px-4">Vị trí thực tập</th>
                   <th className="py-3.5 px-4">Thời gian</th>
@@ -233,7 +236,7 @@ const InternshipManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {internships.map((item) => (
+                {internships.map((item, idx) => (
                   <tr
                     key={item._id}
                     className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
@@ -242,8 +245,13 @@ const InternshipManagement = () => {
                       setDetailModalOpen(true);
                     }}
                   >
+                    {/* STT */}
+                    <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                      {(page - 1) * 10 + idx + 1}
+                    </td>
+
                     {/* Student Info */}
-                    <td className="py-3.5 px-4 pl-6">
+                    <td className="py-3.5 px-4">
                       <UserNameClickable
                         user={item.studentId}
                         name={item.studentId?.userId?.fullName || 'Chưa cập nhật'}

@@ -415,17 +415,19 @@ const TbmEvaluationManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header Card */}
-      <div className="p-6 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-amber-700 font-semibold text-xs tracking-wider uppercase">
-            <Award className="w-4 h-4" /> Quản Lý Đánh Giá Thực Tập
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+            <Award className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1">
-            Tổng Hợp Đánh Giá & Quản Lý Link Doanh Nghiệp (TTDN)
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Theo dõi kết quả đánh giá, kỹ năng chuyên môn, quản lý link đánh giá và cấp quyền tạo lại link cho sinh viên
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              Tổng hợp Đánh giá Thực tập Doanh nghiệp (TTDN)
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Theo dõi kết quả đánh giá, kỹ năng chuyên môn và quản lý link đánh giá trực tuyến
+            </p>
+          </div>
         </div>
 
         {/* Tab Selector */}
@@ -569,6 +571,7 @@ const TbmEvaluationManagement = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4 text-center w-14">STT</th>
                       <th className="py-3.5 px-4 pl-6">Sinh viên</th>
                       <th className="py-3.5 px-4">Doanh nghiệp tiếp nhận</th>
                       <th className="py-3.5 px-4">Giảng viên hướng dẫn</th>
@@ -578,7 +581,7 @@ const TbmEvaluationManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {evaluations.map((item) => (
+                    {evaluations.map((item, idx) => (
                       <tr
                         key={item._id}
                         onClick={() => {
@@ -587,6 +590,11 @@ const TbmEvaluationManagement = () => {
                         }}
                         className="hover:bg-amber-50/40 transition cursor-pointer group"
                       >
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                          {(page - 1) * (pagination?.limit || 10) + idx + 1}
+                        </td>
+
                         {/* Student */}
                         <td className="py-3.5 px-4 pl-6">
                           <div className="font-bold text-slate-900 group-hover:text-amber-900 transition">
@@ -773,6 +781,7 @@ const TbmEvaluationManagement = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4 text-center w-14">STT</th>
                       <th className="py-3.5 px-4 pl-6">Sinh viên</th>
                       <th className="py-3.5 px-4">Doanh nghiệp</th>
                       <th className="py-3.5 px-4">Điểm cũ / Ngày đánh giá</th>
@@ -782,8 +791,13 @@ const TbmEvaluationManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {recreateRequests.map((req) => (
+                    {recreateRequests.map((req, idx) => (
                       <tr key={req._id} className="hover:bg-amber-50/30 transition">
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                          {idx + 1}
+                        </td>
+
                         {/* Student */}
                         <td className="py-3.5 px-4 pl-6">
                           <div className="font-bold text-slate-900">{req.studentName}</div>
@@ -949,6 +963,7 @@ const TbmEvaluationManagement = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                      <th className="py-3.5 px-4 text-center w-14">STT</th>
                       <th className="py-3.5 px-4 pl-6">Sinh viên</th>
                       <th className="py-3.5 px-4">Doanh nghiệp</th>
                       <th className="py-3.5 px-4">Ngày tạo link</th>
@@ -958,8 +973,13 @@ const TbmEvaluationManagement = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-sm">
-                    {requests.map((req) => (
+                    {requests.map((req, idx) => (
                       <tr key={req._id} className="hover:bg-slate-50/60 transition">
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                          {(reqPage - 1) * (reqPagination?.limit || 10) + idx + 1}
+                        </td>
+
                         {/* Student */}
                         <td className="py-3.5 px-4 pl-6">
                           <div className="font-bold text-slate-900">
