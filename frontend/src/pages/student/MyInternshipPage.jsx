@@ -143,6 +143,7 @@ const MyInternshipPage = () => {
       }
 
       if (res?.success) {
+        evaluationRecreateService.clearDeletedEvaluation(rawInternship?._id || internship?._id);
         showToast(res.message || 'Tạo link đánh giá thành công!', 'success');
         setCreateLinkModalOpen(false);
         await fetchMyInternship();
@@ -272,10 +273,16 @@ const MyInternshipPage = () => {
   const isDeleted = evaluationRecreateService.isEvaluationDeleted(internId);
 
   // Resolve evaluation data from all available sources
-  const activeEvaluation = isDeleted
-    ? null
-    : (evalData?.evaluation ||
-      (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null));
+  let activeEvaluation = evalData?.evaluation ||
+    (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
+
+  if (activeEvaluation && (activeEvaluation.status === 'SUBMITTED' || activeEvaluation.status === 'CONFIRMED' || activeEvaluation.score !== undefined)) {
+    if (isDeleted) {
+      evaluationRecreateService.clearDeletedEvaluation(internId);
+    }
+  } else if (isDeleted) {
+    activeEvaluation = null;
+  }
 
   const isCompleted = Boolean(
     internship?.status === 'COMPLETED' ||

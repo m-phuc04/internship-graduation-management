@@ -155,6 +155,23 @@ export const evaluationRecreateService = {
       return false;
     }
   },
+
+  // Clear deleted state for an internship (e.g. when a new evaluation is created/submitted)
+  clearDeletedEvaluation: (internshipId) => {
+    if (!internshipId) return;
+    try {
+      const data = localStorage.getItem(DELETED_EVALS_KEY);
+      const list = data ? JSON.parse(data) : [];
+      const updated = list.filter((id) => String(id) !== String(internshipId));
+      localStorage.setItem(DELETED_EVALS_KEY, JSON.stringify(updated));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('storage'));
+        window.dispatchEvent(new CustomEvent('eval_recreate_updated'));
+      }
+    } catch {
+      // ignore
+    }
+  },
 };
 
 export default evaluationRecreateService;
