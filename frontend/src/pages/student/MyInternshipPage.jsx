@@ -290,22 +290,32 @@ const MyInternshipPage = () => {
     activeEvaluation?.status === 'COMPLETED'
   );
 
+  const reqObj = evalData?.request;
+  const isEvaluationDeletedByTbm = Boolean(
+    !isCompleted &&
+    !activeEvaluation &&
+    (
+      evalData?.isEvaluationDeletedByTbm ||
+      isDeleted ||
+      (reqObj?.status === 'SUBMITTED' && !activeEvaluation)
+    )
+  );
+
   const activeRequest = isDeleted ? null : evalData?.request;
   const isPendingEvaluation = Boolean(
-    !isDeleted &&
+    !isEvaluationDeletedByTbm &&
     activeRequest?.status === 'PENDING' &&
     Boolean(activeRequest?.token)
   );
   const isEvaluated = Boolean(
-    !isDeleted &&
+    !isEvaluationDeletedByTbm &&
     !isPendingEvaluation && (
-      activeEvaluation ||
-      activeRequest?.status === 'SUBMITTED' ||
+      (activeEvaluation && (activeEvaluation.status === 'SUBMITTED' || activeEvaluation.status === 'CONFIRMED' || activeEvaluation.score !== undefined)) ||
+      (activeRequest?.status === 'SUBMITTED' && activeEvaluation) ||
       isCompleted
     )
   );
 
-  const reqObj = evalData?.request;
   const canCreateNewLink = Boolean(
     !isCompleted && (
       recreateRequestState?.status === 'APPROVED' ||
@@ -741,6 +751,11 @@ const MyInternshipPage = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Doanh nghiệp đã đánh giá
                 </span>
+              ) : isEvaluationDeletedByTbm ? (
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                  Kết quả đã bị xóa bởi TBM
+                </span>
               ) : isPendingEvaluation ? (
                 <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -783,7 +798,7 @@ const MyInternshipPage = () => {
             {['PENDING_SUPERVISOR_ACCEPTANCE', 'APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status) && (
               <>
                 {/* Case 1: No Evaluation Request Created Yet */}
-                {!isEvaluated && !isPendingEvaluation && (
+                {!isEvaluated && !isPendingEvaluation && !isEvaluationDeletedByTbm && (
                   <div className="py-4 text-center space-y-3">
                     <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-left text-xs text-indigo-900 space-y-1">
                       <div className="font-bold">Quy trình đánh giá thực tập:</div>
@@ -853,14 +868,26 @@ const MyInternshipPage = () => {
                 {isEvaluated && (
                   <div className="space-y-4 text-xs">
                     <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 text-emerald-950 space-y-3 shadow-2xs">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
-                          <CheckCircle2 className="w-5 h-5" />
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                            <CheckCircle2 className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Doanh nghiệp đã hoàn thành đánh giá thực tập</h4>
+                            <p className="text-[11px] text-slate-500">Phiếu đánh giá đã được gửi lên hệ thống và chuyển tới Trưởng Bộ Môn để xem xét.</p>
+                          </div>
                         </div>
-                        <div>
-                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Doanh nghiệp đã hoàn thành đánh giá thực tập</h4>
-                          <p className="text-[11px] text-slate-500">Phiếu đánh giá đã được gửi lên hệ thống và chuyển tới Trưởng Bộ Môn để xem xét.</p>
-                        </div>
+
+                        {/* Điểm đánh giá / 10 điểm */}
+                        {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null && (
+                          <div className="text-left sm:text-right shrink-0">
+                            <div className="text-sm sm:text-base font-extrabold text-emerald-700 bg-white/90 px-3.5 py-1.5 rounded-xl border border-emerald-300 inline-flex items-baseline gap-1 shadow-2xs">
+                              <span className="text-base sm:text-lg">{Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score) : activeEvaluation.score}</span>
+                              <span className="text-xs font-semibold text-emerald-800">/ 10 điểm</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Recreation Request Alert Boxes */}
@@ -950,6 +977,37 @@ const MyInternshipPage = () => {
                           </button>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Case 4: Evaluation Deleted by TBM */}
+                {isEvaluationDeletedByTbm && (
+                  <div className="space-y-4 text-xs">
+                    <div className="p-4 rounded-2xl bg-rose-50/80 border border-rose-200/90 text-rose-950 space-y-3 shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold shrink-0">
+                          <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Kết quả đã bị xóa bởi TBM</h4>
+                          <p className="text-[11px] text-slate-600">Kết quả đánh giá trước đó đã được Trưởng Bộ môn xóa.</p>
+                        </div>
+                      </div>
+
+                      {/* Action button: Create new link immediately */}
+                      {!isCompleted && (
+                        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setCreateLinkModalOpen(true)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Tạo link đánh giá mới</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

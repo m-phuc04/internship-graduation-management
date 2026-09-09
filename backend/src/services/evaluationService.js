@@ -456,8 +456,18 @@ const createStudentEvaluationLink = async (userId, academicTermId = null) => {
   });
 
   if (existingRequest) {
-    if (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") {
-      // Re-create permission granted by TBM: remove old request and clean up old evaluation
+    const existingEval = await Evaluation.findOne({
+      evaluationType: "INTERNSHIP",
+      targetId: internship._id,
+    });
+
+    const isEvalDeletedByTbm = Boolean(existingRequest.status === "SUBMITTED" && !existingEval);
+
+    if (
+      (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") ||
+      isEvalDeletedByTbm
+    ) {
+      // Re-create permission granted by TBM or evaluation deleted by TBM: remove old request and clean up old evaluation
       await CompanyEvaluationRequest.findByIdAndDelete(existingRequest._id);
       await Evaluation.deleteMany({
         evaluationType: "INTERNSHIP",
@@ -544,14 +554,25 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
     evaluation = await Evaluation.findOne({
       evaluationType: "INTERNSHIP",
       targetId: internship._id,
-    });
+      evaluatorRole: "COMPANY",
+    }).sort({ createdAt: -1 });
+
+    if (!evaluation) {
+      evaluation = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      }).sort({ createdAt: -1 });
+    }
   }
+
+  const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
 
   return {
     hasInternship: true,
     internship,
     request,
     evaluation,
+    isEvaluationDeletedByTbm,
   };
 };
 
@@ -1154,6 +1175,12 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
       await internship.save();
     }
   }
+
+  // Update company evaluation request to allow recreate immediately
+  await CompanyEvaluationRequest.updateMany(
+    { internshipId },
+    { allowRecreate: true, recreateStatus: "APPROVED" }
+  );
 
   return {
     message: "Đã xóa kết quả đánh giá của sinh viên thành công.",
