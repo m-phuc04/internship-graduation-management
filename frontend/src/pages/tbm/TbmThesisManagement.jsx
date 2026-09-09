@@ -354,6 +354,7 @@ const TbmThesisManagement = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
                   <th className="py-3.5 px-4">Tên đề tài KLTN</th>
                   <th className="py-3.5 px-4">Sinh viên thực hiện</th>
                   <th className="py-3.5 px-4">GV Hướng Dẫn (GVHD)</th>
@@ -364,13 +365,18 @@ const TbmThesisManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {theses.map((item) => {
+                {theses.map((item, idx) => {
                   const isPending = item.status === 'PENDING_TBM_APPROVAL';
                   return (
                     <tr
                       key={item._id}
                       className="hover:bg-slate-50/80 transition"
                     >
+                      {/* STT */}
+                      <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                        {(page - 1) * limit + idx + 1}
+                      </td>
+
                       {/* Thesis Title */}
                       <td className="py-3.5 px-4 min-w-[260px] max-w-sm" title={item.thesisTitle}>
                         <div
