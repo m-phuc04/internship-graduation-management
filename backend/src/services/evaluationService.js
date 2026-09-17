@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import crypto from "crypto";
 import Evaluation from "../models/Evaluation.js";
 import CompanyEvaluationRequest from "../models/CompanyEvaluationRequest.js";
@@ -382,11 +383,15 @@ const getAllEvaluationsForTbm = async ({
   const evaluations = await Evaluation.find({
     evaluationType: "INTERNSHIP",
     targetId: { $in: internshipIds },
-  }).lean();
+  })
+    .sort({ createdAt: -1 })
+    .lean();
 
   const evalMap = new Map();
   evaluations.forEach((ev) => {
-    evalMap.set(ev.targetId.toString(), ev);
+    if (!evalMap.has(ev.targetId.toString())) {
+      evalMap.set(ev.targetId.toString(), ev);
+    }
   });
 
   let enriched = internships.map((intern) => {
@@ -451,8 +456,18 @@ const createStudentEvaluationLink = async (userId, academicTermId = null) => {
   });
 
   if (existingRequest) {
-    if (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") {
-      // Re-create permission granted by TBM: remove old request and clean up old evaluation
+    const existingEval = await Evaluation.findOne({
+      evaluationType: "INTERNSHIP",
+      targetId: internship._id,
+    });
+
+    const isEvalDeletedByTbm = Boolean(existingRequest.status === "SUBMITTED" && !existingEval);
+
+    if (
+      (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") ||
+      isEvalDeletedByTbm
+    ) {
+      // Re-create permission granted by TBM or evaluation deleted by TBM: remove old request and clean up old evaluation
       await CompanyEvaluationRequest.findByIdAndDelete(existingRequest._id);
       await Evaluation.deleteMany({
         evaluationType: "INTERNSHIP",
@@ -539,14 +554,25 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
     evaluation = await Evaluation.findOne({
       evaluationType: "INTERNSHIP",
       targetId: internship._id,
-    });
+      evaluatorRole: "COMPANY",
+    }).sort({ createdAt: -1 });
+
+    if (!evaluation) {
+      evaluation = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      }).sort({ createdAt: -1 });
+    }
   }
+
+  const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
 
   return {
     hasInternship: true,
     internship,
     request,
     evaluation,
+    isEvaluationDeletedByTbm,
   };
 };
 
@@ -1105,6 +1131,64 @@ const tbmRejectRecreateRequest = async (requestId, { rejectReason } = {}) => {
   };
 };
 
+// ==========================================
+// 15. TBM: Delete Evaluation Result
+// ==========================================
+const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
+  if (!targetIdOrEvalId) {
+    throw new AppError("ID kết quả đánh giá hoặc hồ sơ thực tập là bắt buộc", 400);
+  }
+
+  // Find evaluation either by its _id or by targetId (internshipId)
+  let evaluation = null;
+  if (mongoose.Types.ObjectId.isValid(targetIdOrEvalId)) {
+    evaluation = await Evaluation.findOne({
+      $or: [
+        { _id: targetIdOrEvalId },
+        { targetId: targetIdOrEvalId, evaluationType: "INTERNSHIP" },
+      ],
+    }).sort({ createdAt: -1 });
+  }
+
+  if (!evaluation) {
+    throw new AppError("Không tìm thấy kết quả đánh giá để xóa.", 404);
+  }
+
+  const internshipId = evaluation.targetId;
+
+  // Check if internship is already completed/locked
+  const internship = await Internship.findById(internshipId);
+  if (internship && internship.status === "COMPLETED") {
+    throw new AppError(
+      "Phiếu đánh giá đã ở trạng thái hoàn thành và bị khóa, không thể xóa.",
+      400,
+    );
+  }
+
+  // Delete the specific evaluation
+  await Evaluation.findByIdAndDelete(evaluation._id);
+
+  // If internship had evaluation ref pointing to this evaluation, clear it
+  if (internship) {
+    if (String(internship.evaluation) === String(evaluation._id)) {
+      internship.evaluation = null;
+      await internship.save();
+    }
+  }
+
+  // Update company evaluation request to allow recreate immediately
+  await CompanyEvaluationRequest.updateMany(
+    { internshipId },
+    { allowRecreate: true, recreateStatus: "APPROVED" }
+  );
+
+  return {
+    message: "Đã xóa kết quả đánh giá của sinh viên thành công.",
+    deletedEvaluationId: evaluation._id,
+    internshipId,
+  };
+};
+
 export default {
   getCompanyInternships,
   createOrUpdateEvaluation,
@@ -1121,5 +1205,6 @@ export default {
   tbmGetRecreateRequests,
   tbmApproveRecreateRequest,
   tbmRejectRecreateRequest,
+  tbmDeleteEvaluation,
 };
 

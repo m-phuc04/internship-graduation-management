@@ -143,6 +143,7 @@ const MyInternshipPage = () => {
       }
 
       if (res?.success) {
+        evaluationRecreateService.clearDeletedEvaluation(rawInternship?._id || internship?._id);
         showToast(res.message || 'Tạo link đánh giá thành công!', 'success');
         setCreateLinkModalOpen(false);
         await fetchMyInternship();
@@ -272,10 +273,16 @@ const MyInternshipPage = () => {
   const isDeleted = evaluationRecreateService.isEvaluationDeleted(internId);
 
   // Resolve evaluation data from all available sources
-  const activeEvaluation = isDeleted
-    ? null
-    : (evalData?.evaluation ||
-      (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null));
+  let activeEvaluation = evalData?.evaluation ||
+    (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
+
+  if (activeEvaluation && (activeEvaluation.status === 'SUBMITTED' || activeEvaluation.status === 'CONFIRMED' || activeEvaluation.score !== undefined)) {
+    if (isDeleted) {
+      evaluationRecreateService.clearDeletedEvaluation(internId);
+    }
+  } else if (isDeleted) {
+    activeEvaluation = null;
+  }
 
   const isCompleted = Boolean(
     internship?.status === 'COMPLETED' ||
@@ -283,22 +290,32 @@ const MyInternshipPage = () => {
     activeEvaluation?.status === 'COMPLETED'
   );
 
+  const reqObj = evalData?.request;
+  const isEvaluationDeletedByTbm = Boolean(
+    !isCompleted &&
+    !activeEvaluation &&
+    (
+      evalData?.isEvaluationDeletedByTbm ||
+      isDeleted ||
+      (reqObj?.status === 'SUBMITTED' && !activeEvaluation)
+    )
+  );
+
   const activeRequest = isDeleted ? null : evalData?.request;
   const isPendingEvaluation = Boolean(
-    !isDeleted &&
+    !isEvaluationDeletedByTbm &&
     activeRequest?.status === 'PENDING' &&
     Boolean(activeRequest?.token)
   );
   const isEvaluated = Boolean(
-    !isDeleted &&
+    !isEvaluationDeletedByTbm &&
     !isPendingEvaluation && (
-      activeEvaluation ||
-      activeRequest?.status === 'SUBMITTED' ||
+      (activeEvaluation && (activeEvaluation.status === 'SUBMITTED' || activeEvaluation.status === 'CONFIRMED' || activeEvaluation.score !== undefined)) ||
+      (activeRequest?.status === 'SUBMITTED' && activeEvaluation) ||
       isCompleted
     )
   );
 
-  const reqObj = evalData?.request;
   const canCreateNewLink = Boolean(
     !isCompleted && (
       recreateRequestState?.status === 'APPROVED' ||
@@ -734,6 +751,11 @@ const MyInternshipPage = () => {
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Doanh nghiệp đã đánh giá
                 </span>
+              ) : isEvaluationDeletedByTbm ? (
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                  Kết quả đã bị xóa bởi TBM
+                </span>
               ) : isPendingEvaluation ? (
                 <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
                   <Clock className="w-3.5 h-3.5 text-amber-600" />
@@ -776,7 +798,7 @@ const MyInternshipPage = () => {
             {['PENDING_SUPERVISOR_ACCEPTANCE', 'APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status) && (
               <>
                 {/* Case 1: No Evaluation Request Created Yet */}
-                {!isEvaluated && !isPendingEvaluation && (
+                {!isEvaluated && !isPendingEvaluation && !isEvaluationDeletedByTbm && (
                   <div className="py-4 text-center space-y-3">
                     <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-100 text-left text-xs text-indigo-900 space-y-1">
                       <div className="font-bold">Quy trình đánh giá thực tập:</div>
@@ -842,60 +864,31 @@ const MyInternshipPage = () => {
                   </div>
                 )}
 
-                {/* Case 3: Submitted Evaluation Result */}
+                {/* Case 3: Submitted Evaluation (Clean View with Recreate Request Option) */}
                 {isEvaluated && (
                   <div className="space-y-4 text-xs">
-                    <div className="p-5 rounded-2xl bg-gradient-to-b from-emerald-50/70 to-emerald-50/30 border border-emerald-200/90 text-emerald-950 space-y-3.5 shadow-2xs">
-                      {/* Header & Score Badge */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-emerald-100">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 text-emerald-950 space-y-3 shadow-2xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
                             <CheckCircle2 className="w-5 h-5" />
                           </div>
                           <div>
-                            <h4 className="font-bold text-slate-900 text-sm">Kết quả đánh giá từ Doanh nghiệp</h4>
-                            <p className="text-[11px] text-slate-500">Doanh nghiệp đã hoàn thành biểu mẫu đánh giá thực tập</p>
+                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Doanh nghiệp đã hoàn thành đánh giá thực tập</h4>
+                            <p className="text-[11px] text-slate-500">Phiếu đánh giá đã được gửi lên hệ thống và chuyển tới Trưởng Bộ Môn để xem xét.</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-1.5 self-start sm:self-auto bg-emerald-700 text-white px-4 py-1.5 rounded-xl shadow-xs">
-                          <span className="text-base font-black font-mono tracking-tight">
-                            {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null
-                              ? `${Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score).toFixed(1) : activeEvaluation.score}`
-                              : '—'}
-                          </span>
-                          <span className="text-[11px] font-semibold text-emerald-200">/ 10 điểm</span>
-                        </div>
-                      </div>
 
-                      {/* Metadata Grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs pt-0.5">
-                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
-                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Doanh nghiệp</span>
-                          <span className="font-bold text-slate-900 text-xs block truncate">{internship.companyId?.name || internship.companyId?.companyName || 'TDSOUTH'}</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
-                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Người đánh giá</span>
-                          <span className="font-bold text-slate-900 text-xs block truncate">{activeEvaluation?.evaluatorInfo?.name || internship.mentorName || 'Cán bộ DN'}</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
-                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Chức vụ</span>
-                          <span className="font-bold text-slate-900 text-xs block truncate">{activeEvaluation?.evaluatorInfo?.position || internship.mentorPosition || '—'}</span>
-                        </div>
-                        <div className="p-3 rounded-xl bg-white/90 border border-emerald-100/90 space-y-0.5">
-                          <span className="text-[10.5px] font-bold text-slate-400 block uppercase tracking-wider">Ngày nộp</span>
-                          <span className="font-bold text-slate-900 text-xs font-mono block">{formatDate(activeEvaluation?.submittedAt || activeRequest?.submittedAt || activeEvaluation?.createdAt)}</span>
-                        </div>
+                        {/* Điểm đánh giá / 10 điểm */}
+                        {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null && (
+                          <div className="text-left sm:text-right shrink-0">
+                            <div className="text-sm sm:text-base font-extrabold text-emerald-700 bg-white/90 px-3.5 py-1.5 rounded-xl border border-emerald-300 inline-flex items-baseline gap-1 shadow-2xs">
+                              <span className="text-base sm:text-lg">{Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score) : activeEvaluation.score}</span>
+                              <span className="text-xs font-semibold text-emerald-800">/ 10 điểm</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-
-                      {/* Comments */}
-                      {activeEvaluation?.comments && (
-                        <div className="p-3.5 rounded-xl bg-white/90 border border-emerald-100 text-slate-700 space-y-1">
-                          <span className="font-bold text-[11.5px] text-slate-900 block">Nhận xét của Doanh nghiệp:</span>
-                          <p className="whitespace-pre-line leading-relaxed italic text-slate-600 text-xs pl-2.5 border-l-2 border-emerald-500">
-                            "{activeEvaluation.comments}"
-                          </p>
-                        </div>
-                      )}
 
                       {/* Recreation Request Alert Boxes */}
                       {isRecreatePending && (
@@ -951,15 +944,6 @@ const MyInternshipPage = () => {
 
                       {/* Action buttons */}
                       <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => setDocModalOpen(true)}
-                          className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
-                        >
-                          <Printer className="w-4 h-4 text-emerald-400" />
-                          <span>In phiếu đánh giá (Print / PDF)</span>
-                        </button>
-
                         {canCreateNewLink && (
                           <button
                             type="button"
@@ -993,6 +977,37 @@ const MyInternshipPage = () => {
                           </button>
                         )}
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Case 4: Evaluation Deleted by TBM */}
+                {isEvaluationDeletedByTbm && (
+                  <div className="space-y-4 text-xs">
+                    <div className="p-4 rounded-2xl bg-rose-50/80 border border-rose-200/90 text-rose-950 space-y-3 shadow-2xs">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold shrink-0">
+                          <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Kết quả đã bị xóa bởi TBM</h4>
+                          <p className="text-[11px] text-slate-600">Kết quả đánh giá trước đó đã được Trưởng Bộ môn xóa.</p>
+                        </div>
+                      </div>
+
+                      {/* Action button: Create new link immediately */}
+                      {!isCompleted && (
+                        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setCreateLinkModalOpen(true)}
+                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
+                          >
+                            <Plus className="w-4 h-4" />
+                            <span>Tạo link đánh giá mới</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1084,7 +1099,7 @@ const MyInternshipPage = () => {
               </div>
             </div>
 
-            {/* Readonly Evaluation Info */}
+            {/* Readonly Info */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
               <div className="flex justify-between">
                 <span className="text-slate-500">Sinh viên:</span>
@@ -1102,18 +1117,6 @@ const MyInternshipPage = () => {
                 <span className="text-slate-500">Đợt thực tập:</span>
                 <strong className="text-slate-900">{internship.position || 'Thực tập sinh'}</strong>
               </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Điểm hiện tại:</span>
-                <strong className="text-indigo-700 font-mono font-bold">
-                  {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null
-                    ? `${Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score).toFixed(1) : activeEvaluation.score} / 10`
-                    : '—'}
-                </strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Ngày đánh giá:</span>
-                <strong className="text-slate-900">{formatDate(activeEvaluation?.submittedAt || activeRequest?.submittedAt || activeEvaluation?.createdAt)}</strong>
-              </div>
             </div>
 
             {/* Textarea Reason */}
@@ -1126,7 +1129,7 @@ const MyInternshipPage = () => {
                 rows={3}
                 value={recreateReason}
                 onChange={(e) => setRecreateReason(e.target.value)}
-                placeholder="Vui lòng nhập lý do cụ thể (Ví dụ: Doanh nghiệp gửi nhầm điểm số, thay đổi người đánh giá trực tiếp, v.v.)..."
+                placeholder="Vui lòng nhập lý do cụ thể (Ví dụ: Doanh nghiệp gửi nhầm thông tin, thay đổi người đánh giá trực tiếp, v.v.)..."
                 className="w-full p-3 rounded-xl border border-slate-300 focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600 outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
               />
             </div>
@@ -1154,18 +1157,6 @@ const MyInternshipPage = () => {
           </div>
         </div>
       )}
-
-      {/* Document B Viewer Modal */}
-      <DocumentViewerModal
-        isOpen={docModalOpen}
-        onClose={() => setDocModalOpen(false)}
-        title="Phiếu Đánh Giá Kết Quả Thực Tập Doanh Nghiệp"
-      >
-        <InternshipEvaluationDoc
-          internship={internship}
-          evaluation={activeEvaluation || evalData?.evaluation || internship?.evaluation}
-        />
-      </DocumentViewerModal>
     </div>
   );
 };

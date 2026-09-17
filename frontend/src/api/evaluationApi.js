@@ -58,6 +58,10 @@ export const evaluationApi = {
   // TBM: Reject recreate request
   tbmRejectRecreateRequest: (id, data) =>
     axiosClient.post(`/evaluations/tbm/reject-recreate/${id}`, data),
+
+  // TBM: Delete evaluation result
+  tbmDeleteEvaluation: (id) =>
+    axiosClient.delete(`/evaluations/tbm/${id}`),
 };
 
 export default evaluationApi;

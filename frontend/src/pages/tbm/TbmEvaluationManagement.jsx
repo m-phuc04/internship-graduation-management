@@ -147,9 +147,13 @@ const TbmEvaluationManagement = () => {
       }
 
       if (res?.success) {
-        // Filter out any evaluations that have been deleted by TBM
+        // Map evaluations, preserving valid backend evaluations and clearing stale deleted flags
         const list = (res.data || []).map((item) => {
           if (evaluationRecreateService.isEvaluationDeleted(item._id)) {
+            if (item.evaluation && (item.evaluation.status === 'SUBMITTED' || item.evaluation.status === 'CONFIRMED' || item.evaluation.score !== undefined)) {
+              evaluationRecreateService.clearDeletedEvaluation(item._id);
+              return item;
+            }
             return {
               ...item,
               evaluation: null,
@@ -344,41 +348,35 @@ const TbmEvaluationManagement = () => {
     if (!deleteTarget) return;
     setActionLoading(true);
     try {
-      evaluationRecreateService.deleteEvaluation(deleteTarget._id);
+      const evalId = deleteTarget.evaluation?._id || deleteTarget._id;
+      const res = await evaluationApi.tbmDeleteEvaluation(evalId);
 
-      // If there's an evaluation request on backend, reset it
-      try {
-        const foundReq = requests.find(
-          (r) => String(r.internshipId?._id || r.internshipId) === String(deleteTarget._id)
+      if (res?.success || res?.status === 200 || !res?.error) {
+        evaluationRecreateService.deleteEvaluation(deleteTarget._id);
+
+        // Filter or clear evaluation locally in evaluations list
+        setEvaluations((prev) =>
+          prev.map((it) => {
+            if (String(it._id) === String(deleteTarget._id)) {
+              return {
+                ...it,
+                evaluation: null,
+                evaluationStatus: 'UNASSESSED',
+              };
+            }
+            return it;
+          })
         );
-        if (foundReq?._id) {
-          await evaluationApi.tbmResetEvaluationRequest(foundReq._id);
-        }
-      } catch {
-        // ignore
+
+        showToast(res?.message || 'Đã xóa kết quả đánh giá của sinh viên thành công!', 'success');
+        setDeleteEvalModalOpen(false);
+        setDetailModalOpen(false);
+        setDeleteTarget(null);
+        setSelectedInternship(null);
+        await fetchEvaluations();
       }
-
-      // Filter or clear evaluation locally in evaluations list
-      setEvaluations((prev) =>
-        prev.map((it) => {
-          if (String(it._id) === String(deleteTarget._id)) {
-            return {
-              ...it,
-              evaluation: null,
-              status: 'INTERNING',
-            };
-          }
-          return it;
-        })
-      );
-
-      showToast('Đã xóa kết quả đánh giá của sinh viên thành công!', 'success');
-      setDeleteEvalModalOpen(false);
-      setDetailModalOpen(false);
-      setDeleteTarget(null);
-      fetchEvaluations();
     } catch (err) {
-      showToast(err.message || 'Không thể xóa kết quả đánh giá', 'error');
+      showToast(err.response?.data?.message || err.message || 'Không thể xóa kết quả đánh giá', 'error');
     } finally {
       setActionLoading(false);
     }

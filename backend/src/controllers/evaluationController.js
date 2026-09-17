@@ -320,6 +320,23 @@ const tbmRejectRecreateRequest = async (req, res, next) => {
   }
 };
 
+// ====================
+// TBM Deletes Evaluation Result
+// ====================
+const tbmDeleteEvaluation = async (req, res, next) => {
+  try {
+    const result = await evaluationService.tbmDeleteEvaluation(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getCompanyInternships,
   createOrUpdateEvaluation,
@@ -336,5 +353,6 @@ export default {
   tbmGetRecreateRequests,
   tbmApproveRecreateRequest,
   tbmRejectRecreateRequest,
+  tbmDeleteEvaluation,
 };
 

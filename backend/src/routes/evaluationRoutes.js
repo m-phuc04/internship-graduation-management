@@ -137,6 +137,14 @@ router.post(
   evaluationController.tbmResetEvaluationRequest,
 );
 
+// TBM: Delete evaluation result
+router.delete(
+  "/tbm/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.tbmDeleteEvaluation,
+);
+
 // Get evaluation by ID (Secured with role & ownership check)
 router.get(
   "/:id",
