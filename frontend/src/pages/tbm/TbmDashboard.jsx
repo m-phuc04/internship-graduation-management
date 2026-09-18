@@ -7,6 +7,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 
 import {
+  LayoutDashboard,
   Briefcase,
   GraduationCap,
   Award,
