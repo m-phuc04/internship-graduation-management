@@ -27,13 +27,23 @@ router.get(
   thesisProgressController.getMyThesisProgress,
 );
 
-// Student: Submit Draft progress
-router.patch(
-  "/:id/submit",
+// Student: Update progress report (when DRAFT or NEEDS_REVISION) with optional file upload
+router.put(
+  "/:id",
   authMiddleware,
   authorizeRoles("STUDENT"),
-  thesisProgressController.submitDraftProgress,
+  uploadProgressFile.single("file"),
+  thesisProgressController.updateProgress,
 );
+
+// Student 2: Confirm or Reject thesis progress
+router.patch(
+  "/:id/confirm-student2",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisProgressController.confirmStudent2,
+);
+
 
 // ==========================================
 // 2. Lecturer Supervision Routes
@@ -67,4 +77,14 @@ router.get(
   thesisProgressController.getProgressByThesis,
 );
 
+// Update Thesis timeline (startDate & endDate) - Only GVHD, TBM, ADMIN
+router.patch(
+  "/thesis/:thesisId/timeline",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisProgressController.updateTimeline,
+);
+
+
 export default router;
+

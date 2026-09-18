@@ -23,6 +23,23 @@ const studentSchema = new mongoose.Schema(
       trim: true,
     },
 
+    major: {
+      type: String,
+      default: "Công nghệ Thông tin",
+      trim: true,
+    },
+
+    dateOfBirth: {
+      type: Date,
+      default: null,
+    },
+
+    gender: {
+      type: String,
+      enum: ["Nam", "Nữ", "Khác", null],
+      default: null,
+    },
+
     gpa: {
       type: Number,
       min: [0, "GPA không được nhỏ hơn 0"],

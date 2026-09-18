@@ -15,6 +15,12 @@ const internshipSchema = new mongoose.Schema(
       required: [true, "Sinh viên là bắt buộc"],
     },
 
+    secondStudentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      default: null,
+    },
+
     lecturerId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Lecturer",

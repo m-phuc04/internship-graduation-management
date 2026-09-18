@@ -17,33 +17,130 @@ import {
 // Register
 // ====================
 
-const register = async ({ fullName, email, password, role }) => {
-  const existingUser = await User.findOne({
-    email: email.toLowerCase(),
-  });
+const register = async ({
+  studentCode,
+  code,
+  fullName,
+  email,
+  password,
+  confirmPassword,
+  className,
+  phone,
+}) => {
+  const normalizedCode = (studentCode || code || "").trim();
+  const normalizedFullName = (fullName || "").trim();
+  const normalizedEmail = (email || "").trim().toLowerCase();
+  const normalizedPassword = (password || "").trim();
+  const normalizedConfirmPassword = (confirmPassword || "").trim();
+  const normalizedClass = (className || "DHKTPM18A").trim();
 
-  if (existingUser) {
-    const error = new Error("Email đã được sử dụng");
-    error.statusCode = 409;
-
+  // 1. Validation checks
+  if (!normalizedCode) {
+    const error = new Error("Mã số sinh viên (MSSV) không được để trống");
+    error.statusCode = 400;
     throw error;
   }
 
-  const hashedPassword = await bcrypt.hash(password || "1111", 12);
+  if (!/^\d{8}$/.test(normalizedCode)) {
+    const error = new Error("Mã số sinh viên (MSSV) phải gồm đúng 8 chữ số");
+    error.statusCode = 400;
+    throw error;
+  }
 
+  if (!normalizedFullName) {
+    const error = new Error("Họ và tên sinh viên không được để trống");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!normalizedEmail) {
+    const error = new Error("Email không được để trống");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(normalizedEmail)) {
+    const error = new Error("Định dạng email không hợp lệ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!normalizedPassword) {
+    const error = new Error("Mật khẩu không được để trống");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (normalizedPassword.length < 6) {
+    const error = new Error("Mật khẩu phải có ít nhất 6 ký tự");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (normalizedConfirmPassword && normalizedConfirmPassword !== normalizedPassword) {
+    const error = new Error("Xác nhận mật khẩu không khớp với mật khẩu");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // 2. Check uniqueness
+  const existingStudent = await Student.findOne({ studentCode: normalizedCode });
+  const existingUserCode = await User.findOne({ code: normalizedCode });
+  if (existingStudent || existingUserCode) {
+    const error = new Error("Mã sinh viên (MSSV) này đã được đăng ký trong hệ thống");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  const existingEmail = await User.findOne({ email: normalizedEmail });
+  if (existingEmail) {
+    const error = new Error("Địa chỉ email này đã được sử dụng");
+    error.statusCode = 409;
+    throw error;
+  }
+
+  // 3. Hash password
+  const hashedPassword = await bcrypt.hash(normalizedPassword, 12);
+
+  // 4. Create User (Strictly STUDENT role)
   const user = await User.create({
-    fullName,
-    email: email.toLowerCase(),
+    fullName: normalizedFullName,
+    email: normalizedEmail,
+    code: normalizedCode,
     password: hashedPassword,
-    role,
+    phone: phone ? phone.trim() : null,
+    role: "STUDENT",
+    isActive: true,
   });
 
-  const userResponse = user.toObject();
+  // 5. Create Student profile linked to User
+  try {
+    const student = await Student.create({
+      userId: user._id,
+      studentCode: normalizedCode,
+      className: normalizedClass,
+      gpa: 0,
+      accumulatedCredits: 0,
+      prerequisiteCompleted: true,
+      internshipRegistered: false,
+      thesisRegistered: false,
+      isActive: true,
+    });
 
-  delete userResponse.password;
-  delete userResponse.refreshToken;
+    const userResponse = user.toObject();
+    delete userResponse.password;
+    delete userResponse.refreshToken;
+    userResponse.studentId = student._id;
+    userResponse.studentCode = student.studentCode;
+    userResponse.className = student.className;
 
-  return userResponse;
+    return userResponse;
+  } catch (error) {
+    // Rollback user if student record creation fails
+    await User.findByIdAndDelete(user._id);
+    throw error;
+  }
 };
 
 // ====================

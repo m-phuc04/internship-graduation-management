@@ -19,6 +19,23 @@ router.post(
   internshipReportController.createReport,
 );
 
+// Student: Update report (draft or needs revision) with file upload
+router.put(
+  "/:id",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  uploadInternshipReportFile.single("file"),
+  internshipReportController.updateReport,
+);
+
+// Student 2: Confirm or reject report with reason
+router.patch(
+  "/:id/confirm-student2",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  internshipReportController.confirmStudent2,
+);
+
 // Student: View own reports list
 router.get(
   "/my",
@@ -31,7 +48,7 @@ router.get(
 // 2. Lecturer Endpoints
 // ==========================================
 
-// Lecturer: View reports of supervised students
+// Lecturer: View reports of supervised students (only confirmed/submitted)
 router.get(
   "/lecturer/supervised",
   authMiddleware,

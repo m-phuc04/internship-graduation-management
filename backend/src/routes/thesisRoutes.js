@@ -6,7 +6,66 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 const router = express.Router();
 
 // ==========================================
-// 1. Student Registration & Profile Routes
+// 1. KLTN Topic Management Routes (GV -> TBM -> SV FIFO)
+// ==========================================
+
+// GV: Tạo danh sách đề tài KLTN hàng loạt
+router.post(
+  "/topics/batch",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM"),
+  thesisController.batchCreateTopics,
+);
+
+// GV: Xem danh sách đề tài do mình đề xuất
+router.get(
+  "/topics/my-created",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM"),
+  thesisController.getMyCreatedTopics,
+);
+
+// TBM: Xem tất cả đề tài GV gửi lên
+router.get(
+  "/topics/tbm",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.getTopicsForTbm,
+);
+
+// TBM: Duyệt đề tài
+router.patch(
+  "/topics/:id/approve",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.approveTopicByTbm,
+);
+
+// TBM: Từ chối đề tài
+router.patch(
+  "/topics/:id/reject",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.rejectTopicByTbm,
+);
+
+// SV: Xem danh sách đề tài APPROVED
+router.get(
+  "/topics/approved",
+  authMiddleware,
+  thesisController.getApprovedTopicsForStudent,
+);
+
+// SV: Đăng ký chọn đề tài (FIFO)
+router.post(
+  "/topics/:id/register",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.registerTopicByStudent,
+);
+
+// ==========================================
+// 2. Student Registration & Profile Routes
 // ==========================================
 
 // Student: Register a new Thesis (1 or 2 students)
@@ -34,6 +93,13 @@ router.get(
   "/available-supervisors",
   authMiddleware,
   thesisController.getAvailableSupervisors,
+);
+
+// Search students by code or name for group selection
+router.get(
+  "/search-students",
+  authMiddleware,
+  thesisController.searchStudents,
 );
 
 // Lookup student by MSSV (for group partner selection)
@@ -73,6 +139,22 @@ router.patch(
   authMiddleware,
   authorizeRoles("LECTURER", "TBM", "ADMIN"),
   thesisController.gradeThesisByLecturer,
+);
+
+// Lecturer / Admin: Toggle lock on single thesis score
+router.patch(
+  "/:id/score-lock",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.toggleThesisScoreLock,
+);
+
+// Lecturer / Admin: Toggle lock on all assigned theses scores
+router.patch(
+  "/lecturer/score-lock-all",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.toggleAllThesisScoresLock,
 );
 
 // Lecturer / Admin: Accept / Approve supervision of thesis

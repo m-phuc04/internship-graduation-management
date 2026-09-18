@@ -9,6 +9,13 @@ const thesisSchema = new mongoose.Schema(
       index: true,
     },
 
+    topicId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ThesisTopic",
+      default: null,
+      index: true,
+    },
+
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
@@ -32,6 +39,16 @@ const thesisSchema = new mongoose.Schema(
       required: [true, "Tên đề tài là bắt buộc"],
       trim: true,
       maxlength: [300, "Tên đề tài không được quá 300 ký tự"],
+    },
+
+    startDate: {
+      type: Date,
+      default: null,
+    },
+
+    endDate: {
+      type: Date,
+      default: null,
     },
 
     supervisorId: {
@@ -165,6 +182,18 @@ const thesisSchema = new mongoose.Schema(
         max: 10,
         default: null,
       },
+
+      student1SupervisorScore: { type: Number, min: 0, max: 10, default: null },
+      student2SupervisorScore: { type: Number, min: 0, max: 10, default: null },
+      student1Reviewer1Score: { type: Number, min: 0, max: 10, default: null },
+      student2Reviewer1Score: { type: Number, min: 0, max: 10, default: null },
+      student1Reviewer2Score: { type: Number, min: 0, max: 10, default: null },
+      student2Reviewer2Score: { type: Number, min: 0, max: 10, default: null },
+      student1FinalScore: { type: Number, min: 0, max: 10, default: null },
+      student2FinalScore: { type: Number, min: 0, max: 10, default: null },
+      isSupervisorScoreLocked: { type: Boolean, default: false },
+      isReviewer1ScoreLocked: { type: Boolean, default: false },
+      isReviewer2ScoreLocked: { type: Boolean, default: false },
     },
 
     supervisorComment: {

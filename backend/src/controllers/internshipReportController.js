@@ -29,8 +29,77 @@ const createReport = async (req, res, next) => {
       success: true,
       message:
         report.status === "DRAFT"
-          ? "Lưu bản nháp báo cáo thành công"
-          : "Nộp báo cáo thực tập thành công",
+          ? "Lưu bản nháp nhật ký thành công"
+          : report.status === "WAITING_STUDENT_2"
+          ? "Đã gửi nhật ký, đang chờ Sinh viên 2 xác nhận"
+          : "Nộp nhật ký thực tập thành công",
+      data: report,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student Updates Report (Draft or Needs Revision)
+// ====================
+const updateReport = async (req, res, next) => {
+  try {
+    let fileMeta = undefined;
+    if (req.file) {
+      fileMeta = {
+        originalName: req.file.originalname,
+        fileName: req.file.filename,
+        fileUrl: `/uploads/internship-reports/${req.file.filename}`,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        uploadedAt: new Date(),
+      };
+    } else if (req.body.file && typeof req.body.file === "object") {
+      fileMeta = req.body.file;
+    }
+
+    const report = await internshipReportService.updateReport({
+      reportId: req.params.id,
+      userId: req.user.userId,
+      ...req.body,
+      file: fileMeta,
+    });
+
+    res.status(200).json({
+      success: true,
+      message:
+        report.status === "DRAFT"
+          ? "Lưu bản nháp thành công"
+          : report.status === "WAITING_STUDENT_2"
+          ? "Đã cập nhật nhật ký, đang chờ Sinh viên 2 xác nhận"
+          : "Cập nhật và nộp nhật ký thực tập thành công",
+      data: report,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 2 Confirms or Rejects Report
+// ====================
+const confirmStudent2 = async (req, res, next) => {
+  try {
+    const { action, rejectionReason } = req.body;
+
+    const report = await internshipReportService.confirmReportByStudent2(
+      req.params.id,
+      req.user.userId,
+      { action, rejectionReason },
+    );
+
+    res.status(200).json({
+      success: true,
+      message:
+        action === "CONFIRM"
+          ? "Đã xác nhận nhật ký thực tập và chuyển tới Giảng viên hướng dẫn"
+          : "Đã yêu cầu Sinh viên 1 chỉnh sửa lại nhật ký",
       data: report,
     });
   } catch (error) {
@@ -49,7 +118,7 @@ const getMyReports = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Lấy danh sách báo cáo thực tập thành công",
+      message: "Lấy danh sách nhật ký thực tập thành công",
       data: result.reports,
       student: result.student,
       internship: result.internship,
@@ -79,7 +148,7 @@ const getReportsForLecturer = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Lấy danh sách báo cáo sinh viên hướng dẫn thành công",
+      message: "Lấy danh sách nhật ký sinh viên hướng dẫn thành công",
       data: result.data,
       lecturer: result.lecturer,
       pagination: result.pagination,
@@ -106,7 +175,7 @@ const getAllReportsForTbm = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Lấy danh sách toàn bộ báo cáo thực tập thành công",
+      message: "Lấy danh sách toàn bộ nhật ký thực tập thành công",
       data: result.data,
       pagination: result.pagination,
     });
@@ -127,7 +196,7 @@ const getReportById = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Lấy chi tiết báo cáo thành công",
+      message: "Lấy chi tiết nhật ký thành công",
       data: report,
     });
   } catch (error) {
@@ -154,7 +223,7 @@ const reviewReport = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Đánh giá báo cáo thành công (Trạng thái: ${report.status})`,
+      message: `Đánh giá nhật ký thành công (Trạng thái: ${report.status})`,
       data: report,
     });
   } catch (error) {
@@ -164,6 +233,8 @@ const reviewReport = async (req, res, next) => {
 
 export default {
   createReport,
+  updateReport,
+  confirmStudent2,
   getMyReports,
   getReportsForLecturer,
   getAllReportsForTbm,

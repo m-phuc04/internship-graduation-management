@@ -971,15 +971,26 @@ const studentRequestRecreateLink = async (userId, { reason } = {}) => {
     await request.save();
   }
 
-  // Send notification to TBM
+  // Send notification to TBM only (excluding ADMIN)
   const studentName = student.userId?.fullName || "Sinh viên";
   const studentCode = student.studentCode || "";
-  await notificationService.createNotificationForRole("TBM", {
-    title: "Yêu cầu tạo lại link đánh giá",
-    message: `Sinh viên ${studentName} (${studentCode}) đã yêu cầu tạo lại link đánh giá thực tập doanh nghiệp. Lý do: ${reason.trim()}.`,
-    type: "EVALUATION",
-    link: "/tbm/evaluations",
-  });
+  const tbmUsers = await User.find({ role: "TBM", isActive: true }).select("_id");
+  if (tbmUsers && tbmUsers.length > 0) {
+    await Promise.all(
+      tbmUsers.map((tbm) =>
+        notificationService.createNotification({
+          recipientId: tbm._id,
+          senderId: userId,
+          type: "EVALUATION_RECREATE",
+          title: "Yêu cầu tạo lại link đánh giá",
+          message: `Sinh viên ${studentName} (${studentCode}) đã yêu cầu tạo lại link đánh giá thực tập doanh nghiệp. Lý do: ${reason.trim()}.`,
+          referenceId: request._id,
+          referenceModel: "CompanyEvaluationRequest",
+          link: "/tbm/evaluations",
+        }),
+      ),
+    );
+  }
 
   return {
     message: "Gửi yêu cầu tạo lại link đánh giá thành công. Vui lòng chờ Trưởng Bộ Môn xét duyệt.",

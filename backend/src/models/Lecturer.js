@@ -14,7 +14,7 @@ const lecturerSchema = new mongoose.Schema(
       required: [true, "Mã giảng viên là bắt buộc"],
       unique: true,
       trim: true,
-      match: [/^\d{8}$/, "Mã giảng viên phải gồm 8 chữ số"],
+      match: [/^(GV\d{3,6}|\d{4,8})$/i, "Mã giảng viên không hợp lệ (VD: GV0001 hoặc 8 chữ số)"],
     },
 
     academicTitle: {

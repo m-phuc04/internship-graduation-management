@@ -23,6 +23,7 @@ import scheduleRoutes from "./routes/scheduleRoutes.js";
 import academicTermRoutes from "./routes/academicTermRoutes.js";
 import academicTermService from "./services/academicTermService.js";
 import chatRoutes from "./routes/chatRoutes.js";
+import newsRoutes from "./routes/newsRoutes.js";
 import { initSocketServer } from "./socket/socketHandler.js";
 
 import path from "path";
@@ -71,6 +72,7 @@ app.use("/api/profile", profileRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/schedules", scheduleRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/news", newsRoutes);
 
 // ====================
 // Health Check

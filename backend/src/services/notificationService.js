@@ -7,6 +7,7 @@ import AppError from "../utils/AppError.js";
 // ====================
 const createNotification = async ({
   recipientId,
+  userId,
   senderId = null,
   type = "SYSTEM",
   title,
@@ -16,15 +17,16 @@ const createNotification = async ({
   link = null,
   priority = "NORMAL",
 }) => {
-  if (!recipientId || !title || !message) {
+  const targetRecipientId = recipientId || userId;
+  if (!targetRecipientId || !title || !message) {
     return null;
   }
 
   try {
     // Avoid duplicate unread notification for the same reference
-    if (referenceId && referenceModel && recipientId) {
+    if (referenceId && referenceModel && targetRecipientId) {
       const existing = await Notification.findOne({
-        recipientId,
+        recipientId: targetRecipientId,
         referenceId,
         referenceModel,
         isRead: false,
@@ -35,7 +37,7 @@ const createNotification = async ({
     }
 
     const notification = await Notification.create({
-      recipientId,
+      recipientId: targetRecipientId,
       senderId,
       type,
       title: title.trim(),
@@ -70,11 +72,7 @@ const createNotificationForRole = async (
   },
 ) => {
   try {
-    const roleQuery = Array.isArray(role)
-      ? { $in: role }
-      : role === "TBM"
-      ? { $in: ["TBM", "ADMIN"] }
-      : role;
+    const roleQuery = Array.isArray(role) ? { $in: role } : role;
 
     const users = await User.find({ role: roleQuery, isActive: true }).select("_id");
     if (!users || users.length === 0) return [];
@@ -102,6 +100,42 @@ const createNotificationForRole = async (
   }
 };
 
+const buildUserNotificationQuery = async (userId, unreadOnly = false) => {
+  const query = { recipientId: userId };
+  if (unreadOnly) {
+    query.isRead = false;
+  }
+
+  const user = await User.findById(userId).select("role").lean();
+  if (user?.role === "ADMIN") {
+    query.$and = [
+      {
+        type: {
+          $nin: [
+            "EVALUATION",
+            "EVALUATION_RECREATE",
+            "INTERNSHIP",
+            "INTERNSHIP_REPORT",
+            "THESIS",
+            "THESIS_PROGRESS",
+          ],
+        },
+      },
+      {
+        title: {
+          $not: /(thực tập|khóa luận|tạo lại link|đánh giá|báo cáo|tiến độ)/i,
+        },
+      },
+      {
+        link: {
+          $not: /^\/(tbm\/(internships|evaluations|theses|thesis-evaluations|dashboard)|student|lecturer|company)/,
+        },
+      },
+    ];
+  }
+  return query;
+};
+
 // ====================
 // 3. Get User's Notifications
 // ====================
@@ -109,10 +143,8 @@ const getMyNotifications = async (
   userId,
   { page = 1, limit = 20, unreadOnly = false } = {},
 ) => {
-  const query = { recipientId: userId };
-  if (unreadOnly) {
-    query.isRead = false;
-  }
+  const query = await buildUserNotificationQuery(userId, unreadOnly);
+  const unreadQuery = await buildUserNotificationQuery(userId, true);
 
   const skip = (Number(page) - 1) * Number(limit);
 
@@ -124,7 +156,7 @@ const getMyNotifications = async (
       .populate("senderId", "fullName email avatar role")
       .lean(),
     Notification.countDocuments(query),
-    Notification.countDocuments({ recipientId: userId, isRead: false }),
+    Notification.countDocuments(unreadQuery),
   ]);
 
   return {
@@ -163,8 +195,9 @@ const markAsRead = async (notificationId, userId) => {
 // 5. Mark All Notifications as Read for User
 // ====================
 const markAllAsRead = async (userId) => {
+  const unreadQuery = await buildUserNotificationQuery(userId, true);
   const result = await Notification.updateMany(
-    { recipientId: userId, isRead: false },
+    unreadQuery,
     { $set: { isRead: true, readAt: new Date() } },
   );
 
@@ -177,10 +210,8 @@ const markAllAsRead = async (userId) => {
 // 6. Get Unread Count
 // ====================
 const getUnreadCount = async (userId) => {
-  const count = await Notification.countDocuments({
-    recipientId: userId,
-    isRead: false,
-  });
+  const unreadQuery = await buildUserNotificationQuery(userId, true);
+  const count = await Notification.countDocuments(unreadQuery);
   return { unreadCount: count };
 };
 

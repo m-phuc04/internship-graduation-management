@@ -43,6 +43,27 @@ const lookupStudent = async (req, res, next) => {
 };
 
 // ====================
+// Search Students for Group Partner Selection
+// ====================
+const searchStudents = async (req, res, next) => {
+  try {
+    const { query } = req.query;
+    const result = await thesisService.searchStudentsForGroup(
+      query,
+      req.user?.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Tìm kiếm sinh viên thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
 // Get Available Supervisors
 // ====================
 const getAvailableSupervisors = async (req, res, next) => {
@@ -247,13 +268,16 @@ const getAssignedThesesForLecturer = async (req, res, next) => {
 // ====================
 const gradeThesisByLecturer = async (req, res, next) => {
   try {
-    const { score, comment, roleType } = req.body;
+    const { score, student1Score, student2Score, comment, roleType, role } = req.body;
 
     const thesis = await thesisService.gradeThesisByLecturer(req.params.id, {
       score,
+      student1Score,
+      student2Score,
       comment,
-      roleType,
-      userId: req.user.userId,
+      roleType: roleType || role,
+      role: role || roleType,
+      userId: req.user.userId || req.user._id,
       userRole: req.user.role,
     });
 
@@ -261,6 +285,51 @@ const gradeThesisByLecturer = async (req, res, next) => {
       success: true,
       message: "Chấm điểm và lưu đánh giá đề tài khóa luận thành công",
       data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Lecturer: Toggle Thesis Score Lock
+// ====================
+const toggleThesisScoreLock = async (req, res, next) => {
+  try {
+    const { roleType, isLocked } = req.body;
+    const thesis = await thesisService.toggleThesisScoreLock(req.params.id, {
+      roleType,
+      isLocked,
+      userId: req.user.userId || req.user._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: isLocked ? "Đã khóa điểm đề tài thành công" : "Đã mở khóa điểm đề tài thành công",
+      data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Lecturer: Toggle All Theses Score Lock
+// ====================
+const toggleAllThesisScoresLock = async (req, res, next) => {
+  try {
+    const { academicTermId, roleType, isLocked } = req.body;
+    const result = await thesisService.toggleAllThesisScoresLock({
+      academicTermId,
+      roleType,
+      isLocked,
+      userId: req.user.userId || req.user._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: isLocked ? "Đã khóa toàn bộ điểm đề tài" : "Đã mở khóa toàn bộ điểm đề tài",
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -385,9 +454,152 @@ const exportTheses = async (req, res, next) => {
   }
 };
 
+// ====================
+// KLTN Topic Management Controllers (GV -> TBM -> SV FIFO)
+// ====================
+
+// GV: Tạo nhiều đề tài KLTN
+const batchCreateTopics = async (req, res, next) => {
+  try {
+    const createdTopics = await thesisService.batchCreateTopicsByLecturer({
+      userId: req.user.userId || req.user._id,
+      ...req.body,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Tạo thành công ${createdTopics.length} đề tài KLTN (trạng thái Chờ duyệt)`,
+      data: createdTopics,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GV: Xem danh sách đề tài do mình tạo
+const getMyCreatedTopics = async (req, res, next) => {
+  try {
+    const { academicTermId, status } = req.query;
+    const topics = await thesisService.getMyCreatedTopics({
+      userId: req.user.userId || req.user._id,
+      academicTermId,
+      status,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách đề tài đã đề xuất thành công",
+      data: topics,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM: Xem tất cả đề tài do các GV gửi lên
+const getTopicsForTbm = async (req, res, next) => {
+  try {
+    const { status, academicTermId, search, supervisorId } = req.query;
+    const topics = await thesisService.getTopicsForTbm({
+      status,
+      academicTermId,
+      search,
+      supervisorId,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách đề tài KLTN cho TBM thành công",
+      data: topics,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM: Duyệt đề tài
+const approveTopicByTbm = async (req, res, next) => {
+  try {
+    const topic = await thesisService.approveTopicByTbm(
+      req.params.id,
+      req.user.userId || req.user._id
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Đã phê duyệt đề tài "${topic.title}" thành công`,
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM: Từ chối đề tài
+const rejectTopicByTbm = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const topic = await thesisService.rejectTopicByTbm(
+      req.params.id,
+      req.user.userId || req.user._id,
+      reason
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Đã từ chối đề tài "${topic.title}"`,
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// SV: Lấy danh sách đề tài APPROVED
+const getApprovedTopicsForStudent = async (req, res, next) => {
+  try {
+    const { academicTermId, search } = req.query;
+    const topics = await thesisService.getApprovedTopicsForStudent({
+      academicTermId,
+      search,
+      userId: req.user?.userId || req.user?._id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách đề tài KLTN khả dụng thành công",
+      data: topics,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// SV: Đăng ký chọn đề tài (FIFO)
+const registerTopicByStudent = async (req, res, next) => {
+  try {
+    const result = await thesisService.registerTopicByStudent({
+      userId: req.user.userId || req.user._id,
+      topicId: req.params.id,
+      studentCount: req.body.studentCount || 1,
+      secondStudentCode: req.body.secondStudentCode || null,
+      secondStudentId: req.body.secondStudentId || null,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: `Đăng ký đề tài "${result.topic.title}" thành công (Nhóm ${result.groupOrder}/${result.topic.maxGroups})`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createThesis,
   lookupStudent,
+  searchStudents,
   getAvailableSupervisors,
   getMyThesis,
   getThesisByStudent,
@@ -400,7 +612,17 @@ export default {
   supervisorRejectThesis,
   getAssignedThesesForLecturer,
   gradeThesisByLecturer,
+  toggleThesisScoreLock,
+  toggleAllThesisScoresLock,
   getThesesForEvaluation,
   completeThesisEvaluation,
   exportTheses,
+  // Topic Management
+  batchCreateTopics,
+  getMyCreatedTopics,
+  getTopicsForTbm,
+  approveTopicByTbm,
+  rejectTopicByTbm,
+  getApprovedTopicsForStudent,
+  registerTopicByStudent,
 };

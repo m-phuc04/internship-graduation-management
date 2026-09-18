@@ -27,10 +27,43 @@ const thesisProgressSchema = new mongoose.Schema(
       default: null,
     },
 
+    weekStartDate: {
+      type: Date,
+      default: null,
+    },
+
+    weekEndDate: {
+      type: Date,
+      default: null,
+    },
+
     monthNumber: {
       type: Number,
       min: 1,
       max: 12,
+      default: null,
+    },
+
+    secondStudentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      default: null,
+    },
+
+    student2Status: {
+      type: String,
+      enum: ["PENDING", "CONFIRMED", "REJECTED", "NOT_APPLICABLE"],
+      default: "NOT_APPLICABLE",
+    },
+
+    student2ConfirmedAt: {
+      type: Date,
+      default: null,
+    },
+
+    student2RejectedReason: {
+      type: String,
+      trim: true,
       default: null,
     },
 
@@ -43,9 +76,9 @@ const thesisProgressSchema = new mongoose.Schema(
 
     description: {
       type: String,
-      required: [true, "Nội dung tiến độ là bắt buộc"],
       trim: true,
       maxlength: [5000, "Nội dung không được quá 5000 ký tự"],
+      default: null,
     },
 
     completionPercentage: {
@@ -89,7 +122,15 @@ const thesisProgressSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["DRAFT", "SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"],
+      enum: [
+        "DRAFT",
+        "WAITING_STUDENT_2",
+        "NEEDS_REVISION",
+        "SUBMITTED",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+      ],
       default: "DRAFT",
     },
 

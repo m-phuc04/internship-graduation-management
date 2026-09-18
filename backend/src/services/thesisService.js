@@ -1,6 +1,8 @@
 import Thesis from "../models/Thesis.js";
+import ThesisTopic from "../models/ThesisTopic.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
+import User from "../models/User.js";
 import Permission from "../models/Permission.js";
 import AcademicTerm from "../models/AcademicTerm.js";
 import academicTermService from "./academicTermService.js";
@@ -1078,6 +1080,14 @@ const supervisorAcceptThesis = async (thesisId, requestingUser) => {
   thesis.acceptedAt = new Date();
   await thesis.save();
 
+  // If thesis was created from a ThesisTopic, update registeredGroups entry
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId, "registeredGroups.thesisId": thesis._id },
+      { $set: { "registeredGroups.$.status": "APPROVED" } }
+    );
+  }
+
   // Notify Students
   const s1 = await Student.findById(thesis.studentId._id || thesis.studentId).populate("userId");
   if (s1?.userId?._id) {
@@ -1147,6 +1157,17 @@ const supervisorRejectThesis = async (thesisId, requestingUser, { reason } = {})
   thesis.rejectionReason = reason.trim();
   thesis.rejectedAt = new Date();
   await thesis.save();
+
+  // If thesis was created from a ThesisTopic, release the FIFO slot
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId },
+      {
+        $inc: { currentGroups: -1 },
+        $pull: { registeredGroups: { thesisId: thesis._id } },
+      }
+    );
+  }
 
   // Reset student registration flag so they can register again
   await Student.findByIdAndUpdate(thesis.studentId._id || thesis.studentId, { thesisRegistered: false });
@@ -1391,9 +1412,22 @@ const getThesesForLecturerRole = async (
 // ====================
 const gradeThesisByLecturer = async (
   thesisId,
-  requestingUserId,
-  { role, score, comment },
+  arg2,
+  arg3 = {},
 ) => {
+  let requestingUserId;
+  let payload;
+  if (typeof arg2 === "object" && arg2 !== null) {
+    payload = arg2;
+    requestingUserId = arg2.userId || arg2.requestingUserId;
+  } else {
+    requestingUserId = arg2;
+    payload = arg3;
+  }
+
+  const { role, roleType, score, student1Score, student2Score, comment } = payload;
+  const activeRole = role || roleType || "SUPERVISOR";
+
   const lecturer = await Lecturer.findOne({ userId: requestingUserId }).populate(
     "userId",
   );
@@ -1414,9 +1448,35 @@ const gradeThesisByLecturer = async (
     );
   }
 
-  const numScore = Number(score);
-  if (isNaN(numScore) || numScore < 0 || numScore > 10) {
-    throw new AppError("Điểm đánh giá phải từ 0 đến 10", 400);
+  const s1 =
+    student1Score !== undefined && student1Score !== null && student1Score !== ""
+      ? Number(student1Score)
+      : score !== undefined && score !== null && score !== ""
+      ? Number(score)
+      : null;
+  const s2 =
+    student2Score !== undefined && student2Score !== null && student2Score !== ""
+      ? Number(student2Score)
+      : null;
+
+  if (s1 !== null && (isNaN(s1) || s1 < 0 || s1 > 10)) {
+    throw new AppError("Điểm sinh viên 1 phải từ 0 đến 10", 400);
+  }
+  if (s2 !== null && (isNaN(s2) || s2 < 0 || s2 > 10)) {
+    throw new AppError("Điểm sinh viên 2 phải từ 0 đến 10", 400);
+  }
+
+  const effectiveScore =
+    s1 !== null && s2 !== null
+      ? Number(((s1 + s2) / 2).toFixed(2))
+      : s1 !== null
+      ? s1
+      : s2 !== null
+      ? s2
+      : null;
+
+  if (effectiveScore === null) {
+    throw new AppError("Vui lòng nhập điểm đánh giá hợp lệ (0 - 10)", 400);
   }
 
   const lecIdStr = lecturer._id.toString();
@@ -1425,7 +1485,7 @@ const gradeThesisByLecturer = async (
     thesis.scores = {};
   }
 
-  if (role === "SUPERVISOR" || role === "GVHD") {
+  if (activeRole === "SUPERVISOR" || activeRole === "GVHD") {
     const isSup = thesis.supervisorId?.toString() === lecIdStr;
     if (!isSup) {
       throw new AppError(
@@ -1433,12 +1493,24 @@ const gradeThesisByLecturer = async (
         403,
       );
     }
-    thesis.scores.supervisorScore = numScore;
+    if (thesis.scores?.isSupervisorScoreLocked) {
+      throw new AppError("Điểm hướng dẫn của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
+    }
+    if (s1 !== null) thesis.scores.student1SupervisorScore = s1;
+    if (s2 !== null) thesis.scores.student2SupervisorScore = s2;
+
+    const finalS1 = thesis.scores.student1SupervisorScore ?? null;
+    const finalS2 = thesis.scores.student2SupervisorScore ?? null;
+    if (finalS1 !== null && finalS2 !== null) {
+      thesis.scores.supervisorScore = Number(((finalS1 + finalS2) / 2).toFixed(2));
+    } else {
+      thesis.scores.supervisorScore = finalS1 ?? finalS2 ?? effectiveScore;
+    }
     if (comment !== undefined) thesis.supervisorComment = comment ? comment.trim() : null;
   } else if (
-    role === "REVIEWER_1" ||
-    role === "REVIEWER1" ||
-    role === "GVPB_KIN"
+    activeRole === "REVIEWER_1" ||
+    activeRole === "REVIEWER1" ||
+    activeRole === "GVPB_KIN"
   ) {
     const isRev1Legacy = thesis.reviewer1Id?.toString() === lecIdStr;
     const isRev1Array = Array.isArray(thesis.reviewers) && thesis.reviewers.some(
@@ -1450,12 +1522,24 @@ const gradeThesisByLecturer = async (
         403,
       );
     }
-    thesis.scores.reviewer1Score = numScore;
+    if (thesis.scores?.isReviewer1ScoreLocked) {
+      throw new AppError("Điểm phản biện kín của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
+    }
+    if (s1 !== null) thesis.scores.student1Reviewer1Score = s1;
+    if (s2 !== null) thesis.scores.student2Reviewer1Score = s2;
+
+    const finalS1 = thesis.scores.student1Reviewer1Score ?? null;
+    const finalS2 = thesis.scores.student2Reviewer1Score ?? null;
+    if (finalS1 !== null && finalS2 !== null) {
+      thesis.scores.reviewer1Score = Number(((finalS1 + finalS2) / 2).toFixed(2));
+    } else {
+      thesis.scores.reviewer1Score = finalS1 ?? finalS2 ?? effectiveScore;
+    }
     if (comment !== undefined) thesis.reviewer1Comment = comment ? comment.trim() : null;
   } else if (
-    role === "REVIEWER_2" ||
-    role === "REVIEWER2" ||
-    role === "GVPB_HOIDONG"
+    activeRole === "REVIEWER_2" ||
+    activeRole === "REVIEWER2" ||
+    activeRole === "GVPB_HOIDONG"
   ) {
     const isRev2Legacy = thesis.reviewer2Id?.toString() === lecIdStr;
     const isRev2Array = Array.isArray(thesis.reviewers) && thesis.reviewers.some(
@@ -1467,7 +1551,19 @@ const gradeThesisByLecturer = async (
         403,
       );
     }
-    thesis.scores.reviewer2Score = numScore;
+    if (thesis.scores?.isReviewer2ScoreLocked) {
+      throw new AppError("Điểm phản biện hội đồng của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
+    }
+    if (s1 !== null) thesis.scores.student1Reviewer2Score = s1;
+    if (s2 !== null) thesis.scores.student2Reviewer2Score = s2;
+
+    const finalS1 = thesis.scores.student1Reviewer2Score ?? null;
+    const finalS2 = thesis.scores.student2Reviewer2Score ?? null;
+    if (finalS1 !== null && finalS2 !== null) {
+      thesis.scores.reviewer2Score = Number(((finalS1 + finalS2) / 2).toFixed(2));
+    } else {
+      thesis.scores.reviewer2Score = finalS1 ?? finalS2 ?? effectiveScore;
+    }
     if (comment !== undefined) thesis.reviewer2Comment = comment ? comment.trim() : null;
   } else {
     throw new AppError("Vai trò đánh giá không hợp lệ", 400);
@@ -1489,6 +1585,34 @@ const gradeThesisByLecturer = async (
 
     thesis.scores.finalScore = Number(final.toFixed(2));
     thesis.status = "GRADED";
+  }
+
+  // Calculate individual final scores if available
+  if (
+    thesis.scores.student1SupervisorScore != null &&
+    thesis.scores.student1Reviewer1Score != null &&
+    thesis.scores.student1Reviewer2Score != null
+  ) {
+    thesis.scores.student1FinalScore = Number(
+      (
+        thesis.scores.student1SupervisorScore * 0.4 +
+        thesis.scores.student1Reviewer1Score * 0.3 +
+        thesis.scores.student1Reviewer2Score * 0.3
+      ).toFixed(2),
+    );
+  }
+  if (
+    thesis.scores.student2SupervisorScore != null &&
+    thesis.scores.student2Reviewer1Score != null &&
+    thesis.scores.student2Reviewer2Score != null
+  ) {
+    thesis.scores.student2FinalScore = Number(
+      (
+        thesis.scores.student2SupervisorScore * 0.4 +
+        thesis.scores.student2Reviewer1Score * 0.3 +
+        thesis.scores.student2Reviewer2Score * 0.3
+      ).toFixed(2),
+    );
   }
 
   await thesis.save();
@@ -1515,6 +1639,94 @@ const gradeThesisByLecturer = async (
       populate: { path: "userId", select: "fullName email phone" },
     })
     .populate("academicTermId");
+};
+
+// ====================
+// Toggle Score Lock for Single Thesis
+// ====================
+const toggleThesisScoreLock = async (thesisId, { roleType = "SUPERVISOR", isLocked, userId }) => {
+  const lecturer = await Lecturer.findOne({ userId }).populate("userId");
+  if (!lecturer) {
+    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  }
+
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  if (thesis.status === "COMPLETED") {
+    throw new AppError("Khóa luận đã hoàn thành (COMPLETED), không thể thay đổi trạng thái khóa.", 400);
+  }
+
+  if (!thesis.scores) {
+    thesis.scores = {};
+  }
+
+  const lecIdStr = lecturer._id.toString();
+  const normalizedRole = roleType?.toUpperCase() || "SUPERVISOR";
+
+  if (normalizedRole === "SUPERVISOR" || normalizedRole === "GVHD") {
+    if (thesis.supervisorId?.toString() !== lecIdStr) {
+      throw new AppError("Bạn không phải là giảng viên hướng dẫn của đề tài này", 403);
+    }
+    thesis.scores.isSupervisorScoreLocked = Boolean(isLocked);
+  } else if (normalizedRole === "REVIEWER_1" || normalizedRole === "REVIEWER1" || normalizedRole === "GVPB_KIN") {
+    const isRev1 = thesis.reviewer1Id?.toString() === lecIdStr ||
+      (Array.isArray(thesis.reviewers) && thesis.reviewers.some(r => (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr && r.isPrivateReviewer));
+    if (!isRev1) {
+      throw new AppError("Bạn không được phân công phản biện 1 cho đề tài này", 403);
+    }
+    thesis.scores.isReviewer1ScoreLocked = Boolean(isLocked);
+  } else if (normalizedRole === "REVIEWER_2" || normalizedRole === "REVIEWER2" || normalizedRole === "GVPB_HOIDONG") {
+    const isRev2 = thesis.reviewer2Id?.toString() === lecIdStr ||
+      (Array.isArray(thesis.reviewers) && thesis.reviewers.some(r => (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr && r.isCouncilReviewer));
+    if (!isRev2) {
+      throw new AppError("Bạn không được phân công phản biện hội đồng cho đề tài này", 403);
+    }
+    thesis.scores.isReviewer2ScoreLocked = Boolean(isLocked);
+  }
+
+  await thesis.save();
+  return thesis;
+};
+
+// ====================
+// Toggle All Scores Lock for Assigned Theses
+// ====================
+const toggleAllThesisScoresLock = async ({ academicTermId, roleType = "SUPERVISOR", isLocked, userId }) => {
+  const lecturer = await Lecturer.findOne({ userId }).populate("userId");
+  if (!lecturer) {
+    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  }
+
+  const lecId = lecturer._id;
+  const normalizedRole = roleType?.toUpperCase() || "SUPERVISOR";
+
+  const query = { status: { $ne: "COMPLETED" } };
+  if (academicTermId) query.academicTermId = academicTermId;
+
+  let updateField = "";
+  if (normalizedRole === "SUPERVISOR" || normalizedRole === "GVHD") {
+    query.supervisorId = lecId;
+    updateField = "scores.isSupervisorScoreLocked";
+  } else if (normalizedRole === "REVIEWER_1" || normalizedRole === "REVIEWER1" || normalizedRole === "GVPB_KIN") {
+    query.$or = [{ reviewer1Id: lecId }, { "reviewers.lecturerId": lecId, "reviewers.isPrivateReviewer": true }];
+    updateField = "scores.isReviewer1ScoreLocked";
+  } else if (normalizedRole === "REVIEWER_2" || normalizedRole === "REVIEWER2" || normalizedRole === "GVPB_HOIDONG") {
+    query.$or = [{ reviewer2Id: lecId }, { "reviewers.lecturerId": lecId, "reviewers.isCouncilReviewer": true }];
+    updateField = "scores.isReviewer2ScoreLocked";
+  }
+
+  if (updateField) {
+    await Thesis.updateMany(query, { $set: { [updateField]: Boolean(isLocked) } });
+  } else {
+    await Thesis.updateMany({ ...query, supervisorId: lecId }, { $set: { "scores.isSupervisorScoreLocked": Boolean(isLocked) } });
+    await Thesis.updateMany({ ...query, reviewer1Id: lecId }, { $set: { "scores.isReviewer1ScoreLocked": Boolean(isLocked) } });
+    await Thesis.updateMany({ ...query, reviewer2Id: lecId }, { $set: { "scores.isReviewer2ScoreLocked": Boolean(isLocked) } });
+  }
+
+  return { success: true, isLocked: Boolean(isLocked) };
 };
 
 // ==========================================
@@ -1722,9 +1934,652 @@ const completeThesisEvaluation = async (thesisId, tbmUserId) => {
     });
 };
 
+// ==========================================
+// 8. KLTN Topic Management (GV -> TBM -> SV FIFO)
+// ==========================================
+
+/**
+ * Giảng viên tạo danh sách nhiều đề tài KLTN cùng lúc (hỗ trợ array hoặc string ngăn cách dòng/dấu phẩy)
+ */
+const batchCreateTopicsByLecturer = async ({
+  userId,
+  topics = [],
+  topicListRaw = "",
+  defaultMaxGroups = 1,
+  defaultDescription = "",
+  academicTermId = null,
+}) => {
+  const lecturer = await Lecturer.findOne({ userId }).populate("userId");
+  if (!lecturer) {
+    throw new AppError("Không tìm thấy thông tin giảng viên tương ứng với tài khoản này", 404);
+  }
+
+  // Resolve active term
+  let termId = academicTermId;
+  if (!termId) {
+    const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+    termId = activeTerm?._id || null;
+  }
+
+  const topicDocs = [];
+
+  // 1. Process array of topic objects if provided
+  if (Array.isArray(topics) && topics.length > 0) {
+    for (const item of topics) {
+      const title = (typeof item === "string" ? item : item.title || "").trim();
+      if (!title) continue;
+
+      const maxGroups = Math.max(1, Number(item.maxGroups || defaultMaxGroups || 1));
+      const desc = (typeof item === "object" ? item.description : "") || defaultDescription || null;
+
+      topicDocs.push({
+        title,
+        supervisorId: lecturer._id,
+        academicTermId: termId,
+        maxGroups,
+        currentGroups: 0,
+        description: desc,
+        status: "PENDING",
+      });
+    }
+  }
+
+  // 2. Process raw string input (split by newlines or commas)
+  if (topicListRaw && typeof topicListRaw === "string" && topicListRaw.trim()) {
+    // If text contains newlines, split by line; otherwise split by comma
+    const rawLines = topicListRaw.includes("\n")
+      ? topicListRaw.split(/\r?\n/)
+      : topicListRaw.split(/[,;\n]/);
+
+    for (const line of rawLines) {
+      const title = line.trim().replace(/^[-*•\d.)\s]+/, "").trim();
+      if (!title || title.length < 3) continue;
+
+      topicDocs.push({
+        title,
+        supervisorId: lecturer._id,
+        academicTermId: termId,
+        maxGroups: Math.max(1, Number(defaultMaxGroups || 1)),
+        currentGroups: 0,
+        description: defaultDescription || null,
+        status: "PENDING",
+      });
+    }
+  }
+
+  if (topicDocs.length === 0) {
+    throw new AppError("Vui lòng nhập ít nhất một tên đề tài hợp lệ", 400);
+  }
+
+  const createdTopics = await ThesisTopic.insertMany(topicDocs);
+
+  // Notify TBM
+  try {
+    const tbms = await User.find({ role: "TBM", isActive: true });
+    for (const tbm of tbms) {
+      await notificationService.createNotification({
+        recipientId: tbm._id,
+        type: "THESIS",
+        title: "Đề xuất đề tài KLTN mới",
+        message: `Giảng viên ${lecturer.userId?.fullName || lecturer.lecturerCode} vừa gửi ${createdTopics.length} đề tài KLTN chờ duyệt.`,
+        link: "/tbm/theses",
+      });
+    }
+  } catch (err) {
+    console.warn("Failed to notify TBM on topic creation:", err.message);
+  }
+
+  return createdTopics;
+};
+
+/**
+ * Giảng viên xem danh sách đề tài do mình tạo
+ */
+const getMyCreatedTopics = async ({ userId, academicTermId = null, status = null }) => {
+  const lecturer = await Lecturer.findOne({ userId });
+  if (!lecturer) {
+    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  }
+
+  const query = { supervisorId: lecturer._id };
+  if (academicTermId) query.academicTermId = academicTermId;
+  if (status && status !== "ALL") query.status = status;
+
+  return await ThesisTopic.find(query)
+    .populate("academicTermId", "code name")
+    .populate({
+      path: "registeredGroups.studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "registeredGroups.secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("registeredGroups.thesisId", "status scores finalScore")
+    .sort({ createdAt: -1 });
+};
+
+/**
+ * TBM xem danh sách tất cả đề tài do các GV gửi lên
+ */
+const getTopicsForTbm = async ({ status = null, academicTermId = null, search = "", supervisorId = null }) => {
+  const query = {};
+  if (status && status !== "ALL") query.status = status;
+  if (academicTermId) query.academicTermId = academicTermId;
+  if (supervisorId) query.supervisorId = supervisorId;
+
+  if (search && search.trim()) {
+    query.title = { $regex: search.trim(), $options: "i" };
+  }
+
+  return await ThesisTopic.find(query)
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("academicTermId", "code name")
+    .populate({
+      path: "registeredGroups.studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "registeredGroups.secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .sort({ createdAt: -1 });
+};
+
+/**
+ * TBM phê duyệt đề tài
+ */
+const approveTopicByTbm = async (topicId, tbmUserId) => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  topic.status = "APPROVED";
+  topic.approvedAt = new Date();
+  topic.approvedBy = tbmUserId || null;
+  topic.rejectionReason = null;
+  topic.rejectedAt = null;
+  await topic.save();
+
+  // Notify supervisor
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: tbmUserId || null,
+        type: "THESIS",
+        title: "Đề tài KLTN đã được duyệt",
+        message: `Đề tài "${topic.title}" của bạn đã được Trưởng Bộ Môn phê duyệt và mở cho sinh viên đăng ký.`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on topic approval:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * TBM từ chối đề tài
+ */
+const rejectTopicByTbm = async (topicId, tbmUserId, reason = "") => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  topic.status = "REJECTED";
+  topic.rejectedAt = new Date();
+  topic.approvedBy = tbmUserId || null;
+  topic.rejectionReason = reason?.trim() || "Chưa đạt yêu cầu chuyên môn";
+  await topic.save();
+
+  // Notify supervisor
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: tbmUserId || null,
+        type: "THESIS",
+        title: "Đề tài KLTN bị từ chối",
+        message: `Đề tài "${topic.title}" chưa được phê duyệt: ${topic.rejectionReason}`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on topic rejection:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * Sinh viên xem danh sách đề tài APPROVED
+ */
+const getApprovedTopicsForStudent = async ({ academicTermId = null, search = "", userId = null }) => {
+  let student = null;
+  if (userId) {
+    student = await Student.findOne({ userId });
+  }
+
+  // Identify active academic term if not provided
+  let termId = academicTermId;
+  if (!termId) {
+    try {
+      const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+      termId = activeTerm?._id || null;
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  const query = { status: "APPROVED" };
+  const andConditions = [];
+
+  if (termId) {
+    andConditions.push({
+      $or: [
+        { academicTermId: termId },
+        { academicTermId: null },
+        { academicTermId: { $exists: false } },
+      ],
+    });
+  }
+
+  if (search && search.trim()) {
+    const q = search.trim();
+
+    // Find matched users (Lecturers)
+    const matchedUsers = await User.find({
+      $or: [
+        { fullName: { $regex: q, $options: "i" } },
+        { username: { $regex: q, $options: "i" } },
+        { email: { $regex: q, $options: "i" } },
+      ],
+    }).select("_id");
+    const userIds = matchedUsers.map((u) => u._id);
+
+    // Find matched lecturers
+    const matchedLecturers = await Lecturer.find({
+      $or: [
+        { userId: { $in: userIds } },
+        { lecturerCode: { $regex: q, $options: "i" } },
+        { academicTitle: { $regex: q, $options: "i" } },
+        { department: { $regex: q, $options: "i" } },
+        { specialization: { $regex: q, $options: "i" } },
+      ],
+    }).select("_id");
+    const matchedSupervisorIds = matchedLecturers.map((l) => l._id);
+
+    andConditions.push({
+      $or: [
+        { title: { $regex: q, $options: "i" } },
+        { description: { $regex: q, $options: "i" } },
+        { supervisorId: { $in: matchedSupervisorIds } },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    query.$and = andConditions;
+  }
+
+  const topics = await ThesisTopic.find(query)
+    .populate({
+      path: "supervisorId",
+      select: "lecturerCode academicTitle department specialization userId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("academicTermId", "code name")
+    .sort({ createdAt: -1 });
+
+  return topics.map((t) => {
+    const isFull = t.currentGroups >= t.maxGroups;
+    const isRegisteredByMe = student
+      ? t.registeredGroups?.some(
+          (g) =>
+            g.studentId?.toString() === student._id.toString() ||
+            g.secondStudentId?.toString() === student._id.toString()
+        )
+      : false;
+
+    return {
+      _id: t._id,
+      title: t.title,
+      description: t.description,
+      maxGroups: t.maxGroups,
+      currentGroups: t.currentGroups,
+      isFull,
+      availableSlots: Math.max(0, t.maxGroups - t.currentGroups),
+      status: isFull ? "FULL" : "AVAILABLE",
+      supervisorId: t.supervisorId,
+      supervisor: {
+        _id: t.supervisorId?._id,
+        fullName: t.supervisorId?.userId?.fullName || "Chưa cập nhật",
+        lecturerCode: t.supervisorId?.lecturerCode || "",
+        academicTitle: t.supervisorId?.academicTitle || "",
+        email: t.supervisorId?.userId?.email || "",
+      },
+      academicTerm: t.academicTermId,
+      isRegisteredByMe,
+      createdAt: t.createdAt,
+    };
+  });
+};
+
+/**
+ * Sinh viên chọn đề tài (FIFO Database Atomic Registration)
+ */
+const registerTopicByStudent = async ({
+  userId,
+  topicId,
+  studentCount = 1,
+  secondStudentCode = null,
+  secondStudentId = null,
+}) => {
+  // 1. Identify SV1
+  const student1 = await Student.findOne({ userId }).populate("userId");
+  if (!student1) {
+    throw new AppError("Không tìm thấy thông tin sinh viên đăng ký", 404);
+  }
+
+  // 2. Identify Current Academic Term
+  const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+
+  // 3. Check SV1 has NO active thesis in active term
+  const sv1ActiveThesis = await Thesis.findOne({
+    academicTermId: activeTerm._id,
+    $or: [{ studentId: student1._id }, { secondStudentId: student1._id }],
+    status: { $in: ACTIVE_THESIS_STATUSES },
+  });
+
+  if (sv1ActiveThesis) {
+    throw new AppError(
+      `Sinh viên ${student1.userId?.fullName || student1.studentCode} đã đăng ký đề tài khóa luận ("${sv1ActiveThesis.thesisTitle}") trong học kỳ này`,
+      409
+    );
+  }
+
+  // Also check in ThesisTopic registeredGroups
+  const sv1TopicReg = await ThesisTopic.findOne({
+    academicTermId: activeTerm._id,
+    $or: [
+      { "registeredGroups.studentId": student1._id },
+      { "registeredGroups.secondStudentId": student1._id },
+    ],
+  });
+
+  if (sv1TopicReg) {
+    throw new AppError(
+      `Sinh viên ${student1.userId?.fullName || student1.studentCode} đã đăng ký đề tài "${sv1TopicReg.title}" trong học kỳ này`,
+      409
+    );
+  }
+
+  // 4. Handle 2-Student Group Registration
+  let student2 = null;
+  const isTwoStudents = Number(studentCount) === 2;
+
+  if (isTwoStudents) {
+    if (secondStudentId) {
+      student2 = await Student.findById(secondStudentId).populate("userId");
+    } else if (secondStudentCode && secondStudentCode.trim()) {
+      student2 = await Student.findOne({
+        studentCode: secondStudentCode.trim().toUpperCase(),
+      }).populate("userId");
+    }
+
+    if (!student2) {
+      throw new AppError("Vui lòng chọn hoặc nhập MSSV hợp lệ của sinh viên thứ hai", 400);
+    }
+
+    if (student2._id.toString() === student1._id.toString()) {
+      throw new AppError("Sinh viên thứ hai không được trùng với sinh viên thứ nhất", 400);
+    }
+
+    // Check SV2 has NO active thesis
+    const sv2ActiveThesis = await Thesis.findOne({
+      academicTermId: activeTerm._id,
+      $or: [{ studentId: student2._id }, { secondStudentId: student2._id }],
+      status: { $in: ACTIVE_THESIS_STATUSES },
+    });
+
+    if (sv2ActiveThesis) {
+      throw new AppError(
+        `Sinh viên thứ hai (${student2.userId?.fullName || student2.studentCode}) đã tham gia đề tài "${sv2ActiveThesis.thesisTitle}" trong học kỳ này`,
+        409
+      );
+    }
+
+    const sv2TopicReg = await ThesisTopic.findOne({
+      academicTermId: activeTerm._id,
+      $or: [
+        { "registeredGroups.studentId": student2._id },
+        { "registeredGroups.secondStudentId": student2._id },
+      ],
+    });
+
+    if (sv2TopicReg) {
+      throw new AppError(
+        `Sinh viên thứ hai (${student2.userId?.fullName || student2.studentCode}) đã đăng ký đề tài "${sv2TopicReg.title}" trong học kỳ này`,
+        409
+      );
+    }
+  }
+
+  // 5. ATOMIC FIFO REGISTRATION IN MONGODB
+  // Condition: status == APPROVED && currentGroups < maxGroups && student not already in registeredGroups
+  const registrationTimestamp = new Date();
+
+  const updatedTopic = await ThesisTopic.findOneAndUpdate(
+    {
+      _id: topicId,
+      status: "APPROVED",
+      $expr: { $lt: ["$currentGroups", "$maxGroups"] },
+      "registeredGroups.studentId": { $ne: student1._id },
+      "registeredGroups.secondStudentId": { $ne: student1._id },
+    },
+    {
+      $inc: { currentGroups: 1 },
+      $push: {
+        registeredGroups: {
+          groupOrder: 0, // updated right below
+          studentId: student1._id,
+          studentCode: student1.studentCode,
+          secondStudentId: student2 ? student2._id : null,
+          secondStudentCode: student2 ? student2.studentCode : null,
+          registeredAt: registrationTimestamp,
+          status: "REGISTERED",
+        },
+      },
+    },
+    { returnDocument: "after" }
+  );
+
+  if (!updatedTopic) {
+    // Determine exact cause for precise Vietnamese error message
+    const existing = await ThesisTopic.findById(topicId);
+    if (!existing) {
+      throw new AppError("Đề tài không tồn tại trong hệ thống", 404);
+    }
+    if (existing.status !== "APPROVED") {
+      throw new AppError("Đề tài này chưa được Trưởng Bộ Môn phê duyệt để đăng ký", 400);
+    }
+    if (existing.currentGroups >= existing.maxGroups) {
+      throw new AppError("Đề tài đã đủ số lượng nhóm đăng ký (FIFO). Vui lòng chọn đề tài khác.", 409);
+    }
+    throw new AppError("Bạn hoặc thành viên nhóm đã đăng ký đề tài này rồi", 400);
+  }
+
+  // 6. Set groupOrder and create synchronized Thesis record
+  const groupOrder = updatedTopic.registeredGroups.length;
+
+  const thesis = await Thesis.create({
+    academicTermId: updatedTopic.academicTermId || activeTerm._id,
+    studentId: student1._id,
+    secondStudentId: student2 ? student2._id : null,
+    studentCount: student2 ? 2 : 1,
+    thesisTitle: updatedTopic.title,
+    supervisorId: updatedTopic.supervisorId,
+    topicId: updatedTopic._id,
+    status: "PENDING_SUPERVISOR_APPROVAL", // Chuyển sang chờ GVHD xác nhận
+    description: updatedTopic.description,
+  });
+
+  // Link thesisId & groupOrder in topic's registeredGroups entry
+  await ThesisTopic.updateOne(
+    { _id: updatedTopic._id, "registeredGroups.studentId": student1._id },
+    {
+      $set: {
+        "registeredGroups.$.groupOrder": groupOrder,
+        "registeredGroups.$.thesisId": thesis._id,
+      },
+    }
+  );
+
+  // Update student registration status
+  await Student.findByIdAndUpdate(student1._id, { thesisRegistered: true });
+  if (student2) {
+    await Student.findByIdAndUpdate(student2._id, { thesisRegistered: true });
+  }
+
+  // Send notification to supervisor
+  try {
+    const supervisor = await Lecturer.findById(updatedTopic.supervisorId).populate("userId");
+    if (supervisor?.userId?._id) {
+      await notificationService.createNotification({
+        userId: supervisor.userId._id,
+        type: "THESIS",
+        title: "Sinh viên đăng ký đề tài KLTN - Cần xác nhận",
+        message: `Sinh viên ${student1.userId?.fullName || student1.studentCode}${
+          student2 ? ` và ${student2.userId?.fullName || student2.studentCode}` : ""
+        } vừa đăng ký đề tài "${updatedTopic.title}" (Nhóm ${groupOrder}/${updatedTopic.maxGroups}). Vui lòng vào xác nhận hoặc từ chối.`,
+        referenceId: thesis._id,
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error:", err.message);
+  }
+
+  return {
+    topic: updatedTopic,
+    thesis,
+    groupOrder,
+    registeredAt: registrationTimestamp,
+  };
+};
+
+/**
+ * Tìm kiếm sinh viên có trong database để ghép nhóm
+ */
+const searchStudentsForGroup = async (query, requestingUserId = null) => {
+  if (!query || !query.trim()) return [];
+
+  const requestingStudent = requestingUserId
+    ? await Student.findOne({ userId: requestingUserId })
+    : null;
+  const regex = new RegExp(query.trim(), "i");
+
+  // Search by code
+  const studentsByCode = await Student.find({
+    ...(requestingStudent ? { _id: { $ne: requestingStudent._id } } : {}),
+    studentCode: regex,
+  })
+    .populate("userId", "fullName email phone")
+    .limit(10)
+    .lean();
+
+  // Search by name from User
+  const users = await User.find({
+    fullName: regex,
+    role: "STUDENT",
+    ...(requestingUserId ? { _id: { $ne: requestingUserId } } : {}),
+  })
+    .select("_id")
+    .limit(10);
+
+  const studentsByName = await Student.find({
+    userId: { $in: users.map((u) => u._id) },
+    ...(requestingStudent ? { _id: { $ne: requestingStudent._id } } : {}),
+  })
+    .populate("userId", "fullName email phone")
+    .limit(10)
+    .lean();
+
+  // Merge & deduplicate
+  const map = new Map();
+  [...studentsByCode, ...studentsByName].forEach((s) => {
+    if (s && s._id && s.userId) {
+      map.set(s._id.toString(), s);
+    }
+  });
+  const allMatches = Array.from(map.values()).slice(0, 10);
+
+  // Check active thesis for each student
+  const activeTheses = await Thesis.find({
+    $or: [
+      { studentId: { $in: allMatches.map((s) => s._id) } },
+      { secondStudentId: { $in: allMatches.map((s) => s._id) } },
+    ],
+    status: { $in: ACTIVE_THESIS_STATUSES },
+  }).select("studentId secondStudentId thesisTitle");
+
+  return allMatches.map((s) => {
+    const active = activeTheses.find(
+      (t) =>
+        t.studentId?.toString() === s._id.toString() ||
+        t.secondStudentId?.toString() === s._id.toString()
+    );
+    return {
+      _id: s._id,
+      studentCode: s.studentCode,
+      fullName: s.userId?.fullName || "—",
+      email: s.userId?.email || "—",
+      phone: s.userId?.phone || "—",
+      className: s.className || "—",
+      major: s.major || (s.className?.startsWith("DHCNTT") ? "Công nghệ Thông tin" : s.className?.startsWith("DHKTPM") ? "Kỹ thuật Phần mềm" : s.className?.startsWith("DHKHDL") ? "Khoa học Dữ liệu" : "Công nghệ Thông tin"),
+      dateOfBirth: s.dateOfBirth || null,
+      gender: s.gender || null,
+      gpa: s.gpa || null,
+      isInActiveThesis: Boolean(active),
+      activeThesisTitle: active?.thesisTitle || null,
+    };
+  });
+};
+
 export default {
   createThesis,
   lookupStudentByCode,
+  searchStudentsForGroup,
   getAvailableSupervisors,
   getMyThesis,
   getThesisByStudent,
@@ -1737,6 +2592,17 @@ export default {
   supervisorRejectThesis,
   getThesesForLecturerRole,
   gradeThesisByLecturer,
+  toggleThesisScoreLock,
+  toggleAllThesisScoresLock,
   getThesesForEvaluation,
   completeThesisEvaluation,
+  // KLTN Topic Management
+  batchCreateTopicsByLecturer,
+  getMyCreatedTopics,
+  getTopicsForTbm,
+  approveTopicByTbm,
+  rejectTopicByTbm,
+  getApprovedTopicsForStudent,
+  registerTopicByStudent,
 };
+
