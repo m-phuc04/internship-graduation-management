@@ -176,26 +176,20 @@ const LecturerManagement = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-violet-200 shrink-0">
-              <BookOpen className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                  Quản Lý Giảng Viên & Chỉ Tiêu Hướng Dẫn
-                </h1>
-                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200/60">
-                  {pagination?.total ?? lecturers.length} Giảng viên
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Quản lý hồ sơ giảng viên, phân công đề tài, chỉ tiêu nhận sinh viên hướng dẫn (KLTN)
-              </p>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+            <BookOpen className="w-7 h-7" />
           </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900">
+              Quản lý Danh sách Giảng viên
+            </h1>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Quản lý hồ sơ giảng viên, phân công chuyên môn và chỉ tiêu hướng dẫn
+            </p>
+          </div>
+        </div>
 
           <div className="flex items-center gap-2.5">
             <button
@@ -219,7 +213,6 @@ const LecturerManagement = () => {
             </button>
           </div>
         </div>
-      </div>
 
       {/* Filter / Search Bar */}
       <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
@@ -282,7 +275,8 @@ const LecturerManagement = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 pl-6">Giảng viên</th>
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
+                  <th className="py-3.5 px-4">Giảng viên</th>
                   <th className="py-3.5 px-4">Học vị</th>
                   <th className="py-3.5 px-4 text-center">Đang nhận</th>
                   <th className="py-3.5 px-4 text-center">Tối đa</th>
@@ -293,7 +287,7 @@ const LecturerManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {lecturers.map((lec) => {
+                {lecturers.map((lec, idx) => {
                   const isLecturerActive = lec.isActive !== false && lec.userId?.isActive !== false;
                   const currentStudents = lec.currentSupervisedStudents || 0;
                   const maxStudents = lec.maxSupervisedStudents ?? lec.maxStudents ?? 10;
@@ -306,6 +300,10 @@ const LecturerManagement = () => {
                         !isLecturerActive ? 'bg-slate-50/50 opacity-75' : 'hover:bg-slate-50/80'
                       }`}
                     >
+                      {/* STT */}
+                      <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                        {(page - 1) * 10 + idx + 1}
+                      </td>
                       {/* Lecturer Info */}
                       <td className="py-3.5 px-4 pl-6">
                         <UserNameClickable

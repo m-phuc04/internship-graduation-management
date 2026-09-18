@@ -98,7 +98,7 @@ const AdminPermissionsPage = () => {
         fetchPermissionsList();
       }
     } catch (err) {
-      showToast(err.message || 'Lỗi khi lưu phân quyền', 'error');
+      showToast(err.message || 'Kh lưu phân quyền', 'error');
     } finally {
       setSaving(false);
     }
@@ -123,14 +123,11 @@ const AdminPermissionsPage = () => {
             <KeyRound className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5 text-[#0B4DB7] font-bold text-[11px] tracking-wider uppercase">
-              <span>QUẢN TRỊ HỆ THỐNG</span>
-            </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 tracking-tight">
-              Quản Lý Phân Quyền Giảng Viên & Trưởng Bộ Môn
+            <h1 className="text-xl font-bold text-slate-900">
+              Quản lý Phân quyền Giảng viên & Bộ môn
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Phân quyền 3 quyền nghiệp vụ độc lập (GVHD, GVPB Kín, GVPB Hội đồng) và chỉ định vai trò Trưởng Bộ Môn (TBM).
+            <p className="text-xs text-slate-500 mt-0.5">
+              Phân quyền nghiệp vụ (GVHD, GVPB) và chỉ định vai trò Trưởng Bộ Môn (TBM)
             </p>
           </div>
         </div>
@@ -177,6 +174,7 @@ const AdminPermissionsPage = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
                   <th className="py-3.5 px-4">Họ và Tên</th>
                   <th className="py-3.5 px-4">Mã GV</th>
                   <th className="py-3.5 px-4">Role</th>
@@ -186,13 +184,18 @@ const AdminPermissionsPage = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredLecturers.map((item) => {
+                {filteredLecturers.map((item, idx) => {
                   const role = item.user?.role || 'LECTURER';
                   const perms = item.permissions || [];
                   const isTbm = role === 'TBM';
 
                   return (
                     <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                      {/* STT */}
+                      <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                        {idx + 1}
+                      </td>
+
                       {/* Name & Academic Title */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">

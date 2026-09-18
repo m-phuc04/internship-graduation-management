@@ -33,14 +33,17 @@ router.get(
 // Admin / TBM Management Routes
 // ====================
 
+// Create term
 // Create term (Admin only)
 router.post(
   "/",
   authMiddleware,
+  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.createTerm,
 );
 
+// Update term
 // Update term (Admin for general term info, TBM for registration timelines)
 router.patch(
   "/:id",
@@ -49,26 +52,32 @@ router.patch(
   academicTermController.updateTerm,
 );
 
+// Activate term
 // Activate term (Admin only)
 router.patch(
   "/:id/activate",
   authMiddleware,
+  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.activateTerm,
 );
 
+// Close term
 // Close term (Admin only)
 router.patch(
   "/:id/close",
   authMiddleware,
+  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.closeTerm,
 );
 
+// Delete term (Safe delete)
 // Delete term (Safe delete, Admin only)
 router.delete(
   "/:id",
   authMiddleware,
+  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.deleteTerm,
 );

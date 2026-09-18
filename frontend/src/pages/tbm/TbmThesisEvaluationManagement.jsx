@@ -111,19 +111,17 @@ const TbmThesisEvaluationManagement = () => {
     <div className="space-y-6">
       {/* Top Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
               <Award className="w-7 h-7" />
             </div>
             <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                  Quản Lý Đánh Giá Khóa Luận Tốt Nghiệp (KLTN)
-                </h1>
-              </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Theo dõi bảng điểm đánh giá của Giảng viên hướng dẫn (40%) và Hội đồng Phản biện 1 & 2 (30% + 30%).
+              <h1 className="text-xl font-bold text-slate-900">
+                Quản lý Đánh giá Khóa luận Tốt nghiệp (KLTN)
+              </h1>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Theo dõi bảng điểm đánh giá của Giảng viên hướng dẫn và Hội đồng Phản biện
               </p>
             </div>
           </div>
@@ -211,6 +209,7 @@ const TbmThesisEvaluationManagement = () => {
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
                   <th className="py-3.5 px-4">Tên đề tài KLTN</th>
                   <th className="py-3.5 px-4">Sinh viên thực hiện</th>
                   <th className="py-3.5 px-4">Hội đồng (GVHD | PB Kín | PB Hội đồng)</th>
@@ -221,13 +220,18 @@ const TbmThesisEvaluationManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {theses.map((item) => {
+                {theses.map((item, idx) => {
                   const s = item.scores || {};
                   const isFullyGraded = s.finalScore !== null && s.finalScore !== undefined;
                   const isCompleted = item.status === 'COMPLETED';
 
                   return (
                     <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                      {/* STT */}
+                      <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                        {idx + 1}
+                      </td>
+
                       {/* Title */}
                       <td className="py-3.5 px-4 min-w-[260px] max-w-sm" title={item.thesisTitle}>
                         <strong className="text-slate-900 line-clamp-2 leading-snug hover:text-indigo-600 transition">

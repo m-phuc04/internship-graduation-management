@@ -167,14 +167,11 @@ const StudentManagement = () => {
             <Users className="w-7 h-7" />
           </div>
           <div>
-            <div className="flex items-center gap-1.5 text-[#0B4DB7] font-bold text-[11px] tracking-wider uppercase">
-              <span>DANH MỤC MASTER DATA</span>
-            </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-0.5">
-              Quản lý Sinh viên
+            <h1 className="text-xl font-bold text-slate-900">
+              Quản lý Danh sách Sinh viên
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Quản lý hồ sơ, điều kiện tiên quyết và trạng thái hoạt động của sinh viên khoa.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Quản lý hồ sơ, điều kiện tiên quyết và trạng thái hoạt động của sinh viên
             </p>
           </div>
         </div>
@@ -273,7 +270,8 @@ const StudentManagement = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 pl-6">Sinh viên</th>
+                  <th className="py-3.5 px-4 text-center w-14">STT</th>
+                  <th className="py-3.5 px-4">Sinh viên</th>
                   <th className="py-3.5 px-4">Lớp</th>
                   <th className="py-3.5 px-4">GPA / Tín chỉ</th>
                   <th className="py-3.5 px-4">ĐK Tiên quyết</th>
@@ -284,7 +282,7 @@ const StudentManagement = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
-                {students.map((st) => {
+                {students.map((st, idx) => {
                   const isStudentActive = st.userId?.isActive !== false && st.isActive !== false;
                   return (
                     <tr
@@ -293,8 +291,13 @@ const StudentManagement = () => {
                         !isStudentActive ? 'bg-slate-50/40 opacity-75' : ''
                       }`}
                     >
+                      {/* STT */}
+                      <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                        {(page - 1) * (pagination?.limit || 10) + idx + 1}
+                      </td>
+
                       {/* Student Info */}
-                      <td className="py-3.5 px-4 pl-6">
+                      <td className="py-3.5 px-4">
                         <UserNameClickable
                           user={st}
                           name={st.userId?.fullName || 'Chưa đặt tên'}
