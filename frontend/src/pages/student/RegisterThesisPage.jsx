@@ -1,25 +1,23 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
-import studentApi from '../../api/studentApi';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import Modal from '../../components/common/Modal';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
+import EmptyState from '../../components/common/EmptyState';
+import SearchInput from '../../components/common/SearchInput';
 
 import {
   GraduationCap,
   Users,
   User,
-  Search,
   CheckCircle2,
   AlertCircle,
   Clock,
-  Send,
-  Eye,
   BookOpen,
-  ArrowRight,
   ShieldAlert,
+  Check,
+  X,
 } from 'lucide-react';
 
 const RegisterThesisPage = () => {
@@ -27,202 +25,195 @@ const RegisterThesisPage = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
 
-  // Registration Type: 1 or 2
-  const [studentCount, setStudentCount] = useState(1);
-
   // SV1 (Current Student)
   const [student1, setStudent1] = useState(null);
   const [loadingStudent1, setLoadingStudent1] = useState(true);
-
-  // SV2 (Group Partner)
-  const [sv2Code, setSv2Code] = useState('');
-  const [student2, setStudent2] = useState(null);
-  const [sv2Error, setSv2Error] = useState('');
-  const [sv2Warning, setSv2Warning] = useState('');
-  const [loadingSv2, setLoadingSv2] = useState(false);
-
-  // Available Supervisors
-  const [supervisors, setSupervisors] = useState([]);
-  const [loadingSupervisors, setLoadingSupervisors] = useState(true);
-
-  // Form Fields
-  const [thesisTitle, setThesisTitle] = useState('');
-  const [supervisorId, setSupervisorId] = useState('');
-  const [description, setDescription] = useState('');
-  const [objectives, setObjectives] = useState('');
-
-  // Modals & Submission
-  const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [existingThesis, setExistingThesis] = useState(null);
 
-  // 1. Fetch Current Student Info & Active Thesis Check
-  useEffect(() => {
-    const fetchCurrentStudent = async () => {
-      setLoadingStudent1(true);
-      try {
-        const [myThesisRes, supervisorsRes] = await Promise.all([
-          thesisApi.getMyThesis(),
-          thesisApi.getAvailableSupervisors(),
-        ]);
+  // ==========================================
+  // APPROVED TOPICS (FIFO SELECTION)
+  // ==========================================
+  const [approvedTopics, setApprovedTopics] = useState([]);
+  const [loadingApprovedTopics, setLoadingApprovedTopics] = useState(false);
+  const [topicSearch, setTopicSearch] = useState('');
+  const [selectedTopicForRegistration, setSelectedTopicForRegistration] = useState(null);
+  const [registerTopicModalOpen, setRegisterTopicModalOpen] = useState(false);
+  const [topicStudentCount, setTopicStudentCount] = useState(1);
+  const [topicSv2Code, setTopicSv2Code] = useState('');
+  const [topicStudent2, setTopicStudent2] = useState(null);
+  const [topicSv2Error, setTopicSv2Error] = useState('');
+  const [registeringTopic, setRegisteringTopic] = useState(false);
+  const [topicSearchResults, setTopicSearchResults] = useState([]);
+  const [searchingStudents, setSearchingStudents] = useState(false);
 
-        if (myThesisRes.success) {
-          setStudent1(myThesisRes.student);
-          if (myThesisRes.data && !['REJECTED'].includes(myThesisRes.data.status)) {
-            setExistingThesis(myThesisRes.data);
-          }
-        }
+  // Helper to format Date of Birth
+  const formatDOB = (dob) => {
+    if (!dob) return '—';
+    try {
+      const d = new Date(dob);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('vi-VN', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch {
+      return '—';
+    }
+  };
 
-        if (supervisorsRes.success) {
-          setSupervisors(supervisorsRes.data || []);
-          if (supervisorsRes.data?.length > 0) {
-            const firstAvailable = supervisorsRes.data.find((s) => s.isAvailable);
-            if (firstAvailable) {
-              setSupervisorId(firstAvailable._id);
-            }
-          }
+  // Helper to format Lecturer Title nicely (prevents "TS. TS.")
+  const formatLecturerDisplay = (title, name) => {
+    if (!name) return 'Chưa cập nhật';
+    const trimmedName = name.trim();
+    if (!title) return trimmedName;
+    const trimmedTitle = title.trim();
+    if (trimmedName.toLowerCase().startsWith(trimmedTitle.toLowerCase())) {
+      return trimmedName;
+    }
+    return `${trimmedTitle} ${trimmedName}`;
+  };
+
+  // 1. Fetch Current Student Info & Check for existing Thesis
+  const fetchStudentProfile = useCallback(async () => {
+    setLoadingStudent1(true);
+    try {
+      const myThesisRes = await thesisApi.getMyThesis();
+      if (myThesisRes.success) {
+        setStudent1(myThesisRes.student);
+        if (myThesisRes.data && !['REJECTED'].includes(myThesisRes.data.status)) {
+          setExistingThesis(myThesisRes.data);
+        } else {
+          setExistingThesis(null);
         }
-      } catch (err) {
-        showToast(err.message || 'Không thể tải thông tin sinh viên', 'error');
-      } finally {
-        setLoadingStudent1(false);
-        setLoadingSupervisors(false);
       }
-    };
+    } catch (err) {
+      console.warn('Student profile fetch error:', err.message);
+    } finally {
+      setLoadingStudent1(false);
+    }
+  }, []);
 
-    fetchCurrentStudent();
-  }, [showToast]);
+  // 2. Fetch Approved Topics
+  const fetchApprovedTopics = useCallback(async () => {
+    setLoadingApprovedTopics(true);
+    try {
+      const res = await thesisApi.getApprovedTopics({
+        search: topicSearch,
+      });
+      if (res.success) {
+        setApprovedTopics(res.data || []);
+      }
+    } catch (err) {
+      console.warn('Cannot fetch approved topics:', err.message);
+    } finally {
+      setLoadingApprovedTopics(false);
+    }
+  }, [topicSearch]);
 
-  // 2. Lookup SV2 by MSSV
-  const handleLookupSv2 = async () => {
-    if (!sv2Code.trim()) {
-      setSv2Error('Vui lòng nhập MSSV của sinh viên thứ hai');
-      setStudent2(null);
+  useEffect(() => {
+    fetchStudentProfile();
+  }, [fetchStudentProfile]);
+
+  useEffect(() => {
+    fetchApprovedTopics();
+  }, [fetchApprovedTopics]);
+
+  // Search students from DB in real time
+  const handleSearchTopicStudents = async (keyword) => {
+    setTopicSv2Code(keyword);
+    setTopicSv2Error('');
+    if (!keyword || !keyword.trim()) {
+      setTopicSearchResults([]);
       return;
     }
 
-    setLoadingSv2(true);
-    setSv2Error('');
-    setSv2Warning('');
-
+    setSearchingStudents(true);
     try {
-      const res = await thesisApi.lookupStudent(sv2Code.trim());
+      const res = await thesisApi.searchStudents({ query: keyword.trim() });
       if (res.success) {
-        const { student, isSelf, isInActiveThesis, activeThesisTitle } = res.data;
-
-        if (isSelf) {
-          setSv2Error('Sinh viên 2 không được trùng với Sinh viên 1 (chính bạn)!');
-          setStudent2(null);
-          return;
-        }
-
-        if (isInActiveThesis) {
-          setSv2Error(
-            `Sinh viên ${student.fullName} (${student.studentCode}) đã tham gia một đề tài KLTN khác ("${activeThesisTitle}")!`,
-          );
-          setStudent2(null);
-          return;
-        }
-
-        setStudent2(student);
-        showToast(`Đã tìm thấy sinh viên: ${student.fullName}`, 'success');
+        setTopicSearchResults(res.data || []);
       }
     } catch (err) {
-      setSv2Error(err.message || 'Không tìm thấy sinh viên với MSSV này');
-      setStudent2(null);
+      console.warn('Student search error:', err.message);
     } finally {
-      setLoadingSv2(false);
+      setSearchingStudents(false);
     }
   };
 
-  // 3. Validation before Preview / Submit
-  const validateForm = () => {
+  const handleSelectPartner = (student) => {
+    if (student.isInActiveThesis) {
+      setTopicSv2Error(`Sinh viên ${student.fullName} (${student.studentCode}) đã tham gia đề tài khác!`);
+      return;
+    }
+    setTopicStudent2(student);
+    setTopicSv2Code(student.studentCode);
+    setTopicSearchResults([]);
+    setTopicSv2Error('');
+    showToast(`Đã chọn thành viên nhóm: ${student.fullName}`, 'success');
+  };
+
+  // Submit Topic Selection
+  const handleConfirmTopicRegistration = async () => {
+    if (!selectedTopicForRegistration) return;
     if (existingThesis) {
       showToast('Bạn đã có đề tài khóa luận đang hoạt động trong hệ thống!', 'error');
-      return false;
+      return;
+    }
+    if (topicStudentCount === 2 && !topicStudent2) {
+      showToast('Vui lòng chọn hoặc tra cứu thông tin Sinh viên 2', 'warning');
+      return;
     }
 
-    if (!thesisTitle.trim()) {
-      showToast('Vui lòng nhập tên đề tài khóa luận', 'error');
-      return false;
-    }
-
-    if (!supervisorId) {
-      showToast('Vui lòng chọn giảng viên hướng dẫn', 'error');
-      return false;
-    }
-
-    if (studentCount === 2 && !student2) {
-      showToast('Vui lòng nhập và tra cứu thông tin sinh viên thứ hai', 'error');
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleOpenPreview = () => {
-    if (validateForm()) {
-      setPreviewModalOpen(true);
-    }
-  };
-
-  // 4. Submit Registration
-  const handleSubmit = async () => {
-    if (!validateForm()) return;
-
-    setSubmitting(true);
+    setRegisteringTopic(true);
     try {
       const payload = {
-        studentCount,
-        secondStudentId: studentCount === 2 ? student2?._id : null,
-        thesisTitle: thesisTitle.trim(),
-        supervisorId,
-        description: description.trim() || null,
-        objectives: objectives.trim() || null,
+        studentCount: topicStudentCount,
+        secondStudentId: topicStudentCount === 2 ? topicStudent2?._id : null,
+        secondStudentCode: topicStudentCount === 2 ? topicStudent2?.studentCode : null,
       };
 
-      const res = await thesisApi.register(payload);
+      const res = await thesisApi.registerTopic(selectedTopicForRegistration._id, payload);
       if (res.success) {
         showToast(
-          'Đăng ký đề tài Khóa luận tốt nghiệp thành công! Hồ sơ đang chờ Trưởng Bộ Môn (TBM) phê duyệt.',
+          `Đăng ký đề tài "${selectedTopicForRegistration.title}" thành công! Đang chờ Giảng viên hướng dẫn xác nhận.`,
           'success',
         );
-        setPreviewModalOpen(false);
+        setRegisterTopicModalOpen(false);
+        setSelectedTopicForRegistration(null);
         navigate('/student/thesis');
       }
     } catch (err) {
       showToast(err.message || 'Đăng ký đề tài thất bại', 'error');
+      fetchApprovedTopics();
     } finally {
-      setSubmitting(false);
+      setRegisteringTopic(false);
     }
   };
 
-  const selectedSupervisor = supervisors.find((s) => s._id === supervisorId);
-
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Top Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
               <GraduationCap className="w-7 h-7" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  Đăng Ký Đề Tài Khóa Luận Tốt Nghiệp (KLTN)
-                </h2>
-              </div>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">
+                Đăng Ký Đề Tài Khóa Luận Tốt Nghiệp (KLTN)
+              </h1>
               <p className="text-xs text-slate-500 mt-1">
-                Học kỳ 1 — Năm học 2026 - 2027 • Khoa Công nghệ Thông tin (IUH)
+                Lựa chọn và đăng ký danh sách đề tài KLTN do Giảng viên đề xuất theo nguyên tắc thời gian (FIFO).
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200/80">
-              Trạng thái ban đầu: PENDING_TBM_APPROVAL
+            <span className="text-xs font-bold px-3.5 py-2 rounded-xl bg-blue-50 text-[#0B4DB7] border border-blue-200/80 shadow-2xs flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-[#0B4DB7]" />
+              Nguyên tắc đăng ký: FIFO (Ưu tiên theo thời gian)
             </span>
           </div>
         </div>
@@ -236,412 +227,416 @@ const RegisterThesisPage = () => {
             <div className="font-bold text-sm">Bạn đã có đề tài khóa luận đang hoạt động!</div>
             <div className="mt-0.5 leading-relaxed text-slate-700">
               Đề tài: <strong>"{existingThesis.thesisTitle}"</strong> • Trạng thái:{' '}
-              <span className="font-bold text-indigo-700">{existingThesis.status}</span>.
-              Theo quy chế đào tạo, mỗi sinh viên chỉ được tham gia 1 đề tài KLTN tại một thời điểm.
+              <span className="font-bold text-[#0B4DB7]">{existingThesis.status}</span>.
+              Theo quy chế đào tạo, mỗi sinh viên chỉ được tham gia 1 đề tài KLTN trong học kỳ.
             </div>
           </div>
         </div>
       )}
 
-      {/* Registration Mode Selector */}
-      <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-        <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-          <Users className="w-4 h-4 text-indigo-600" />
-          1. Lựa chọn hình thức thực hiện Khóa luận
+      {/* APPROVED TOPICS LIST */}
+      <div className="space-y-4">
+        {/* Search & Counter bar */}
+        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="w-full sm:w-96">
+            <SearchInput
+              value={topicSearch}
+              onChange={(val) => setTopicSearch(val)}
+              placeholder="Tìm tên đề tài, GVHD, mã GV..."
+            />
+          </div>
+          <div className="text-xs text-slate-500 font-medium">
+            Hiển thị <strong>{approvedTopics.length}</strong> đề tài có sẵn
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-          {/* Option 1 Student */}
-          <button
-            type="button"
-            onClick={() => {
-              setStudentCount(1);
-              setStudent2(null);
-              setSv2Code('');
-              setSv2Error('');
-            }}
-            className={`p-4 rounded-2xl border text-left transition ${
-              studentCount === 1
-                ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20'
-                : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
-                <User className="w-4 h-4 text-indigo-600" />
-                Khóa luận cá nhân (1 Sinh viên)
-              </div>
-              <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  studentCount === 1
-                    ? 'border-indigo-600 bg-indigo-600 text-white'
-                    : 'border-slate-300'
-                }`}
-              >
-                {studentCount === 1 && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-              </span>
+        {/* Table */}
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          {loadingApprovedTopics ? (
+            <div className="p-6">
+              <LoadingSkeleton rows={5} cols={6} />
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Thực hiện đề tài độc lập một mình dưới sự hướng dẫn của Giảng viên.
-            </p>
-          </button>
+          ) : approvedTopics.length === 0 ? (
+            <div className="p-8">
+              <EmptyState
+                title="Chưa có đề tài nào được duyệt"
+                description="Khi Giảng viên đề xuất đề tài và được Trưởng Bộ Môn (TBM) phê duyệt, danh sách sẽ hiển thị tại đây để bạn đăng ký."
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                    <th className="py-3.5 px-4 text-center w-12">STT</th>
+                    <th className="py-3.5 px-4">Tên đề tài KLTN</th>
+                    <th className="py-3.5 px-4">Giáo viên hướng dẫn</th>
+                    <th className="py-3.5 px-4 text-center">Số lượng nhóm</th>
+                    <th className="py-3.5 px-4">Mô tả / Yêu cầu</th>
+                    <th className="py-3.5 px-4">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {approvedTopics.map((topic, idx) => {
+                    const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+                    const maxCount = topic.maxGroups || 1;
+                    const isFull = topic.isFull || currentCount >= maxCount;
 
-          {/* Option 2 Students */}
-          <button
-            type="button"
-            onClick={() => setStudentCount(2)}
-            className={`p-4 rounded-2xl border text-left transition ${
-              studentCount === 2
-                ? 'bg-indigo-50/70 border-indigo-500 ring-2 ring-indigo-500/20'
-                : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
-                <Users className="w-4 h-4 text-indigo-600" />
-                Khóa luận nhóm (2 Sinh viên)
-              </div>
-              <span
-                className={`w-4 h-4 rounded-full border flex items-center justify-center ${
-                  studentCount === 2
-                    ? 'border-indigo-600 bg-indigo-600 text-white'
-                    : 'border-slate-300'
-                }`}
-              >
-                {studentCount === 2 && <div className="w-1.5 h-1.5 bg-white rounded-full" />}
-              </span>
+                    return (
+                      <tr key={topic._id} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                          {idx + 1}
+                        </td>
+
+                        <td className="py-3.5 px-4 min-w-[240px] max-w-sm">
+                          <div className="font-bold text-slate-900 leading-snug">
+                            {topic.title}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-slate-900">
+                            {formatLecturerDisplay(
+                              topic.supervisor?.academicTitle || topic.supervisorId?.academicTitle,
+                              topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                            Mã GV: {topic.supervisor?.lecturerCode || topic.supervisorId?.lecturerCode || '—'}
+                          </div>
+                        </td>
+
+                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">
+                            {currentCount} / {maxCount}
+                          </span>
+                        </td>
+
+                        <td className="py-3.5 px-4 max-w-xs">
+                          <p className="text-slate-600 line-clamp-2 text-xs">
+                            {topic.description || <span className="text-slate-400 italic">Không có mô tả</span>}
+                          </p>
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {isFull ? (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800">
+                              Đã đủ nhóm
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                              Còn {maxCount - currentCount} chỗ
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                          <button
+                            type="button"
+                            disabled={isFull || !!existingThesis}
+                            onClick={() => {
+                              setSelectedTopicForRegistration(topic);
+                              setTopicStudentCount(1);
+                              setTopicStudent2(null);
+                              setTopicSv2Code('');
+                              setTopicSv2Error('');
+                              setTopicSearchResults([]);
+                              setRegisterTopicModalOpen(true);
+                            }}
+                            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs ${
+                              isFull || existingThesis
+                                ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                                : 'bg-[#0B4DB7] hover:bg-blue-700 text-white'
+                            }`}
+                            title={
+                              isFull
+                                ? 'Đề tài đã đủ số lượng nhóm đăng ký'
+                                : existingThesis
+                                ? 'Bạn đã có đề tài khóa luận trong kỳ'
+                                : 'Đăng ký đề tài này theo nguyên tắc FIFO'
+                            }
+                          >
+                            {isFull ? 'Đã đủ nhóm' : 'Chọn đề tài'}
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Ghép nhóm cùng 1 bạn sinh viên khác cùng khóa/ngành để thực hiện chung đề tài.
-            </p>
-          </button>
+          )}
         </div>
       </div>
 
-      {/* Student Details Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        {/* SV1 Card */}
-        <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-          <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2.5">
-            <span className="flex items-center gap-2">
-              <User className="w-4 h-4 text-indigo-600" />
-              Sinh viên 1 (Trưởng nhóm / Người đăng ký)
-            </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700">
-              Read-Only
-            </span>
-          </div>
-
-          {loadingStudent1 ? (
-            <LoadingSkeleton rows={4} cols={2} />
-          ) : student1 ? (
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-slate-400 block text-[11px]">Họ và tên:</span>
-                <strong className="text-slate-900">{student1.userId?.fullName}</strong>
+      {/* ========================================================================= */}
+      {/* MODAL: REGISTER SELECTED APPROVED TOPIC */}
+      {/* ========================================================================= */}
+      {registerTopicModalOpen && selectedTopicForRegistration && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Xác nhận chọn Đề tài KLTN</h3>
+                  <p className="text-xs text-slate-500">Áp dụng thứ tự ưu tiên đăng ký</p>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Mã số SV (MSSV):</span>
-                <strong className="font-mono text-indigo-700">{student1.studentCode}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Lớp:</span>
-                <span className="font-mono text-slate-800">{student1.className}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Ngành học:</span>
-                <span className="text-slate-800">{student1.major || 'Công nghệ Thông tin'}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Điểm GPA tích lũy:</span>
-                <strong className="text-slate-900 font-mono">{student1.gpa || '—'}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Tín chỉ tích lũy:</span>
-                <strong className="text-slate-900 font-mono">{student1.creditsAccumulated || '—'}</strong>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
-                <span className="text-slate-700 truncate block">{student1.userId?.email}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Số điện thoại:</span>
-                <span className="text-slate-700">{student1.userId?.phone || '—'}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="text-xs text-rose-500">Không tìm thấy thông tin sinh viên</div>
-          )}
-        </div>
-
-        {/* SV2 Card (Conditional) */}
-        {studentCount === 2 ? (
-          <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-            <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center justify-between border-b border-slate-100 pb-2.5">
-              <span className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-violet-600" />
-                Sinh viên 2 (Thành viên nhóm)
-              </span>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-100 text-violet-700">
-                Cần tra cứu
-              </span>
+              <button
+                type="button"
+                onClick={() => setRegisterTopicModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
 
-            {/* Input & Search MSSV */}
-            <div className="space-y-2">
-              <label className="block text-xs font-semibold text-slate-700">
-                Nhập Mã số Sinh viên 2 (MSSV) <span className="text-rose-500">*</span>
+            {/* Topic Info Card */}
+            <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-xs space-y-2">
+              <div className="font-bold text-slate-900 text-sm leading-snug">{selectedTopicForRegistration.title}</div>
+              <div className="grid grid-cols-2 gap-2 text-slate-700 pt-1 border-t border-blue-200/50">
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Giảng viên hướng dẫn:</span>
+                  <strong className="text-slate-900">
+                    {formatLecturerDisplay(
+                      selectedTopicForRegistration.supervisor?.academicTitle || selectedTopicForRegistration.supervisorId?.academicTitle,
+                      selectedTopicForRegistration.supervisor?.fullName || selectedTopicForRegistration.supervisorId?.userId?.fullName
+                    )}
+                  </strong>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[10px]">Mã GV:</span>
+                  <strong className="font-mono text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-200 inline-block mt-0.5">
+                    {selectedTopicForRegistration.supervisor?.lecturerCode || selectedTopicForRegistration.supervisorId?.lecturerCode || '—'}
+                  </strong>
+                </div>
+              </div>
+              <div className="text-blue-800 text-[11px] font-semibold">
+                Chỉ tiêu: {selectedTopicForRegistration.currentGroups || selectedTopicForRegistration.registeredGroups?.length || 0} / {selectedTopicForRegistration.maxGroups} nhóm
+              </div>
+            </div>
+
+            {/* Member count choice */}
+            <div className="space-y-3">
+              <label className="block text-xs font-bold text-slate-800">
+                Số lượng sinh viên tham gia nhóm:
               </label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={sv2Code}
-                  onChange={(e) => {
-                    setSv2Code(e.target.value);
-                    setSv2Error('');
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleLookupSv2();
-                    }
-                  }}
-                  placeholder="VD: 22635272..."
-                  className="flex-1 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-900 uppercase focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-                />
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={handleLookupSv2}
-                  disabled={loadingSv2 || !sv2Code.trim()}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+                  onClick={() => {
+                    setTopicStudentCount(1);
+                    setTopicStudent2(null);
+                    setTopicSv2Code('');
+                    setTopicSv2Error('');
+                    setTopicSearchResults([]);
+                  }}
+                  className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                    topicStudentCount === 1
+                      ? 'bg-blue-50 border-[#0B4DB7] text-[#0B4DB7]'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
                 >
-                  <Search className="w-3.5 h-3.5" />
-                  <span>{loadingSv2 ? 'Đang tìm...' : 'Tra cứu'}</span>
+                  <User className="w-4 h-4" />
+                  <span>1 Sinh viên (Cá nhân)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTopicStudentCount(2)}
+                  className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
+                    topicStudentCount === 2
+                      ? 'bg-blue-50 border-[#0B4DB7] text-[#0B4DB7]'
+                      : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                  <span>2 Sinh viên (Nhóm)</span>
                 </button>
               </div>
-
-              {sv2Error && (
-                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
-                  <span>{sv2Error}</span>
-                </div>
-              )}
             </div>
 
-            {/* SV2 Details Preview */}
-            {student2 ? (
-              <div className="p-3.5 rounded-2xl bg-violet-50/60 border border-violet-200/80 text-xs grid grid-cols-2 gap-2 mt-2">
-                <div className="col-span-2 flex items-center justify-between pb-1.5 border-b border-violet-200">
-                  <span className="font-bold text-violet-900 flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    {student2.fullName}
-                  </span>
-                  <span className="font-mono text-violet-700 font-bold">{student2.studentCode}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Lớp:</span>
-                  <span className="font-mono font-medium">{student2.className}</span>
-                </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">GPA / Tín chỉ:</span>
-                  <span className="font-mono font-medium">{student2.gpa} / {student2.creditsAccumulated} TC</span>
-                </div>
-                <div className="col-span-2">
-                  <span className="text-slate-400 block text-[10px]">Email:</span>
-                  <span className="truncate block">{student2.email}</span>
-                </div>
+            {/* Student 1 Info */}
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
+              <span className="text-[10px] text-slate-400 block uppercase font-bold">Sinh viên 1 (Bạn):</span>
+              <div className="font-bold text-slate-900 mt-0.5 flex items-center gap-2 flex-wrap">
+                <span>{student1?.userId?.fullName}</span>
+                <span className="font-mono text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded text-[11px]">
+                  ({student1?.studentCode})
+                </span>
+                <span className="text-slate-500 font-normal text-[11px]">
+                  • Lớp: {student1?.className} • Ngành: {student1?.major || 'Công nghệ Thông tin'}
+                </span>
               </div>
-            ) : (
-              <div className="p-4 text-center text-slate-400 text-xs italic bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                Nhập MSSV và nhấn nút "Tra cứu" để tự động điền thông tin Sinh viên 2.
+            </div>
+
+            {/* Student 2 Selection (if 2 students) */}
+            {topicStudentCount === 2 && (
+              <div className="space-y-2">
+                <label className="block text-xs font-bold text-slate-700">
+                  Tìm kiếm & Chọn Sinh viên 2 (Nhập MSSV hoặc Họ tên) <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={topicSv2Code}
+                    onChange={(e) => handleSearchTopicStudents(e.target.value)}
+                    placeholder="Gõ MSSV (VD: 22635201...) hoặc họ tên để tìm kiếm..."
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition"
+                  />
+                  {searchingStudents && (
+                    <span className="absolute right-3 top-3 text-[11px] text-blue-600 font-medium animate-pulse">
+                      Đang tìm...
+                    </span>
+                  )}
+                </div>
+
+                {/* Live Database Search Results */}
+                {topicSearchResults.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 p-2 bg-slate-50 border border-slate-200 rounded-2xl shadow-inner">
+                    <div className="text-[10px] font-bold text-slate-400 uppercase px-1">
+                      Kết quả tìm kiếm ({topicSearchResults.length} sinh viên):
+                    </div>
+                    {topicSearchResults.map((st) => {
+                      const isSelected = topicStudent2?._id === st._id;
+                      return (
+                        <div
+                          key={st._id}
+                          onClick={() => !st.isInActiveThesis && handleSelectPartner(st)}
+                          className={`p-2.5 rounded-xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2 transition ${
+                            st.isInActiveThesis
+                              ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
+                              : isSelected
+                              ? 'bg-blue-50 border-[#0B4DB7] text-[#0B4DB7] shadow-xs cursor-pointer'
+                              : 'bg-white border-slate-200 hover:bg-blue-50/40 hover:border-blue-200 cursor-pointer text-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-start gap-2.5 min-w-0">
+                            <input
+                              type="radio"
+                              name="selectedPartner"
+                              checked={isSelected}
+                              disabled={st.isInActiveThesis}
+                              onChange={() => handleSelectPartner(st)}
+                              className="accent-[#0B4DB7] mt-1 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <strong className="text-slate-900 font-bold text-xs">{st.fullName}</strong>
+                                <span className="text-[10px] font-mono font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                  MSSV: {st.studentCode}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2 flex-wrap">
+                                <span>📅 Ngày sinh: <strong>{formatDOB(st.dateOfBirth)}</strong></span>
+                                <span>•</span>
+                                <span>🎓 Ngành: <strong>{st.major || 'Công nghệ Thông tin'}</strong></span>
+                                <span>•</span>
+                                <span>Lớp: {st.className}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="self-end sm:self-center shrink-0">
+                            {st.isInActiveThesis ? (
+                              <span className="text-[10px] font-semibold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded">
+                                Đã có đề tài
+                              </span>
+                            ) : isSelected ? (
+                              <span className="text-[10px] font-bold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                <Check className="w-3 h-3" /> Đã chọn
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                                Chọn
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {topicSv2Error && (
+                  <div className="text-[11px] text-rose-600 bg-rose-50 p-2.5 rounded-xl border border-rose-200">
+                    {topicSv2Error}
+                  </div>
+                )}
+
+                {/* Selected Partner Card */}
+                {topicStudent2 && (
+                  <div className="p-3.5 bg-emerald-50/80 border border-emerald-200 rounded-2xl text-xs text-emerald-950 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] text-emerald-800 font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        THÀNH VIÊN ĐÃ CHỌN (SINH VIÊN 2)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTopicStudent2(null);
+                          setTopicSv2Code('');
+                          setTopicSearchResults([]);
+                        }}
+                        className="text-xs text-rose-600 font-bold hover:underline cursor-pointer"
+                      >
+                        Bỏ chọn
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-emerald-200/60">
+                      <div>
+                        <span className="text-[10px] text-emerald-700 block">Họ và tên:</span>
+                        <strong className="text-slate-900 text-xs">{topicStudent2.fullName}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-emerald-700 block">Mã số SV (MSSV):</span>
+                        <strong className="font-mono text-blue-700 text-xs">{topicStudent2.studentCode}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-emerald-700 block">Ngày tháng năm sinh:</span>
+                        <strong className="text-slate-800 text-xs">{formatDOB(topicStudent2.dateOfBirth)}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-emerald-700 block">Ngành học:</span>
+                        <strong className="text-slate-800 text-xs">{topicStudent2.major || 'Công nghệ Thông tin'}</strong>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-emerald-700 block">Lớp:</span>
+                        <strong className="text-slate-800 text-xs">{topicStudent2.className}</strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
-          </div>
-        ) : (
-          <div className="p-5 rounded-3xl bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-xs flex flex-col items-center justify-center text-center">
-            <User className="w-8 h-8 text-slate-300 mb-2" />
-            <div className="font-semibold text-slate-600">Khóa luận cá nhân (1 Sinh viên)</div>
-            <div className="text-[11px] mt-0.5">Nếu muốn làm cùng bạn, hãy chuyển sang tùy chọn "Khóa luận nhóm (2 Sinh viên)".</div>
-          </div>
-        )}
-      </div>
 
-      {/* Thesis Information Form */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-        <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
-          <BookOpen className="w-4 h-4 text-indigo-600" />
-          2. Thông tin Đề tài & Giảng viên Hướng dẫn
-        </div>
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setRegisterTopicModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
 
-        {/* Thesis Title */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Tên đề tài Khóa luận tốt nghiệp <span className="text-rose-500">*</span>
-          </label>
-          <input
-            type="text"
-            value={thesisTitle}
-            onChange={(e) => setThesisTitle(e.target.value)}
-            placeholder="VD: Xây dựng hệ thống quản lý chuỗi cung ứng ứng dụng Blockchain và AI..."
-            className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-          />
-        </div>
-
-        {/* Supervisor Dropdown */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Giảng viên hướng dẫn (GVHD) <span className="text-rose-500">*</span>
-          </label>
-          {loadingSupervisors ? (
-            <div className="w-full h-10 bg-slate-100 animate-pulse rounded-xl" />
-          ) : (
-            <select
-              value={supervisorId}
-              onChange={(e) => setSupervisorId(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-            >
-              <option value="">-- Chọn Giảng viên hướng dẫn --</option>
-              {supervisors.map((s) => (
-                <option
-                  key={s._id}
-                  value={s._id}
-                  disabled={!s.isAvailable}
-                >
-                  {s.displayText} {!s.isAvailable ? '(Đã hết chỉ tiêu)' : ''}
-                </option>
-              ))}
-            </select>
-          )}
-          {selectedSupervisor && (
-            <div className="mt-1.5 text-[11px] text-indigo-600">
-              Đang chọn: <strong>{selectedSupervisor.academicTitle} {selectedSupervisor.fullName}</strong> • Email: {selectedSupervisor.email}
-            </div>
-          )}
-        </div>
-
-        {/* Description & Objectives */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Mô tả tóm tắt nội dung đề tài
-            </label>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Nêu bối cảnh, lý do chọn đề tài, phạm vi và công nghệ dự kiến sử dụng..."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-              Mục tiêu & Sản phẩm dự kiến đạt được
-            </label>
-            <textarea
-              rows={4}
-              value={objectives}
-              onChange={(e) => setObjectives(e.target.value)}
-              placeholder="Các tính năng hoàn thành, sản phẩm web/mobile, tài liệu phân tích kỹ thuật..."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
-            />
-          </div>
-        </div>
-
-        {/* Action Button */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={() => navigate('/student/thesis')}
-            className="px-5 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
-          >
-            Hủy
-          </button>
-
-          <button
-            type="button"
-            disabled={existingThesis || submitting}
-            onClick={handleOpenPreview}
-            className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 transition disabled:opacity-50"
-          >
-            <Eye className="w-4 h-4" />
-            <span>Xem trước đơn đăng ký</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Registration Preview & Confirmation Modal */}
-      <Modal
-        isOpen={previewModalOpen}
-        onClose={() => setPreviewModalOpen(false)}
-        title="Xác nhận Đăng ký Đề tài Khóa Luận Tốt Nghiệp"
-        maxWidth="max-w-2xl"
-      >
-        <div className="space-y-4 text-xs">
-          <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 text-indigo-950">
-            <div className="font-bold text-sm">{thesisTitle}</div>
-            <div className="text-[11px] text-slate-600 mt-1">
-              Hình thức: <strong>{studentCount === 1 ? 'Khóa luận cá nhân (1 SV)' : 'Khóa luận nhóm (2 SV)'}</strong> • Trạng thái khởi tạo: <span className="font-bold text-indigo-700">PENDING_TBM_APPROVAL</span>
+              <button
+                type="button"
+                disabled={registeringTopic || (topicStudentCount === 2 && !topicStudent2)}
+                onClick={handleConfirmTopicRegistration}
+                className="px-5 py-2.5 text-xs font-bold text-white bg-[#0B4DB7] hover:bg-blue-700 disabled:opacity-50 rounded-xl transition cursor-pointer shadow-sm"
+              >
+                {registeringTopic ? 'Đang đăng ký...' : 'Xác nhận đăng ký'}
+              </button>
             </div>
           </div>
-
-          {/* Members Table */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-            <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">
-              Danh sách thành viên đăng ký:
-            </div>
-            <div className="space-y-1.5">
-              <div className="flex justify-between p-2 rounded-xl bg-white border border-slate-200">
-                <div>
-                  <strong>1. {student1?.userId?.fullName}</strong> (MSSV: {student1?.studentCode})
-                  <div className="text-[11px] text-slate-400">{student1?.className} • GPA: {student1?.gpa}</div>
-                </div>
-                <span className="text-[10px] font-bold text-indigo-700 self-center">Trưởng nhóm</span>
-              </div>
-
-              {studentCount === 2 && student2 && (
-                <div className="flex justify-between p-2 rounded-xl bg-white border border-slate-200">
-                  <div>
-                    <strong>2. {student2.fullName}</strong> (MSSV: {student2.studentCode})
-                    <div className="text-[11px] text-slate-400">{student2.className} • GPA: {student2.gpa}</div>
-                  </div>
-                  <span className="text-[10px] font-bold text-violet-700 self-center">Thành viên</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Supervisor Info */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200">
-            <div className="text-[11px] text-slate-400">Giảng viên hướng dẫn:</div>
-            <div className="font-bold text-slate-900 mt-0.5">
-              {selectedSupervisor?.academicTitle} {selectedSupervisor?.fullName} ({selectedSupervisor?.specialization})
-            </div>
-            <div className="text-[11px] text-slate-600">{selectedSupervisor?.email}</div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => setPreviewModalOpen(false)}
-              className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
-            >
-              Chỉnh sửa lại
-            </button>
-
-            <button
-              type="button"
-              disabled={submitting}
-              onClick={handleSubmit}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 transition disabled:opacity-50"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>{submitting ? 'Đang nộp...' : 'Xác nhận nộp đơn đăng ký'}</span>
-            </button>
-          </div>
         </div>
-      </Modal>
+      )}
     </div>
   );
 };

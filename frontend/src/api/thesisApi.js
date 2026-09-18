@@ -14,6 +14,10 @@ export const thesisApi = {
   lookupStudent: (studentCode) =>
     axiosClient.get(`/theses/lookup-student/${studentCode}`),
 
+  // Search students for group partner from database
+  searchStudents: (params) =>
+    axiosClient.get('/theses/search-students', { params }),
+
   // Get thesis by student ID
   getByStudentId: (studentId) =>
     axiosClient.get(`/theses/student/${studentId}`),
@@ -40,6 +44,12 @@ export const thesisApi = {
 
   // Lecturer grades thesis based on role (Supervisor / Reviewer 1 / Reviewer 2)
   gradeThesis: (id, data) => axiosClient.patch(`/theses/${id}/grade`, data),
+
+  // Lecturer toggles lock for single thesis score
+  toggleScoreLock: (id, data) => axiosClient.patch(`/theses/${id}/score-lock`, data),
+
+  // Lecturer toggles lock for all assigned theses scores
+  toggleAllScoresLock: (data) => axiosClient.patch('/theses/lecturer/score-lock-all', data),
 
   // Lecturer accepts / approves supervision of thesis
   supervisorAccept: (id) => axiosClient.patch(`/theses/${id}/supervisor-accept`),
@@ -69,6 +79,31 @@ export const thesisApi = {
   // TBM assigns Reviewer 1 & Reviewer 2
   assignReviewers: (id, data) =>
     axiosClient.patch(`/theses/${id}/assign-reviewers`, data),
+
+  // ==========================================
+  // KLTN Topic Management Endpoints (GV -> TBM -> SV FIFO)
+  // ==========================================
+
+  // GV: Batch create KLTN topics
+  batchCreateTopics: (data) => axiosClient.post('/theses/topics/batch', data),
+
+  // GV: Get own created KLTN topics
+  getMyCreatedTopics: (params) => axiosClient.get('/theses/topics/my-created', { params }),
+
+  // TBM: Get all KLTN topics for review
+  getTopicsForTbm: (params) => axiosClient.get('/theses/topics/tbm', { params }),
+
+  // TBM: Approve a topic
+  approveTopic: (id) => axiosClient.patch(`/theses/topics/${id}/approve`),
+
+  // TBM: Reject a topic
+  rejectTopic: (id, data) => axiosClient.patch(`/theses/topics/${id}/reject`, data),
+
+  // SV: Get approved KLTN topics
+  getApprovedTopics: (params) => axiosClient.get('/theses/topics/approved', { params }),
+
+  // SV: Register for a topic (FIFO)
+  registerTopic: (id, data) => axiosClient.post(`/theses/topics/${id}/register`, data),
 
   // TBM & ADMIN: Export theses to Excel
   exportExcel: (params) =>

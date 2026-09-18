@@ -100,10 +100,10 @@ const LecturerReportPage = () => {
             <BookOpen className="w-4 h-4" /> Đánh Giá & Chấm Điểm
           </div>
           <h2 className="text-xl font-bold text-slate-900 mt-1">
-            Báo Cáo Thực Tập Sinh Viên Hướng Dẫn
+            Nhật Ký Thực Tập Sinh Viên Hướng Dẫn
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Xem xét tiến độ, chấm điểm và phản hồi các báo cáo định kỳ của sinh viên được phân công
+            Xem xét tiến độ, chấm điểm và phản hồi nhật ký thực tập hàng tuần của sinh viên được phân công
           </p>
         </div>
 
@@ -165,8 +165,8 @@ const LecturerReportPage = () => {
           </div>
         ) : reports.length === 0 ? (
           <EmptyState
-            title="Chưa có báo cáo nào"
-            description="Hiện không tìm thấy báo cáo nào của sinh viên phù hợp với bộ lọc hoặc sinh viên chưa nộp báo cáo."
+            title="Chưa có nhật ký nào"
+            description="Hiện không tìm thấy nhật ký nào của sinh viên phù hợp với bộ lọc hoặc sinh viên chưa nộp/chưa hoàn tất xác nhận."
           />
         ) : (
           <div className="overflow-x-auto">
@@ -174,9 +174,9 @@ const LecturerReportPage = () => {
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 px-4 pl-6">Sinh viên</th>
-                  <th className="py-3.5 px-4">Loại báo cáo</th>
-                  <th className="py-3.5 px-4">Tiêu đề báo cáo</th>
-                  <th className="py-3.5 px-4">Ngày nộp</th>
+                  <th className="py-3.5 px-4">Loại / Tuần</th>
+                  <th className="py-3.5 px-4">Tiêu đề nhật ký</th>
+                  <th className="py-3.5 px-4">Thời gian nộp</th>
                   <th className="py-3.5 px-4">Điểm đã chấm</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
                   <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
@@ -196,10 +196,15 @@ const LecturerReportPage = () => {
                     <td className="py-3.5 px-4 pl-6">
                       <div className="font-semibold text-slate-900 text-xs">
                         {report.studentId?.userId?.fullName}
+                        <span className="text-[11px] text-violet-700 font-mono ml-1">
+                          ({report.studentId?.studentCode})
+                        </span>
                       </div>
-                      <div className="text-[11px] text-violet-700 font-mono">
-                        MSSV: {report.studentId?.studentCode}
-                      </div>
+                      {report.secondStudentId && (
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          + SV2: {report.secondStudentId?.userId?.fullName} ({report.secondStudentId?.studentCode})
+                        </div>
+                      )}
                     </td>
 
                     {/* Report Type */}
@@ -233,7 +238,12 @@ const LecturerReportPage = () => {
 
                     {/* Submitted At */}
                     <td className="py-3.5 px-4 text-xs text-slate-600">
-                      {formatDate(report.submittedAt || report.createdAt)}
+                      <div>{formatDate(report.submittedAt || report.createdAt)}</div>
+                      {report.student2ConfirmedAt && (
+                        <div className="text-[10px] text-emerald-600">
+                          SV2 duyệt: {formatDate(report.student2ConfirmedAt)}
+                        </div>
+                      )}
                     </td>
 
                     {/* Score */}

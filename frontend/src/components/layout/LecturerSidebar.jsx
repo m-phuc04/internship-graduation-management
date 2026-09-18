@@ -17,6 +17,7 @@ import {
   Shield,
   Sliders,
   Calendar,
+  Newspaper,
 } from 'lucide-react';
 
 const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleModal, unreadCount = 0 }) => {
@@ -46,11 +47,28 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
   // Helper to check active state with query string precision
   const isItemActive = (path, requiredSearch = '') => {
     if (location.pathname !== path) return false;
+    if (requiredSearch === '?tab=topics') {
+      return location.search.includes('tab=topics');
+    }
     if (requiredSearch === '?tab=review') {
       return (
         location.search.includes('tab=review') ||
         location.search.includes('tab=reviewer1') ||
         location.search.includes('tab=reviewer2')
+      );
+    }
+    if (requiredSearch === '?view=evaluation') {
+      return location.search.includes('view=evaluation');
+    }
+    if (requiredSearch === '?tab=supervisor') {
+      return (
+        location.search.includes('tab=supervisor') ||
+        (!location.search.includes('tab=topics') &&
+          !location.search.includes('tab=review') &&
+          !location.search.includes('tab=reviewer1') &&
+          !location.search.includes('tab=reviewer2') &&
+          !location.search.includes('view=evaluation') &&
+          !location.search.includes('view=progress'))
       );
     }
     if (requiredSearch) {
@@ -60,6 +78,7 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
       !location.search ||
       (location.search !== '?view=evaluation' &&
         location.search !== '?view=progress' &&
+        !location.search.includes('tab=topics') &&
         !location.search.includes('tab=review') &&
         !location.search.includes('tab=reviewer1') &&
         !location.search.includes('tab=reviewer2'))
@@ -170,27 +189,17 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
                 <span>Sinh viên thực tập</span>
               </Link>
 
-              {/* Item 2: Theo dõi tiến độ */}
-              <Link
-                to="/lecturer/reports?view=progress"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/lecturer/reports', '?view=progress'))}
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-                <span>Theo dõi tiến độ</span>
-              </Link>
-
-              {/* Item 3: Báo cáo thực tập */}
+              {/* Item 2: Nhật ký thực tập */}
               <Link
                 to="/lecturer/reports"
                 onClick={onCloseMobile}
                 className={getSubLinkClass(isItemActive('/lecturer/reports'))}
               >
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                <span>Báo cáo thực tập</span>
+                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                <span>Nhật ký thực tập</span>
               </Link>
 
-              {/* Item 4: Đánh giá thực tập */}
+              {/* Item 3: Đánh giá thực tập */}
               <Link
                 to="/lecturer/internships?view=evaluation"
                 onClick={onCloseMobile}
@@ -223,37 +232,38 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
 
           {thesisOpen && (
             <div className="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-indigo-100 ml-5 animate-in slide-in-from-top-1 duration-150">
-              {/* Item 1: Sinh viên hướng dẫn */}
+              {/* Item 1: Đề xuất đề tài KLTN */}
               <Link
-                to="/lecturer/theses"
+                to="/lecturer/theses?tab=topics"
                 onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/lecturer/theses'))}
+                className={getSubLinkClass(isItemActive('/lecturer/theses', '?tab=topics'))}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                <span>Đề xuất đề tài KLTN</span>
+              </Link>
+
+              {/* Item 2: Sinh viên hướng dẫn */}
+              <Link
+                to="/lecturer/theses?tab=supervisor"
+                onClick={onCloseMobile}
+                className={getSubLinkClass(isItemActive('/lecturer/theses', '?tab=supervisor'))}
               >
                 <Users className="w-3.5 h-3.5 text-slate-400" />
                 <span>Sinh viên hướng dẫn</span>
               </Link>
 
-              {/* Item 2: Theo dõi tiến độ KLTN */}
-              <Link
-                to="/lecturer/theses/progress?view=progress"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/lecturer/theses/progress', '?view=progress'))}
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-                <span>Theo dõi tiến độ KLTN</span>
-              </Link>
-
-              {/* Item 3: Báo cáo KLTN */}
+              {/* Item 3: Nhật ký khóa luận */}
               <Link
                 to="/lecturer/theses/progress"
                 onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/lecturer/theses/progress'))}
+                className={getSubLinkClass(location.pathname === '/lecturer/theses/progress')}
               >
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                <span>Báo cáo KLTN</span>
+                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                <span>Nhật ký khóa luận</span>
               </Link>
 
-              {/* Item 4: Đánh giá khóa luận */}
+
+              {/* Item 5: Đánh giá khóa luận */}
               <Link
                 to="/lecturer/theses?view=evaluation"
                 onClick={onCloseMobile}
@@ -263,7 +273,7 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
                 <span>Đánh giá khóa luận</span>
               </Link>
 
-              {/* Item 5: Phản biện khóa luận */}
+              {/* Item 6: Phản biện khóa luận */}
               <Link
                 to="/lecturer/theses?tab=review"
                 onClick={onCloseMobile}
@@ -282,6 +292,19 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
             Tiện ích cá nhân
           </div>
 
+
+          <Link
+            to="/lecturer/news"
+            onClick={onCloseMobile}
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+              location.pathname === '/lecturer/news'
+                ? 'bg-violet-600 text-white shadow-sm shadow-violet-600/30 font-bold'
+                : 'text-slate-600 hover:text-violet-600 hover:bg-violet-50/60'
+            }`}
+          >
+            <Newspaper className="w-4 h-4 text-violet-500" />
+            <span>Quản lý Tin tức</span>
+          </Link>
 
           <button
             type="button"

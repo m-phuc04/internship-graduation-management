@@ -40,6 +40,7 @@ import LecturerReportPage from './pages/lecturer/LecturerReportPage';
 import LecturerThesesPage from './pages/lecturer/LecturerThesesPage';
 import LecturerThesisProgressPage from './pages/lecturer/LecturerThesisProgressPage';
 import LecturerDashboard from './pages/lecturer/LecturerDashboard';
+import LecturerNewsManagement from './pages/lecturer/LecturerNewsManagement';
 import CompanyEvaluationPage from './pages/company/CompanyEvaluationPage';
 import CompanyDashboard from './pages/company/CompanyDashboard';
 import ProfilePage from './pages/ProfilePage';
@@ -109,7 +110,7 @@ function App() {
                   <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login" element={<Navigate to="/" replace />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
                 <Route path="/company-evaluation/:token" element={<CompanyPublicEvaluationPage />} />
 
@@ -141,11 +142,11 @@ function App() {
                   }
                 />
 
-              {/* TBM & ADMIN Master Data & Management Routes (Protected with TBM and ADMIN roles) */}
+              {/* TBM Management Routes (Protected with TBM role) */}
               <Route
                 path="/tbm"
                 element={
-                  <ProtectedRoute allowedRoles={['TBM', 'ADMIN']}>
+                  <ProtectedRoute allowedRoles={['TBM']}>
                     <TbmLayout />
                   </ProtectedRoute>
                 }
@@ -153,7 +154,6 @@ function App() {
                 <Route index element={<Navigate to="/tbm/dashboard" replace />} />
                 <Route path="dashboard" element={<TbmDashboard />} />
                 <Route path="academic-terms" element={<AcademicTermManagement />} />
-                <Route path="academic-terms" element={<Navigate to="/tbm/dashboard" replace />} />
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="lecturers" element={<LecturerManagement />} />
                 <Route path="companies" element={<CompanyManagement />} />
@@ -162,15 +162,6 @@ function App() {
                 <Route path="theses" element={<TbmThesisManagement />} />
                 <Route path="thesis-evaluations" element={<TbmThesisEvaluationManagement />} />
                 <Route path="profile" element={<ProfilePage />} />
-                {/* Permissions: Only ADMIN allowed */}
-                <Route
-                  path="permissions"
-                  element={
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
-                      <AdminPermissionsPage />
-                    </ProtectedRoute>
-                  }
-                />
               </Route>
 
             {/* Student Internship & Reports Routes (Protected with STUDENT role) */}
@@ -208,6 +199,7 @@ function App() {
               <Route path="reports" element={<LecturerReportPage />} />
               <Route path="theses" element={<LecturerThesesPage />} />
               <Route path="theses/progress" element={<LecturerThesisProgressPage />} />
+              <Route path="news" element={<LecturerNewsManagement />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 
@@ -238,15 +230,10 @@ function App() {
               <Route index element={<Navigate to="/admin/permissions" replace />} />
               <Route path="permissions" element={<AdminPermissionsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
-              <Route path="dashboard" element={<TbmDashboard />} />
               <Route path="academic-terms" element={<AcademicTermManagement />} />
               <Route path="students" element={<StudentManagement />} />
               <Route path="lecturers" element={<LecturerManagement />} />
               <Route path="companies" element={<CompanyManagement />} />
-              <Route path="internships" element={<InternshipManagement />} />
-              <Route path="evaluations" element={<TbmEvaluationManagement />} />
-              <Route path="theses" element={<TbmThesisManagement />} />
-              <Route path="thesis-evaluations" element={<TbmThesisEvaluationManagement />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

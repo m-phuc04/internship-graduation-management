@@ -81,6 +81,19 @@ const MyThesisPage = () => {
     });
   };
 
+  const formatLecturerDisplay = (title, name) => {
+    if (!name) return '—';
+    const trimmedName = name.trim();
+    if (!title) return trimmedName;
+    const trimmedTitle = title.trim();
+    if (trimmedName.toLowerCase().startsWith(trimmedTitle.toLowerCase())) {
+      return trimmedName;
+    }
+    return `${trimmedTitle} ${trimmedName}`;
+  };
+
+  const isPendingApproval = ['PENDING_SUPERVISOR_APPROVAL', 'PENDING_TBM_APPROVAL', 'PENDING_SUPERVISOR_ACCEPTANCE'].includes(thesis?.status);
+
   // Calculations for Thesis Evaluation
   const supervisorScore =
     thesis?.scores?.supervisorScore !== null && thesis?.scores?.supervisorScore !== undefined
@@ -195,6 +208,28 @@ const MyThesisPage = () => {
         </div>
       </div>
 
+      {/* Pending Approval Notice Banner */}
+      {thesis && isPendingApproval && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-3 shadow-2xs">
+          <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+          <div>
+            <div className="font-bold text-sm text-amber-900">
+              Đang chờ Giảng viên hướng dẫn duyệt đăng ký
+            </div>
+            <div className="mt-0.5 leading-relaxed text-slate-700">
+              Đề tài <strong>"{thesis.thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
+              <strong>
+                {formatLecturerDisplay(
+                  thesis.supervisorId?.academicTitle,
+                  thesis.supervisorId?.userId?.fullName,
+                )}
+              </strong>{' '}
+              xác nhận tiếp nhận hướng dẫn. Các chức năng nộp báo cáo tiến độ và chấm điểm sẽ mở sau khi Giảng viên duyệt.
+            </div>
+          </div>
+        </div>
+      )}
+
       {!thesis ? (
         <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs">
           <EmptyState
@@ -272,8 +307,17 @@ const MyThesisPage = () => {
                 </div>
               </div>
 
-              {/* 3 Component Score Columns + Final Score */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+              {isPendingApproval ? (
+                <div className="p-6 text-center bg-slate-50/80 rounded-2xl border border-dashed border-slate-200 text-slate-500 text-xs space-y-1.5">
+                  <Clock className="w-7 h-7 text-amber-500 mx-auto" />
+                  <div className="font-bold text-slate-800 text-sm">Chưa bắt đầu giai đoạn chấm điểm</div>
+                  <p className="max-w-md mx-auto text-slate-600">
+                    Đề tài đang ở trạng thái <strong>Chờ GVHD duyệt</strong>. Bảng điểm và kết quả đánh giá sẽ mở sau khi GVHD duyệt tiếp nhận và đến các mốc báo cáo, phản biện.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
                 {/* 1. Điểm GVHD (40%) */}
                 <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-100 space-y-1 text-center relative flex flex-col justify-between">
                   <div>
@@ -573,6 +617,8 @@ const MyThesisPage = () => {
                   </div>
                 </div>
               </div>
+            </>
+          )}
             </div>
           </div>
 
@@ -597,8 +643,7 @@ const MyThesisPage = () => {
                   <div>
                     <span className="text-slate-400 block text-[11px]">Họ và tên:</span>
                     <strong className="text-slate-900 text-sm">
-                      {thesis.supervisorId.academicTitle ? `${thesis.supervisorId.academicTitle} ` : ''}
-                      {thesis.supervisorId.userId?.fullName}
+                      {formatLecturerDisplay(thesis.supervisorId.academicTitle, thesis.supervisorId.userId?.fullName)}
                     </strong>
                   </div>
                   <div>

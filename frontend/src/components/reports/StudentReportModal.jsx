@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Modal from '../common/Modal';
 import reportApi from '../../api/reportApi';
 import { useToast } from '../../context/ToastContext';
 import {
-  FileText,
+  BookOpen,
   Send,
   Save,
   AlertCircle,
@@ -12,23 +12,64 @@ import {
   CheckCircle2,
   X,
   FileCheck,
+  Calendar,
+  Users,
 } from 'lucide-react';
 
-const MAX_FILE_SIZE = 15 * 1024 * 1024; // 15MB
-const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx'];
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar'];
 
-const StudentReportModal = ({ isOpen, onClose, internship, onCreated }) => {
-  const [reportType, setReportType] = useState('WEEKLY');
+const StudentReportModal = ({
+  isOpen,
+  onClose,
+  internship,
+  targetWeek,
+  editingReport,
+  onCreated,
+}) => {
   const [weekNumber, setWeekNumber] = useState(1);
-  const [monthNumber, setMonthNumber] = useState(1);
+  const [weekStartDate, setWeekStartDate] = useState('');
+  const [weekEndDate, setWeekEndDate] = useState('');
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
+  const [existingFile, setExistingFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   const fileInputRef = useRef(null);
   const { showToast } = useToast();
+
+  useEffect(() => {
+    if (isOpen) {
+      if (editingReport) {
+        setWeekNumber(editingReport.weekNumber || 1);
+        setWeekStartDate(editingReport.weekStartDate ? new Date(editingReport.weekStartDate).toISOString().split('T')[0] : '');
+        setWeekEndDate(editingReport.weekEndDate ? new Date(editingReport.weekEndDate).toISOString().split('T')[0] : '');
+        setTitle(editingReport.title || `Nhật ký tuần ${editingReport.weekNumber || 1}`);
+        setContent(editingReport.content || '');
+        setExistingFile(editingReport.file || null);
+        setSelectedFile(null);
+      } else if (targetWeek) {
+        setWeekNumber(targetWeek.weekNumber);
+        setWeekStartDate(targetWeek.startDate ? new Date(targetWeek.startDate).toISOString().split('T')[0] : '');
+        setWeekEndDate(targetWeek.endDate ? new Date(targetWeek.endDate).toISOString().split('T')[0] : '');
+        setTitle(`Nhật ký tuần ${targetWeek.weekNumber}`);
+        setContent('');
+        setExistingFile(null);
+        setSelectedFile(null);
+      } else {
+        setWeekNumber(1);
+        setWeekStartDate('');
+        setWeekEndDate('');
+        setTitle('Nhật ký tuần 1');
+        setContent('');
+        setExistingFile(null);
+        setSelectedFile(null);
+      }
+      setError('');
+    }
+  }, [isOpen, targetWeek, editingReport]);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -37,7 +78,7 @@ const StudentReportModal = ({ isOpen, onClose, internship, onCreated }) => {
     // Check Extension
     const ext = '.' + file.name.split('.').pop().toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
-      setError('Định dạng file không được hỗ trợ. Vui lòng chọn .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx');
+      setError('Định dạng file không được hỗ trợ. Vui lòng chọn .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .zip, .rar');
       showToast('Định dạng file không được hỗ trợ.', 'error');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
@@ -45,7 +86,7 @@ const StudentReportModal = ({ isOpen, onClose, internship, onCreated }) => {
 
     // Check Size
     if (file.size > MAX_FILE_SIZE) {
-      setError('File vượt quá dung lượng cho phép (tối đa 15MB).');
+      setError('File vượt quá dung lượng cho phép (tối đa 20MB).');
       showToast('File vượt quá dung lượng cho phép.', 'error');
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
@@ -57,6 +98,7 @@ const StudentReportModal = ({ isOpen, onClose, internship, onCreated }) => {
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    setExistingFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -70,28 +112,24 @@ const StudentReportModal = ({ isOpen, onClose, internship, onCreated }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const formatDateDisplay = (dateStr) => {
+    if (!dateStr) return '';
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
   const handleSubmit = async (targetStatus) => {
     setError('');
 
     if (!title.trim()) {
-      setError('Vui lòng nhập tiêu đề báo cáo');
+      setError('Vui lòng nhập tiêu đề nhật ký');
       return;
     }
 
-    if (reportType === 'WEEKLY' && (!weekNumber || Number(weekNumber) < 1 || Number(weekNumber) > 52)) {
-      setError('Vui lòng nhập số tuần hợp lệ (từ 1 đến 52)');
-      return;
-    }
-
-    if (reportType === 'MONTHLY' && (!monthNumber || Number(monthNumber) < 1 || Number(monthNumber) > 12)) {
-      setError('Vui lòng chọn số tháng hợp lệ (từ 1 đến 12)');
-      return;
-    }
-
-    // Must have a file when submitting
-    if (targetStatus === 'SUBMITTED' && !selectedFile) {
-      setError('Vui lòng chọn file báo cáo.');
-      showToast('Vui lòng chọn file báo cáo.', 'error');
+    if (!content.trim() && !selectedFile && !existingFile) {
+      setError('Vui lòng nhập nội dung nhật ký hoặc tải lên file đính kèm.');
+      showToast('Vui lòng nhập nội dung hoặc đính kèm file báo cáo.', 'error');
       return;
     }
 
@@ -99,281 +137,226 @@ const StudentReportModal = ({ isOpen, onClose, internship, onCreated }) => {
 
     try {
       const formData = new FormData();
-      formData.append('internshipId', internship._id);
-      formData.append('reportType', reportType);
+      formData.append('reportType', 'WEEKLY');
+      formData.append('weekNumber', String(weekNumber));
+      if (weekStartDate) formData.append('weekStartDate', weekStartDate);
+      if (weekEndDate) formData.append('weekEndDate', weekEndDate);
       formData.append('title', title.trim());
+      formData.append('content', content.trim());
       formData.append('status', targetStatus);
-
-      if (reportType === 'WEEKLY') {
-        formData.append('weekNumber', Number(weekNumber));
-      } else if (reportType === 'MONTHLY') {
-        formData.append('monthNumber', Number(monthNumber));
-      }
-
-      if (content.trim()) {
-        formData.append('content', content.trim());
-      }
 
       if (selectedFile) {
         formData.append('file', selectedFile);
       }
 
-      await reportApi.create(formData);
+      if (editingReport) {
+        await reportApi.update(editingReport._id, formData);
+        showToast(
+          targetStatus === 'DRAFT'
+            ? 'Đã lưu bản nháp nhật ký thành công!'
+            : internship?.secondStudentId
+            ? 'Cập nhật thành công! Nhật ký đã được gửi để Sinh viên 2 xác nhận.'
+            : 'Cập nhật và gửi nhật ký cho GVHD thành công!',
+          'success',
+        );
+      } else {
+        if (!internship?._id) {
+          throw new Error('Không tìm thấy thông tin hồ sơ thực tập.');
+        }
+        formData.append('internshipId', internship._id);
+        await reportApi.create(formData);
+        showToast(
+          targetStatus === 'DRAFT'
+            ? 'Đã lưu bản nháp nhật ký thành công!'
+            : internship?.secondStudentId
+            ? 'Đã gửi nhật ký! Đang chờ Sinh viên 2 kiểm tra và xác nhận.'
+            : 'Gửi nhật ký thực tập cho GVHD thành công!',
+          'success',
+        );
+      }
 
-      showToast(
-        targetStatus === 'DRAFT'
-          ? 'Đã lưu bản nháp báo cáo thành công!'
-          : 'Nộp báo cáo thực tập thành công!',
-        'success',
-      );
-
-      // Reset form
-      setTitle('');
-      setContent('');
-      setSelectedFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      setReportType('WEEKLY');
-      setWeekNumber(1);
-      setMonthNumber(1);
-
-      onCreated();
+      if (onCreated) onCreated();
       onClose();
     } catch (err) {
-      setError(err.message || 'Không thể tạo báo cáo thực tập');
-      showToast(err.message || 'Không thể tạo báo cáo thực tập', 'error');
+      const msg = err.response?.data?.message || err.message || 'Không thể lưu nhật ký thực tập';
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (!internship) return null;
+  const hasStudent2 = !!internship?.secondStudentId;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Nộp Báo cáo Thực tập Doanh nghiệp"
+      title={editingReport ? `Chỉnh sửa Nhật Ký Tuần ${weekNumber}` : `Ghi Nhật Ký Tuần ${weekNumber}`}
       maxWidth="max-w-2xl"
     >
-      <div className="space-y-4 text-xs">
-        {/* Internship Banner */}
-        <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 text-indigo-950 flex justify-between items-center">
-          <div>
-            <div className="font-bold text-sm">{internship.position}</div>
-            <div className="text-slate-600 text-[11px] mt-0.5">
-              Đơn vị: <strong>{internship.companyId?.name}</strong>
-            </div>
-          </div>
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-white border border-indigo-200 text-indigo-700 shadow-2xs">
-            Hồ sơ hợp lệ
-          </span>
-        </div>
-
+      <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
         {/* Error Alert */}
         {error && (
-          <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-start gap-2 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Form Fields */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* Report Type */}
-          <div>
-            <label className="block font-semibold text-slate-700 mb-1.5">
-              Loại báo cáo <span className="text-rose-500">*</span>
-            </label>
-            <select
-              value={reportType}
-              onChange={(e) => {
-                setReportType(e.target.value);
-                setError('');
-              }}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-            >
-              <option value="WEEKLY">Báo cáo tuần (WEEKLY)</option>
-              <option value="MONTHLY">Báo cáo tháng (MONTHLY)</option>
-              <option value="FINAL">Báo cáo tổng kết (FINAL)</option>
-            </select>
+        {/* 2-Student Group Notice */}
+        {hasStudent2 && (
+          <div className="p-3 bg-blue-50/80 border border-blue-200/80 text-blue-900 text-xs rounded-2xl flex items-start gap-2.5">
+            <Users className="w-4 h-4 shrink-0 text-blue-600 mt-0.5" />
+            <div>
+              <div className="font-bold">Quy trình xác nhận 2 sinh viên</div>
+              <div className="text-[11px] text-blue-800 mt-0.5 leading-relaxed">
+                Sau khi bạn gửi nhật ký, hệ thống sẽ gửi thông báo cho <strong>Sinh viên 2 ({internship.secondStudentId?.userId?.fullName || 'SV2'})</strong> để kiểm tra và xác nhận. Khi SV2 đồng ý, nhật ký mới được chuyển tới Giảng viên hướng dẫn.
+              </div>
+            </div>
           </div>
+        )}
 
-          {/* Week number if WEEKLY */}
-          {reportType === 'WEEKLY' && (
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1.5">
-                Báo cáo Tuần số <span className="text-rose-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                max="52"
-                value={weekNumber}
-                onChange={(e) => setWeekNumber(e.target.value)}
-                placeholder="VD: 1, 2, 3..."
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-              />
+        {/* Week Info Banner */}
+        <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-extrabold text-white bg-indigo-600 px-2.5 py-1 rounded-lg">
+              Tuần #{weekNumber}
+            </span>
+            <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>
+                {weekStartDate && weekEndDate
+                  ? `${formatDateDisplay(weekStartDate)} — ${formatDateDisplay(weekEndDate)}`
+                  : 'Thời gian theo tuần thực tập'}
+              </span>
             </div>
-          )}
-
-          {/* Month number if MONTHLY */}
-          {reportType === 'MONTHLY' && (
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1.5">
-                Báo cáo Tháng thứ <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={monthNumber}
-                onChange={(e) => setMonthNumber(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                  <option key={m} value={m}>
-                    Tháng {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+          </div>
+          <div className="text-[11px] text-slate-500 truncate max-w-xs">
+            <strong>Doanh nghiệp:</strong> {internship?.companyId?.name || '—'}
+          </div>
         </div>
 
         {/* Title */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1.5">
-            Tiêu đề báo cáo <span className="text-rose-500">*</span>
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            Tiêu đề nhật ký <span className="text-rose-500">*</span>
           </label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="VD: Báo cáo kết quả thực tập tuần 1 - Tìm hiểu quy trình công ty"
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            placeholder={`Ví dụ: Nhật ký tuần ${weekNumber} - Tìm hiểu quy trình và nghiệp vụ`}
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
           />
         </div>
 
-        {/* Note / Description (Optional) */}
+        {/* Text Content */}
         <div>
-          <label className="block font-semibold text-slate-700 mb-1.5 flex items-center justify-between">
-            <span>Ghi chú / Tóm tắt báo cáo (Tùy chọn)</span>
-            <span className="text-[10px] text-slate-400 font-normal">Không thay thế file đính kèm</span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+              Nội dung công việc thực hiện
+            </label>
+            <span className="text-[11px] text-slate-400">Có thể nhập văn bản hoặc đính kèm file</span>
+          </div>
           <textarea
-            rows={2}
+            rows={5}
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Ghi chú ngắn gọn cho Giảng viên hướng dẫn (nếu có)..."
-            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
+            placeholder="Mô tả tóm tắt các công việc đã làm trong tuần, kết quả đạt được, khó khăn gặp phải và kế hoạch tuần tiếp theo..."
+            className="w-full p-3.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition leading-relaxed resize-none"
           />
         </div>
 
-        {/* File Upload Section (Choose File) */}
-        <div className="space-y-1.5">
-          <label className="block font-semibold text-slate-700">
-            File báo cáo đính kèm <span className="text-rose-500">*</span>
+        {/* File Upload Attachment */}
+        <div>
+          <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+            File đính kèm (nếu có)
           </label>
 
-          {/* Hidden native input */}
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-            className="hidden"
-          />
-
-          {!selectedFile ? (
-            <div
-              onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 rounded-2xl p-5 text-center cursor-pointer transition flex flex-col items-center justify-center gap-2 group"
-            >
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition shadow-2xs">
-                <Upload className="w-5 h-5" />
-              </div>
-              <div>
-                <span className="font-bold text-indigo-600 hover:underline">
-                  Nhấn để chọn file báo cáo từ máy tính
-                </span>
-                <p className="text-[11px] text-slate-400 mt-0.5">
-                  Hỗ trợ định dạng: .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx (Tối đa 15MB)
-                </p>
-              </div>
-            </div>
-          ) : (
+          {selectedFile || existingFile ? (
             <div className="p-3.5 bg-indigo-50/60 border border-indigo-200/80 rounded-2xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                  <FileCheck className="w-5 h-5" />
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                  <FileCheck className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-bold text-slate-900 truncate text-xs">
-                    {selectedFile.name}
+                  <div className="text-xs font-bold text-indigo-950 truncate">
+                    {selectedFile ? selectedFile.name : existingFile.originalName}
                   </div>
-                  <div className="text-[11px] text-slate-500 font-medium mt-0.5 flex items-center gap-2">
-                    <span>{formatFileSize(selectedFile.size)}</span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3" /> Đã sẵn sàng tải lên
-                    </span>
+                  <div className="text-[10px] text-indigo-600 font-mono">
+                    {selectedFile ? formatFileSize(selectedFile.size) : formatFileSize(existingFile.size)}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="px-2.5 py-1.5 text-[11px] font-semibold text-indigo-700 hover:bg-indigo-100 rounded-lg transition"
-                >
-                  Đổi file
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRemoveFile}
-                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                  title="Xóa file đã chọn"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <button
+                type="button"
+                onClick={handleRemoveFile}
+                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                title="Gỡ bỏ file"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="p-4 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition group"
+            >
+              <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center transition">
+                <Upload className="w-4 h-4" />
               </div>
+              <div className="text-xs font-bold text-slate-700 group-hover:text-indigo-600 transition">
+                Bấm để chọn file đính kèm (.PDF, .DOCX, .ZIP,...)
+              </div>
+              <div className="text-[10px] text-slate-400">Dung lượng tối đa: 20MB</div>
             </div>
           )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileChange}
+            accept={ALLOWED_EXTENSIONS.join(',')}
+            className="hidden"
+          />
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+        {/* Modal Actions */}
+        <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-3">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+            disabled={submitting}
+            className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
           >
-            Hủy
+            Hủy bỏ
           </button>
 
           <div className="flex items-center gap-2">
-            {/* Save Draft button */}
             <button
               type="button"
-              disabled={submitting}
               onClick={() => handleSubmit('DRAFT')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition disabled:opacity-50"
+              disabled={submitting}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>{submitting ? 'Đang lưu...' : 'Lưu bản nháp'}</span>
+              <span>Lưu nháp</span>
             </button>
 
-            {/* Submit button */}
             <button
               type="button"
-              disabled={submitting}
               onClick={() => handleSubmit('SUBMITTED')}
-              className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-200 transition disabled:opacity-50"
+              disabled={submitting}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-200 transition cursor-pointer disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{submitting ? 'Đang nộp...' : 'Nộp báo cáo'}</span>
+              <span>{submitting ? 'Đang gửi...' : hasStudent2 ? 'Gửi cho SV2 duyệt' : 'Nộp nhật ký'}</span>
             </button>
           </div>
         </div>
-      </div>
+      </form>
     </Modal>
   );
 };

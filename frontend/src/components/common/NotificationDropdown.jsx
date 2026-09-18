@@ -48,7 +48,24 @@ const NotificationDropdown = () => {
     try {
       const res = await notificationApi.getNotifications({ limit: 15 });
       if (res?.success) {
-        setNotifications(res.data || []);
+        let items = res.data || [];
+        if (user?.role === 'ADMIN') {
+          items = items.filter((item) => {
+            const type = item.type || '';
+            const link = item.link || '';
+            const title = item.title || '';
+            const isOperational =
+              ['EVALUATION', 'EVALUATION_RECREATE', 'INTERNSHIP', 'INTERNSHIP_REPORT', 'THESIS', 'THESIS_PROGRESS'].includes(type) ||
+              link.startsWith('/tbm/internships') ||
+              link.startsWith('/tbm/evaluations') ||
+              link.startsWith('/tbm/theses') ||
+              link.startsWith('/tbm/thesis-evaluations') ||
+              link.startsWith('/tbm/dashboard') ||
+              /thực tập|khóa luận|tạo lại link|đánh giá|báo cáo|tiến độ/i.test(title);
+            return !isOperational;
+          });
+        }
+        setNotifications(items);
         if (res.unreadCount !== undefined) {
           setUnreadCount(res.unreadCount);
         }
@@ -160,6 +177,25 @@ const NotificationDropdown = () => {
         targetLink.startsWith('/tbm/thesis-evaluations')
       ) {
         targetLink = '/student/thesis';
+      }
+    }
+
+    if (role === 'ADMIN' && targetLink) {
+      if (
+        targetLink.startsWith('/tbm/academic-terms') ||
+        targetLink.startsWith('/tbm/students') ||
+        targetLink.startsWith('/tbm/lecturers') ||
+        targetLink.startsWith('/tbm/companies')
+      ) {
+        targetLink = targetLink.replace('/tbm/', '/admin/');
+      } else if (
+        targetLink.startsWith('/tbm/') ||
+        targetLink.startsWith('/lecturer/') ||
+        targetLink.startsWith('/student/') ||
+        targetLink.startsWith('/company/')
+      ) {
+        // Do not navigate ADMIN to non-admin operational pages
+        return;
       }
     }
 

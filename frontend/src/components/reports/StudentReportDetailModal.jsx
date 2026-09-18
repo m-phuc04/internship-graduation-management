@@ -12,6 +12,10 @@ import {
   MessageSquare,
   Paperclip,
   FileCheck,
+  ShieldCheck,
+  AlertTriangle,
+  Clock,
+  User,
 } from 'lucide-react';
 import getFileUrl from '../../utils/fileUrlHelper';
 
@@ -37,19 +41,13 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
-  const getTypeLabel = () => {
-    if (report.reportType === 'WEEKLY') return `Báo cáo Tuần ${report.weekNumber || ''}`;
-    if (report.reportType === 'MONTHLY') return `Báo cáo Tháng ${report.monthNumber || ''}`;
-    return 'Báo cáo Tổng kết (Final)';
-  };
-
   const fullFileUrl = report.file?.fileUrl ? getFileUrl(report.file.fileUrl) : '';
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Chi tiết Báo cáo Thực tập Doanh nghiệp"
+      title={`Chi Tiết Nhật Ký Tuần ${report.weekNumber || ''}`}
       maxWidth="max-w-2xl"
     >
       <div className="space-y-4 text-xs">
@@ -57,28 +55,75 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-indigo-100 text-indigo-700 font-mono">
-                {getTypeLabel()}
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-mono">
+                Tuần #{report.weekNumber}
               </span>
               <StatusBadge status={report.status} size="sm" />
             </div>
             <h3 className="font-bold text-slate-900 text-sm mt-1.5">
               {report.title}
             </h3>
+            {report.weekStartDate && report.weekEndDate && (
+              <div className="text-[11px] text-slate-500 mt-0.5">
+                Thời gian: {new Date(report.weekStartDate).toLocaleDateString('vi-VN')} — {new Date(report.weekEndDate).toLocaleDateString('vi-VN')}
+              </div>
+            )}
           </div>
 
           <div className="text-right text-[11px] text-slate-500 shrink-0">
             <div>Ngày nộp: <strong>{formatDate(report.submittedAt || report.createdAt)}</strong></div>
+            {report.studentId?.userId?.fullName && (
+              <div className="text-[10px] text-slate-400 mt-0.5">
+                Người tạo: {report.studentId.userId.fullName}
+              </div>
+            )}
           </div>
         </div>
+
+        {/* SV2 Confirmation Status Banner */}
+        {report.secondStudentId && (
+          <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-white shadow-2xs">
+            <div className="font-bold uppercase tracking-wider text-[11px] flex items-center justify-between">
+              <span className="flex items-center gap-1.5 text-indigo-900">
+                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+                Trạng thái xác nhận Sinh viên 2
+              </span>
+              {report.student2Status === 'CONFIRMED' ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  <CheckCircle2 className="w-3 h-3" /> Đã xác nhận
+                </span>
+              ) : report.student2Status === 'REJECTED' ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                  <XCircle className="w-3 h-3" /> Yêu cầu sửa
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                  <Clock className="w-3 h-3" /> Chờ SV2 xác nhận
+                </span>
+              )}
+            </div>
+
+            {report.student2ConfirmedAt && (
+              <div className="text-[11px] text-emerald-700">
+                SV2 đã xác nhận vào lúc: {formatDate(report.student2ConfirmedAt)}
+              </div>
+            )}
+
+            {report.student2RejectedReason && report.status === 'NEEDS_REVISION' && (
+              <div className="p-2.5 bg-rose-50 rounded-xl border border-rose-200 text-rose-900 mt-1">
+                <strong>Lý do SV2 từ chối:</strong> {report.student2RejectedReason}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Uploaded File Card */}
         {report.file?.fileUrl ? (
           <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-200/70 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-indigo-900">
+              <div className="font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-indigo-900">
                 <Paperclip className="w-4 h-4 text-indigo-600" />
-                Tài liệu báo cáo đã đính kèm
+                Tài liệu nhật ký đính kèm
               </div>
               {report.file.size && (
                 <span className="text-[11px] text-slate-500 font-medium font-mono">
@@ -97,7 +142,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
                     {report.file.originalName || report.file.fileName || 'Tài liệu báo cáo'}
                   </div>
                   <div className="text-[10px] text-slate-400">
-                    Đã tải lên lúc: {formatDate(report.file.uploadedAt || report.createdAt)}
+                    Đã tải lên: {formatDate(report.file.uploadedAt || report.createdAt)}
                   </div>
                 </div>
               </div>
@@ -115,7 +160,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
 
                 <a
                   href={fullFileUrl}
-                  download={report.file.originalName || 'BaoCaoThucTap.pdf'}
+                  download={report.file.originalName || 'NhatKyThucTap.pdf'}
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
                 >
                   <Download className="w-3.5 h-3.5" />
@@ -126,18 +171,18 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           </div>
         ) : (
           <div className="p-3.5 rounded-xl bg-slate-50 border border-dashed border-slate-200 text-slate-400 text-center">
-            Chưa có tệp đính kèm nào cho báo cáo này.
+            Chưa có file đính kèm nào cho nhật ký tuần này.
           </div>
         )}
 
-        {/* Note / Content */}
+        {/* Content */}
         {report.content && (
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1.5 shadow-2xs">
             <div className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5 pb-1.5 border-b border-slate-100">
               <FileText className="w-4 h-4 text-slate-500" />
-              Ghi chú / Tóm tắt báo cáo
+              Nội dung công việc thực hiện
             </div>
-            <p className="text-slate-700 text-xs leading-relaxed whitespace-pre-wrap pt-1">
+            <p className="text-slate-800 text-xs leading-relaxed whitespace-pre-wrap pt-1">
               {report.content}
             </p>
           </div>
@@ -182,7 +227,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
           >
             Đóng
           </button>

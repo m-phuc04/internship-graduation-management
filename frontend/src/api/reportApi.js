@@ -13,6 +13,22 @@ export const reportApi = {
     return axiosClient.post('/internship-reports', data);
   },
 
+  // Student updates report (Supports FormData or JSON)
+  update: (id, data) => {
+    if (data instanceof FormData) {
+      return axiosClient.put(`/internship-reports/${id}`, data, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    }
+    return axiosClient.put(`/internship-reports/${id}`, data);
+  },
+
+  // Student 2 confirms or rejects report
+  confirmStudent2: (id, data) =>
+    axiosClient.patch(`/internship-reports/${id}/confirm-student2`, data),
+
   // Student gets all their own reports
   getMyReports: () => axiosClient.get('/internship-reports/my'),
 

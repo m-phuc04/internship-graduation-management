@@ -141,27 +141,17 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
                 <span>Thông tin thực tập</span>
               </Link>
 
-              {/* Item 3: Tiến độ thực tập */}
-              <Link
-                to="/student/reports?view=progress"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/reports', '?view=progress'))}
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-                <span>Tiến độ thực tập</span>
-              </Link>
-
-              {/* Item 4: Báo cáo thực tập */}
+              {/* Item 3: Nhật ký thực tập */}
               <Link
                 to="/student/reports"
                 onClick={onCloseMobile}
                 className={getSubLinkClass(isItemActive('/student/reports'))}
               >
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                <span>Báo cáo thực tập</span>
+                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                <span>Nhật ký thực tập</span>
               </Link>
 
-              {/* Item 5: Đánh giá thực tập */}
+              {/* Item 4: Đánh giá thực tập */}
               <Link
                 to="/student/internship?view=evaluation"
                 onClick={onCloseMobile}
@@ -214,25 +204,16 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
                 <span>Thông tin khóa luận</span>
               </Link>
 
-              {/* Item 3: Tiến độ KLTN */}
-              <Link
-                to="/student/thesis/progress?view=progress"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/thesis/progress', '?view=progress'))}
-              >
-                <TrendingUp className="w-3.5 h-3.5 text-slate-400" />
-                <span>Tiến độ KLTN</span>
-              </Link>
-
-              {/* Item 4: Báo cáo KLTN */}
+              {/* Item 3: Nhật ký khóa luận */}
               <Link
                 to="/student/thesis/progress"
                 onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/thesis/progress'))}
+                className={getSubLinkClass(location.pathname === '/student/thesis/progress')}
               >
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-                <span>Báo cáo KLTN</span>
+                <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+                <span>Nhật ký khóa luận</span>
               </Link>
+
 
               {/* Item 5: Đánh giá khóa luận */}
               <Link

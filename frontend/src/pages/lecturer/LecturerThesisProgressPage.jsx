@@ -8,28 +8,22 @@ import EmptyState from '../../components/common/EmptyState';
 import getFileUrl from '../../utils/fileUrlHelper';
 
 import {
-  GraduationCap,
-  Users,
-  User,
   BookOpen,
   CheckCircle2,
-  XCircle,
-  Clock,
-  Award,
   Paperclip,
   Eye,
   RefreshCw,
-  Percent,
   Search,
   Filter,
-  Check,
   ExternalLink,
   Download,
   FileCheck,
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  FileText,
+  Calendar,
+  Edit3,
+  Check,
 } from 'lucide-react';
 
 const LecturerThesisProgressPage = () => {
@@ -82,8 +76,11 @@ const LecturerThesisProgressPage = () => {
         reports.push({
           ...p,
           thesisTitle: t.thesisTitle,
+          topicCode: t.topicCode,
           thesisDescription: t.description,
           thesisId: t._id,
+          student1: t.studentId,
+          student2: t.secondStudentId,
           supervisorInfo: t.supervisorId,
           parentThesis: t,
         });
@@ -106,14 +103,18 @@ const LecturerThesisProgressPage = () => {
       // Search term (MSSV, Student Name, Thesis Title, Progress Title)
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase().trim();
-        const studentName = item.studentId?.userId?.fullName?.toLowerCase() || '';
-        const studentCode = item.studentId?.studentCode?.toLowerCase() || '';
+        const s1Name = item.student1?.userId?.fullName?.toLowerCase() || '';
+        const s1Code = item.student1?.studentCode?.toLowerCase() || '';
+        const s2Name = item.student2?.userId?.fullName?.toLowerCase() || '';
+        const s2Code = item.student2?.studentCode?.toLowerCase() || '';
         const thesisTitle = item.thesisTitle?.toLowerCase() || '';
         const progressTitle = item.title?.toLowerCase() || '';
 
         const match =
-          studentName.includes(term) ||
-          studentCode.includes(term) ||
+          s1Name.includes(term) ||
+          s1Code.includes(term) ||
+          s2Name.includes(term) ||
+          s2Code.includes(term) ||
           thesisTitle.includes(term) ||
           progressTitle.includes(term);
 
@@ -171,7 +172,7 @@ const LecturerThesisProgressPage = () => {
     setFormError('');
 
     if (reviewStatus === 'REJECTED' && !lecturerComment.trim()) {
-      setFormError('Vui lòng nhập nhận xét / lý do khi từ chối tiến độ của sinh viên');
+      setFormError('Vui lòng nhập nhận xét / lý do khi từ chối nhật ký của sinh viên');
       return;
     }
 
@@ -197,12 +198,12 @@ const LecturerThesisProgressPage = () => {
       );
 
       if (res.success) {
-        showToast('Đánh giá tiến độ thành công!', 'success');
+        showToast('Đánh giá nhật ký thành công!', 'success');
         setReviewModalOpen(false);
         fetchSupervisedProgress();
       }
     } catch (err) {
-      setFormError(err.message || 'Đánh giá tiến độ thất bại');
+      setFormError(err.message || 'Đánh giá nhật ký thất bại');
     } finally {
       setSubmitting(false);
     }
@@ -246,27 +247,30 @@ const LecturerThesisProgressPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200 shrink-0">
-              <GraduationCap className="w-7 h-7" />
+              <BookOpen className="w-7 h-7" />
             </div>
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  Theo Dõi & Đánh Giá Tiến Độ KLTN
+                  Nhật Ký Khóa Luận - Theo Dõi & Đánh Giá
                 </h2>
               </div>
               <p className="text-xs text-slate-500 mt-1">
-                Giảng viên hướng dẫn (GVHD) theo dõi, xem chi tiết báo cáo & file đính kèm, đánh giá và duyệt tiến độ của sinh viên.
+                Giảng viên hướng dẫn (GVHD) theo dõi nhật ký từng tuần, thiết lập thời gian KLTN, xem tài liệu đính kèm, nhận xét và đánh giá tiến độ của nhóm sinh viên.
               </p>
             </div>
           </div>
 
-          <button
-            onClick={fetchSupervisedProgress}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Làm mới</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={fetchSupervisedProgress}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>Làm mới</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats Grid */}
@@ -277,7 +281,7 @@ const LecturerThesisProgressPage = () => {
           </div>
 
           <div className="p-3 rounded-2xl bg-indigo-50/80 border border-indigo-200/80">
-            <div className="text-[11px] text-indigo-700 font-medium">Tổng báo cáo tiến độ</div>
+            <div className="text-[11px] text-indigo-700 font-medium">Tổng số nhật ký đã gửi</div>
             <div className="text-lg font-bold text-indigo-700 font-mono mt-0.5">{totalReportsCount}</div>
           </div>
 
@@ -287,7 +291,7 @@ const LecturerThesisProgressPage = () => {
           </div>
 
           <div className="p-3 rounded-2xl bg-emerald-50/80 border border-emerald-200/80">
-            <div className="text-[11px] text-emerald-700 font-medium">Đã phê duyệt</div>
+            <div className="text-[11px] text-emerald-700 font-medium">Đã hoàn thành / Duyệt</div>
             <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">{approvedReportsCount}</div>
           </div>
         </div>
@@ -350,8 +354,8 @@ const LecturerThesisProgressPage = () => {
         ) : filteredReports.length === 0 ? (
           <div className="p-8">
             <EmptyState
-              title="Không tìm thấy báo cáo tiến độ phù hợp"
-              description="Chưa có báo cáo nào khớp với tiêu chí tìm kiếm hoặc sinh viên chưa nộp báo cáo."
+              title="Không tìm thấy nhật ký khóa luận phù hợp"
+              description="Chưa có nhật ký nào đã xác nhận hoặc khớp với tiêu chí tìm kiếm."
             />
           </div>
         ) : (
@@ -360,11 +364,12 @@ const LecturerThesisProgressPage = () => {
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                    <th className="py-3.5 px-4">Kỳ báo cáo</th>
-                    <th className="py-3.5 px-4">Sinh viên nộp</th>
+                    <th className="py-3.5 px-4">Tuần</th>
+                    <th className="py-3.5 px-4">Nhóm Sinh viên</th>
                     <th className="py-3.5 px-4">Tiêu đề & Đề tài KLTN</th>
                     <th className="py-3.5 px-4">Tiến độ (%)</th>
-                    <th className="py-3.5 px-4">File báo cáo</th>
+                    <th className="py-3.5 px-4">File đính kèm</th>
+                    <th className="py-3.5 px-4">Xác nhận SV2</th>
                     <th className="py-3.5 px-4">Điểm / Nhận xét</th>
                     <th className="py-3.5 px-4">Trạng thái</th>
                     <th className="py-3.5 px-4 text-right">Thao tác</th>
@@ -380,20 +385,26 @@ const LecturerThesisProgressPage = () => {
                         {/* Period Badge */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <span className="font-bold text-[11px] px-2.5 py-1 rounded-xl bg-violet-50 text-violet-700 border border-violet-200">
-                            {item.progressType === 'WEEKLY'
-                              ? `Tuần ${item.weekNumber}`
-                              : `Tháng ${item.monthNumber}`}
+                            Tuần {item.weekNumber}
                           </span>
                         </td>
 
-                        {/* Student */}
+                        {/* Student info */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="font-semibold text-slate-900">
-                            {item.studentId?.userId?.fullName || 'Sinh viên'}
+                            1. {item.student1?.userId?.fullName || 'Sinh viên 1'}
                           </div>
                           <div className="text-[10px] text-slate-500 font-mono">
-                            MSSV: {item.studentId?.studentCode || '—'}
+                            MSSV: {item.student1?.studentCode || '—'}
                           </div>
+                          {item.student2 && (
+                            <div className="text-[11px] text-slate-700 mt-0.5">
+                              2. {item.student2.userId?.fullName}{' '}
+                              <span className="text-[10px] font-mono text-slate-500">
+                                ({item.student2.studentCode})
+                              </span>
+                            </div>
+                          )}
                         </td>
 
                         {/* Title & Thesis */}
@@ -430,6 +441,23 @@ const LecturerThesisProgressPage = () => {
                             </div>
                           ) : (
                             <span className="text-slate-400 italic">Chưa có file</span>
+                          )}
+                        </td>
+
+                        {/* SV2 Confirmation Status */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {item.student2 ? (
+                            item.student2Status === 'CONFIRMED' ? (
+                              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                                Đã xác nhận
+                              </span>
+                            ) : (
+                              <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
+                                Chờ xác nhận
+                              </span>
+                            )
+                          ) : (
+                            <span className="text-slate-400 italic text-[11px]">Nhóm 1 SV</span>
                           )}
                         </td>
 
@@ -485,7 +513,7 @@ const LecturerThesisProgressPage = () => {
                   {Math.min((currentPage - 1) * pageSize + 1, filteredReports.length)} -{' '}
                   {Math.min(currentPage * pageSize, filteredReports.length)}
                 </strong>{' '}
-                trên <strong>{filteredReports.length}</strong> báo cáo
+                trên <strong>{filteredReports.length}</strong> nhật ký
               </div>
 
               <div className="flex items-center gap-2">
@@ -518,52 +546,62 @@ const LecturerThesisProgressPage = () => {
         )}
       </div>
 
-      {/* 1. Detail Modal (4 Comprehensive Sections) */}
+      {/* 1. Detail Modal */}
       {detailModalOpen && selectedDetail && (
         <Modal
           isOpen={detailModalOpen}
           onClose={() => setDetailModalOpen(false)}
-          title="Chi Tiết Báo Cáo Tiến Độ & Tài Liệu KLTN"
+          title="Chi Tiết Nhật Ký Khóa Luận & Tài Liệu"
           maxWidth="max-w-2xl"
         >
           <div className="space-y-4 text-xs">
-            {/* Section 1: Thông tin sinh viên */}
-            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1">
+            {/* Section 1: Thông tin nhóm sinh viên */}
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-1.5">
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 1. Thông tin sinh viên thực hiện
               </div>
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-slate-500">Họ và tên: </span>
+                  <span className="text-slate-500">Sinh viên 1: </span>
                   <strong className="text-slate-900">
-                    {selectedDetail.studentId?.userId?.fullName || '—'}
+                    {selectedDetail.student1?.userId?.fullName || '—'}
                   </strong>
+                  <div className="text-[11px] text-slate-500 font-mono">
+                    MSSV: {selectedDetail.student1?.studentCode} - Lớp: {selectedDetail.student1?.className}
+                  </div>
                 </div>
-                <div>
-                  <span className="text-slate-500">MSSV: </span>
-                  <strong className="font-mono text-slate-900">
-                    {selectedDetail.studentId?.studentCode || '—'}
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-500">Lớp: </span>
-                  <strong className="text-slate-900">
-                    {selectedDetail.studentId?.className || '—'}
-                  </strong>
-                </div>
-                <div>
-                  <span className="text-slate-500">Email: </span>
-                  <span className="font-mono text-slate-700">
-                    {selectedDetail.studentId?.userId?.email || '—'}
-                  </span>
-                </div>
+                {selectedDetail.student2 ? (
+                  <div>
+                    <span className="text-slate-500">Sinh viên 2: </span>
+                    <strong className="text-slate-900">
+                      {selectedDetail.student2.userId?.fullName || '—'}
+                    </strong>
+                    <div className="text-[11px] text-slate-500 font-mono">
+                      MSSV: {selectedDetail.student2.studentCode} - Lớp: {selectedDetail.student2.className}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-slate-400 italic text-[11px]">Nhóm 1 sinh viên</div>
+                )}
               </div>
             </div>
 
             {/* Section 2: Thông tin đề tài */}
             <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-1">
-              <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
-                2. Thông tin đề tài Khóa Luận
+              <div className="flex items-center justify-between">
+                <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                  2. Thông tin đề tài Khóa Luận
+                </div>
+                {selectedDetail.parentThesis && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenTimelineModal(selectedDetail.parentThesis)}
+                    className="inline-flex items-center gap-1 text-[11px] text-indigo-700 hover:text-indigo-900 font-bold bg-white px-2 py-0.5 rounded-lg border border-indigo-200 transition"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                    <span>Đổi thời gian đề tài</span>
+                  </button>
+                )}
               </div>
               <div className="text-xs">
                 <div className="font-bold text-slate-900 text-sm">
@@ -574,22 +612,15 @@ const LecturerThesisProgressPage = () => {
                     {selectedDetail.thesisDescription}
                   </div>
                 )}
-                {selectedDetail.supervisorInfo && (
-                  <div className="text-[11px] text-indigo-700 font-semibold mt-1">
-                    GVHD: {selectedDetail.supervisorInfo.academicTitle} {selectedDetail.supervisorInfo.userId?.fullName}
-                  </div>
-                )}
               </div>
             </div>
 
-            {/* Section 3: Thông tin tiến độ */}
+            {/* Section 3: Thông tin nhật ký */}
             <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2.5 py-1 rounded-xl bg-violet-600 text-white font-bold text-xs">
-                    {selectedDetail.progressType === 'WEEKLY'
-                      ? `Tuần ${selectedDetail.weekNumber}`
-                      : `Tháng ${selectedDetail.monthNumber}`}
+                    Tuần {selectedDetail.weekNumber}
                   </span>
                   <h4 className="font-bold text-sm text-slate-900">
                     {selectedDetail.title}
@@ -604,18 +635,25 @@ const LecturerThesisProgressPage = () => {
               </div>
 
               <div className="text-slate-800 leading-relaxed whitespace-pre-wrap text-xs pt-1">
-                {selectedDetail.description}
+                {selectedDetail.description || '(Không có nội dung mô tả, xem tệp đính kèm)'}
               </div>
 
-              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100">
-                Ngày nộp: <strong>{formatDate(selectedDetail.submittedAt || selectedDetail.createdAt)}</strong>
+              <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  Ngày nộp: <strong>{formatDate(selectedDetail.submittedAt || selectedDetail.createdAt)}</strong>
+                </div>
+                {selectedDetail.student2ConfirmedAt && (
+                  <div className="text-emerald-700 font-semibold">
+                    SV2 xác nhận: {formatDate(selectedDetail.student2ConfirmedAt)}
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Section 4: File báo cáo đính kèm */}
+            {/* Section 4: File đính kèm */}
             <div>
               <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                4. Tài liệu / File báo cáo đính kèm
+                4. Tài liệu / File đính kèm
               </div>
               {selectedDetail.file && (selectedDetail.file.fileUrl || selectedDetail.file.fileName) ? (
                 <div className="p-3.5 bg-violet-50/70 border border-violet-200 rounded-2xl flex items-center justify-between gap-3">
@@ -655,7 +693,7 @@ const LecturerThesisProgressPage = () => {
                 </div>
               ) : (
                 <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-slate-400 italic">
-                  Sinh viên không đính kèm file cho tiến độ này
+                  Sinh viên không đính kèm file cho tuần này
                 </div>
               )}
             </div>
@@ -720,7 +758,7 @@ const LecturerThesisProgressPage = () => {
         <Modal
           isOpen={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
-          title="Đánh Giá & Phê Duyệt Tiến Độ Khóa Luận"
+          title="Đánh Giá & Phê Duyệt Nhật Ký Khóa Luận"
           maxWidth="max-w-xl"
         >
           <div className="space-y-4 text-xs">
@@ -728,17 +766,15 @@ const LecturerThesisProgressPage = () => {
             <div className="p-3.5 rounded-2xl bg-violet-50/60 border border-violet-200 space-y-1.5">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-violet-900 text-xs">
-                  {selectedProgress.progressType === 'WEEKLY'
-                    ? `Báo cáo Tuần ${selectedProgress.weekNumber}`
-                    : `Báo cáo Tháng ${selectedProgress.monthNumber}`}
-                  : "{selectedProgress.title}"
+                  Tuần {selectedProgress.weekNumber}: "{selectedProgress.title}"
                 </span>
                 <span className="font-mono font-bold text-indigo-700">
                   {selectedProgress.completionPercentage}%
                 </span>
               </div>
-              <div className="text-[11px] text-slate-500">
-                Sinh viên: <strong>{selectedProgress.studentId?.userId?.fullName}</strong> (MSSV: {selectedProgress.studentId?.studentCode})
+              <div className="text-[11px] text-slate-600">
+                Nhóm SV: <strong>{selectedProgress.student1?.userId?.fullName}</strong>
+                {selectedProgress.student2 && ` & ${selectedProgress.student2.userId?.fullName}`}
               </div>
 
               {/* Quick file view in review modal */}
@@ -774,7 +810,7 @@ const LecturerThesisProgressPage = () => {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Điểm đánh giá tiến độ (0 - 10)
+                  Điểm đánh giá tuần (0 - 10)
                 </label>
                 <input
                   type="number"
@@ -799,25 +835,21 @@ const LecturerThesisProgressPage = () => {
                 >
                   <option value="APPROVED">Phê duyệt (APPROVED)</option>
                   <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
-                  <option value="REJECTED">Từ chối (REJECTED)</option>
+                  <option value="REJECTED">Yêu cầu sửa / Từ chối (REJECTED)</option>
                 </select>
               </div>
             </div>
 
-            {/* Comment */}
+            {/* Comments */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Nhận xét của Giảng viên {reviewStatus === 'REJECTED' && <span className="text-rose-500">* (Bắt buộc khi từ chối)</span>}
+                Nhận xét & Hướng dẫn của GVHD {reviewStatus === 'REJECTED' && <span className="text-rose-500">*</span>}
               </label>
               <textarea
-                rows={3}
+                rows={4}
                 value={lecturerComment}
                 onChange={(e) => setLecturerComment(e.target.value)}
-                placeholder={
-                  reviewStatus === 'REJECTED'
-                    ? 'Nêu rõ lý do từ chối và nội dung sinh viên cần bổ sung...'
-                    : 'Nhập nhận xét, hướng dẫn chỉnh sửa cho sinh viên...'
-                }
+                placeholder="Nhập nhận xét chi tiết, nhắc nhở các mục cần hoàn thiện trong tuần tiếp theo..."
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
               />
             </div>
@@ -839,8 +871,8 @@ const LecturerThesisProgressPage = () => {
                 disabled={submitting}
                 className="inline-flex items-center gap-1.5 px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-md shadow-violet-200 transition disabled:opacity-50"
               >
-                <Check className="w-3.5 h-3.5" />
-                <span>{submitting ? 'Đang lưu...' : 'Lưu đánh giá'}</span>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{submitting ? 'Đang lưu...' : 'Lưu kết quả đánh giá'}</span>
               </button>
             </div>
           </div>
