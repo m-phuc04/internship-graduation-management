@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
 import thesisProgressApi from '../../api/thesisProgressApi';
 import { useToast } from '../../context/ToastContext';
@@ -18,6 +18,7 @@ import {
   Users,
   User,
   CheckCircle2,
+  AlertCircle,
   Clock,
   RefreshCw,
   Search,
@@ -34,6 +35,7 @@ const LecturerThesesPage = () => {
   const { showToast } = useToast();
   const { currentTerm } = useAcademicTerm();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Read initial tab from search query
   const getInitialTab = () => {
@@ -96,18 +98,27 @@ const LecturerThesesPage = () => {
   const [savingThesisId, setSavingThesisId] = useState(null);
   const [lockingRowId, setLockingRowId] = useState(null);
   const [lockingAll, setLockingAll] = useState(false);
+  const [gradingPeriods, setGradingPeriods] = useState([]);
 
   const fetchAssignedTheses = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const res = await thesisApi.getAssignedThesesForLecturer({
-        roleType: 'ALL',
-        search,
-        academicTermId: currentTerm?._id || '',
-      });
+      const [thesesRes, periodsRes] = await Promise.all([
+        thesisApi.getAssignedThesesForLecturer({
+          roleType: 'ALL',
+          search,
+          academicTermId: currentTerm?._id || '',
+        }),
+        thesisApi.getGradingPeriods({
+          academicTermId: currentTerm?._id || '',
+        }).catch(() => ({ success: false, data: [] })),
+      ]);
 
-      if (res.success) {
-        setData(res.data);
+      if (thesesRes.success) {
+        setData(thesesRes.data);
+      }
+      if (periodsRes.success) {
+        setGradingPeriods(periodsRes.data || []);
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải danh sách đề tài khóa luận', 'error');
@@ -115,6 +126,17 @@ const LecturerThesesPage = () => {
       if (!silent) setLoading(false);
     }
   }, [search, currentTerm?._id, showToast]);
+
+  // Check if grading period is currently active
+  const isGradingPeriodOpen = useCallback(() => {
+    if (!gradingPeriods || gradingPeriods.length === 0) return true;
+    const now = new Date();
+    return gradingPeriods.some((p) => {
+      const s = new Date(p.startDate);
+      const e = new Date(p.endDate);
+      return now >= s && now <= e;
+    });
+  }, [gradingPeriods]);
 
   const fetchMyTopics = useCallback(async () => {
     setLoadingMyTopics(true);
@@ -190,8 +212,7 @@ const LecturerThesesPage = () => {
   }
 
   const handleOpenGrade = (thesis) => {
-    setSelectedThesis(thesis);
-    setGradeModalOpen(true);
+    navigate(`/lecturer/theses/${thesis._id}/evaluate`);
   };
 
   const handleOpenAccept = (thesis) => {
@@ -256,31 +277,7 @@ const LecturerThesesPage = () => {
   const [savingDetailTimeline, setSavingDetailTimeline] = useState(false);
 
   const handleOpenDetail = (thesis) => {
-    setTargetThesis(thesis);
-    setEditingTimeline(false);
-
-    // Resolved start date: explicit thesis.startDate > thesis.approvedAt > thesis.acceptedAt > assignmentStart > createdAt
-    const sDate =
-      thesis.startDate ||
-      thesis.approvedAt ||
-      thesis.acceptedAt ||
-      thesis.assignedAt ||
-      thesis.academicTermId?.thesis?.assignmentStart ||
-      thesis.academicTermId?.startDate ||
-      currentTerm?.thesis?.assignmentStart ||
-      thesis.createdAt;
-
-    // Resolved end date: explicit thesis.endDate > defenseEnd > defenseStart > term.endDate
-    const eDate =
-      thesis.endDate ||
-      thesis.academicTermId?.thesis?.defenseEnd ||
-      thesis.academicTermId?.thesis?.defenseStart ||
-      thesis.academicTermId?.endDate ||
-      currentTerm?.thesis?.defenseEnd;
-
-    setDetailStartDate(sDate ? new Date(sDate).toISOString().split('T')[0] : '');
-    setDetailEndDate(eDate ? new Date(eDate).toISOString().split('T')[0] : '');
-    setDetailModalOpen(true);
+    navigate(`/lecturer/theses/${thesis._id}/evaluate`);
   };
 
   const handleSaveDetailTimeline = async () => {
@@ -334,8 +331,8 @@ const LecturerThesesPage = () => {
         s1 = item.scores?.student1SupervisorScore !== null && item.scores?.student1SupervisorScore !== undefined
           ? item.scores.student1SupervisorScore
           : !isTwo && item.scores?.supervisorScore !== null && item.scores?.supervisorScore !== undefined
-          ? item.scores.supervisorScore
-          : '';
+            ? item.scores.supervisorScore
+            : '';
         s2 = item.scores?.student2SupervisorScore !== null && item.scores?.student2SupervisorScore !== undefined
           ? item.scores.student2SupervisorScore
           : '';
@@ -343,8 +340,8 @@ const LecturerThesesPage = () => {
         s1 = item.scores?.student1Reviewer1Score !== null && item.scores?.student1Reviewer1Score !== undefined
           ? item.scores.student1Reviewer1Score
           : !isTwo && item.scores?.reviewer1Score !== null && item.scores?.reviewer1Score !== undefined
-          ? item.scores.reviewer1Score
-          : '';
+            ? item.scores.reviewer1Score
+            : '';
         s2 = item.scores?.student2Reviewer1Score !== null && item.scores?.student2Reviewer1Score !== undefined
           ? item.scores.student2Reviewer1Score
           : '';
@@ -352,8 +349,8 @@ const LecturerThesesPage = () => {
         s1 = item.scores?.student1Reviewer2Score !== null && item.scores?.student1Reviewer2Score !== undefined
           ? item.scores.student1Reviewer2Score
           : !isTwo && item.scores?.reviewer2Score !== null && item.scores?.reviewer2Score !== undefined
-          ? item.scores.reviewer2Score
-          : '';
+            ? item.scores.reviewer2Score
+            : '';
         s2 = item.scores?.student2Reviewer2Score !== null && item.scores?.student2Reviewer2Score !== undefined
           ? item.scores.student2Reviewer2Score
           : '';
@@ -577,15 +574,14 @@ const LecturerThesesPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${
-                isTopicsView
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${isTopicsView
                   ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-200'
                   : isReviewView
-                  ? 'bg-gradient-to-tr from-purple-600 to-violet-600 shadow-purple-200'
-                  : isEvaluationView
-                  ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 shadow-amber-200'
-                  : 'bg-gradient-to-tr from-indigo-600 to-violet-600 shadow-indigo-200'
-              }`}
+                    ? 'bg-gradient-to-tr from-purple-600 to-violet-600 shadow-purple-200'
+                    : isEvaluationView
+                      ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 shadow-amber-200'
+                      : 'bg-gradient-to-tr from-indigo-600 to-violet-600 shadow-indigo-200'
+                }`}
             >
               {isTopicsView ? (
                 <BookOpen className="w-7 h-7" />
@@ -603,39 +599,38 @@ const LecturerThesesPage = () => {
                   {isTopicsView
                     ? 'Đề Xuất & Quản Lý Đề Tài Khóa Luận (KLTN)'
                     : isReviewView
-                    ? 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
-                    : isEvaluationView
-                    ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 40%)'
-                    : 'Quản Lý Sinh Viên Hướng Dẫn Khóa Luận'}
+                      ? 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
+                      : isEvaluationView
+                        ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 40%)'
+                        : 'Quản Lý Sinh Viên Hướng Dẫn Khóa Luận'}
                 </h2>
                 <span
-                  className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
-                    isTopicsView
+                  className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${isTopicsView
                       ? 'bg-blue-50 text-blue-700 border-blue-200'
                       : isReviewView
-                      ? 'bg-purple-50 text-purple-700 border-purple-200'
-                      : isEvaluationView
-                      ? 'bg-amber-50 text-amber-700 border-amber-200'
-                      : 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                  }`}
+                        ? 'bg-purple-50 text-purple-700 border-purple-200'
+                        : isEvaluationView
+                          ? 'bg-amber-50 text-amber-700 border-amber-200'
+                          : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                    }`}
                 >
                   {isTopicsView
                     ? 'ĐỀ TÀI KLTN'
                     : isReviewView
-                    ? 'PHẢN BIỆN (30%)'
-                    : isEvaluationView
-                    ? 'ĐÁNH GIÁ (40%)'
-                    : 'HƯỚNG DẪN'}
+                      ? 'PHẢN BIỆN (30%)'
+                      : isEvaluationView
+                        ? 'ĐÁNH GIÁ (40%)'
+                        : 'HƯỚNG DẪN'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1">
                 {isTopicsView
                   ? 'Tạo và nộp danh sách đề tài Khóa luận Tốt nghiệp gửi Trưởng Bộ Môn (TBM) xét duyệt để mở cho sinh viên đăng ký.'
                   : isReviewView
-                  ? 'Chấm điểm độc lập theo phân công Phản biện kín (30%) và Phản biện hội đồng (30%).'
-                  : isEvaluationView
-                  ? 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (40%) cho sinh viên khóa luận.'
-                  : 'Theo dõi danh sách các nhóm sinh viên và đề tài bạn phụ trách hướng dẫn chính trong học kỳ.'}
+                    ? 'Chấm điểm độc lập theo phân công Phản biện kín (30%) và Phản biện hội đồng (30%).'
+                    : isEvaluationView
+                      ? 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (40%) cho sinh viên khóa luận.'
+                      : 'Theo dõi danh sách các nhóm sinh viên và đề tài bạn phụ trách hướng dẫn chính trong học kỳ.'}
               </p>
             </div>
           </div>
@@ -672,11 +667,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('ALL')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
-                topicStatusFilter === 'ALL'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'ALL'
                   ? 'bg-blue-50/80 border-blue-400 ring-2 ring-blue-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900">Tất cả đề tài</span>
@@ -690,11 +684,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('PENDING')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
-                topicStatusFilter === 'PENDING'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'PENDING'
                   ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
@@ -711,11 +704,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('APPROVED')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
-                topicStatusFilter === 'APPROVED'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'APPROVED'
                   ? 'bg-emerald-50/80 border-emerald-400 ring-2 ring-emerald-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-emerald-900 flex items-center gap-1">
@@ -732,11 +724,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('REJECTED')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
-                topicStatusFilter === 'REJECTED'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'REJECTED'
                   ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-rose-900">Bị từ chối</span>
@@ -754,11 +745,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('SUPERVISOR')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                activeTab === 'SUPERVISOR'
+              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'SUPERVISOR'
                   ? 'bg-indigo-50/80 border-indigo-400 ring-2 ring-indigo-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-indigo-950 flex items-center gap-1.5">
@@ -778,11 +768,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_1')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                activeTab === 'REVIEWER_1'
+              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'REVIEWER_1'
                   ? 'bg-violet-50/80 border-violet-400 ring-2 ring-violet-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-violet-950 flex items-center gap-1.5">
@@ -802,11 +791,10 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_2')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                activeTab === 'REVIEWER_2'
+              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'REVIEWER_2'
                   ? 'bg-purple-50/80 border-purple-400 ring-2 ring-purple-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
@@ -915,11 +903,10 @@ const LecturerThesesPage = () => {
 
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold font-mono border ${
-                              isFull
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold font-mono border ${isFull
                                 ? 'bg-amber-50 text-amber-700 border-amber-200'
                                 : 'bg-blue-50 text-blue-700 border-blue-200'
-                            }`}
+                              }`}
                           >
                             {topic.currentGroups}/{topic.maxGroups} nhóm
                           </span>
@@ -995,190 +982,273 @@ const LecturerThesesPage = () => {
       ) : (
         /* ================= BẢNG ĐỀ TÀI PHÂN CÔNG (SUPERVISOR, REVIEWER 1, REVIEWER 2) ================= */
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        {loading ? (
-          <div className="p-6">
-            <LoadingSkeleton rows={4} cols={5} />
-          </div>
-        ) : currentList.length === 0 ? (
-          <div className="p-8">
-            <EmptyState
-              title="Không có đề tài nào trong danh mục này"
-              description="Bạn chưa được phân công đề tài tương ứng với vai trò này hoặc chưa có kết quả tìm kiếm."
-            />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                  <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                  <th className="py-3.5 px-4">Tên đề tài KLTN</th>
-                  <th className="py-3.5 px-4">Sinh viên thực hiện</th>
-                  {activeTab !== 'SUPERVISOR' && (
-                    <th className="py-3.5 px-4">GV Hướng Dẫn</th>
-                  )}
-                  <th className="py-3.5 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span>Chấm Điểm</span>
-                      <span className="text-[9px] lowercase font-normal text-slate-400 bg-slate-100 px-1 py-0.5 rounded">
-                        (Enter ↵)
-                      </span>
-                      {/* Master Lock (Ổ khóa tổng) */}
-                      {currentList.some(
-                        (t) =>
-                          t.status !== 'REJECTED' &&
-                          t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                          t.status !== 'PENDING_TBM_APPROVAL' &&
-                          t.status !== 'COMPLETED'
-                      ) && (
-                        <button
-                          type="button"
-                          onClick={() => handleToggleAllLock(currentList)}
-                          disabled={lockingAll}
-                          title={
-                            currentList
-                              .filter(
-                                (t) =>
-                                  t.status !== 'REJECTED' &&
-                                  t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                                  t.status !== 'PENDING_TBM_APPROVAL' &&
-                                  t.status !== 'COMPLETED'
-                              )
-                              .every((t) => getRoleLockStatus(t))
-                              ? 'Mở khóa toàn bộ điểm'
-                              : 'Khóa toàn bộ điểm'
-                          }
-                          className={`p-1 rounded-md border transition cursor-pointer flex items-center justify-center ${
-                            currentList
-                              .filter(
-                                (t) =>
-                                  t.status !== 'REJECTED' &&
-                                  t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                                  t.status !== 'PENDING_TBM_APPROVAL' &&
-                                  t.status !== 'COMPLETED'
-                              )
-                              .every((t) => getRoleLockStatus(t))
-                              ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
-                              : 'bg-white text-slate-400 border-slate-300 hover:text-indigo-600 hover:border-indigo-300'
-                          }`}
-                        >
-                          {lockingAll ? (
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                          ) : currentList
-                              .filter(
-                                (t) =>
-                                  t.status !== 'REJECTED' &&
-                                  t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                                  t.status !== 'PENDING_TBM_APPROVAL' &&
-                                  t.status !== 'COMPLETED'
-                              )
-                              .every((t) => getRoleLockStatus(t)) ? (
-                            <Lock className="w-3.5 h-3.5 text-amber-600" />
-                          ) : (
-                            <Unlock className="w-3.5 h-3.5" />
+          {loading ? (
+            <div className="p-6">
+              <LoadingSkeleton rows={4} cols={5} />
+            </div>
+          ) : currentList.length === 0 ? (
+            <div className="p-8">
+              <EmptyState
+                title="Không có đề tài nào trong danh mục này"
+                description="Bạn chưa được phân công đề tài tương ứng với vai trò này hoặc chưa có kết quả tìm kiếm."
+              />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                    <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                    <th className="py-3.5 px-4">Tên đề tài KLTN</th>
+                    <th className="py-3.5 px-4">Sinh viên thực hiện</th>
+                    {activeTab !== 'SUPERVISOR' && (
+                      <th className="py-3.5 px-4">GV Hướng Dẫn</th>
+                    )}
+                    <th className="py-3.5 px-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <span>Chấm Điểm</span>
+                        <span className="text-[9px] lowercase font-normal text-slate-400 bg-slate-100 px-1 py-0.5 rounded">
+                          (Enter ↵)
+                        </span>
+                        {/* Master Lock (Ổ khóa tổng) */}
+                        {currentList.some(
+                          (t) =>
+                            t.status !== 'REJECTED' &&
+                            t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                            t.status !== 'PENDING_TBM_APPROVAL' &&
+                            t.status !== 'COMPLETED'
+                        ) && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleAllLock(currentList)}
+                              disabled={lockingAll}
+                              title={
+                                currentList
+                                  .filter(
+                                    (t) =>
+                                      t.status !== 'REJECTED' &&
+                                      t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                                      t.status !== 'PENDING_TBM_APPROVAL' &&
+                                      t.status !== 'COMPLETED'
+                                  )
+                                  .every((t) => getRoleLockStatus(t))
+                                  ? 'Mở khóa toàn bộ điểm'
+                                  : 'Khóa toàn bộ điểm'
+                              }
+                              className={`p-1 rounded-md border transition cursor-pointer flex items-center justify-center ${currentList
+                                  .filter(
+                                    (t) =>
+                                      t.status !== 'REJECTED' &&
+                                      t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                                      t.status !== 'PENDING_TBM_APPROVAL' &&
+                                      t.status !== 'COMPLETED'
+                                  )
+                                  .every((t) => getRoleLockStatus(t))
+                                  ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
+                                  : 'bg-white text-slate-400 border-slate-300 hover:text-indigo-600 hover:border-indigo-300'
+                                }`}
+                            >
+                              {lockingAll ? (
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                              ) : currentList
+                                .filter(
+                                  (t) =>
+                                    t.status !== 'REJECTED' &&
+                                    t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                                    t.status !== 'PENDING_TBM_APPROVAL' &&
+                                    t.status !== 'COMPLETED'
+                                )
+                                .every((t) => getRoleLockStatus(t)) ? (
+                                <Lock className="w-3.5 h-3.5 text-amber-600" />
+                              ) : (
+                                <Unlock className="w-3.5 h-3.5" />
+                              )}
+                            </button>
                           )}
-                        </button>
-                      )}
-                    </div>
-                  </th>
-                  <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                  <th className="py-3.5 px-4 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {currentList.map((item, index) => {
-                  const isGradable =
-                    item.status !== 'REJECTED' &&
-                    item.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                    item.status !== 'PENDING_TBM_APPROVAL';
-                  const isLocked = getRoleLockStatus(item);
+                      </div>
+                    </th>
+                    <th className="py-3.5 px-4 text-center">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {currentList.map((item, index) => {
+                    const isGradable =
+                      item.status !== 'REJECTED' &&
+                      item.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                      item.status !== 'PENDING_TBM_APPROVAL';
+                    const isLocked = getRoleLockStatus(item);
 
-                  return (
-                    <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                      {/* STT */}
-                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                        {index + 1}
-                      </td>
+                    return (
+                      <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                          {index + 1}
+                        </td>
 
-                      {/* Title - Clickable to open Detail */}
-                      <td className="py-3.5 px-4 min-w-[260px] max-w-sm">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDetail(item)}
-                          className="text-left block group cursor-pointer"
-                          title="Bấm để xem toàn bộ thông tin đề tài & phân công phản biện"
-                        >
-                          <strong className="text-slate-900 group-hover:text-indigo-600 line-clamp-2 leading-snug transition">
-                            {item.thesisTitle}
-                          </strong>
-                        </button>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
-                            {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
-                          </span>
-                          {item.scores?.finalScore !== null && item.scores?.finalScore !== undefined && (
-                            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                              Tổng: {item.scores.finalScore}/10
+                        {/* Title - Clickable to open Detail */}
+                        <td className="py-3.5 px-4 min-w-[260px] max-w-sm">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetail(item)}
+                            className="text-left block group cursor-pointer"
+                            title="Bấm để xem toàn bộ thông tin đề tài & phân công phản biện"
+                          >
+                            <strong className="text-slate-900 group-hover:text-indigo-600 line-clamp-2 leading-snug transition">
+                              {item.thesisTitle}
+                            </strong>
+                          </button>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
+                              {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
                             </span>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Students */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <div className="flex flex-col gap-2 min-w-[180px]">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded shrink-0">
-                              SV1
-                            </span>
-                            <UserNameClickable
-                              user={item.studentId}
-                              name={item.studentId?.userId?.fullName}
-                              subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                              avatarSize="w-6 h-6"
-                            />
+                            {item.scores?.finalScore !== null && item.scores?.finalScore !== undefined && (
+                              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                Tổng: {item.scores.finalScore}/10
+                              </span>
+                            )}
                           </div>
-                          {item.studentCount === 2 && item.secondStudentId && (
-                            <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-                              <span className="text-[9px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded shrink-0">
-                                SV2
+                        </td>
+
+                        {/* Students */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="flex flex-col gap-2 min-w-[180px]">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[9px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded shrink-0">
+                                SV1
                               </span>
                               <UserNameClickable
-                                user={item.secondStudentId}
-                                name={item.secondStudentId?.userId?.fullName}
-                                subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                user={item.studentId}
+                                name={item.studentId?.userId?.fullName}
+                                subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
                                 avatarSize="w-6 h-6"
                               />
                             </div>
-                          )}
-                        </div>
-                      </td>
-
-                      {/* Supervisor (shown only in Reviewer tabs) */}
-                      {activeTab !== 'SUPERVISOR' && (
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <UserNameClickable
-                            user={item.supervisorId}
-                            name={formatLecturerDisplay(item.supervisorId)}
-                            subtitle={item.supervisorId?.specialization || item.supervisorId?.department}
-                            avatarSize="w-6 h-6"
-                          />
+                            {item.studentCount === 2 && item.secondStudentId && (
+                              <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
+                                <span className="text-[9px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded shrink-0">
+                                  SV2
+                                </span>
+                                <UserNameClickable
+                                  user={item.secondStudentId}
+                                  name={item.secondStudentId?.userId?.fullName}
+                                  subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                  avatarSize="w-6 h-6"
+                                />
+                              </div>
+                            )}
+                          </div>
                         </td>
-                      )}
 
-                      {/* Square Inline Score Inputs with Row Lock Button */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                        {isGradable ? (
-                          item.status === 'COMPLETED' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold font-mono text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <Lock className="w-3 h-3 text-emerald-600" />
-                              <span>{item.scores?.finalScore ?? item.scores?.supervisorScore ?? '—'} / 10</span>
-                            </span>
-                          ) : item.studentCount === 2 && item.secondStudentId ? (
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="flex flex-col gap-2 items-center justify-center">
-                                {/* SV1 Box - Aligned with SV1 */}
-                                <div className="flex items-center gap-1.5" title={`SV1: ${item.studentId?.userId?.fullName} (${item.studentId?.studentCode})`}>
+                        {/* Supervisor (shown only in Reviewer tabs) */}
+                        {activeTab !== 'SUPERVISOR' && (
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <UserNameClickable
+                              user={item.supervisorId}
+                              name={formatLecturerDisplay(item.supervisorId)}
+                              subtitle={item.supervisorId?.specialization || item.supervisorId?.department}
+                              avatarSize="w-6 h-6"
+                            />
+                          </td>
+                        )}
+
+                        {/* Square Inline Score Inputs with Row Lock Button */}
+                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                          {isGradable ? (
+                            item.status === 'COMPLETED' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full font-bold font-mono text-xs bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <Lock className="w-3 h-3 text-emerald-600" />
+                                <span>{item.scores?.finalScore ?? item.scores?.supervisorScore ?? '—'} / 10</span>
+                              </span>
+                            ) : activeTab === 'SUPERVISOR' && !item.isCriteriaPassed ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/lecturer/theses/${item._id}/evaluate`)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer group"
+                                title="Chưa tick đủ điều kiện KLTN. Bấm để mở trang chi tiết xem báo cáo & tick tiêu chí."
+                              >
+                                <AlertCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition shrink-0" />
+                                <span>Chưa tick điều kiện</span>
+                              </button>
+                            ) : activeTab === 'SUPERVISOR' && !isGradingPeriodOpen() ? (
+                              <button
+                                type="button"
+                                onClick={() => navigate(`/lecturer/theses/${item._id}/evaluate`)}
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                                title="Hiện chưa tới hoặc đã hết đợt nhập điểm. Bấm để xem chi tiết."
+                              >
+                                <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span>Ngoài đợt chấm</span>
+                              </button>
+                            ) : item.studentCount === 2 && item.secondStudentId ? (
+                              <div className="flex items-center justify-center gap-2">
+                                <div className="flex flex-col gap-2 items-center justify-center">
+                                  {/* SV1 Box - Aligned with SV1 */}
+                                  <div className="flex items-center gap-1.5" title={`SV1: ${item.studentId?.userId?.fullName} (${item.studentId?.studentCode})`}>
+                                    <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      min="0"
+                                      max="10"
+                                      value={inlineScores[item._id]?.s1 ?? ''}
+                                      onChange={(e) => !isLocked && handleInlineScoreChange(item._id, 's1', e.target.value)}
+                                      onKeyDown={(e) => !isLocked && handleInlineKeyDown(item, 's1', e)}
+                                      onBlur={() => !isLocked && handleSaveInlineScore(item)}
+                                      placeholder="—"
+                                      readOnly={isLocked}
+                                      disabled={isLocked}
+                                      className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
+                                          ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
+                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100'
+                                        }`}
+                                    />
+                                  </div>
+                                  {/* SV2 Box - Aligned with SV2 */}
+                                  <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 w-full justify-center" title={`SV2: ${item.secondStudentId?.userId?.fullName} (${item.secondStudentId?.studentCode})`}>
+                                    <span className="text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded shrink-0">SV2</span>
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      min="0"
+                                      max="10"
+                                      value={inlineScores[item._id]?.s2 ?? ''}
+                                      onChange={(e) => !isLocked && handleInlineScoreChange(item._id, 's2', e.target.value)}
+                                      onKeyDown={(e) => !isLocked && handleInlineKeyDown(item, 's2', e)}
+                                      onBlur={() => !isLocked && handleSaveInlineScore(item)}
+                                      placeholder="—"
+                                      readOnly={isLocked}
+                                      disabled={isLocked}
+                                      className={`thesis-inline-grade-input thesis-inline-grade-input-s2 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
+                                          ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
+                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-violet-600 focus:ring-2 focus:ring-violet-100'
+                                        }`}
+                                    />
+                                  </div>
+                                </div>
+                                {/* Row Lock Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRowLock(item)}
+                                  disabled={lockingRowId === item._id}
+                                  title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
+                                  className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${isLocked
+                                      ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-indigo-600 hover:border-indigo-300'
+                                    }`}
+                                >
+                                  {lockingRowId === item._id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                                  ) : isLocked ? (
+                                    <Lock className="w-3.5 h-3.5 text-amber-600" />
+                                  ) : (
+                                    <Unlock className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center justify-center gap-2">
+                                <div className="inline-flex items-center gap-1.5 justify-center" title={`Nhập điểm cho ${item.studentId?.userId?.fullName}, ấn Enter để lưu`}>
                                   <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
                                   <input
                                     type="number"
@@ -1192,158 +1262,89 @@ const LecturerThesesPage = () => {
                                     placeholder="—"
                                     readOnly={isLocked}
                                     disabled={isLocked}
-                                    className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${
-                                      isLocked
+                                    className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
                                         ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
                                         : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100'
-                                    }`}
+                                      }`}
                                   />
                                 </div>
-                                {/* SV2 Box - Aligned with SV2 */}
-                                <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 w-full justify-center" title={`SV2: ${item.secondStudentId?.userId?.fullName} (${item.secondStudentId?.studentCode})`}>
-                                  <span className="text-[10px] font-bold text-violet-700 bg-violet-50 border border-violet-200 px-1.5 py-0.5 rounded shrink-0">SV2</span>
-                                  <input
-                                    type="number"
-                                    step="0.1"
-                                    min="0"
-                                    max="10"
-                                    value={inlineScores[item._id]?.s2 ?? ''}
-                                    onChange={(e) => !isLocked && handleInlineScoreChange(item._id, 's2', e.target.value)}
-                                    onKeyDown={(e) => !isLocked && handleInlineKeyDown(item, 's2', e)}
-                                    onBlur={() => !isLocked && handleSaveInlineScore(item)}
-                                    placeholder="—"
-                                    readOnly={isLocked}
-                                    disabled={isLocked}
-                                    className={`thesis-inline-grade-input thesis-inline-grade-input-s2 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${
-                                      isLocked
-                                        ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                        : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-violet-600 focus:ring-2 focus:ring-violet-100'
+                                {/* Row Lock Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleRowLock(item)}
+                                  disabled={lockingRowId === item._id}
+                                  title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
+                                  className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${isLocked
+                                      ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
+                                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-indigo-600 hover:border-indigo-300'
                                     }`}
-                                  />
-                                </div>
+                                >
+                                  {lockingRowId === item._id ? (
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
+                                  ) : isLocked ? (
+                                    <Lock className="w-3.5 h-3.5 text-amber-600" />
+                                  ) : (
+                                    <Unlock className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
                               </div>
-                              {/* Row Lock Button */}
-                              <button
-                                type="button"
-                                onClick={() => handleToggleRowLock(item)}
-                                disabled={lockingRowId === item._id}
-                                title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
-                                className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${
-                                  isLocked
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                                    : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-indigo-600 hover:border-indigo-300'
-                                }`}
-                              >
-                                {lockingRowId === item._id ? (
-                                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                                ) : isLocked ? (
-                                  <Lock className="w-3.5 h-3.5 text-amber-600" />
-                                ) : (
-                                  <Unlock className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            </div>
+                            )
+                          ) : item.status === 'PENDING_SUPERVISOR_APPROVAL' ? (
+                            <span className="text-[11px] text-amber-600 italic">Chờ duyệt ĐT</span>
                           ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <div className="inline-flex items-center gap-1.5 justify-center" title={`Nhập điểm cho ${item.studentId?.userId?.fullName}, ấn Enter để lưu`}>
-                                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
-                                <input
-                                  type="number"
-                                  step="0.1"
-                                  min="0"
-                                  max="10"
-                                  value={inlineScores[item._id]?.s1 ?? ''}
-                                  onChange={(e) => !isLocked && handleInlineScoreChange(item._id, 's1', e.target.value)}
-                                  onKeyDown={(e) => !isLocked && handleInlineKeyDown(item, 's1', e)}
-                                  onBlur={() => !isLocked && handleSaveInlineScore(item)}
-                                  placeholder="—"
-                                  readOnly={isLocked}
-                                  disabled={isLocked}
-                                  className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${
-                                    isLocked
-                                      ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                      : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-indigo-600 focus:ring-2 focus:ring-indigo-100'
-                                  }`}
-                                />
-                              </div>
-                              {/* Row Lock Button */}
-                              <button
-                                type="button"
-                                onClick={() => handleToggleRowLock(item)}
-                                disabled={lockingRowId === item._id}
-                                title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
-                                className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${
-                                  isLocked
-                                    ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                                    : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-indigo-600 hover:border-indigo-300'
-                                }`}
-                              >
-                                {lockingRowId === item._id ? (
-                                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
-                                ) : isLocked ? (
-                                  <Lock className="w-3.5 h-3.5 text-amber-600" />
-                                ) : (
-                                  <Unlock className="w-3.5 h-3.5" />
-                                )}
-                              </button>
-                            </div>
-                          )
-                        ) : item.status === 'PENDING_SUPERVISOR_APPROVAL' ? (
-                          <span className="text-[11px] text-amber-600 italic">Chờ duyệt ĐT</span>
-                        ) : (
-                          <span className="text-[11px] text-slate-400 italic">Chưa mở chấm</span>
-                        )}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                        <StatusBadge status={item.status} size="sm" />
-                      </td>
-
-                      {/* Action */}
-                      <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetail(item)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
-                            title="Xem chi tiết đề tài"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            <span>Chi tiết</span>
-                          </button>
-
-                          {activeTab === 'SUPERVISOR' &&
-                          item.status === 'PENDING_SUPERVISOR_APPROVAL' && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenAccept(item)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5" />
-                                <span>Duyệt</span>
-                              </button>
-
-                              <button
-                                type="button"
-                                onClick={() => handleOpenReject(item)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl transition cursor-pointer"
-                              >
-                                <span>Từ chối</span>
-                              </button>
-                            </>
+                            <span className="text-[11px] text-slate-400 italic">Chưa mở chấm</span>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                          <StatusBadge status={item.status} size="sm" />
+                        </td>
+
+                        {/* Action */}
+                        <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDetail(item)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                              title="Xem chi tiết đề tài"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Chi tiết</span>
+                            </button>
+
+                            {activeTab === 'SUPERVISOR' &&
+                              item.status === 'PENDING_SUPERVISOR_APPROVAL' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenAccept(item)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>Duyệt</span>
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenReject(item)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl transition cursor-pointer"
+                                  >
+                                    <span>Từ chối</span>
+                                  </button>
+                                </>
+                              )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Grade Modal */}
@@ -1356,8 +1357,8 @@ const LecturerThesesPage = () => {
           activeTab === 'REVIEWER_1'
             ? 'REVIEWER1'
             : activeTab === 'REVIEWER_2'
-            ? 'REVIEWER2'
-            : 'SUPERVISOR'
+              ? 'REVIEWER2'
+              : 'SUPERVISOR'
         }
         onSuccess={() => {
           fetchAssignedTheses();

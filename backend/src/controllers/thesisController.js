@@ -120,6 +120,22 @@ const getThesisByStudent = async (req, res, next) => {
   }
 };
 
+// ====================
+// Get Thesis By ID
+// ====================
+const getThesisById = async (req, res, next) => {
+  try {
+    const thesis = await thesisService.getThesisById(req.params.id);
+    res.status(200).json({
+      success: true,
+      message: "Lấy thông tin chi tiết đề tài khóa luận thành công",
+      data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ==========================================
 // PHASE 9: TBM THESIS CONTROLLERS
 // ==========================================
@@ -268,13 +284,15 @@ const getAssignedThesesForLecturer = async (req, res, next) => {
 // ====================
 const gradeThesisByLecturer = async (req, res, next) => {
   try {
-    const { score, student1Score, student2Score, comment, roleType, role } = req.body;
+    const { score, student1Score, student2Score, comment, roleType, role, checkedCriteriaIds, criteriaEvaluations } = req.body;
 
     const thesis = await thesisService.gradeThesisByLecturer(req.params.id, {
       score,
       student1Score,
       student2Score,
       comment,
+      checkedCriteriaIds,
+      criteriaEvaluations,
       roleType: roleType || role,
       role: role || roleType,
       userId: req.user.userId || req.user._id,
@@ -284,6 +302,30 @@ const gradeThesisByLecturer = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Chấm điểm và lưu đánh giá đề tài khóa luận thành công",
+      data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Lecturer: Evaluate Criteria by Supervisor
+// ====================
+const evaluateThesisCriteriaBySupervisor = async (req, res, next) => {
+  try {
+    const { checkedCriteriaIds, criteriaEvaluations } = req.body;
+
+    const thesis = await thesisService.evaluateCriteriaBySupervisor(req.params.id, {
+      checkedCriteriaIds,
+      criteriaEvaluations,
+      userId: req.user.userId || req.user._id,
+      userRole: req.user.role,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Đánh giá điều kiện thực hiện KLTN thành công",
       data: thesis,
     });
   } catch (error) {
@@ -755,6 +797,7 @@ export default {
   getAvailableSupervisors,
   getMyThesis,
   getThesisByStudent,
+  getThesisById,
   getAllThesesForTbm,
   approveThesis,
   rejectThesis,
@@ -764,6 +807,7 @@ export default {
   supervisorRejectThesis,
   getAssignedThesesForLecturer,
   gradeThesisByLecturer,
+  evaluateThesisCriteriaBySupervisor,
   toggleThesisScoreLock,
   toggleAllThesisScoresLock,
   getThesesForEvaluation,

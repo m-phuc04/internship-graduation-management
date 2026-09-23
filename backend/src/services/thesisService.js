@@ -413,6 +413,40 @@ const getThesisByStudent = async (studentId) => {
     .populate("reviewer2Id")
     .populate("academicTermId");
 
+  return thesis;
+};
+
+// ====================
+// Get Thesis By Thesis ID (Detail view)
+// ====================
+const getThesisById = async (id) => {
+  const thesis = await Thesis.findById(id)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone avatar" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone avatar" },
+    })
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone avatar" },
+    })
+    .populate({
+      path: "reviewer1Id",
+      populate: { path: "userId", select: "fullName email phone avatar" },
+    })
+    .populate({
+      path: "reviewer2Id",
+      populate: { path: "userId", select: "fullName email phone avatar" },
+    })
+    .populate({
+      path: "reviewers.lecturerId",
+      populate: { path: "userId", select: "fullName email phone avatar" },
+    })
+    .populate("academicTermId");
+
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
@@ -1732,6 +1766,110 @@ const gradeThesisByLecturer = async (
 };
 
 // ====================
+// GVHD Evaluates Criteria Directly
+// ====================
+const evaluateCriteriaBySupervisor = async (
+  thesisId,
+  arg2,
+  arg3 = {},
+) => {
+  let requestingUserId;
+  let payload;
+  if (typeof arg2 === "object" && arg2 !== null) {
+    payload = arg2;
+    requestingUserId = arg2.userId || arg2.requestingUserId;
+  } else {
+    requestingUserId = arg2;
+    payload = arg3;
+  }
+
+  const lecturer = await Lecturer.findOne({ userId: requestingUserId }).populate("userId");
+  if (!lecturer) {
+    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  }
+
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  if (thesis.status === "COMPLETED") {
+    throw new AppError("Khóa luận đã hoàn thành và không thể chỉnh sửa đánh giá tiêu chí.", 400);
+  }
+  if (thesis.status === "REJECTED") {
+    throw new AppError("Đề tài đã bị từ chối / không đạt (FAIL).", 400);
+  }
+
+  const isSup = thesis.supervisorId?.toString() === lecturer._id.toString();
+  if (!isSup) {
+    throw new AppError("Bạn không phải là giảng viên hướng dẫn của đề tài này", 403);
+  }
+
+  let activeCriteria = await ThesisEvaluationCriteria.find({
+    isActive: true,
+    $or: [
+      ...(thesis.academicTermId ? [{ academicTermId: thesis.academicTermId }] : []),
+      { academicTermId: null },
+    ],
+  }).sort({ order: 1 });
+
+  if (activeCriteria.length === 0) {
+    await seedDefaultCriteria(thesis.academicTermId);
+    activeCriteria = await ThesisEvaluationCriteria.find({
+      isActive: true,
+      $or: [
+        ...(thesis.academicTermId ? [{ academicTermId: thesis.academicTermId }] : []),
+        { academicTermId: null },
+      ],
+    }).sort({ order: 1 });
+  }
+
+  const requiredCriteria = activeCriteria.filter((c) => c.isRequired !== false);
+  const incomingCheckedIds = Array.isArray(payload.checkedCriteriaIds)
+    ? payload.checkedCriteriaIds.map((id) => id.toString())
+    : (payload.criteriaEvaluations || [])
+        .filter((e) => e.isPassed)
+        .map((e) => (e.criteriaId?._id || e.criteriaId)?.toString());
+
+  const allRequiredPassed =
+    requiredCriteria.length === 0 ||
+    requiredCriteria.every((rc) => incomingCheckedIds.includes(rc._id.toString()));
+
+  thesis.criteriaEvaluations = activeCriteria.map((c) => ({
+    criteriaId: c._id,
+    criteriaName: c.name,
+    isPassed: incomingCheckedIds.includes(c._id.toString()),
+    evaluatedAt: new Date(),
+  }));
+  thesis.isCriteriaPassed = allRequiredPassed;
+
+  await thesis.save();
+
+  return await Thesis.findById(thesis._id)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer1Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer2Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("academicTermId");
+};
+
+// ====================
 // Toggle Score Lock for Single Thesis
 // ====================
 const toggleThesisScoreLock = async (thesisId, { roleType = "SUPERVISOR", isLocked, userId }) => {
@@ -2985,6 +3123,7 @@ export default {
   getAvailableSupervisors,
   getMyThesis,
   getThesisByStudent,
+  getThesisById,
   getAllThesesForTbm,
   approveThesis,
   rejectThesis,
@@ -2994,6 +3133,7 @@ export default {
   supervisorRejectThesis,
   getThesesForLecturerRole,
   gradeThesisByLecturer,
+  evaluateCriteriaBySupervisor,
   toggleThesisScoreLock,
   toggleAllThesisScoresLock,
   getThesesForEvaluation,

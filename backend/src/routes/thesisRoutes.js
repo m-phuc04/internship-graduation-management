@@ -219,6 +219,14 @@ router.patch(
   thesisController.gradeThesisByLecturer,
 );
 
+// Lecturer (GVHD) / Admin: Evaluate criteria condition for thesis
+router.patch(
+  "/:id/evaluate-criteria",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.evaluateThesisCriteriaBySupervisor,
+);
+
 // Lecturer / Admin: Toggle lock on single thesis score
 router.patch(
   "/:id/score-lock",
@@ -323,6 +331,13 @@ router.get(
   "/student/:studentId",
   authMiddleware,
   thesisController.getThesisByStudent,
+);
+
+// Get thesis by ID
+router.get(
+  "/:id",
+  authMiddleware,
+  thesisController.getThesisById,
 );
 
 export default router;

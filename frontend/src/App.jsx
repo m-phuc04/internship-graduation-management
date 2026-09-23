@@ -39,6 +39,7 @@ import LecturerInternshipPage from './pages/lecturer/LecturerInternshipPage';
 import LecturerReportPage from './pages/lecturer/LecturerReportPage';
 import LecturerThesesPage from './pages/lecturer/LecturerThesesPage';
 import LecturerThesisProgressPage from './pages/lecturer/LecturerThesisProgressPage';
+import LecturerThesisEvaluationDetailPage from './pages/lecturer/LecturerThesisEvaluationDetailPage';
 import LecturerDashboard from './pages/lecturer/LecturerDashboard';
 import LecturerNewsManagement from './pages/lecturer/LecturerNewsManagement';
 import CompanyEvaluationPage from './pages/company/CompanyEvaluationPage';
@@ -198,6 +199,8 @@ function App() {
               <Route path="internships" element={<LecturerInternshipPage />} />
               <Route path="reports" element={<LecturerReportPage />} />
               <Route path="theses" element={<LecturerThesesPage />} />
+              <Route path="theses/:id/evaluate" element={<LecturerThesisEvaluationDetailPage />} />
+              <Route path="theses/:id" element={<LecturerThesisEvaluationDetailPage />} />
               <Route path="theses/progress" element={<LecturerThesisProgressPage />} />
               <Route path="news" element={<LecturerNewsManagement />} />
               <Route path="profile" element={<ProfilePage />} />

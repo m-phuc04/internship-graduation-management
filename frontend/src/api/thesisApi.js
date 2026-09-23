@@ -22,6 +22,9 @@ export const thesisApi = {
   getByStudentId: (studentId) =>
     axiosClient.get(`/theses/student/${studentId}`),
 
+  // Get single thesis by thesis ID
+  getById: (id) => axiosClient.get(`/theses/${id}`),
+
   // ==========================================
   // Phase 12: Thesis Evaluation Endpoints
   // ==========================================
@@ -61,6 +64,9 @@ export const thesisApi = {
 
   // Lecturer grades thesis based on role (Supervisor / Reviewer 1 / Reviewer 2)
   gradeThesis: (id, data) => axiosClient.patch(`/theses/${id}/grade`, data),
+
+  // Lecturer (GVHD) evaluates criteria condition
+  evaluateCriteria: (id, data) => axiosClient.patch(`/theses/${id}/evaluate-criteria`, data),
 
   // Lecturer toggles lock for single thesis score
   toggleScoreLock: (id, data) => axiosClient.patch(`/theses/${id}/score-lock`, data),
