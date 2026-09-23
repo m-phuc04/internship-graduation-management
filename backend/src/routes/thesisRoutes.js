@@ -110,7 +110,85 @@ router.get(
 );
 
 // ==========================================
-// 3. Thesis Evaluations (Only reviewer1Id != null AND reviewer2Id != null)
+// 3. Thesis Evaluation Criteria Routes
+// ==========================================
+
+// Get all active criteria (Accessible to all authenticated users)
+router.get(
+  "/criteria",
+  authMiddleware,
+  thesisController.getThesisEvaluationCriteria,
+);
+
+// TBM / ADMIN: Create new evaluation criteria
+router.post(
+  "/criteria",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.createThesisEvaluationCriteria,
+);
+
+// TBM / ADMIN: Update evaluation criteria
+router.patch(
+  "/criteria/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.updateThesisEvaluationCriteria,
+);
+
+// TBM / ADMIN: Delete evaluation criteria
+router.delete(
+  "/criteria/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.deleteThesisEvaluationCriteria,
+);
+
+// ==========================================
+// 4. Thesis Grading Periods Routes
+// ==========================================
+
+// Get all grading periods
+router.get(
+  "/grading-periods",
+  authMiddleware,
+  thesisController.getThesisGradingPeriods,
+);
+
+// TBM / ADMIN: Create new grading period
+router.post(
+  "/grading-periods",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.createThesisGradingPeriod,
+);
+
+// TBM / ADMIN: Update grading period
+router.patch(
+  "/grading-periods/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.updateThesisGradingPeriod,
+);
+
+// TBM / ADMIN: Delete grading period
+router.delete(
+  "/grading-periods/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.deleteThesisGradingPeriod,
+);
+
+// TBM / ADMIN: Process Expired Grading Periods (Mark FAIL for unsubmitted theses)
+router.post(
+  "/grading-periods/process-expired",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.processExpiredGradingPeriods,
+);
+
+// ==========================================
+// 5. Thesis Evaluations (Only reviewer1Id != null AND reviewer2Id != null)
 // ==========================================
 
 // TBM, Lecturer, ADMIN: Get Theses For Evaluation with Stats

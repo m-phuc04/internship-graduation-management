@@ -35,6 +35,23 @@ export const thesisApi = {
     axiosClient.patch(`/theses/${id}/complete`),
 
   // ==========================================
+  // Thesis Evaluation Criteria & Grading Periods
+  // ==========================================
+
+  // Criteria
+  getCriteria: (params) => axiosClient.get('/theses/criteria', { params }),
+  createCriteria: (data) => axiosClient.post('/theses/criteria', data),
+  updateCriteria: (id, data) => axiosClient.patch(`/theses/criteria/${id}`, data),
+  deleteCriteria: (id) => axiosClient.delete(`/theses/criteria/${id}`),
+
+  // Grading Periods
+  getGradingPeriods: (params) => axiosClient.get('/theses/grading-periods', { params }),
+  createGradingPeriod: (data) => axiosClient.post('/theses/grading-periods', data),
+  updateGradingPeriod: (id, data) => axiosClient.patch(`/theses/grading-periods/${id}`, data),
+  deleteGradingPeriod: (id) => axiosClient.delete(`/theses/grading-periods/${id}`),
+  processExpiredGradingPeriods: (data) => axiosClient.post('/theses/grading-periods/process-expired', data),
+
+  // ==========================================
   // Lecturer / Reviewer Endpoints
   // ==========================================
 
@@ -64,6 +81,7 @@ export const thesisApi = {
   // ==========================================
 
   // TBM gets all theses with search & filter
+  getAll: (params) => axiosClient.get('/theses', { params }),
   getAllForTbm: (params) => axiosClient.get('/theses', { params }),
 
   // TBM approves a thesis

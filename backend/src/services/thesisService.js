@@ -1,5 +1,7 @@
 import Thesis from "../models/Thesis.js";
 import ThesisTopic from "../models/ThesisTopic.js";
+import ThesisEvaluationCriteria from "../models/ThesisEvaluationCriteria.js";
+import ThesisGradingPeriod from "../models/ThesisGradingPeriod.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
@@ -813,7 +815,18 @@ const assignReviewers = async (
   }
 
   if (thesis.status === "REJECTED") {
-    throw new AppError("Đề tài đã bị từ chối, không thể phân công giảng viên phản biện.", 400);
+    throw new AppError("Đề tài đã bị từ chối / không đạt (FAIL), không thể phân công giảng viên phản biện.", 400);
+  }
+
+  if (
+    thesis.scores?.supervisorScore === null ||
+    thesis.scores?.supervisorScore === undefined ||
+    thesis.isCriteriaPassed === false
+  ) {
+    throw new AppError(
+      "Sinh viên chưa hoàn tất đánh giá điều kiện và chưa có điểm GVHD hợp lệ. Không thể phân công giảng viên phản biện.",
+      400,
+    );
   }
 
   const supervisorIdStr = thesis.supervisorId.toString();
@@ -1440,10 +1453,16 @@ const gradeThesisByLecturer = async (
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
 
-  // 1. RULE: Permanent Lock if Thesis is COMPLETED
+  // 1. RULE: Permanent Lock if Thesis is COMPLETED or REJECTED
   if (thesis.status === "COMPLETED") {
     throw new AppError(
       "Khóa luận đã hoàn thành và không thể chỉnh sửa điểm hay nhận xét.",
+      400,
+    );
+  }
+  if (thesis.status === "REJECTED") {
+    throw new AppError(
+      "Đề tài đã bị từ chối / không đạt (FAIL). Không thể nhập hoặc chỉnh sửa điểm.",
       400,
     );
   }
@@ -1496,6 +1515,77 @@ const gradeThesisByLecturer = async (
     if (thesis.scores?.isSupervisorScoreLocked) {
       throw new AppError("Điểm hướng dẫn của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
     }
+
+    // Check Grading Period for Thesis
+    const now = new Date();
+    if (thesis.academicTermId) {
+      const allPeriods = await ThesisGradingPeriod.find({
+        academicTermId: thesis.academicTermId,
+      });
+
+      if (allPeriods.length > 0) {
+        const activePeriod = allPeriods.find(
+          (p) => now >= new Date(p.startDate) && now <= new Date(p.endDate),
+        );
+        if (!activePeriod) {
+          const hasUpcoming = allPeriods.some((p) => now < new Date(p.startDate));
+          if (hasUpcoming) {
+            throw new AppError("Đợt nhập điểm KLTN chưa bắt đầu.", 400);
+          }
+          throw new AppError("Đã hết thời gian nhập điểm KLTN. Không thể nhập hoặc chỉnh sửa điểm.", 400);
+        }
+      }
+    }
+
+    // Check Criteria Checklist
+    let activeCriteria = await ThesisEvaluationCriteria.find({
+      isActive: true,
+      $or: [
+        ...(thesis.academicTermId ? [{ academicTermId: thesis.academicTermId }] : []),
+        { academicTermId: null },
+      ],
+    }).sort({ order: 1 });
+
+    if (activeCriteria.length === 0) {
+      await seedDefaultCriteria(thesis.academicTermId);
+      activeCriteria = await ThesisEvaluationCriteria.find({
+        isActive: true,
+        $or: [
+          ...(thesis.academicTermId ? [{ academicTermId: thesis.academicTermId }] : []),
+          { academicTermId: null },
+        ],
+      }).sort({ order: 1 });
+    }
+
+    const requiredCriteria = activeCriteria.filter((c) => c.isRequired !== false);
+    const incomingEvaluations = payload.criteriaEvaluations || [];
+    const incomingCheckedIds = Array.isArray(payload.checkedCriteriaIds)
+      ? payload.checkedCriteriaIds.map((id) => id.toString())
+      : incomingEvaluations
+          .filter((e) => e.isPassed)
+          .map((e) => (e.criteriaId?._id || e.criteriaId)?.toString());
+
+    // Check if all required criteria are checked
+    const allRequiredPassed = requiredCriteria.every((rc) =>
+      incomingCheckedIds.includes(rc._id.toString()),
+    );
+
+    if (!allRequiredPassed && requiredCriteria.length > 0) {
+      throw new AppError(
+        "Chưa đủ điều kiện nhập điểm. Vui lòng hoàn thành tất cả tiêu chí đánh giá.",
+        400,
+      );
+    }
+
+    // Save criteria evaluations
+    thesis.criteriaEvaluations = activeCriteria.map((c) => ({
+      criteriaId: c._id,
+      criteriaName: c.name,
+      isPassed: incomingCheckedIds.includes(c._id.toString()),
+      evaluatedAt: new Date(),
+    }));
+    thesis.isCriteriaPassed = true;
+
     if (s1 !== null) thesis.scores.student1SupervisorScore = s1;
     if (s2 !== null) thesis.scores.student2SupervisorScore = s2;
 
@@ -2576,6 +2666,318 @@ const searchStudentsForGroup = async (query, requestingUserId = null) => {
   });
 };
 
+// ====================
+// Thesis Evaluation Criteria Management
+// ====================
+const DEFAULT_CRITERIA = [
+  {
+    name: "Đã nộp code",
+    description: "Sinh viên đã nộp source code theo yêu cầu của GVHD",
+    isRequired: true,
+    isActive: true,
+    order: 1,
+  },
+  {
+    name: "Đủ báo cáo",
+    description: "Sinh viên nộp đầy đủ báo cáo định kỳ theo quy định",
+    isRequired: true,
+    isActive: true,
+    order: 2,
+  },
+  {
+    name: "Đi báo cáo đầy đủ",
+    description: "Sinh viên tham gia đầy đủ các buổi gặp và báo cáo tiến độ với GVHD",
+    isRequired: true,
+    isActive: true,
+    order: 3,
+  },
+  {
+    name: "Hoàn thành các yêu cầu của GVHD",
+    description: "Sinh viên hoàn thành các nội dung và yêu cầu chuyên môn được GVHD giao",
+    isRequired: true,
+    isActive: true,
+    order: 4,
+  },
+];
+
+const seedDefaultCriteria = async (academicTermId = null) => {
+  const count = await ThesisEvaluationCriteria.countDocuments();
+  if (count === 0) {
+    const docs = DEFAULT_CRITERIA.map((c) => ({
+      ...c,
+      academicTermId: academicTermId || null,
+    }));
+    await ThesisEvaluationCriteria.insertMany(docs);
+  }
+};
+
+const getThesisEvaluationCriteria = async ({ academicTermId = null, includeInactive = false } = {}) => {
+  await seedDefaultCriteria(academicTermId);
+
+  const query = {};
+  if (!includeInactive) {
+    query.isActive = true;
+  }
+  if (academicTermId && academicTermId !== "ALL") {
+    query.$or = [{ academicTermId }, { academicTermId: null }];
+  }
+
+  const criteria = await ThesisEvaluationCriteria.find(query)
+    .sort({ order: 1, createdAt: 1 })
+    .populate("createdBy", "fullName email");
+
+  return criteria;
+};
+
+const createThesisEvaluationCriteria = async ({
+  name,
+  description = null,
+  isRequired = true,
+  isActive = true,
+  order = 0,
+  academicTermId = null,
+  userId,
+}) => {
+  if (!name || !name.trim()) {
+    throw new AppError("Tên tiêu chí không được để trống", 400);
+  }
+
+  const criteria = await ThesisEvaluationCriteria.create({
+    name: name.trim(),
+    description: description ? description.trim() : null,
+    isRequired: Boolean(isRequired),
+    isActive: isActive !== undefined ? Boolean(isActive) : true,
+    order: Number(order) || 0,
+    academicTermId: academicTermId || null,
+    createdBy: userId || null,
+  });
+
+  return criteria;
+};
+
+const updateThesisEvaluationCriteria = async (id, data) => {
+  const criteria = await ThesisEvaluationCriteria.findById(id);
+  if (!criteria) {
+    throw new AppError("Không tìm thấy tiêu chí đánh giá", 404);
+  }
+
+  if (data.name !== undefined) criteria.name = data.name.trim();
+  if (data.description !== undefined) criteria.description = data.description ? data.description.trim() : null;
+  if (data.isRequired !== undefined) criteria.isRequired = Boolean(data.isRequired);
+  if (data.isActive !== undefined) criteria.isActive = Boolean(data.isActive);
+  if (data.order !== undefined) criteria.order = Number(data.order);
+  if (data.academicTermId !== undefined) criteria.academicTermId = data.academicTermId || null;
+
+  await criteria.save();
+  return criteria;
+};
+
+const deleteThesisEvaluationCriteria = async (id) => {
+  const criteria = await ThesisEvaluationCriteria.findById(id);
+  if (!criteria) {
+    throw new AppError("Không tìm thấy tiêu chí đánh giá", 404);
+  }
+
+  // Check if this criteria is referenced in any evaluated Thesis
+  const isUsed = await Thesis.exists({
+    "criteriaEvaluations.criteriaId": criteria._id,
+  });
+
+  if (isUsed) {
+    // Soft delete to maintain historical evaluation records
+    criteria.isActive = false;
+    await criteria.save();
+    return { message: "Tiêu chí đã được sử dụng trong đánh giá nên đã được chuyển sang trạng thái Ẩn (Inactive)", criteria };
+  }
+
+  await ThesisEvaluationCriteria.findByIdAndDelete(id);
+  return { message: "Xóa tiêu chí đánh giá thành công", id };
+};
+
+// ====================
+// Thesis Grading Periods Management
+// ====================
+const getThesisGradingPeriods = async ({ academicTermId = null } = {}) => {
+  const query = {};
+  if (academicTermId && academicTermId !== "ALL") {
+    query.academicTermId = academicTermId;
+  }
+
+  const periods = await ThesisGradingPeriod.find(query)
+    .sort({ startDate: -1 })
+    .populate("academicTermId", "name code academicYear")
+    .populate("createdBy", "fullName email");
+
+  const now = new Date();
+  const withStatus = periods.map((p) => {
+    const obj = p.toObject();
+    const start = new Date(p.startDate);
+    const end = new Date(p.endDate);
+    if (now < start) {
+      obj.computedStatus = "UPCOMING";
+    } else if (now > end) {
+      obj.computedStatus = "EXPIRED";
+    } else {
+      obj.computedStatus = "ACTIVE";
+    }
+    return obj;
+  });
+
+  return withStatus;
+};
+
+const createThesisGradingPeriod = async ({
+  name,
+  academicTermId,
+  startDate,
+  endDate,
+  notificationScope = "LECTURER_ONLY",
+  description = null,
+  userId,
+}) => {
+  if (!name || !name.trim()) throw new AppError("Tên đợt nhập điểm là bắt buộc", 400);
+  if (!academicTermId) throw new AppError("Vui lòng chọn học kỳ áp dụng", 400);
+  if (!startDate || !endDate) throw new AppError("Vui lòng chọn đầy đủ thời gian bắt đầu và kết thúc", 400);
+
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+    throw new AppError("Thời gian bắt đầu hoặc kết thúc không hợp lệ", 400);
+  }
+  if (end <= start) {
+    throw new AppError("Thời gian kết thúc phải sau thời gian bắt đầu", 400);
+  }
+
+  const period = await ThesisGradingPeriod.create({
+    name: name.trim(),
+    academicTermId,
+    startDate: start,
+    endDate: end,
+    notificationScope: notificationScope === "PUBLIC" ? "PUBLIC" : "LECTURER_ONLY",
+    description: description ? description.trim() : null,
+    createdBy: userId || null,
+  });
+
+  // Handle Notifications
+  try {
+    const term = await AcademicTerm.findById(academicTermId);
+    const termName = term ? `${term.name} (${term.code})` : "";
+    const formattedStart = start.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+    const formattedEnd = end.toLocaleString("vi-VN", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" });
+
+    const notifTitle = `Thông báo mở đợt nhập điểm KLTN: ${period.name}`;
+    const notifMessage = `${description ? `${description.trim()}\n` : ""}Thời gian mở nhập điểm: ${formattedStart} đến ${formattedEnd} (Học kỳ: ${termName}).`;
+
+    if (period.notificationScope === "PUBLIC") {
+      await notificationService.createNotificationForRole(["LECTURER", "TBM", "STUDENT"], {
+        senderId: userId,
+        type: "THESIS",
+        title: notifTitle,
+        message: notifMessage,
+        referenceId: period._id,
+        referenceModel: "Schedule",
+        priority: "HIGH",
+      });
+    } else {
+      // Send strictly to supervisors of theses in this academic term
+      const theses = await Thesis.find({
+        academicTermId,
+        supervisorId: { $ne: null },
+      }).select("supervisorId");
+
+      const supervisorIds = [...new Set(theses.map((t) => t.supervisorId.toString()))];
+      const lecturers = await Lecturer.find({ _id: { $in: supervisorIds } }).select("userId");
+
+      for (const lec of lecturers) {
+        if (lec.userId) {
+          await notificationService.createNotification({
+            recipientId: lec.userId,
+            senderId: userId,
+            type: "THESIS",
+            title: notifTitle,
+            message: notifMessage,
+            referenceId: period._id,
+            referenceModel: "Schedule",
+            priority: "HIGH",
+          });
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Error broadcasting grading period notification:", err.message);
+  }
+
+  return period;
+};
+
+const updateThesisGradingPeriod = async (id, data, userId) => {
+  const period = await ThesisGradingPeriod.findById(id);
+  if (!period) throw new AppError("Không tìm thấy đợt nhập điểm", 404);
+
+  if (data.name !== undefined) period.name = data.name.trim();
+  if (data.startDate !== undefined) period.startDate = new Date(data.startDate);
+  if (data.endDate !== undefined) period.endDate = new Date(data.endDate);
+  if (data.notificationScope !== undefined) period.notificationScope = data.notificationScope;
+  if (data.description !== undefined) period.description = data.description ? data.description.trim() : null;
+
+  if (period.endDate <= period.startDate) {
+    throw new AppError("Thời gian kết thúc phải sau thời gian bắt đầu", 400);
+  }
+
+  await period.save();
+  return period;
+};
+
+const deleteThesisGradingPeriod = async (id) => {
+  const period = await ThesisGradingPeriod.findByIdAndDelete(id);
+  if (!period) throw new AppError("Không tìm thấy đợt nhập điểm", 404);
+  return { message: "Xóa đợt nhập điểm thành công", id };
+};
+
+const processExpiredGradingPeriods = async (academicTermId) => {
+  const now = new Date();
+  const query = {
+    endDate: { $lt: now },
+  };
+  if (academicTermId && academicTermId !== "ALL") {
+    query.academicTermId = academicTermId;
+  }
+
+  const expiredPeriods = await ThesisGradingPeriod.find(query);
+  if (expiredPeriods.length === 0) {
+    return { processedThesesCount: 0, failedTheses: [] };
+  }
+
+  const termIds = expiredPeriods.map((p) => p.academicTermId);
+  const incompleteTheses = await Thesis.find({
+    academicTermId: { $in: termIds },
+    status: { $in: ["APPROVED", "ASSIGNED_REVIEWERS", "IN_PROGRESS", "SUBMITTED"] },
+    $or: [
+      { "scores.supervisorScore": null },
+      { "scores.supervisorScore": { $exists: false } },
+      { isCriteriaPassed: false },
+    ],
+  }).populate({ path: "studentId", populate: { path: "userId", select: "fullName email" } });
+
+  const failedTheses = [];
+  for (const t of incompleteTheses) {
+    t.status = "REJECTED";
+    t.rejectionReason = "Không hoàn thành đánh giá điều kiện hoặc không có điểm GVHD đúng thời hạn quy định (FAIL KLTN)";
+    t.rejectedAt = new Date();
+    await t.save();
+    failedTheses.push({
+      _id: t._id,
+      thesisTitle: t.thesisTitle,
+      studentName: t.studentId?.userId?.fullName || "Sinh viên",
+    });
+  }
+
+  return {
+    processedThesesCount: failedTheses.length,
+    failedTheses,
+  };
+};
+
 export default {
   createThesis,
   lookupStudentByCode,
@@ -2596,6 +2998,16 @@ export default {
   toggleAllThesisScoresLock,
   getThesesForEvaluation,
   completeThesisEvaluation,
+  // Criteria & Grading Period Management
+  getThesisEvaluationCriteria,
+  createThesisEvaluationCriteria,
+  updateThesisEvaluationCriteria,
+  deleteThesisEvaluationCriteria,
+  getThesisGradingPeriods,
+  createThesisGradingPeriod,
+  updateThesisGradingPeriod,
+  deleteThesisGradingPeriod,
+  processExpiredGradingPeriods,
   // KLTN Topic Management
   batchCreateTopicsByLecturer,
   getMyCreatedTopics,

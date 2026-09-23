@@ -13,6 +13,12 @@ import {
   Percent,
   Lock,
   Eye,
+  CheckSquare,
+  Square,
+  Clock,
+  Calendar,
+  AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 
 const GradeThesisModal = ({
@@ -33,11 +39,23 @@ const GradeThesisModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  // Criteria & Grading Period State
+  const [criteriaList, setCriteriaList] = useState([]);
+  const [checkedCriteriaIds, setCheckedCriteriaIds] = useState([]);
+  const [loadingCriteria, setLoadingCriteria] = useState(false);
+  const [gradingPeriodInfo, setGradingPeriodInfo] = useState({
+    hasPeriods: false,
+    isActive: true,
+    statusText: '',
+    period: null,
+  });
+
   const input1Ref = useRef(null);
   const input2Ref = useRef(null);
   const commentRef = useRef(null);
 
   const isCompleted = thesis?.status === 'COMPLETED';
+  const isRejected = thesis?.status === 'REJECTED';
   const isTwoStudents = thesis?.studentCount === 2 && thesis?.secondStudentId;
 
   // Determine current lecturer's role on this thesis
@@ -72,6 +90,80 @@ const GradeThesisModal = ({
 
   const isBothReviewers = isReviewer1 && isReviewer2;
 
+  // Fetch criteria and grading periods
+  const fetchCriteriaAndPeriods = async () => {
+    if (!thesis) return;
+    setLoadingCriteria(true);
+    try {
+      const termId = thesis.academicTermId?._id || thesis.academicTermId || '';
+      const [critRes, periodRes] = await Promise.all([
+        thesisApi.getCriteria({ academicTermId: termId }),
+        thesisApi.getGradingPeriods({ academicTermId: termId }),
+      ]);
+
+      if (critRes.success) {
+        const fetchedCriteria = critRes.data || [];
+        setCriteriaList(fetchedCriteria);
+
+        // Pre-populate checked criteria from thesis if available
+        if (Array.isArray(thesis.criteriaEvaluations) && thesis.criteriaEvaluations.length > 0) {
+          const passedIds = thesis.criteriaEvaluations
+            .filter((ce) => ce.isPassed)
+            .map((ce) => (ce.criteriaId?._id || ce.criteriaId)?.toString());
+          setCheckedCriteriaIds(passedIds);
+        } else if (thesis.isCriteriaPassed) {
+          // If marked passed historically, check all
+          setCheckedCriteriaIds(fetchedCriteria.map((c) => c._id.toString()));
+        } else {
+          setCheckedCriteriaIds([]);
+        }
+      }
+
+      if (periodRes.success) {
+        const periods = periodRes.data || [];
+        if (periods.length === 0) {
+          setGradingPeriodInfo({
+            hasPeriods: false,
+            isActive: true,
+            statusText: '',
+            period: null,
+          });
+        } else {
+          const active = periods.find((p) => p.computedStatus === 'ACTIVE');
+          const upcoming = periods.find((p) => p.computedStatus === 'UPCOMING');
+          const expired = periods.filter((p) => p.computedStatus === 'EXPIRED');
+
+          if (active) {
+            setGradingPeriodInfo({
+              hasPeriods: true,
+              isActive: true,
+              statusText: `Đợt nhập điểm "${active.name}" đang mở (đến ${new Date(active.endDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })})`,
+              period: active,
+            });
+          } else if (upcoming) {
+            setGradingPeriodInfo({
+              hasPeriods: true,
+              isActive: false,
+              statusText: `Đợt nhập điểm "${upcoming.name}" chưa bắt đầu (bắt đầu lúc ${new Date(upcoming.startDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })})`,
+              period: upcoming,
+            });
+          } else if (expired.length > 0) {
+            setGradingPeriodInfo({
+              hasPeriods: true,
+              isActive: false,
+              statusText: 'Đã hết thời gian nhập điểm.',
+              period: expired[0],
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Error fetching criteria or grading periods:', err.message);
+    } finally {
+      setLoadingCriteria(false);
+    }
+  };
+
   useEffect(() => {
     if (isOpen && thesis) {
       setError('');
@@ -87,6 +179,7 @@ const GradeThesisModal = ({
       }
       setActiveRoleTab(initialTab);
       loadRoleData(initialTab);
+      fetchCriteriaAndPeriods();
 
       // Auto-focus first input
       setTimeout(() => {
@@ -100,7 +193,27 @@ const GradeThesisModal = ({
     (activeRoleTab === 'REVIEWER1' && thesis?.scores?.isReviewer1ScoreLocked) ||
     (activeRoleTab === 'REVIEWER2' && thesis?.scores?.isReviewer2ScoreLocked);
 
-  const isFormLocked = isCompleted || isRoleScoreLocked;
+  // Criteria validation: Check if all required active criteria are checked
+  const requiredCriteria = criteriaList.filter((c) => c.isRequired !== false);
+  const allRequiredChecked =
+    requiredCriteria.length === 0 ||
+    requiredCriteria.every((rc) => checkedCriteriaIds.includes(rc._id.toString()));
+
+  // Period validation: If supervisor and periods exist but none active -> window closed
+  const isPeriodClosedForSupervisor =
+    activeRoleTab === 'SUPERVISOR' &&
+    gradingPeriodInfo.hasPeriods &&
+    !gradingPeriodInfo.isActive;
+
+  // Criteria incomplete for supervisor
+  const isCriteriaIncompleteForSupervisor =
+    activeRoleTab === 'SUPERVISOR' && !allRequiredChecked;
+
+  const isFormLocked =
+    isCompleted ||
+    isRejected ||
+    isRoleScoreLocked ||
+    (activeRoleTab === 'SUPERVISOR' && (isPeriodClosedForSupervisor || isCriteriaIncompleteForSupervisor));
 
   const loadRoleData = (role) => {
     const isTwo = thesis?.studentCount === 2 && thesis?.secondStudentId;
@@ -131,6 +244,25 @@ const GradeThesisModal = ({
     loadRoleData(role);
   };
 
+  // Toggle single criteria checkbox
+  const handleToggleCriteria = (criteriaId) => {
+    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+      return;
+    }
+    const idStr = criteriaId.toString();
+    setCheckedCriteriaIds((prev) =>
+      prev.includes(idStr) ? prev.filter((id) => id !== idStr) : [...prev, idStr],
+    );
+  };
+
+  // Check all criteria button
+  const handleCheckAllCriteria = () => {
+    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+      return;
+    }
+    setCheckedCriteriaIds(criteriaList.map((c) => c._id.toString()));
+  };
+
   let roleTitle = 'Giảng viên đánh giá';
   let roleWeight = '30%';
 
@@ -147,9 +279,22 @@ const GradeThesisModal = ({
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
-    if (isCompleted) return;
+    if (isCompleted || isRejected) return;
 
     setError('');
+
+    // Backend condition checks mirrored in frontend
+    if (activeRoleTab === 'SUPERVISOR') {
+      if (isPeriodClosedForSupervisor) {
+        setError(gradingPeriodInfo.statusText || 'Đã hết thời gian nhập điểm.');
+        return;
+      }
+
+      if (!allRequiredChecked) {
+        setError('Chưa đủ điều kiện nhập điểm. Vui lòng hoàn thành tất cả tiêu chí đánh giá.');
+        return;
+      }
+    }
 
     if (student1Score === '' && (!isTwoStudents || student2Score === '')) {
       setError('Vui lòng nhập điểm số đánh giá');
@@ -178,6 +323,7 @@ const GradeThesisModal = ({
         student2Score: num2,
         comment: comment.trim() || null,
         roleType: activeRoleTab,
+        checkedCriteriaIds,
       });
 
       if (res.success) {
@@ -198,8 +344,14 @@ const GradeThesisModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={isCompleted ? "Xem Điểm & Đánh Giá Đề Tài Khóa Luận (Đã hoàn thành)" : "Chấm Điểm & Đánh Giá Đề Tài Khóa Luận"}
-      maxWidth="max-w-xl"
+      title={
+        isCompleted
+          ? 'Xem Điểm & Đánh Giá Đề Tài Khóa Luận (Đã hoàn thành)'
+          : isRejected
+          ? 'Xem Điểm & Đánh Giá Đề Tài (Đã bị từ chối / FAIL)'
+          : 'Chấm Điểm & Đánh Giá Đề Tài Khóa Luận'
+      }
+      maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {/* Thesis Summary Card */}
@@ -223,7 +375,7 @@ const GradeThesisModal = ({
           </div>
         </div>
 
-        {/* Lock Notice if COMPLETED or Role Score Locked */}
+        {/* Lock Notice if COMPLETED, REJECTED, or Locked */}
         {isCompleted ? (
           <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2.5 shadow-2xs">
             <Lock className="w-4 h-4 shrink-0 text-emerald-600" />
@@ -231,6 +383,16 @@ const GradeThesisModal = ({
               <div className="font-bold">Đánh giá đã hoàn thành (COMPLETED)</div>
               <p className="text-[11px] text-emerald-700 mt-0.5">
                 Đề tài khóa luận này đã hoàn tất nghiệm thu và đánh giá. Không được phép chỉnh sửa điểm và nhận xét.
+              </p>
+            </div>
+          </div>
+        ) : isRejected ? (
+          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2.5 shadow-2xs">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+            <div>
+              <div className="font-bold">Đề tài đã bị dừng quy trình (FAIL / REJECTED)</div>
+              <p className="text-[11px] text-rose-700 mt-0.5">
+                {thesis.rejectionReason || 'Đề tài không đủ điều kiện hoặc quá hạn đánh giá KLTN.'}
               </p>
             </div>
           </div>
@@ -274,16 +436,118 @@ const GradeThesisModal = ({
           </div>
         )}
 
-        {/* Current Role Banner */}
-        <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Award className="w-4 h-4 text-indigo-600" />
-            <span className="font-bold text-slate-800 text-xs">{roleTitle}</span>
+        {/* Current Role Banner & Grading Period Notice */}
+        <div className="space-y-2">
+          <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Award className="w-4 h-4 text-indigo-600" />
+              <span className="font-bold text-slate-800 text-xs">{roleTitle}</span>
+            </div>
+            <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono font-bold text-[11px] border border-indigo-100 shadow-2xs">
+              Trọng số: {roleWeight}
+            </span>
           </div>
-          <span className="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-700 font-mono font-bold text-[11px] border border-indigo-100 shadow-2xs">
-            Trọng số: {roleWeight}
-          </span>
+
+          {/* Grading Period Banner for Supervisor */}
+          {activeRoleTab === 'SUPERVISOR' && gradingPeriodInfo.hasPeriods && (
+            <div
+              className={`p-3 rounded-2xl text-xs flex items-center gap-2.5 border ${
+                gradingPeriodInfo.isActive
+                  ? 'bg-blue-50 border-blue-200 text-blue-900'
+                  : 'bg-amber-50 border-amber-200 text-amber-900'
+              }`}
+            >
+              <Clock className="w-4 h-4 shrink-0 text-blue-600" />
+              <div className="flex-1 font-medium">{gradingPeriodInfo.statusText}</div>
+            </div>
+          )}
         </div>
+
+        {/* ========================================== */}
+        {/* SECTION: ĐÁNH GIÁ ĐIỀU KIỆN (TIÊU CHÍ GVHD) */}
+        {/* ========================================== */}
+        {activeRoleTab === 'SUPERVISOR' && (
+          <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="font-bold text-slate-800 text-xs uppercase tracking-wide">
+                  Đánh giá điều kiện thực hiện KLTN <span className="text-rose-500">*</span>
+                </span>
+              </div>
+              {!isCompleted && !isRejected && !isPeriodClosedForSupervisor && (
+                <button
+                  type="button"
+                  onClick={handleCheckAllCriteria}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-200 transition cursor-pointer"
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span>Tick tất cả</span>
+                </button>
+              )}
+            </div>
+
+            <p className="text-[11px] text-slate-500">
+              Sinh viên phải đạt <strong>TẤT CẢ</strong> các tiêu chí bắt buộc dưới đây thì GVHD mới được phép nhập điểm đánh giá.
+            </p>
+
+            {loadingCriteria ? (
+              <div className="py-4 text-center text-slate-400 text-xs">Đang tải danh sách tiêu chí...</div>
+            ) : criteriaList.length === 0 ? (
+              <div className="p-3 bg-slate-50 border rounded-xl text-slate-500 text-center text-xs">
+                Chưa có tiêu chí đánh giá nào được kích hoạt trong hệ thống.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {criteriaList.map((crit) => {
+                  const isChecked = checkedCriteriaIds.includes(crit._id.toString());
+                  return (
+                    <label
+                      key={crit._id}
+                      onClick={() => handleToggleCriteria(crit._id)}
+                      className={`flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer select-none ${
+                        isChecked
+                          ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
+                          : 'bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {}}
+                        disabled={isCompleted || isRejected || isPeriodClosedForSupervisor}
+                        className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 mt-0.5 pointer-events-none"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-xs">{crit.name}</span>
+                          {crit.isRequired !== false && (
+                            <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                              Bắt buộc
+                            </span>
+                          )}
+                        </div>
+                        {crit.description && (
+                          <div className="text-[11px] text-slate-500 mt-0.5">{crit.description}</div>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Criteria Status Banner */}
+            {!allRequiredChecked && (
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-[11px] flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+                <span className="font-semibold">
+                  Chưa đủ điều kiện nhập điểm. Vui lòng hoàn thành tất cả tiêu chí đánh giá ({checkedCriteriaIds.length}/{requiredCriteria.length}).
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-xs flex items-center gap-2">
@@ -343,12 +607,12 @@ const GradeThesisModal = ({
                       }
                     }
                   }}
-                  placeholder={isFormLocked ? "—" : "0.0"}
+                  placeholder={isFormLocked ? '—' : '0.0'}
                   disabled={submitting || isFormLocked}
                   readOnly={isFormLocked}
                   className={`w-20 h-12 text-center border-2 rounded-xl text-lg font-mono font-extrabold transition ${
                     isFormLocked
-                      ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
+                      ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                       : 'bg-indigo-50/40 border-indigo-200 text-indigo-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600'
                   }`}
                   required
@@ -356,7 +620,15 @@ const GradeThesisModal = ({
                 <div className="text-[11px] text-slate-500">
                   Điểm số / 10
                   <span className="block text-[10px] text-slate-400 font-normal">
-                    {isTwoStudents ? 'Nhập điểm SV1 rồi ấn Enter qua SV2' : 'Nhập điểm rồi ấn Enter'}
+                    {isFormLocked
+                      ? isCriteriaIncompleteForSupervisor
+                        ? 'Khóa: Chưa đạt đủ tiêu chí'
+                        : isPeriodClosedForSupervisor
+                        ? 'Khóa: Hết thời gian nhập điểm'
+                        : 'Không thể chỉnh sửa'
+                      : isTwoStudents
+                      ? 'Nhập điểm SV1 rồi ấn Enter qua SV2'
+                      : 'Nhập điểm rồi ấn Enter'}
                   </span>
                 </div>
               </div>
@@ -399,19 +671,25 @@ const GradeThesisModal = ({
                         }
                       }
                     }}
-                    placeholder={isFormLocked ? "—" : "0.0"}
+                    placeholder={isFormLocked ? '—' : '0.0'}
                     disabled={submitting || isFormLocked}
                     readOnly={isFormLocked}
                     className={`w-20 h-12 text-center border-2 rounded-xl text-lg font-mono font-extrabold transition ${
                       isFormLocked
-                        ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
+                        ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
                         : 'bg-violet-50/40 border-violet-200 text-violet-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-violet-600'
                     }`}
                   />
                   <div className="text-[11px] text-slate-500">
                     Điểm số / 10
                     <span className="block text-[10px] text-slate-400 font-normal">
-                      Nhập điểm SV2 rồi ấn Enter để lưu
+                      {isFormLocked
+                        ? isCriteriaIncompleteForSupervisor
+                          ? 'Khóa: Chưa đạt đủ tiêu chí'
+                          : isPeriodClosedForSupervisor
+                          ? 'Khóa: Hết thời gian nhập điểm'
+                          : 'Không thể chỉnh sửa'
+                        : 'Nhập điểm SV2 rồi ấn Enter để lưu'}
                     </span>
                   </div>
                 </div>
@@ -432,7 +710,11 @@ const GradeThesisModal = ({
             onChange={(e) => {
               if (!isFormLocked) setComment(e.target.value);
             }}
-            placeholder={isFormLocked ? "Chưa có nhận xét." : "Nhập nhận xét về tính đúng đắn, phương pháp nghiên cứu, ưu điểm và hạn chế của đề tài..."}
+            placeholder={
+              isFormLocked
+                ? 'Chưa có nhận xét.'
+                : 'Nhập nhận xét về tính đúng đắn, phương pháp nghiên cứu, ưu điểm và hạn chế của đề tài...'
+            }
             disabled={submitting || isFormLocked}
             readOnly={isFormLocked}
             className={`w-full px-3.5 py-2.5 border rounded-xl text-xs transition resize-none ${
@@ -456,7 +738,7 @@ const GradeThesisModal = ({
           {!isFormLocked && (
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || isFormLocked}
               className="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />

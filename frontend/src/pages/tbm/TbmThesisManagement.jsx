@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
@@ -388,6 +389,16 @@ const TbmThesisManagement = () => {
                 {windowBadge.text}
               </span>
             </button>
+
+            {/* Quick Link to KLTN Grading Periods Management */}
+            <Link
+              to="/tbm/thesis-evaluations"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#0B4DB7] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
+              title="Quản lý đợt nhập điểm, tiêu chí đánh giá và bảng điểm KLTN"
+            >
+              <Award className="w-3.5 h-3.5 text-[#0B4DB7]" />
+              <span>Thời gian nhập điểm KLTN</span>
+            </Link>
 
             <button
               onClick={() => (activeMainTab === 'PROPOSED_TOPICS' ? fetchProposedTopics() : fetchTheses())}

@@ -196,6 +196,23 @@ const thesisSchema = new mongoose.Schema(
       isReviewer2ScoreLocked: { type: Boolean, default: false },
     },
 
+    criteriaEvaluations: [
+      {
+        criteriaId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "ThesisEvaluationCriteria",
+        },
+        criteriaName: { type: String, trim: true },
+        isPassed: { type: Boolean, default: false },
+        evaluatedAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    isCriteriaPassed: {
+      type: Boolean,
+      default: false,
+    },
+
     supervisorComment: {
       type: String,
       trim: true,

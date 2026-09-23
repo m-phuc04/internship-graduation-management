@@ -596,6 +596,158 @@ const registerTopicByStudent = async (req, res, next) => {
   }
 };
 
+// ====================
+// Thesis Evaluation Criteria Controllers
+// ====================
+const getThesisEvaluationCriteria = async (req, res, next) => {
+  try {
+    const { academicTermId, includeInactive } = req.query;
+    const criteria = await thesisService.getThesisEvaluationCriteria({
+      academicTermId,
+      includeInactive: includeInactive === "true",
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách tiêu chí đánh giá KLTN thành công",
+      data: criteria,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createThesisEvaluationCriteria = async (req, res, next) => {
+  try {
+    const criteria = await thesisService.createThesisEvaluationCriteria({
+      ...req.body,
+      userId: req.user.userId || req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo tiêu chí đánh giá KLTN thành công",
+      data: criteria,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateThesisEvaluationCriteria = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const criteria = await thesisService.updateThesisEvaluationCriteria(id, req.body);
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật tiêu chí đánh giá thành công",
+      data: criteria,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteThesisEvaluationCriteria = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await thesisService.deleteThesisEvaluationCriteria(id);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Thesis Grading Periods Controllers
+// ====================
+const getThesisGradingPeriods = async (req, res, next) => {
+  try {
+    const { academicTermId } = req.query;
+    const periods = await thesisService.getThesisGradingPeriods({ academicTermId });
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách đợt nhập điểm KLTN thành công",
+      data: periods,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createThesisGradingPeriod = async (req, res, next) => {
+  try {
+    const period = await thesisService.createThesisGradingPeriod({
+      ...req.body,
+      userId: req.user.userId || req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo đợt nhập điểm KLTN thành công",
+      data: period,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateThesisGradingPeriod = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const period = await thesisService.updateThesisGradingPeriod(
+      id,
+      req.body,
+      req.user.userId || req.user._id,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật đợt nhập điểm KLTN thành công",
+      data: period,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteThesisGradingPeriod = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await thesisService.deleteThesisGradingPeriod(id);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const processExpiredGradingPeriods = async (req, res, next) => {
+  try {
+    const { academicTermId } = req.body;
+    const result = await thesisService.processExpiredGradingPeriods(academicTermId);
+
+    res.status(200).json({
+      success: true,
+      message: `Xử lý quá hạn thành công. Đã đánh dấu FAIL cho ${result.processedThesesCount} đề tài chưa hoàn tất đánh giá/điểm GVHD.`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createThesis,
   lookupStudent,
@@ -617,6 +769,16 @@ export default {
   getThesesForEvaluation,
   completeThesisEvaluation,
   exportTheses,
+  // Criteria & Grading Period Management
+  getThesisEvaluationCriteria,
+  createThesisEvaluationCriteria,
+  updateThesisEvaluationCriteria,
+  deleteThesisEvaluationCriteria,
+  getThesisGradingPeriods,
+  createThesisGradingPeriod,
+  updateThesisGradingPeriod,
+  deleteThesisGradingPeriod,
+  processExpiredGradingPeriods,
   // Topic Management
   batchCreateTopics,
   getMyCreatedTopics,
