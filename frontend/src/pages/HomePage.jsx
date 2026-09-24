@@ -260,20 +260,20 @@ const HomePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] text-slate-800 flex flex-col font-sans selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#f4f7fb] text-slate-800 flex flex-col font-sans selection:bg-[#0B1E48] selection:text-white">
       {/* 1. Header Bar (Clean, full width, with Hotline & User status) */}
-      <header className="bg-white border-b border-slate-200/90 sticky top-0 z-40 shadow-2xs">
+      <header className="bg-[#0B1E48] text-white border-b border-[#132c66] sticky top-0 z-40 shadow-md">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
           {/* Logo & School Name */}
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="flex items-center justify-center shrink-0">
-              <IUHLogo className="h-10 sm:h-11 w-auto object-contain" />
+            <div className="p-1.5 sm:p-2 bg-white rounded-xl shadow-md flex items-center justify-center shrink-0">
+              <IUHLogo className="h-8 sm:h-9 w-auto object-contain" />
             </div>
-            <div className="border-l border-slate-200 pl-3">
-              <div className="text-xs sm:text-sm font-black text-blue-900 tracking-tight leading-tight group-hover:text-blue-600 transition">
+            <div className="border-l border-white/20 pl-3">
+              <div className="text-xs sm:text-sm font-black text-white tracking-tight leading-tight group-hover:text-amber-300 transition">
                 CỔNG THÔNG TIN TTDN & KLTN
               </div>
-              <div className="text-[10px] sm:text-[11px] font-bold text-blue-700 uppercase tracking-wide mt-0.5">
+              <div className="text-[10px] sm:text-[11px] font-bold text-slate-200 uppercase tracking-wide mt-0.5">
                 KHOA CÔNG NGHỆ THÔNG TIN • ĐH CÔNG NGHIỆP TP.HCM
               </div>
             </div>
@@ -285,23 +285,23 @@ const HomePage = () => {
               <div className="flex items-center gap-2 sm:gap-3">
                 <Link
                   to={getDashboardUrl()}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-xs transition"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F7B928] hover:bg-[#E5A412] text-slate-950 text-xs font-black shadow-sm transition"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">Vào Bảng Điều Khiển</span>
                   <span className="sm:hidden">Hệ Thống</span>
                 </Link>
 
-                <div className="flex items-center gap-2 p-1 pl-2.5 bg-slate-100 rounded-xl border border-slate-200 text-xs">
+                <div className="flex items-center gap-2 p-1 pl-2.5 bg-[#071638] rounded-xl border border-[#132c66] text-xs text-white">
                   <div className="text-right hidden sm:block">
-                    <span className="font-bold text-slate-800 text-xs block leading-tight">{user?.fullName}</span>
-                    <span className="text-[10px] text-blue-600 font-semibold">{getRoleLabel(user?.role)}</span>
+                    <span className="font-bold text-white text-xs block leading-tight">{user?.fullName}</span>
+                    <span className="text-[10px] text-[#F7B928] font-bold">{getRoleLabel(user?.role)}</span>
                   </div>
                   <button
                     type="button"
                     onClick={handleLogout}
                     title="Đăng xuất"
-                    className="p-1.5 hover:bg-rose-50 rounded-lg text-rose-600 transition cursor-pointer"
+                    className="p-1.5 hover:bg-white/10 rounded-lg text-rose-300 hover:text-white transition cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
@@ -320,21 +320,21 @@ const HomePage = () => {
           <div className="lg:col-span-8 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col">
             
             {/* Header Title (Clean without navigation pills) */}
-            <div className="px-5 sm:px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-blue-50/60 via-white to-white flex items-center justify-between">
+            <div className="px-5 sm:px-6 py-4 border-b border-[#132c66] bg-[#0B1E48] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-blue-100/80 text-blue-700 flex items-center justify-center shrink-0 shadow-2xs">
+                <div className="w-9 h-9 rounded-xl bg-[#F7B928] text-slate-950 flex items-center justify-center shrink-0 shadow-md">
                   <Newspaper className="w-5 h-5" />
                 </div>
                 <div>
-                  <h1 className="text-sm sm:text-base font-extrabold text-slate-900 uppercase tracking-tight">
+                  <h1 className="text-sm sm:text-base font-black text-white uppercase tracking-tight">
                     BẢN TIN ĐÀO TẠO & SỰ KIỆN
                   </h1>
-                  <p className="text-[11px] text-slate-500">Thông báo kế hoạch thực tập, tiến độ và lịch bảo vệ KLTN</p>
+                  <p className="text-[11px] text-blue-100">Thông báo kế hoạch thực tập, tiến độ và lịch bảo vệ KLTN</p>
                 </div>
               </div>
 
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-blue-700 font-semibold bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                <ShieldCheck className="w-3.5 h-3.5" />
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-[#F7B928] font-bold bg-[#F7B928]/15 px-3 py-1 rounded-full border border-[#F7B928]/30">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#F7B928]" />
                 <span>Khoa Công nghệ Thông tin</span>
               </div>
             </div>
@@ -373,10 +373,10 @@ const HomePage = () => {
                     >
                       {/* Responsive Date Badge */}
                       <div className="flex flex-col items-center justify-center w-13 sm:w-15 rounded-xl sm:rounded-2xl overflow-hidden border border-blue-100 shadow-2xs shrink-0 bg-white select-none">
-                        <div className="w-full bg-[#0054a6] text-white text-[9px] sm:text-[10px] font-bold py-1 text-center uppercase tracking-wider">
+                        <div className="w-full bg-[#0B1E48] text-white text-[9px] sm:text-[10px] font-bold py-1 text-center uppercase tracking-wider">
                           THG {dateInfo.month}
                         </div>
-                        <div className="w-full py-1 text-center text-lg sm:text-2xl font-black text-slate-800 group-hover:text-blue-600 transition">
+                        <div className="w-full py-1 text-center text-lg sm:text-2xl font-black text-slate-800 group-hover:text-[#0B1E48] transition">
                           {dateInfo.day}
                         </div>
                       </div>
@@ -405,7 +405,7 @@ const HomePage = () => {
                             setSelectedNews(item);
                             setDetailModalOpen(true);
                           }}
-                          className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-blue-600 transition cursor-pointer line-clamp-2 leading-snug"
+                          className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-[#0B1E48] transition cursor-pointer line-clamp-2 leading-snug"
                         >
                           {item.title}
                         </h2>
@@ -437,10 +437,10 @@ const HomePage = () => {
             {/* Bottom bar of news box */}
             <div className="bg-slate-50/80 px-5 sm:px-6 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#0B1E48]" />
                 <span>Kênh thông báo đào tạo chính thức</span>
               </span>
-              <span className="text-blue-700 font-semibold">Khoa CNTT - IUH</span>
+              <span className="text-[#0B1E48] font-bold">Khoa CNTT - IUH</span>
             </div>
           </div>
 
@@ -452,7 +452,7 @@ const HomePage = () => {
               
               {/* Card Header */}
               <div className="text-center pb-4 border-b border-slate-100">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold mb-1.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#0B1E48] text-xs font-bold mb-1.5 border border-blue-100">
                   <GraduationCap className="w-3.5 h-3.5" />
                   <span>CỔNG THÔNG TIN ĐÀO TẠO</span>
                 </div>
@@ -466,19 +466,19 @@ const HomePage = () => {
               {isAuthenticated ? (
                 <div className="mt-5 space-y-4">
                   <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white flex items-center justify-center font-black text-lg shrink-0 shadow-xs">
+                    <div className="w-12 h-12 rounded-2xl bg-[#0B1E48] text-white flex items-center justify-center font-black text-lg shrink-0 shadow-xs">
                       {user?.fullName?.charAt(0)?.toUpperCase() || 'U'}
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="text-[11px] text-slate-500 font-medium">Đang đăng nhập:</div>
                       <div className="text-sm font-bold text-slate-900 truncate">{user?.fullName}</div>
-                      <div className="text-xs font-semibold text-blue-600 mt-0.5">{getRoleLabel(user?.role)}</div>
+                      <div className="text-xs font-semibold text-[#0B1E48] mt-0.5">{getRoleLabel(user?.role)}</div>
                     </div>
                   </div>
 
                   <Link
                     to={getDashboardUrl()}
-                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs sm:text-sm font-bold uppercase shadow-md shadow-blue-200 transition cursor-pointer"
+                    className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#0B1E48] hover:bg-[#071638] text-white text-xs sm:text-sm font-bold uppercase shadow-md shadow-blue-900/20 transition cursor-pointer"
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     <span>VÀO BẢNG ĐIỀU KHIỂN</span>
@@ -509,7 +509,7 @@ const HomePage = () => {
                         onChange={(e) => setAccountCode(e.target.value)}
                         placeholder="Nhập MSSV / Mã cán bộ"
                         required
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition"
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48] focus:ring-2 focus:ring-amber-200/50 transition"
                       />
                     </div>
                   </div>
@@ -527,7 +527,7 @@ const HomePage = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Nhập mật khẩu"
                         required
-                        className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition"
+                        className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48] focus:ring-2 focus:ring-amber-200/50 transition"
                       />
                     </div>
                   </div>
@@ -547,7 +547,7 @@ const HomePage = () => {
                           maxLength={6}
                           required
                           autoComplete="off"
-                          className="w-full px-2.5 py-2 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-center uppercase tracking-widest text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                          className="w-full px-2.5 py-2 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-center uppercase tracking-widest text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48] focus:ring-2 focus:ring-amber-200/50"
                         />
                       </div>
 
@@ -558,7 +558,7 @@ const HomePage = () => {
                         title="Làm mới mã"
                         className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition cursor-pointer shrink-0 disabled:opacity-50"
                       >
-                        <RotateCw className={`w-4 h-4 text-blue-600 ${captchaLoading ? 'animate-spin' : ''}`} />
+                        <RotateCw className={`w-4 h-4 text-[#0B1E48] ${captchaLoading ? 'animate-spin' : ''}`} />
                       </button>
 
                       <div className="flex-1 h-10 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center p-0.5 relative">
@@ -583,7 +583,7 @@ const HomePage = () => {
                     <button
                       type="submit"
                       disabled={submitLoading}
-                      className="w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-wide text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 active:scale-[0.99] shadow-md shadow-blue-200 transition duration-150 cursor-pointer disabled:opacity-60"
+                      className="w-full py-3 px-4 rounded-xl text-xs sm:text-sm font-black uppercase tracking-wide text-slate-950 bg-[#F7B928] hover:bg-[#E5A412] active:scale-[0.99] shadow-md shadow-amber-500/20 transition duration-150 cursor-pointer disabled:opacity-60"
                     >
                       {submitLoading ? 'ĐANG ĐĂNG NHẬP...' : 'ĐĂNG NHẬP HỆ THỐNG'}
                     </button>
@@ -594,7 +594,7 @@ const HomePage = () => {
                     <button
                       type="button"
                       onClick={() => setActiveFormMode('REGISTER')}
-                      className="text-xs text-blue-600 hover:text-blue-800 font-semibold transition cursor-pointer"
+                      className="text-xs text-[#0B1E48] hover:text-[#071638] font-semibold transition cursor-pointer"
                     >
                       Chưa có tài khoản sinh viên? <span className="underline font-bold">Đăng ký ngay</span>
                     </button>
@@ -616,7 +616,7 @@ const HomePage = () => {
                       placeholder="Mã số sinh viên"
                       maxLength={8}
                       required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48]"
                     />
                   </div>
 
@@ -627,7 +627,7 @@ const HomePage = () => {
                       onChange={(e) => setRegFullName(e.target.value)}
                       placeholder="Họ và tên sinh viên"
                       required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48]"
                     />
                   </div>
 
@@ -638,7 +638,7 @@ const HomePage = () => {
                       onChange={(e) => setRegEmail(e.target.value)}
                       placeholder="Email"
                       required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48]"
                     />
                   </div>
 
@@ -649,7 +649,7 @@ const HomePage = () => {
                       onChange={(e) => setRegClassName(e.target.value)}
                       placeholder="Lớp danh nghĩa"
                       required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48]"
                     />
                   </div>
 
@@ -661,7 +661,7 @@ const HomePage = () => {
                       placeholder="Mật khẩu"
                       required
                       minLength={6}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48]"
                     />
                   </div>
 
@@ -673,7 +673,7 @@ const HomePage = () => {
                       placeholder="Xác nhận lại mật khẩu"
                       required
                       minLength={6}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-600"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#0B1E48]"
                     />
                   </div>
 
@@ -681,7 +681,7 @@ const HomePage = () => {
                     <button
                       type="submit"
                       disabled={regLoading}
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wide text-white bg-blue-600 hover:bg-blue-700 active:scale-[0.99] shadow-md shadow-blue-200 transition duration-150 cursor-pointer disabled:opacity-60"
+                      className="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wide text-slate-950 bg-[#F7B928] hover:bg-[#E5A412] active:scale-[0.99] shadow-md shadow-amber-500/20 transition duration-150 cursor-pointer disabled:opacity-60"
                     >
                       {regLoading ? 'ĐANG TẠO TÀI KHOẢN...' : 'HOÀN TẤT ĐĂNG KÝ'}
                     </button>
@@ -691,9 +691,9 @@ const HomePage = () => {
                     <button
                       type="button"
                       onClick={() => setActiveFormMode('LOGIN')}
-                      className="text-xs text-slate-600 hover:text-blue-600 font-semibold transition cursor-pointer"
+                      className="text-xs text-slate-600 hover:text-[#0B1E48] font-semibold transition cursor-pointer"
                     >
-                      Đã có tài khoản? <span className="underline font-bold text-blue-600">Đăng nhập ngay</span>
+                      Đã có tài khoản? <span className="underline font-bold text-[#0B1E48]">Đăng nhập ngay</span>
                     </button>
                   </div>
                 </form>
@@ -703,7 +703,7 @@ const HomePage = () => {
             {/* Quick Links Widget */}
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-5 shadow-2xs space-y-3 text-xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
-                <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                <Sparkles className="w-3.5 h-3.5 text-[#0B1E48]" />
                 <span>Hướng dẫn & Tiện ích</span>
               </div>
               <ul className="space-y-2 text-slate-600">
@@ -712,7 +712,7 @@ const HomePage = () => {
                     href="https://fit.iuh.edu.vn"
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-blue-600 flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition"
+                    className="hover:text-[#0B1E48] flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition"
                   >
                     <span className="font-medium">• Trang thông tin Khoa Công nghệ Thông tin</span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
@@ -723,7 +723,7 @@ const HomePage = () => {
                     href="https://sv.iuh.edu.vn/sinh-vien-dang-nhap.html"
                     target="_blank"
                     rel="noreferrer"
-                    className="hover:text-blue-600 flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition"
+                    className="hover:text-[#0B1E48] flex items-center justify-between p-2 rounded-xl hover:bg-slate-50 transition"
                   >
                     <span className="font-medium">• Cổng thông tin Sinh viên IUH</span>
                     <ExternalLink className="w-3.5 h-3.5 text-slate-400" />

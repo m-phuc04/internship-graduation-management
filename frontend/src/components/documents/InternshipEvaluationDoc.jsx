@@ -240,7 +240,7 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
           </thead>
           <tbody>
             <tr>
-              <td className="border border-black p-1.5 text-center font-bold text-indigo-950">PEO 1</td>
+              <td className="border border-black p-1.5 text-center font-bold text-[#0B1E48]">PEO 1</td>
               <td className="border border-black p-1.5 leading-snug">
                 Thể hiện kiến thức lý thuyết và thực hành cơ bản và chuyên sâu liên quan đến CNTT để đáp ứng những yêu cầu trong việc quản trị, bảo mật và phát triển các hệ thống IT cho tổ chức và doanh nghiệp.
               </td>
@@ -249,7 +249,7 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
               </td>
             </tr>
             <tr>
-              <td className="border border-black p-1.5 text-center font-bold text-indigo-950">PEO 2</td>
+              <td className="border border-black p-1.5 text-center font-bold text-[#0B1E48]">PEO 2</td>
               <td className="border border-black p-1.5 leading-snug">
                 Thể hiện khả năng làm việc hiệu quả với tư cách là thành viên hay lãnh đạo trong nhóm đa quốc gia trong môi trường chuyên nghiệp không ngừng thay đổi.
               </td>
@@ -258,7 +258,7 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
               </td>
             </tr>
             <tr>
-              <td className="border border-black p-1.5 text-center font-bold text-indigo-950">PEO 3</td>
+              <td className="border border-black p-1.5 text-center font-bold text-[#0B1E48]">PEO 3</td>
               <td className="border border-black p-1.5 leading-snug">
                 Thể hiện năng lực học tập suốt đời cũng như đạo đức tốt trong môi trường chuyên nghiệp.
               </td>

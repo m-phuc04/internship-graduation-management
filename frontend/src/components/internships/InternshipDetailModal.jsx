@@ -62,7 +62,7 @@ const InternshipDetailModal = ({
         {/* Header Summary Banner */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold text-lg flex items-center justify-center shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-[#102d7d] font-bold text-lg flex items-center justify-center shadow-2xs">
               {internship.studentId?.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
             </div>
             <div>
@@ -73,7 +73,7 @@ const InternshipDetailModal = ({
                 <StatusBadge status={internship.status} size="sm" />
               </div>
               <div className="text-xs text-slate-500 font-mono flex items-center gap-2 mt-0.5">
-                <span className="font-bold text-indigo-600">
+                <span className="font-bold text-[#153898]">
                   MSSV: {internship.studentId?.studentCode}
                 </span>
                 <span>•</span>
@@ -108,7 +108,7 @@ const InternshipDetailModal = ({
           {/* Section 1: Student Details */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <GraduationCap className="w-4 h-4 text-indigo-600" />
+              <GraduationCap className="w-4 h-4 text-[#153898]" />
               Thông tin Sinh viên
             </div>
             <div className="space-y-2">
@@ -142,7 +142,7 @@ const InternshipDetailModal = ({
           {/* Section 2: Company Details */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <Building2 className="w-4 h-4 text-indigo-600" />
+              <Building2 className="w-4 h-4 text-[#153898]" />
               Doanh nghiệp Thực tập
             </div>
             <div className="space-y-2">
@@ -168,7 +168,7 @@ const InternshipDetailModal = ({
           {/* Section 3: Internship Position & Time */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <Calendar className="w-4 h-4 text-indigo-600" />
+              <Calendar className="w-4 h-4 text-[#153898]" />
               Vị trí & Thời gian Thực tập
             </div>
             <div className="space-y-2">
@@ -200,7 +200,7 @@ const InternshipDetailModal = ({
           {/* Section 4: Mentor & Academic Supervisor */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <UserCheck className="w-4 h-4 text-indigo-600" />
+              <UserCheck className="w-4 h-4 text-[#153898]" />
               Hướng dẫn & Giám sát
             </div>
             <div className="space-y-2">
@@ -224,7 +224,7 @@ const InternshipDetailModal = ({
                 <span className="text-slate-400 block mb-0.5">Giảng viên hướng dẫn (GVHD):</span>
                 {internship.lecturerId ? (
                   <div>
-                    <span className="font-bold text-indigo-700">
+                    <span className="font-bold text-[#102d7d]">
                       {internship.lecturerId?.academicTitle} {internship.lecturerId?.userId?.fullName}
                     </span>
                     <div className="text-[11px] text-slate-500 font-mono mt-0.5">
@@ -283,7 +283,7 @@ const InternshipDetailModal = ({
               <button
                 type="button"
                 onClick={() => onAssignLecturer(internship)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer"
               >
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>{internship.lecturerId ? 'Đổi GVHD' : 'Phân công GVHD'}</span>

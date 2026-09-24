@@ -47,7 +47,7 @@ const TbmThesisDetailModal = ({
     >
       <div className="space-y-4 text-xs">
         {/* Title & Status */}
-        <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
+        <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80">
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-bold text-slate-900 leading-snug">
@@ -86,7 +86,7 @@ const TbmThesisDetailModal = ({
         {/* Student Members */}
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-indigo-600" />
+            <Users className="w-3.5 h-3.5 text-[#153898]" />
             Sinh viên thực hiện đề tài
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -94,7 +94,7 @@ const TbmThesisDetailModal = ({
             <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
               <div className="flex justify-between items-center">
                 <strong className="text-slate-900">1. {thesis.studentId?.userId?.fullName}</strong>
-                <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded">
+                <span className="text-[10px] font-bold text-[#102d7d] bg-blue-50 px-1.5 py-0.5 rounded">
                   Trưởng nhóm
                 </span>
               </div>
@@ -114,7 +114,7 @@ const TbmThesisDetailModal = ({
               <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
                 <div className="flex justify-between items-center">
                   <strong className="text-slate-900">2. {thesis.secondStudentId?.userId?.fullName}</strong>
-                  <span className="text-[10px] font-bold text-violet-700 bg-violet-50 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] font-bold text-[#102d7d] bg-blue-50 px-1.5 py-0.5 rounded">
                     Thành viên
                   </span>
                 </div>
@@ -143,7 +143,7 @@ const TbmThesisDetailModal = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-bold text-slate-500 uppercase">GVHD</span>
-                <span className="px-1.5 py-0.2 rounded bg-indigo-50 text-indigo-700 font-bold text-[9.5px] border border-indigo-100">
+                <span className="px-1.5 py-0.2 rounded bg-blue-50 text-[#102d7d] font-bold text-[9.5px] border border-blue-100">
                   40%
                 </span>
                 <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold text-[9.5px]">
@@ -154,7 +154,7 @@ const TbmThesisDetailModal = ({
                 <button
                   type="button"
                   onClick={() => onOpenAssignSupervisor(thesis)}
-                  className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                  className="text-[10px] font-bold text-[#153898] hover:underline cursor-pointer"
                 >
                   Đổi GVHD
                 </button>
@@ -178,7 +178,7 @@ const TbmThesisDetailModal = ({
                 <button
                   type="button"
                   onClick={() => onOpenAssignReviewers(thesis)}
-                  className="text-[10px] font-bold text-indigo-600 hover:underline cursor-pointer"
+                  className="text-[10px] font-bold text-[#153898] hover:underline cursor-pointer"
                 >
                   Phân công
                 </button>
@@ -186,10 +186,10 @@ const TbmThesisDetailModal = ({
             </div>
 
             {/* PB KÍN */}
-            <div className="p-2 rounded-xl bg-violet-50/50 border border-violet-100 text-[11px] space-y-0.5">
+            <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100 text-[11px] space-y-0.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-violet-800">PB KÍN (30%):</span>
-                <span className="px-1.5 py-0.2 rounded bg-violet-100 text-violet-700 font-bold text-[9px]">
+                <span className="font-bold text-[#0d2a75]">PB KÍN (30%):</span>
+                <span className="px-1.5 py-0.2 rounded bg-blue-100 text-[#102d7d] font-bold text-[9px]">
                   GVPB KÍN
                 </span>
               </div>
@@ -269,9 +269,9 @@ const TbmThesisDetailModal = ({
 
         {/* Scores Card (If available or Completed) */}
         {thesis.scores && (
-          <div className="p-3.5 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-2.5">
+          <div className="p-3.5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-2.5">
             <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-indigo-600" />
+              <Award className="w-3.5 h-3.5 text-[#153898]" />
               Kết quả đánh giá & Bảng điểm khóa luận
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -283,7 +283,7 @@ const TbmThesisDetailModal = ({
               </div>
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
                 <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (30%)</div>
-                <div className="text-sm font-mono font-bold text-violet-700 mt-0.5">
+                <div className="text-sm font-mono font-bold text-[#102d7d] mt-0.5">
                   {thesis.scores.reviewer1Score !== null ? `${thesis.scores.reviewer1Score}` : '—'}
                 </div>
               </div>
@@ -358,7 +358,7 @@ const TbmThesisDetailModal = ({
               <button
                 type="button"
                 onClick={() => onOpenAssignReviewers(thesis)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 transition cursor-pointer"
               >
                 <UserCheck className="w-3.5 h-3.5" />
                 <span>Phân công phản biện</span>

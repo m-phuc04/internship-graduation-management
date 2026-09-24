@@ -220,7 +220,7 @@ const StudentReportModal = ({
         {/* Week Info Banner */}
         <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-white bg-indigo-600 px-2.5 py-1 rounded-lg">
+            <span className="font-extrabold text-white bg-[#153898] px-2.5 py-1 rounded-lg">
               Tuần #{weekNumber}
             </span>
             <div className="flex items-center gap-1.5 text-slate-600 font-medium">
@@ -247,7 +247,7 @@ const StudentReportModal = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder={`Ví dụ: Nhật ký tuần ${weekNumber} - Tìm hiểu quy trình và nghiệp vụ`}
-            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
           />
         </div>
 
@@ -264,7 +264,7 @@ const StudentReportModal = ({
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Mô tả tóm tắt các công việc đã làm trong tuần, kết quả đạt được, khó khăn gặp phải và kế hoạch tuần tiếp theo..."
-            className="w-full p-3.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition leading-relaxed resize-none"
+            className="w-full p-3.5 bg-white border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition leading-relaxed resize-none"
           />
         </div>
 
@@ -275,16 +275,16 @@ const StudentReportModal = ({
           </label>
 
           {selectedFile || existingFile ? (
-            <div className="p-3.5 bg-indigo-50/60 border border-indigo-200/80 rounded-2xl flex items-center justify-between gap-3">
+            <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-[#153898] text-white flex items-center justify-center shrink-0">
                   <FileCheck className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-indigo-950 truncate">
+                  <div className="text-xs font-bold text-[#0B1E48] truncate">
                     {selectedFile ? selectedFile.name : existingFile.originalName}
                   </div>
-                  <div className="text-[10px] text-indigo-600 font-mono">
+                  <div className="text-[10px] text-[#153898] font-mono">
                     {selectedFile ? formatFileSize(selectedFile.size) : formatFileSize(existingFile.size)}
                   </div>
                 </div>
@@ -302,12 +302,12 @@ const StudentReportModal = ({
           ) : (
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="p-4 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/30 rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition group"
+              className="p-4 border-2 border-dashed border-slate-200 hover:border-[#153898]/60 hover:bg-blue-50/30 rounded-2xl flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer transition group"
             >
-              <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-indigo-100 text-slate-500 group-hover:text-indigo-600 flex items-center justify-center transition">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 group-hover:bg-blue-100 text-slate-500 group-hover:text-[#153898] flex items-center justify-center transition">
                 <Upload className="w-4 h-4" />
               </div>
-              <div className="text-xs font-bold text-slate-700 group-hover:text-indigo-600 transition">
+              <div className="text-xs font-bold text-slate-700 group-hover:text-[#153898] transition">
                 Bấm để chọn file đính kèm (.PDF, .DOCX, .ZIP,...)
               </div>
               <div className="text-[10px] text-slate-400">Dung lượng tối đa: 20MB</div>
@@ -349,7 +349,7 @@ const StudentReportModal = ({
               type="button"
               onClick={() => handleSubmit('SUBMITTED')}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-200 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{submitting ? 'Đang gửi...' : hasStudent2 ? 'Gửi cho SV2 duyệt' : 'Nộp nhật ký'}</span>

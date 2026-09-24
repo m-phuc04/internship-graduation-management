@@ -48,8 +48,8 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
         {/* Toggle between interactive detail and printable preview */}
         {showPrintDoc ? (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-2xl bg-indigo-50 border border-indigo-100">
-              <span className="text-xs font-bold text-indigo-900">
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50 border border-blue-100">
+              <span className="text-xs font-bold text-[#0B1E48]">
                 Bản xem trước biểu mẫu in chính thức (A4 Chuẩn Khoa CNTT)
               </span>
               <div className="flex items-center gap-2">
@@ -78,7 +78,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
         ) : (
           <>
             {/* Banner Summary */}
-            <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 text-[#0B1E48] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <IUHLogo className="h-10 w-auto object-contain" />
                 <div>
@@ -99,7 +99,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
 
               {ev && (
                 <div className="text-right shrink-0">
-                  <div className="text-xl font-extrabold text-indigo-700 bg-indigo-100 px-3.5 py-1 rounded-xl border border-indigo-300/60 inline-block">
+                  <div className="text-xl font-extrabold text-[#102d7d] bg-blue-100 px-3.5 py-1 rounded-xl border border-blue-300/60 inline-block">
                     {Number(ev.score) % 1 === 0 ? Number(ev.score).toFixed(1) : ev.score} / 10 <span className="text-xs font-semibold">điểm</span>
                   </div>
                   <div className="text-[10px] text-slate-500 mt-1">
@@ -118,7 +118,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                 {/* 1. Thông tin chung */}
                 <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                    <Building2 className="w-4 h-4 text-indigo-600" />
+                    <Building2 className="w-4 h-4 text-[#153898]" />
                     <span>I. Thông Tin Chung & Quy Mô Doanh Nghiệp</span>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
@@ -132,12 +132,12 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                 {/* 2. Mảng công việc */}
                 <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                    <Briefcase className="w-4 h-4 text-indigo-600" />
+                    <Briefcase className="w-4 h-4 text-[#153898]" />
                     <span>1. Công việc thực tập hiện tại của sinh viên</span>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {ev.workFields?.map((wf) => (
-                      <span key={wf} className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-900 font-bold text-xs border border-indigo-100">
+                      <span key={wf} className="px-3 py-1 rounded-xl bg-blue-50 text-[#0B1E48] font-bold text-xs border border-blue-100">
                         {wf}
                       </span>
                     ))}
@@ -153,7 +153,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-2 shadow-2xs">
                     <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                      <Users className="w-4 h-4 text-indigo-600" />
+                      <Users className="w-4 h-4 text-[#153898]" />
                       <span>2. Yêu cầu của người sử dụng (End User)</span>
                     </div>
                     <p className="p-3 rounded-xl bg-slate-50 text-slate-700 leading-relaxed text-xs italic">
@@ -163,7 +163,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
 
                   <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-2 shadow-2xs">
                     <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                      <User className="w-4 h-4 text-indigo-600" />
+                      <User className="w-4 h-4 text-[#153898]" />
                       <span>3. Yêu cầu của lãnh đạo trực tiếp</span>
                     </div>
                     <p className="p-3 rounded-xl bg-slate-50 text-slate-700 leading-relaxed text-xs italic">
@@ -175,37 +175,37 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                 {/* 4. Mục tiêu PEO */}
                 <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
                   <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                    <FileText className="w-4 h-4 text-indigo-600" />
+                    <FileText className="w-4 h-4 text-[#153898]" />
                     <span>4. Đánh giá Mục tiêu Chương trình Đào tạo CNTT (PEO)</span>
                   </div>
 
                   <div className="space-y-2.5">
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                       <div className="font-bold text-slate-900 text-[11px]">
-                        <span className="text-indigo-700 mr-1">PEO 1:</span>
+                        <span className="text-[#102d7d] mr-1">PEO 1:</span>
                         Kiến thức lý thuyết & thực hành CNTT trong quản trị, bảo mật và phát triển hệ thống
                       </div>
-                      <p className="text-slate-700 text-xs italic pl-2 border-l-2 border-indigo-400">
+                      <p className="text-slate-700 text-xs italic pl-2 border-l-2 border-[#153898]/60">
                         {ev.requirements?.peo1 || '—'}
                       </p>
                     </div>
 
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                       <div className="font-bold text-slate-900 text-[11px]">
-                        <span className="text-indigo-700 mr-1">PEO 2:</span>
+                        <span className="text-[#102d7d] mr-1">PEO 2:</span>
                         Khả năng làm việc hiệu quả (thành viên / lãnh đạo nhóm đa quốc gia)
                       </div>
-                      <p className="text-slate-700 text-xs italic pl-2 border-l-2 border-indigo-400">
+                      <p className="text-slate-700 text-xs italic pl-2 border-l-2 border-[#153898]/60">
                         {ev.requirements?.peo2 || '—'}
                       </p>
                     </div>
 
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
                       <div className="font-bold text-slate-900 text-[11px]">
-                        <span className="text-indigo-700 mr-1">PEO 3:</span>
+                        <span className="text-[#102d7d] mr-1">PEO 3:</span>
                         Năng lực học tập suốt đời & đạo đức nghề nghiệp
                       </div>
-                      <p className="text-slate-700 text-xs italic pl-2 border-l-2 border-indigo-400">
+                      <p className="text-slate-700 text-xs italic pl-2 border-l-2 border-[#153898]/60">
                         {ev.requirements?.peo3 || '—'}
                       </p>
                     </div>
@@ -216,11 +216,11 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-2 shadow-2xs">
                     <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                      <Users className="w-4 h-4 text-indigo-600" />
+                      <Users className="w-4 h-4 text-[#153898]" />
                       <span>5. Đánh giá làm việc nhóm</span>
                     </div>
-                    <div className="p-3 rounded-xl bg-indigo-50/50 border border-indigo-100">
-                      <span className="text-sm font-bold text-indigo-900">
+                    <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+                      <span className="text-sm font-bold text-[#0B1E48]">
                         {ev.teamworkEvaluation}
                       </span>
                       {ev.teamworkOther && (
@@ -233,7 +233,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
 
                   <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-2 shadow-2xs">
                     <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-                      <Award className="w-4 h-4 text-indigo-600" />
+                      <Award className="w-4 h-4 text-[#153898]" />
                       <span>Nhận xét & Kiến nghị tổng quát</span>
                     </div>
                     <p className="p-3 rounded-xl bg-slate-50 text-slate-700 leading-relaxed text-xs italic">
@@ -246,13 +246,13 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                 {ev.evaluatorInfo && (
                   <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2 text-xs">
                     <div className="font-bold text-slate-800 uppercase text-[11px] flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-indigo-600" />
+                      <User className="w-3.5 h-3.5 text-[#153898]" />
                       <span>Thông tin Người Đánh Giá</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2 text-slate-700">
                       <div>Họ tên: <strong className="text-slate-900">{ev.evaluatorInfo.name || '—'}</strong></div>
                       <div>Chức vụ: <strong className="text-slate-900">{ev.evaluatorInfo.position || '—'}</strong></div>
-                      <div>Email: <span className="font-mono text-indigo-700">{ev.evaluatorInfo.email || '—'}</span></div>
+                      <div>Email: <span className="font-mono text-[#102d7d]">{ev.evaluatorInfo.email || '—'}</span></div>
                       <div>SĐT: <span className="font-mono">{ev.evaluatorInfo.phone || '—'}</span></div>
                     </div>
                   </div>
@@ -269,7 +269,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
               <button
                 type="button"
                 onClick={() => setShowPrintDoc(true)}
-                className="px-4 py-2 font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer text-xs"
+                className="px-4 py-2 font-bold text-[#153898] hover:bg-blue-50 rounded-xl transition inline-flex items-center gap-1.5 cursor-pointer text-xs"
               >
                 <Printer className="w-4 h-4" />
                 <span>Xem biểu mẫu in chính thức</span>

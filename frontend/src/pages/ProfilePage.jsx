@@ -250,9 +250,9 @@ const ProfilePage = () => {
       case 'ADMIN':
         return { label: 'Quản Trị Viên Hệ Thống (ADMIN)', color: 'bg-rose-50 text-rose-700 border-rose-200' };
       case 'TBM':
-        return { label: 'Trưởng Bộ Môn (TBM)', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' };
+        return { label: 'Trưởng Bộ Môn (TBM)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'LECTURER':
-        return { label: 'Giảng Viên (LECTURER)', color: 'bg-violet-50 text-violet-700 border-violet-200' };
+        return { label: 'Giảng Viên (LECTURER)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'STUDENT':
         return { label: 'Sinh Viên (STUDENT)', color: 'bg-blue-50 text-blue-700 border-blue-200' };
       case 'COMPANY':
@@ -270,7 +270,7 @@ const ProfilePage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-[#153898] text-white font-black text-2xl flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
               {user?.fullName?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div>
@@ -281,7 +281,7 @@ const ProfilePage = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2">
-                <span>Mã tài khoản: <strong className="text-indigo-600 font-bold">{getAccountCode()}</strong></span>
+                <span>Mã tài khoản: <strong className="text-[#153898] font-bold">{getAccountCode()}</strong></span>
                 <span className="text-slate-300">•</span>
                 <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
                   <CheckCircle2 className="w-3.5 h-3.5" /> Hoạt động
@@ -296,7 +296,7 @@ const ProfilePage = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(true)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#153898] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition"
                 >
                   <Edit3 className="w-4 h-4" />
                   <span>Chỉnh sửa hồ sơ</span>
@@ -327,7 +327,7 @@ const ProfilePage = () => {
                   type="button"
                   onClick={handleSaveProfile}
                   disabled={saving}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-xs transition"
+                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition"
                 >
                   <Save className="w-4 h-4" />
                   <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
@@ -343,7 +343,7 @@ const ProfilePage = () => {
         {/* Section 1: Thông tin liên hệ cá nhân (Editable) */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 text-indigo-600 font-bold text-sm">
+            <div className="flex items-center gap-2 text-[#153898] font-bold text-sm">
               <Mail className="w-4 h-4" />
               <span>Thông tin liên hệ cá nhân</span>
             </div>
@@ -369,7 +369,7 @@ const ProfilePage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="ví dụ: user@iuh.edu.vn (hoặc để trống)"
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                   />
                 </div>
               ) : (
@@ -394,7 +394,7 @@ const ProfilePage = () => {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="ví dụ: 0901234567 (hoặc để trống)"
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                   />
                 </div>
               ) : (
@@ -418,7 +418,7 @@ const ProfilePage = () => {
                       value={companyDetails.website}
                       onChange={(e) => setCompanyDetails({ ...companyDetails, website: e.target.value })}
                       placeholder="https://company.com"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                     />
                   ) : (
                     <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-medium text-slate-900">
@@ -437,7 +437,7 @@ const ProfilePage = () => {
                       value={companyDetails.contactPerson}
                       onChange={(e) => setCompanyDetails({ ...companyDetails, contactPerson: e.target.value })}
                       placeholder="Họ tên người liên hệ"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                     />
                   ) : (
                     <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-medium text-slate-900">
@@ -496,7 +496,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <span className="text-[11px] font-semibold text-slate-400 block mb-1">Mã số sinh viên (MSSV)</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-indigo-700 font-mono flex items-center justify-between">
+                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-[#102d7d] font-mono flex items-center justify-between">
                   <span>{student.studentCode}</span>
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                 </div>
@@ -553,7 +553,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <span className="text-[11px] font-semibold text-slate-400 block mb-1">Mã giảng viên</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-indigo-700 font-mono flex items-center justify-between">
+                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-[#102d7d] font-mono flex items-center justify-between">
                   <span>{lecturer.lecturerCode}</span>
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                 </div>
@@ -585,13 +585,13 @@ const ProfilePage = () => {
                       max="50"
                       value={maxSupervisedStudents}
                       onChange={(e) => setMaxSupervisedStudents(e.target.value)}
-                      className="w-full p-2.5 bg-indigo-50/50 border border-indigo-300 rounded-xl text-xs font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                      className="w-full p-2.5 bg-blue-50/50 border border-blue-300 rounded-xl text-xs font-bold text-[#102d7d] focus:outline-none focus:ring-2 focus:ring-[#153898]/20"
                     />
                   </div>
                 ) : (
-                  <div className="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-xs font-bold text-indigo-700 flex items-center justify-between">
+                  <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs font-bold text-[#102d7d] flex items-center justify-between">
                     <span>Tối đa {lecturer.maxSupervisedStudents ?? lecturer.maxStudents ?? 5} sinh viên</span>
-                    <span className="text-[10px] text-indigo-500 font-normal">Có thể chỉnh sửa</span>
+                    <span className="text-[10px] text-[#153898] font-normal">Có thể chỉnh sửa</span>
                   </div>
                 )}
               </div>
@@ -625,7 +625,7 @@ const ProfilePage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
                 <span className="text-[11px] font-semibold text-slate-400 block mb-1">Mã doanh nghiệp</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-indigo-700 font-mono flex items-center justify-between">
+                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-[#102d7d] font-mono flex items-center justify-between">
                   <span>{company.code}</span>
                   <Lock className="w-3.5 h-3.5 text-slate-400" />
                 </div>
@@ -680,7 +680,7 @@ const ProfilePage = () => {
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Nhập mật khẩu đang dùng"
-                className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
               <button
                 type="button"
@@ -703,7 +703,7 @@ const ProfilePage = () => {
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Tối thiểu 6 ký tự"
-                className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
               <button
                 type="button"
@@ -726,7 +726,7 @@ const ProfilePage = () => {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Nhập lại mật khẩu mới"
-                className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full pl-3.5 pr-10 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
               <button
                 type="button"
@@ -750,7 +750,7 @@ const ProfilePage = () => {
             <button
               type="submit"
               disabled={pwLoading}
-              className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition"
+              className="px-5 py-2 text-xs font-bold text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-xs transition"
             >
               {pwLoading ? 'Đang đổi...' : 'Xác nhận đổi mật khẩu'}
             </button>

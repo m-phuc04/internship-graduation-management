@@ -40,7 +40,7 @@ const UserNameClickable = ({
     return (
       <span
         onClick={handleClick}
-        className={`cursor-pointer hover:text-indigo-600 transition-colors ${className}`}
+        className={`cursor-pointer hover:text-[#153898] transition-colors ${className}`}
         title={`Xem hồ sơ ${displayName}`}
       >
         {children}
@@ -57,7 +57,7 @@ const UserNameClickable = ({
     >
       {showAvatar && (
         <div
-          className={`${avatarSize} rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-indigo-100 group-hover:text-indigo-800 transition border border-indigo-100 shadow-2xs overflow-hidden`}
+          className={`${avatarSize} rounded-full bg-blue-50 text-[#102d7d] flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-blue-100 group-hover:text-[#0d2a75] transition border border-blue-100 shadow-2xs overflow-hidden`}
         >
           {avatarUrl ? (
             <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
@@ -68,7 +68,7 @@ const UserNameClickable = ({
       )}
 
       <div className="min-w-0">
-        <div className="text-xs font-bold text-slate-900 group-hover:text-indigo-600 transition-colors truncate flex items-center gap-1">
+        <div className="text-xs font-bold text-slate-900 group-hover:text-[#153898] transition-colors truncate flex items-center gap-1">
           <span>{displayName}</span>
         </div>
         {subtitle && (

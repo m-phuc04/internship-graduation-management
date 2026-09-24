@@ -400,7 +400,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <p className="text-xs text-slate-500">Đề tài không tồn tại hoặc bạn không có quyền truy cập.</p>
         <Link
           to="/lecturer/theses?view=evaluation"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white text-xs font-bold rounded-xl shadow-xs hover:bg-indigo-700 transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#153898] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#102d7d] transition"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Quay lại danh sách đề tài</span>
@@ -415,10 +415,10 @@ const LecturerThesisEvaluationDetailPage = () => {
       <div className="flex items-center justify-between gap-4">
         <Link
           to="/lecturer/theses?view=evaluation"
-          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-indigo-600 transition group"
+          className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#153898] transition group"
         >
-          <div className="p-2 rounded-xl bg-white border border-slate-200 group-hover:border-indigo-300 group-hover:bg-indigo-50/50 transition">
-            <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:text-indigo-600" />
+          <div className="p-2 rounded-xl bg-white border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-50/50 transition">
+            <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:text-[#153898]" />
           </div>
           <span>Quay lại danh sách đánh giá KLTN</span>
         </Link>
@@ -442,7 +442,7 @@ const LecturerThesisEvaluationDetailPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200 shrink-0 mt-1">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#153898] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0 mt-1">
               <BookOpen className="w-7 h-7" />
             </div>
             <div className="space-y-1.5">
@@ -469,13 +469,13 @@ const LecturerThesisEvaluationDetailPage = () => {
               </h1>
 
               <div className="text-xs text-slate-500 flex flex-wrap items-center gap-3 pt-1">
-                <span className="font-semibold text-indigo-950">
+                <span className="font-semibold text-[#0B1E48]">
                   SV1: {thesis.studentId?.userId?.fullName} ({thesis.studentId?.studentCode})
                 </span>
                 {isTwoStudents && (
                   <>
                     <span>•</span>
-                    <span className="font-semibold text-violet-950">
+                    <span className="font-semibold text-[#0B1E48]">
                       SV2: {thesis.secondStudentId?.userId?.fullName} ({thesis.secondStudentId?.studentCode})
                     </span>
                   </>
@@ -544,14 +544,14 @@ const LecturerThesisEvaluationDetailPage = () => {
           type="button"
           onClick={() => setActiveTabSection('REPORTS')}
           className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'REPORTS'
-              ? 'bg-white text-indigo-700 shadow-sm border border-indigo-200'
+              ? 'bg-white text-[#102d7d] shadow-sm border border-blue-200'
               : 'text-slate-600 hover:text-slate-900'
             }`}
         >
           <FileText className="w-4 h-4" />
           <span>1. Báo Cáo & Code SV</span>
           {progressList.length > 0 && (
-            <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-full text-[10.5px] font-mono">
+            <span className="px-2 py-0.5 bg-blue-100 text-[#0d2a75] rounded-full text-[10.5px] font-mono">
               {progressList.length} báo cáo
             </span>
           )}
@@ -578,7 +578,7 @@ const LecturerThesisEvaluationDetailPage = () => {
           type="button"
           onClick={() => setActiveTabSection('GRADE')}
           className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'GRADE'
-              ? 'bg-white text-violet-700 shadow-sm border border-violet-200'
+              ? 'bg-white text-[#102d7d] shadow-sm border border-blue-200'
               : 'text-slate-600 hover:text-slate-900'
             }`}
         >
@@ -606,9 +606,9 @@ const LecturerThesisEvaluationDetailPage = () => {
         <div className="space-y-6">
           {/* Stats Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-white rounded-2xl border border-indigo-100 shadow-2xs space-y-1">
-              <div className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Tổng số báo cáo nộp</div>
-              <div className="text-2xl font-extrabold text-indigo-950 font-mono">
+            <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-2xs space-y-1">
+              <div className="text-[11px] font-bold text-[#153898] uppercase tracking-wider">Tổng số báo cáo nộp</div>
+              <div className="text-2xl font-extrabold text-[#0B1E48] font-mono">
                 {loadingProgress ? '...' : progressList.length}
               </div>
               <div className="text-[11px] text-slate-400">Các đợt tiến độ sinh viên đã gửi</div>
@@ -622,9 +622,9 @@ const LecturerThesisEvaluationDetailPage = () => {
               <div className="text-[11px] text-slate-400">Báo cáo đạt chất lượng yêu cầu</div>
             </div>
 
-            <div className="p-4 bg-white rounded-2xl border border-violet-100 shadow-2xs space-y-1">
-              <div className="text-[11px] font-bold text-violet-600 uppercase tracking-wider">Tiến độ trung bình</div>
-              <div className="text-2xl font-extrabold text-violet-950 font-mono">
+            <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-2xs space-y-1">
+              <div className="text-[11px] font-bold text-[#153898] uppercase tracking-wider">Tiến độ trung bình</div>
+              <div className="text-2xl font-extrabold text-[#0B1E48] font-mono">
                 {loadingProgress ? '...' : `${stats.avgPercentage || 0}%`}
               </div>
               <div className="text-[11px] text-slate-400">Độ hoàn thiện đề tài KLTN</div>
@@ -647,11 +647,11 @@ const LecturerThesisEvaluationDetailPage = () => {
               {progressList.map((rep, idx) => (
                 <div
                   key={rep._id || idx}
-                  className="p-5 bg-white border border-slate-200 rounded-3xl space-y-3.5 shadow-2xs hover:border-indigo-300 transition"
+                  className="p-5 bg-white border border-slate-200 rounded-3xl space-y-3.5 shadow-2xs hover:border-blue-300 transition"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
                     <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-bold text-xs font-mono border border-indigo-100">
+                      <span className="px-3 py-1 rounded-xl bg-blue-50 text-[#102d7d] font-bold text-xs font-mono border border-blue-100">
                         Tuần {rep.weekNumber || idx + 1}
                       </span>
                       <h4 className="text-sm font-bold text-slate-900">{rep.title}</h4>
@@ -666,7 +666,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                         }`}>
                         {rep.status === 'APPROVED' ? '✓ Đã duyệt' : rep.status === 'NEEDS_REVISION' ? '⚠ Cần sửa' : 'Đã nộp'}
                       </span>
-                      <span className="text-xs font-mono font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100">
+                      <span className="text-xs font-mono font-bold text-[#153898] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
                         {rep.completionPercentage || 0}% Hoàn thành
                       </span>
                     </div>
@@ -685,11 +685,11 @@ const LecturerThesisEvaluationDetailPage = () => {
                         href={rep.file.fileUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 transition shadow-2xs"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 transition shadow-2xs"
                       >
                         <Download className="w-4 h-4" />
                         <span className="truncate max-w-[280px]">{rep.file.originalName || rep.file.fileName || 'Tải file báo cáo'}</span>
-                        <span className="text-indigo-400 font-normal">({formatFileSize(rep.file.size)})</span>
+                        <span className="text-blue-400 font-normal">({formatFileSize(rep.file.size)})</span>
                       </a>
                     ) : (
                       <span className="text-slate-400 italic text-xs">Không có file đính kèm</span>
@@ -726,7 +726,7 @@ const LecturerThesisEvaluationDetailPage = () => {
             <button
               type="button"
               onClick={() => setActiveTabSection('CRITERIA')}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-xs"
+              className="px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-xs"
             >
               <span>Chuyển sang Đánh giá Điều kiện</span>
               <span>→</span>
@@ -864,7 +864,7 @@ const LecturerThesisEvaluationDetailPage = () => {
             <button
               type="button"
               onClick={() => setActiveTabSection('GRADE')}
-              className="px-5 py-2.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-xs"
+              className="px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-xs"
             >
               <span>Chuyển sang Nhập Điểm</span>
               <span>→</span>
@@ -886,7 +886,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                   type="button"
                   onClick={() => handleRoleTabChange('REVIEWER1')}
                   className={`flex-1 py-2.5 px-4 rounded-xl font-bold text-xs transition cursor-pointer ${activeRoleTab === 'REVIEWER1'
-                      ? 'bg-white text-violet-700 shadow-2xs border border-violet-200'
+                      ? 'bg-white text-[#102d7d] shadow-2xs border border-blue-200'
                       : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
@@ -909,10 +909,10 @@ const LecturerThesisEvaluationDetailPage = () => {
             <div className="space-y-3">
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
-                  <Award className="w-5 h-5 text-indigo-600" />
+                  <Award className="w-5 h-5 text-[#153898]" />
                   <span className="font-bold text-slate-900 text-sm">{roleTitle}</span>
                 </div>
-                <span className="px-3 py-1 rounded-xl bg-indigo-50 text-indigo-700 font-mono font-bold text-xs border border-indigo-100 shadow-2xs">
+                <span className="px-3 py-1 rounded-xl bg-blue-50 text-[#102d7d] font-mono font-bold text-xs border border-blue-100 shadow-2xs">
                   Trọng số: {roleWeight}
                 </span>
               </div>
@@ -972,10 +972,10 @@ const LecturerThesisEvaluationDetailPage = () => {
 
               <div className={`grid ${isTwoStudents ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 {/* Student 1 Box */}
-                <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-indigo-300 transition space-y-3">
+                <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-blue-300 transition space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-indigo-900 text-xs flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                    <span className="font-bold text-[#0B1E48] text-xs flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#153898]" />
                       SV 1: {thesis.studentId?.userId?.fullName}
                     </span>
                     <span className="text-xs font-mono text-slate-400">
@@ -1013,7 +1013,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                       readOnly={isFormLocked}
                       className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isFormLocked
                           ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-indigo-50/40 border-indigo-200 text-indigo-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-indigo-600'
+                          : 'bg-blue-50/40 border-blue-200 text-[#0B1E48] focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-[#153898]'
                         }`}
                       required
                     />
@@ -1036,10 +1036,10 @@ const LecturerThesisEvaluationDetailPage = () => {
 
                 {/* Student 2 Box (if applicable) */}
                 {isTwoStudents && (
-                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-violet-300 transition space-y-3">
+                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-blue-300 transition space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-violet-900 text-xs flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+                      <span className="font-bold text-[#0B1E48] text-xs flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#153898]" />
                         SV 2: {thesis.secondStudentId?.userId?.fullName}
                       </span>
                       <span className="text-xs font-mono text-slate-400">
@@ -1076,7 +1076,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                         readOnly={isFormLocked}
                         className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isFormLocked
                             ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-violet-50/40 border-violet-200 text-violet-900 focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-violet-600'
+                            : 'bg-blue-50/40 border-blue-200 text-[#0B1E48] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-[#153898]'
                           }`}
                       />
                       <div className="text-xs text-slate-500">
@@ -1118,7 +1118,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                 readOnly={isFormLocked}
                 className={`w-full p-4 border rounded-2xl text-xs transition resize-none ${isFormLocked
                     ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500'
+                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]'
                   }`}
               />
             </div>
@@ -1135,7 +1135,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                 <button
                   type="submit"
                   disabled={submitting || isFormLocked}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer text-xs"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer text-xs"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>{submitting ? 'Đang lưu kết quả...' : 'Lưu kết quả đánh giá (Enter)'}</span>
@@ -1183,17 +1183,17 @@ const LecturerThesisEvaluationDetailPage = () => {
               Thông tin sinh viên thực hiện
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-5 rounded-3xl bg-white border border-indigo-100 space-y-2.5 text-xs shadow-2xs">
-                <div className="font-bold text-indigo-950 flex items-center justify-between border-b border-indigo-50 pb-2">
+              <div className="p-5 rounded-3xl bg-white border border-blue-100 space-y-2.5 text-xs shadow-2xs">
+                <div className="font-bold text-[#0B1E48] flex items-center justify-between border-b border-indigo-50 pb-2">
                   <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#153898]" />
                     <span>Sinh viên 1 (Trưởng nhóm)</span>
                   </div>
                   <UserNameClickable
                     user={thesis.studentId}
                     name="Xem hồ sơ ↗"
                     showAvatar={false}
-                    className="text-xs font-bold text-indigo-600 hover:underline"
+                    className="text-xs font-bold text-[#153898] hover:underline"
                   />
                 </div>
                 <div><strong>Họ tên:</strong> {thesis.studentId?.userId?.fullName}</div>
@@ -1205,17 +1205,17 @@ const LecturerThesisEvaluationDetailPage = () => {
               </div>
 
               {thesis.secondStudentId ? (
-                <div className="p-5 rounded-3xl bg-white border border-violet-100 space-y-2.5 text-xs shadow-2xs">
-                  <div className="font-bold text-violet-950 flex items-center justify-between border-b border-violet-50 pb-2">
+                <div className="p-5 rounded-3xl bg-white border border-blue-100 space-y-2.5 text-xs shadow-2xs">
+                  <div className="font-bold text-[#0B1E48] flex items-center justify-between border-b border-violet-50 pb-2">
                     <div className="flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-violet-600" />
+                      <span className="w-2.5 h-2.5 rounded-full bg-[#153898]" />
                       <span>Sinh viên 2</span>
                     </div>
                     <UserNameClickable
                       user={thesis.secondStudentId}
                       name="Xem hồ sơ ↗"
                       showAvatar={false}
-                      className="text-xs font-bold text-violet-600 hover:underline"
+                      className="text-xs font-bold text-[#153898] hover:underline"
                     />
                   </div>
                   <div><strong>Họ tên:</strong> {thesis.secondStudentId?.userId?.fullName}</div>

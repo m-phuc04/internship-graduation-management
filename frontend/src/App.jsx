@@ -77,7 +77,7 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+          <div className="w-8 h-8 border-3 border-[#153898] border-t-transparent rounded-full animate-spin" />
           <div className="text-xs text-slate-500 font-medium">Đang tải thông tin xác thực...</div>
         </div>
       </div>

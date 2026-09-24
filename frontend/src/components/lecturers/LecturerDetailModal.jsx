@@ -17,7 +17,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
       <div className="space-y-6">
         {/* Header Summary Banner */}
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-slate-200/80">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-[#153898] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             {lecturer.userId?.fullName?.charAt(0).toUpperCase() || 'L'}
           </div>
           <div className="flex-1 min-w-0">
@@ -43,7 +43,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
         {/* Workload Stats Grid */}
         <div>
           <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Users className="w-4 h-4 text-indigo-500" /> Tải Hướng dẫn & Đánh giá
+            <Users className="w-4 h-4 text-[#153898]" /> Tải Hướng dẫn & Đánh giá
           </h5>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
@@ -55,14 +55,14 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
               <div className="text-xs text-slate-500 mb-0.5">Hướng dẫn TTDN</div>
-              <div className="text-sm font-bold text-indigo-600">
+              <div className="text-sm font-bold text-[#153898]">
                 {lecturer.activeInternshipsCount || lecturer.assignedInternships?.length || 0} SV
               </div>
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
               <div className="text-xs text-slate-500 mb-0.5">GVHD Khóa luận</div>
-              <div className="text-sm font-bold text-indigo-600">
+              <div className="text-sm font-bold text-[#153898]">
                 {lecturer.activeThesesSupervisorCount || lecturer.supervisingTheses?.length || 0} Đề tài
               </div>
             </div>

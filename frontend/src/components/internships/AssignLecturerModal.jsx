@@ -67,7 +67,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
     >
       <div className="space-y-4 text-xs">
         {/* Student & Internship Info */}
-        <div className="p-4 rounded-2xl bg-indigo-50/60 border border-indigo-200/80 text-indigo-900 space-y-1">
+        <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#0B1E48] space-y-1">
           <div className="font-bold text-sm">
             Sinh viên: {internship.studentId?.userId?.fullName} ({internship.studentId?.studentCode})
           </div>
@@ -75,7 +75,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
             Vị trí: <strong>{internship.position}</strong> • DN: <strong>{internship.companyId?.name}</strong>
           </div>
           {internship.lecturerId && (
-            <div className="text-indigo-700 pt-1">
+            <div className="text-[#102d7d] pt-1">
               GVHD hiện tại: <strong>{internship.lecturerId?.academicTitle} {internship.lecturerId?.userId?.fullName}</strong>
             </div>
           )}
@@ -107,10 +107,10 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                     }}
                     className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
                       isSelected
-                        ? 'bg-indigo-50 border-indigo-500 ring-2 ring-indigo-500/20'
+                        ? 'bg-blue-50 border-[#153898] ring-2 ring-indigo-500/20'
                         : isFull
                         ? 'bg-slate-50/60 border-slate-200 opacity-60 cursor-not-allowed'
-                        : 'bg-white border-slate-200 hover:border-indigo-300'
+                        : 'bg-white border-slate-200 hover:border-blue-300'
                     }`}
                   >
                     <div className="min-w-0">
@@ -118,7 +118,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                         {lec.academicTitle} {lec.userId?.fullName}
                       </div>
                       <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-indigo-600">{lec.lecturerCode}</span>
+                        <span className="font-semibold text-[#153898]">{lec.lecturerCode}</span>
                         <span>•</span>
                         <span className="truncate">{lec.specialization || 'Chưa cập nhật'}</span>
                       </div>
@@ -129,7 +129,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                         className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
                           isFull
                             ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            : 'bg-blue-50 text-[#102d7d] border border-blue-200'
                         }`}
                       >
                         {lec.activeStudentsCount} / {lec.maxStudents} SV
@@ -161,7 +161,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
             type="button"
             onClick={handleAssign}
             disabled={submitting || !selectedLecturerId}
-            className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-200 transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
           >
             {submitting ? (
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

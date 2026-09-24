@@ -434,7 +434,7 @@ const StudentThesisProgressPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#153898] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
@@ -478,15 +478,15 @@ const StudentThesisProgressPage = () => {
           <div className="mt-6 pt-5 border-t border-slate-100 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
               {/* Thesis Title */}
-              <div className="p-3.5 rounded-2xl bg-indigo-50/60 border border-indigo-100/80 md:col-span-2">
-                <div className="text-[10.5px] font-bold text-indigo-700 uppercase tracking-wider mb-1">
+              <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100/80 md:col-span-2">
+                <div className="text-[10.5px] font-bold text-[#102d7d] uppercase tracking-wider mb-1">
                   Đề tài Khóa luận
                 </div>
                 <div className="font-bold text-slate-900 text-sm line-clamp-2">
                   {thesis.thesisTitle}
                 </div>
                 {thesis.topicCode && (
-                  <div className="text-[11px] text-indigo-600 font-mono mt-1">
+                  <div className="text-[11px] text-[#153898] font-mono mt-1">
                     Mã đề tài: {thesis.topicCode}
                   </div>
                 )}
@@ -539,7 +539,7 @@ const StudentThesisProgressPage = () => {
                 <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">
                   {allWeeks.length || stats.totalWeeks || weeks.length} tuần
                 </div>
-                <div className="text-[10.5px] text-indigo-600 font-semibold mt-0.5">
+                <div className="text-[10.5px] text-[#153898] font-semibold mt-0.5">
                   Đã mở: Tuần 1 → Tuần {weeks.length}
                 </div>
               </div>
@@ -566,12 +566,12 @@ const StudentThesisProgressPage = () => {
                 </div>
               </div>
 
-              <div className="p-3 rounded-2xl bg-indigo-50/80 border border-indigo-200/80">
-                <div className="text-[11px] text-indigo-700 font-medium">Tiến độ tổng thể</div>
-                <div className="text-lg font-bold text-indigo-700 font-mono mt-0.5">
+              <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200/80">
+                <div className="text-[11px] text-[#102d7d] font-medium">Tiến độ tổng thể</div>
+                <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">
                   {overallPercentage}%
                 </div>
-                <div className="text-[10.5px] text-indigo-600 font-medium mt-0.5">
+                <div className="text-[10.5px] text-[#153898] font-medium mt-0.5">
                   {stats.approved > 0 ? `Đã duyệt ${stats.approved}/${totalWeeksCount} tuần` : 'ước tính theo báo cáo'}
                 </div>
               </div>
@@ -591,7 +591,7 @@ const StudentThesisProgressPage = () => {
           <div className="text-center mt-4">
             <Link
               to="/student/thesis/register"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 transition"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Đăng ký đề tài Khóa luận</span>
@@ -604,7 +604,7 @@ const StudentThesisProgressPage = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-indigo-600" />
+                <Calendar className="w-4 h-4 text-[#153898]" />
                 <span>
                   Danh sách nhật ký theo tiến độ (Đã mở: {weeks.length} / {allWeeks.length || stats.totalWeeks || weeks.length} tuần)
                 </span>
@@ -620,7 +620,7 @@ const StudentThesisProgressPage = () => {
               onClick={() => setSortByPendingFirst(!sortByPendingFirst)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
                 sortByPendingFirst
-                  ? 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                  ? 'bg-blue-50 border-blue-200 text-[#102d7d]'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
@@ -674,7 +674,7 @@ const StudentThesisProgressPage = () => {
                       : isApproved
                       ? 'border-emerald-200 hover:border-emerald-300'
                       : hasProgress
-                      ? 'border-slate-200/90 hover:border-indigo-200'
+                      ? 'border-slate-200/90 hover:border-blue-200'
                       : 'border-dashed border-slate-200 hover:border-slate-300 bg-slate-50/40'
                   }`}
                 >
@@ -684,7 +684,7 @@ const StudentThesisProgressPage = () => {
                       <span
                         className={`text-xs font-bold px-3 py-1 rounded-xl border ${
                           hasProgress
-                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                             : 'bg-slate-100 text-slate-600 border-slate-200'
                         }`}
                       >
@@ -728,14 +728,14 @@ const StudentThesisProgressPage = () => {
 
                         {/* File Attachment */}
                         {hasFile && (
-                          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-indigo-700 bg-indigo-50/60 px-3.5 py-2 rounded-2xl border border-indigo-100">
+                          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#102d7d] bg-blue-50/60 px-3.5 py-2 rounded-2xl border border-blue-100">
                             <div className="flex items-center gap-2 min-w-0">
-                              <Paperclip className="w-4 h-4 shrink-0 text-indigo-600" />
+                              <Paperclip className="w-4 h-4 shrink-0 text-[#153898]" />
                               <span className="truncate font-semibold">
                                 {p.file.originalName || p.file.fileName}
                               </span>
                               {p.file.size && (
-                                <span className="text-[11px] text-indigo-500 font-mono">
+                                <span className="text-[11px] text-[#153898] font-mono">
                                   ({formatFileSize(p.file.size)})
                                 </span>
                               )}
@@ -746,7 +746,7 @@ const StudentThesisProgressPage = () => {
                                 href={getFileUrl(p.file.fileUrl)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 rounded-lg text-xs font-semibold text-indigo-700 transition"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#153898] hover:text-white border border-blue-200 rounded-lg text-xs font-semibold text-[#102d7d] transition"
                               >
                                 <ExternalLink className="w-3 h-3" />
                                 <span>Xem file</span>
@@ -754,7 +754,7 @@ const StudentThesisProgressPage = () => {
                               <a
                                 href={getFileUrl(p.file.fileUrl)}
                                 download={p.file.originalName || p.file.fileName}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold transition"
+                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#153898] hover:bg-[#102d7d] text-white rounded-lg text-xs font-semibold transition"
                               >
                                 <Download className="w-3 h-3" />
                                 <span>Tải về</span>
@@ -839,15 +839,15 @@ const StudentThesisProgressPage = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenUploadModal(week)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 transition"
+                            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 transition"
                           >
-                            <Paperclip className="w-3.5 h-3.5 text-indigo-600" />
+                            <Paperclip className="w-3.5 h-3.5 text-[#153898]" />
                             <span>Tải lên tệp</span>
                           </button>
                           <button
                             type="button"
                             onClick={() => handleOpenWriteModal(week)}
-                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-xs transition"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition"
                           >
                             <PlusCircle className="w-3.5 h-3.5" />
                             <span>Viết nhật ký</span>
@@ -920,10 +920,10 @@ const StudentThesisProgressPage = () => {
         >
           <div className="space-y-4 text-xs">
             {/* Header info */}
-            <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-xl bg-indigo-600 text-white font-bold text-xs">
+                  <span className="px-2.5 py-1 rounded-xl bg-[#153898] text-white font-bold text-xs">
                     Tuần {selectedProgress.weekNumber}
                   </span>
                   <h3 className="font-bold text-sm text-slate-900">
@@ -937,7 +937,7 @@ const StudentThesisProgressPage = () => {
 
               <div className="flex items-center gap-2">
                 <StatusBadge status={selectedProgress.status} size="md" />
-                <span className="font-mono font-bold text-indigo-700 bg-white px-2.5 py-1 rounded-xl border border-indigo-200">
+                <span className="font-mono font-bold text-[#102d7d] bg-white px-2.5 py-1 rounded-xl border border-blue-200">
                   {selectedProgress.completionPercentage}%
                 </span>
               </div>
@@ -989,9 +989,9 @@ const StudentThesisProgressPage = () => {
                 Tệp tài liệu đính kèm
               </div>
               {selectedProgress.file && (selectedProgress.file.fileUrl || selectedProgress.file.fileName) ? (
-                <div className="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-2xl flex items-center justify-between gap-3">
+                <div className="p-3.5 bg-blue-50/60 border border-blue-100 rounded-2xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#153898] text-white flex items-center justify-center shrink-0">
                       <FileCheck className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -1009,7 +1009,7 @@ const StudentThesisProgressPage = () => {
                       href={getFileUrl(selectedProgress.file.fileUrl)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-indigo-600 hover:text-white border border-indigo-200 text-indigo-700 rounded-xl text-xs font-semibold transition shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#153898] hover:text-white border border-blue-200 text-[#102d7d] rounded-xl text-xs font-semibold transition shadow-xs"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Xem file</span>
@@ -1017,7 +1017,7 @@ const StudentThesisProgressPage = () => {
                     <a
                       href={getFileUrl(selectedProgress.file.fileUrl)}
                       download={selectedProgress.file.originalName || selectedProgress.file.fileName}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold transition shadow-xs"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Tải về</span>
@@ -1098,9 +1098,9 @@ const StudentThesisProgressPage = () => {
           )}
 
           {/* Week Info header */}
-          <div className="p-3 rounded-2xl bg-indigo-50/70 border border-indigo-100 flex items-center justify-between">
+          <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between">
             <div>
-              <span className="font-bold text-indigo-900 text-sm">
+              <span className="font-bold text-[#0B1E48] text-sm">
                 {currentWeek?.label}
               </span>
               <div className="text-[11px] text-slate-500 font-mono mt-0.5">
@@ -1108,7 +1108,7 @@ const StudentThesisProgressPage = () => {
               </div>
             </div>
             {thesis?.secondStudentId && (
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-md">
+              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-[#102d7d] rounded-md">
                 Nhóm 2 sinh viên (Cần SV2 xác nhận)
               </span>
             )}
@@ -1124,7 +1124,7 @@ const StudentThesisProgressPage = () => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="VD: Nhật ký Tuần 1 - Tìm hiểu tài liệu và xây dựng SRS"
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             />
           </div>
 
@@ -1134,7 +1134,7 @@ const StudentThesisProgressPage = () => {
               <label className="text-xs font-semibold text-slate-700">
                 Tỷ lệ hoàn thành khối lượng KLTN ước tính
               </label>
-              <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+              <span className="font-mono font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                 {completionPercentage}%
               </span>
             </div>
@@ -1159,7 +1159,7 @@ const StudentThesisProgressPage = () => {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Mô tả các nội dung đã nghiên cứu, các module đã lập trình, kết quả đạt được trong tuần..."
-              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-none"
             />
           </div>
 
@@ -1181,9 +1181,9 @@ const StudentThesisProgressPage = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="w-full py-4 border-2 border-dashed border-slate-200 hover:border-indigo-400 hover:bg-indigo-50/50 rounded-2xl text-center text-slate-500 transition flex flex-col items-center justify-center gap-1.5"
+                className="w-full py-4 border-2 border-dashed border-slate-200 hover:border-[#153898]/60 hover:bg-blue-50/50 rounded-2xl text-center text-slate-500 transition flex flex-col items-center justify-center gap-1.5"
               >
-                <Upload className="w-5 h-5 text-indigo-600" />
+                <Upload className="w-5 h-5 text-[#153898]" />
                 <span className="font-semibold text-xs text-slate-700">
                   Nhấn để chọn tệp tài liệu nhật ký
                 </span>
@@ -1192,16 +1192,16 @@ const StudentThesisProgressPage = () => {
                 </span>
               </button>
             ) : (
-              <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between gap-3">
+              <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#153898] text-white flex items-center justify-center shrink-0">
                     <FileCheck className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
                     <div className="font-bold text-slate-900 text-xs truncate">
                       {selectedFile ? selectedFile.name : existingFile?.originalName || existingFile?.fileName}
                     </div>
-                    <div className="text-[11px] text-indigo-600 font-mono">
+                    <div className="text-[11px] text-[#153898] font-mono">
                       {selectedFile ? formatFileSize(selectedFile.size) : formatFileSize(existingFile?.size)}
                     </div>
                   </div>
@@ -1252,7 +1252,7 @@ const StudentThesisProgressPage = () => {
               type="button"
               onClick={() => handleSaveDiary(thesis?.secondStudentId ? 'WAITING_STUDENT_2' : 'SUBMITTED')}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md shadow-indigo-200 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{submitting ? 'Đang gửi...' : 'Gửi nhật ký ngay'}</span>
@@ -1286,7 +1286,7 @@ const StudentThesisProgressPage = () => {
                 <span className="font-bold text-slate-900 text-sm">
                   {progressToConfirm.title}
                 </span>
-                <span className="font-mono font-bold text-indigo-700 bg-white px-2 py-0.5 rounded border border-indigo-100">
+                <span className="font-mono font-bold text-[#102d7d] bg-white px-2 py-0.5 rounded border border-blue-100">
                   {progressToConfirm.completionPercentage}%
                 </span>
               </div>
@@ -1296,8 +1296,8 @@ const StudentThesisProgressPage = () => {
               </div>
 
               {progressToConfirm.file && (progressToConfirm.file.fileUrl || progressToConfirm.file.fileName) && (
-                <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-indigo-100 mt-2">
-                  <div className="flex items-center gap-2 text-indigo-700 font-semibold truncate">
+                <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-blue-100 mt-2">
+                  <div className="flex items-center gap-2 text-[#102d7d] font-semibold truncate">
                     <Paperclip className="w-4 h-4 shrink-0" />
                     <span className="truncate">
                       {progressToConfirm.file.originalName || progressToConfirm.file.fileName}
@@ -1307,7 +1307,7 @@ const StudentThesisProgressPage = () => {
                     href={getFileUrl(progressToConfirm.file.fileUrl)}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-bold shrink-0 ml-2"
+                    className="inline-flex items-center gap-1 text-xs text-[#153898] hover:text-[#0d2a75] font-bold shrink-0 ml-2"
                   >
                     <ExternalLink className="w-3.5 h-3.5" />
                     <span>Xem file</span>
@@ -1491,7 +1491,7 @@ const StudentThesisProgressPage = () => {
                       className="p-3.5 rounded-xl border border-slate-200 bg-white space-y-1.5"
                     >
                       <div className="flex items-center justify-between border-b border-slate-100 pb-1.5 font-bold">
-                        <span className="text-indigo-900">
+                        <span className="text-[#0B1E48]">
                           {w.label} ({formatDate(w.startDate)} - {formatDate(w.endDate)})
                         </span>
                         <span className="text-[11px] text-slate-500 font-mono">
@@ -1508,7 +1508,7 @@ const StudentThesisProgressPage = () => {
                             {p.description || '(Nội dung trong tệp đính kèm)'}
                           </div>
                           {p.file && (
-                            <div className="text-[11px] text-indigo-600 font-mono">
+                            <div className="text-[11px] text-[#153898] font-mono">
                               File: {p.file.originalName || p.file.fileName}
                             </div>
                           )}
@@ -1566,7 +1566,7 @@ const StudentThesisProgressPage = () => {
               <button
                 type="button"
                 onClick={handlePrintDiary}
-                className="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition text-xs"
+                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md transition text-xs"
               >
                 <Printer className="w-4 h-4" />
                 <span>In / Lưu PDF</span>

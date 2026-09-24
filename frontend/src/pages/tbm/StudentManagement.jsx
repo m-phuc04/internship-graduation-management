@@ -163,7 +163,7 @@ const StudentManagement = () => {
       {/* Top Header Card */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
             <Users className="w-7 h-7" />
           </div>
           <div>
@@ -181,7 +181,7 @@ const StudentManagement = () => {
             setSelectedStudent(null);
             setFormModalOpen(true);
           }}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B4DB7] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer"
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#153898] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Thêm sinh viên mới</span>
@@ -205,7 +205,7 @@ const StudentManagement = () => {
             <select
               value={className}
               onChange={(e) => handleFilterChange(setClassName, e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               <option value="">Tất cả Lớp học</option>
               {availableClasses.map((cls) => (
@@ -221,7 +221,7 @@ const StudentManagement = () => {
             <select
               value={prerequisiteCompleted}
               onChange={(e) => handleFilterChange(setPrerequisiteCompleted, e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               <option value="">ĐK Tiên quyết (Tất cả)</option>
               <option value="true">Đã đủ điều kiện</option>
@@ -234,7 +234,7 @@ const StudentManagement = () => {
             <select
               value={internshipRegistered}
               onChange={(e) => handleFilterChange(setInternshipRegistered, e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               <option value="">ĐK Thực tập (Tất cả)</option>
               <option value="true">Đã đăng ký TTDN</option>
@@ -377,7 +377,7 @@ const StudentManagement = () => {
                               setSelectedStudent(st);
                               setDetailModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                            className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />

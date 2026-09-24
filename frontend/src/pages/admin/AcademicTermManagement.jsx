@@ -234,7 +234,7 @@ const AcademicTermManagement = () => {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
             <Calendar className="w-7 h-7" />
           </div>
           <div>
@@ -250,7 +250,7 @@ const AcademicTermManagement = () => {
         <button
           type="button"
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0B4DB7] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#153898] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Học Kỳ Mới</span>
@@ -267,7 +267,7 @@ const AcademicTermManagement = () => {
             placeholder="Tìm theo mã, tên học kỳ, năm học..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition"
+            className="w-full pl-9 pr-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
           />
         </div>
 
@@ -277,7 +277,7 @@ const AcademicTermManagement = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition font-medium text-slate-700"
+            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-medium text-slate-700"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">🟢 Đang diễn ra (ACTIVE)</option>
@@ -290,7 +290,7 @@ const AcademicTermManagement = () => {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition font-medium text-slate-700"
+            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-medium text-slate-700"
           >
             <option value="ALL">Tất cả năm học</option>
             {uniqueYears.map((y) => (
@@ -341,7 +341,7 @@ const AcademicTermManagement = () => {
                       {/* Name & Code */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-900">{term.name}</div>
-                        <div className="text-[11px] font-mono font-medium text-indigo-600 mt-0.5">
+                        <div className="text-[11px] font-mono font-medium text-[#153898] mt-0.5">
                           {term.code}
                         </div>
                       </td>
@@ -399,7 +399,7 @@ const AcademicTermManagement = () => {
                               setViewingTerm(term);
                               setDetailModalOpen(true);
                             }}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                            className="p-1.5 rounded-lg text-slate-600 hover:text-[#153898] hover:bg-blue-50 transition"
                             title="Xem chi tiết các mốc thời gian"
                           >
                             <Eye className="w-4 h-4" />
@@ -466,7 +466,7 @@ const AcademicTermManagement = () => {
             {/* Modal Header */}
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <GraduationCap className="w-5 h-5 text-indigo-400" />
+                <GraduationCap className="w-5 h-5 text-blue-400" />
                 <span className="font-bold text-sm">
                   {editingTerm ? `Chỉnh sửa Học kỳ: ${editingTerm.code}` : 'Tạo mới Học kỳ & Năm học'}
                 </span>
@@ -484,8 +484,8 @@ const AcademicTermManagement = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
               {/* Section 1: Core Information */}
               <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-3 flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <div className="text-xs font-bold uppercase tracking-wider text-[#153898] mb-3 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-[#153898]" />
                   1. Thông tin chung học kỳ
                 </div>
 
@@ -507,7 +507,7 @@ const AcademicTermManagement = () => {
                           code: editingTerm ? formData.code : handleAutoCode(val, formData.academicYear),
                         });
                       }}
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]"
                     />
                   </div>
 
@@ -528,7 +528,7 @@ const AcademicTermManagement = () => {
                           code: editingTerm ? formData.code : handleAutoCode(formData.name, val),
                         });
                       }}
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]"
                     />
                   </div>
 
@@ -542,7 +542,7 @@ const AcademicTermManagement = () => {
                       placeholder="Ví dụ: HK1-2026-2027"
                       value={formData.code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-mono uppercase"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] font-mono uppercase"
                     />
                   </div>
 
@@ -553,7 +553,7 @@ const AcademicTermManagement = () => {
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-medium"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] font-medium"
                     >
                       <option value="DRAFT">Nháp cấu hình (DRAFT)</option>
                       <option value="UPCOMING">Sắp diễn ra (UPCOMING)</option>
@@ -571,10 +571,10 @@ const AcademicTermManagement = () => {
                       required
                       value={formData.startDate}
                       onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]"
                     />
                     {formData.startDate && (
-                      <div className="text-[11px] font-semibold text-indigo-700 mt-1 flex items-center gap-1 bg-indigo-50/80 px-2 py-0.5 rounded-md">
+                      <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
                         <span>📅</span>
                         <span>{formatFullDateVN(formData.startDate)} ({formatDateVN(formData.startDate)})</span>
                       </div>
@@ -590,10 +590,10 @@ const AcademicTermManagement = () => {
                       required
                       value={formData.endDate}
                       onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                      className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]"
                     />
                     {formData.endDate && (
-                      <div className="text-[11px] font-semibold text-indigo-700 mt-1 flex items-center gap-1 bg-indigo-50/80 px-2 py-0.5 rounded-md">
+                      <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
                         <span>📅</span>
                         <span>{formatFullDateVN(formData.endDate)} ({formatDateVN(formData.endDate)})</span>
                       </div>
@@ -602,8 +602,8 @@ const AcademicTermManagement = () => {
                 </div>
 
                 {/* Quick Date Presets & Suggestion Helper */}
-                <div className="mt-3 p-3 rounded-2xl bg-indigo-50/60 border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <div className="text-[11px] text-indigo-900 leading-tight">
+                <div className="mt-3 p-3 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                  <div className="text-[11px] text-[#0B1E48] leading-tight">
                     💡 <span className="font-semibold">Quy ước chuẩn:</span> HK1 (01/08 → 31/12), HK2 (01/01 → 31/05).
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -620,7 +620,7 @@ const AcademicTermManagement = () => {
                           code: handleAutoCode('Học kỳ 1', formData.academicYear),
                         });
                       }}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-2xs transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white text-[#102d7d] hover:bg-blue-100 border border-blue-200 shadow-2xs transition cursor-pointer"
                     >
                       Áp dụng mẫu HK1
                     </button>
@@ -637,7 +637,7 @@ const AcademicTermManagement = () => {
                           code: handleAutoCode('Học kỳ 2', formData.academicYear),
                         });
                       }}
-                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white text-indigo-700 hover:bg-indigo-100 border border-indigo-200 shadow-2xs transition cursor-pointer"
+                      className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white text-[#102d7d] hover:bg-blue-100 border border-blue-200 shadow-2xs transition cursor-pointer"
                     >
                       Áp dụng mẫu HK2
                     </button>
@@ -657,7 +657,7 @@ const AcademicTermManagement = () => {
                 <button
                   type="submit"
                   disabled={actionLoading}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-md shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-[#153898] hover:bg-[#102d7d] transition shadow-md shadow-blue-600/20 cursor-pointer disabled:opacity-50"
                 >
                   {actionLoading
                     ? editingTerm
@@ -679,7 +679,7 @@ const AcademicTermManagement = () => {
           <div className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-scale-up">
             <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <GraduationCap className="w-5 h-5 text-indigo-400" />
+                <GraduationCap className="w-5 h-5 text-blue-400" />
                 <span className="font-bold text-sm">
                   Chi tiết: {viewingTerm.name} — {viewingTerm.code}
                 </span>
@@ -702,7 +702,7 @@ const AcademicTermManagement = () => {
                 </div>
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                   <div className="text-[10px] uppercase font-bold text-slate-400">Trạng thái</div>
-                  <div className="font-bold text-indigo-600 mt-1">{viewingTerm.status}</div>
+                  <div className="font-bold text-[#153898] mt-1">{viewingTerm.status}</div>
                 </div>
                 <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-center">
                   <div className="text-[10px] uppercase font-bold text-blue-600">Hồ sơ TTDN</div>

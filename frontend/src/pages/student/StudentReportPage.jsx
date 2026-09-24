@@ -208,7 +208,7 @@ const StudentReportPage = () => {
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs tracking-wider uppercase">
+          <div className="flex items-center gap-2 text-[#153898] font-semibold text-xs tracking-wider uppercase">
             <BookOpen className="w-4 h-4" /> Theo Dõi Tiến Độ Thực Tập
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -235,7 +235,7 @@ const StudentReportPage = () => {
               onClick={() => setExportModalOpen(true)}
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-indigo-400" />
+              <Printer className="w-4 h-4 text-blue-400" />
               <span>Xuất nhật ký</span>
             </button>
           )}
@@ -244,25 +244,25 @@ const StudentReportPage = () => {
 
       {/* Internship Overview Summary Card */}
       {internship && (
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-indigo-900 via-indigo-950 to-slate-950 text-white shadow-md border border-indigo-800/40 space-y-4">
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#071638] via-indigo-950 to-slate-950 text-white shadow-md border border-indigo-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-indigo-800/60">
             <div>
-              <div className="text-[11px] uppercase tracking-widest text-indigo-300 font-bold">
+              <div className="text-[11px] uppercase tracking-widest text-blue-300 font-bold">
                 Đợt Thực Tập Hiện Tại
               </div>
               <div className="text-base sm:text-lg font-black text-white mt-0.5 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-indigo-400 shrink-0" />
+                <Building2 className="w-5 h-5 text-blue-400 shrink-0" />
                 <span>{internship.companyId?.name || 'Doanh nghiệp thực tập'}</span>
               </div>
-              <div className="text-xs text-indigo-200 mt-0.5 flex items-center gap-1.5">
-                <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
+              <div className="text-xs text-blue-200 mt-0.5 flex items-center gap-1.5">
+                <Briefcase className="w-3.5 h-3.5 text-blue-400" />
                 <span>Vị trí: <strong>{internship.position || 'Thực tập sinh'}</strong></span>
               </div>
             </div>
 
             {hasStudent2 && (
               <div className="px-3 py-1.5 rounded-xl bg-indigo-800/60 border border-indigo-700/60 text-xs flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-indigo-300" />
+                <Users className="w-4 h-4 text-blue-300" />
                 <span>
                   Nhóm 2 SV: <strong>{isSV1 ? 'Bạn là SV1' : isSV2 ? 'Bạn là SV2' : 'Nhóm 2 SV'}</strong>
                 </span>
@@ -272,19 +272,19 @@ const StudentReportPage = () => {
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-[10px] text-indigo-300 uppercase font-bold tracking-wider block">Ngày bắt đầu</span>
+              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Ngày bắt đầu</span>
               <span className="font-bold text-sm text-white mt-0.5 block font-mono">{formatDate(internship.startDate)}</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-[10px] text-indigo-300 uppercase font-bold tracking-wider block">Ngày kết thúc</span>
+              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Ngày kết thúc</span>
               <span className="font-bold text-sm text-white mt-0.5 block font-mono">{formatDate(internship.endDate)}</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-[10px] text-indigo-300 uppercase font-bold tracking-wider block">Tổng số tuần</span>
-              <span className="font-bold text-sm text-indigo-300 mt-0.5 block font-mono">{totalWeeks} tuần</span>
+              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Tổng số tuần</span>
+              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{totalWeeks} tuần</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-[10px] text-indigo-300 uppercase font-bold tracking-wider block">Đã hoàn thành</span>
+              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Đã hoàn thành</span>
               <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">{completedWeeks}/{totalWeeks} tuần</span>
             </div>
           </div>
@@ -308,7 +308,7 @@ const StudentReportPage = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-indigo-600" />
+            <Calendar className="w-4 h-4 text-[#153898]" />
             Danh Sách Nhật Ký Hàng Tuần ({weeks.length} Tuần)
           </h2>
           <span className="text-xs text-slate-500">
@@ -345,7 +345,7 @@ const StudentReportPage = () => {
                       : status === 'NEEDS_REVISION'
                       ? 'bg-rose-50/40 border-rose-200/80'
                       : status === 'SUBMITTED' || status === 'REVIEWING'
-                      ? 'bg-indigo-50/40 border-indigo-200/80'
+                      ? 'bg-blue-50/40 border-blue-200/80'
                       : 'bg-white border-slate-200/80 hover:border-slate-300'
                   }`}
                 >
@@ -386,7 +386,7 @@ const StudentReportPage = () => {
                         </span>
                       )}
                       {(status === 'SUBMITTED' || status === 'REVIEWING') && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-100/70 border border-indigo-200 px-2.5 py-1 rounded-lg">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#102d7d] bg-blue-100/70 border border-blue-200 px-2.5 py-1 rounded-lg">
                           <CheckCircle2 className="w-3 h-3" />
                           <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVHD' : 'Đã gửi GVHD'}</span>
                         </span>
@@ -418,7 +418,7 @@ const StudentReportPage = () => {
                         )}
 
                         {report.file?.originalName && (
-                          <div className="inline-flex items-center gap-1 text-[10px] text-indigo-700 font-semibold bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-lg truncate max-w-full">
+                          <div className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-lg truncate max-w-full">
                             <Paperclip className="w-3 h-3 shrink-0" />
                             <span className="truncate">{report.file.originalName}</span>
                           </div>
@@ -452,7 +452,7 @@ const StudentReportPage = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenCreateForWeek(week)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Viết báo cáo</span>
@@ -464,7 +464,7 @@ const StudentReportPage = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenCreateForWeek(week, report)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Chỉnh sửa báo cáo</span>

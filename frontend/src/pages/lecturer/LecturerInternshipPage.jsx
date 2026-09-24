@@ -231,7 +231,7 @@ const LecturerInternshipPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-violet-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#153898] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
@@ -243,7 +243,7 @@ const LecturerInternshipPage = () => {
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
                 <span>Giảng viên: <strong className="text-slate-800">{lecturerInfo?.academicTitle} {lecturerInfo?.userId?.fullName}</strong></span>
                 <span>•</span>
-                <span>Mã GV: <strong className="font-mono text-violet-700">{lecturerInfo?.lecturerCode}</strong></span>
+                <span>Mã GV: <strong className="font-mono text-[#102d7d]">{lecturerInfo?.lecturerCode}</strong></span>
                 <span>•</span>
                 <span>Chuyên môn: <strong className="text-slate-700">{lecturerInfo?.specialization || 'CNTT'}</strong></span>
               </div>
@@ -256,19 +256,19 @@ const LecturerInternshipPage = () => {
             <button
               onClick={handleOpenConfirmationDoc}
               disabled={loadingDoc || internships.length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs shadow-sm shadow-violet-200 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs shadow-sm shadow-blue-200 transition disabled:opacity-50"
               title="Xuất & In Giấy xác nhận hướng dẫn thực tập"
             >
               <Printer className="w-4 h-4" />
               <span>In Giấy xác nhận hướng dẫn</span>
             </button>
 
-            <div className="p-3.5 rounded-2xl bg-violet-50/80 border border-violet-200/80 text-right">
-              <div className="text-[11px] font-semibold text-violet-700 uppercase tracking-wider">
+            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-right">
+              <div className="text-[11px] font-semibold text-[#102d7d] uppercase tracking-wider">
                 Chỉ tiêu hướng dẫn
               </div>
-              <div className="text-lg font-extrabold text-violet-950 mt-0.5">
-                {stats?.activeCount || 0} / {stats?.maxStudents || 10} <span className="text-xs font-semibold text-violet-600">SV</span>
+              <div className="text-lg font-extrabold text-[#0B1E48] mt-0.5">
+                {stats?.activeCount || 0} / {stats?.maxStudents || 10} <span className="text-xs font-semibold text-[#153898]">SV</span>
               </div>
             </div>
 
@@ -330,14 +330,14 @@ const LecturerInternshipPage = () => {
                     }}
                   >
                     {/* MSSV */}
-                    <td className="py-3.5 px-4 pl-6 font-mono font-bold text-xs text-violet-700">
+                    <td className="py-3.5 px-4 pl-6 font-mono font-bold text-xs text-[#102d7d]">
                       {item.studentId?.studentCode}
                     </td>
 
                     {/* Student Name */}
                     <td className="py-3.5 px-4">
                       <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-violet-50 text-violet-700 font-bold text-xs flex items-center justify-center shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#102d7d] font-bold text-xs flex items-center justify-center shrink-0">
                           {item.studentId?.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
                         </div>
                         <div className="min-w-0">
@@ -418,7 +418,7 @@ const LecturerInternshipPage = () => {
                             setSelectedInternship(item);
                             setDetailModalOpen(true);
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-xl transition"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
                           title="Xem chi tiết hồ sơ"
                         >
                           <Eye className="w-3.5 h-3.5" />

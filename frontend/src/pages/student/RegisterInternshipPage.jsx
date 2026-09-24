@@ -255,7 +255,7 @@ const RegisterInternshipPage = () => {
         <div className="pt-2">
           <Link
             to="/student/internship"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold rounded-xl shadow-sm transition"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
           >
             <Briefcase className="w-4 h-4" />
             <span>Xem hồ sơ thực tập hiện tại</span>
@@ -273,7 +273,7 @@ const RegisterInternshipPage = () => {
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs tracking-wider uppercase">
+        <div className="flex items-center gap-2 text-[#153898] font-semibold text-xs tracking-wider uppercase">
           <Briefcase className="w-4 h-4" /> Quy trình Đăng ký TTDN
         </div>
         <h2 className="text-xl font-bold text-slate-900 mt-1">
@@ -294,7 +294,7 @@ const RegisterInternshipPage = () => {
                 1. Thông tin Sinh viên (Chỉ đọc từ hệ thống)
               </h3>
             </div>
-            <span className="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100">
+            <span className="text-[11px] font-semibold text-[#153898] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
               Read-Only
             </span>
           </div>
@@ -309,7 +309,7 @@ const RegisterInternshipPage = () => {
 
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
               <span className="text-slate-400 block mb-0.5">Mã số sinh viên (MSSV)</span>
-              <span className="font-mono font-bold text-indigo-600 text-sm">
+              <span className="font-mono font-bold text-[#153898] text-sm">
                 {student?.studentCode}
               </span>
             </div>
@@ -347,7 +347,7 @@ const RegisterInternshipPage = () => {
         {/* SECTION 2: Company Selection / Entry */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Building2 className="w-5 h-5 text-indigo-600" />
+            <Building2 className="w-5 h-5 text-[#153898]" />
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
               2. Thông tin Doanh nghiệp Thực tập
             </h3>
@@ -360,7 +360,7 @@ const RegisterInternshipPage = () => {
               onClick={() => setCompanyMode('existing')}
               className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${
                 companyMode === 'existing'
-                  ? 'bg-white text-indigo-700 shadow-xs'
+                  ? 'bg-white text-[#102d7d] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -371,7 +371,7 @@ const RegisterInternshipPage = () => {
               onClick={() => setCompanyMode('new')}
               className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${
                 companyMode === 'new'
-                  ? 'bg-white text-indigo-700 shadow-xs'
+                  ? 'bg-white text-[#102d7d] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -390,7 +390,7 @@ const RegisterInternshipPage = () => {
                   name="companyId"
                   value={formData.companyId}
                   onChange={handleCompanySelect}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition font-medium"
+                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-medium"
                 >
                   {activeCompanies.map((comp) => (
                     <option key={comp._id} value={comp._id}>
@@ -405,8 +405,8 @@ const RegisterInternshipPage = () => {
 
               {/* Auto-filled Company Details Display */}
               {selectedExistingCompany && (
-                <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100/80 space-y-2 text-xs">
-                  <div className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider mb-2">
+                <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-100/80 space-y-2 text-xs">
+                  <div className="text-[11px] font-bold text-[#153898] uppercase tracking-wider mb-2">
                     Thông tin tự động điền từ hệ thống:
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
@@ -450,7 +450,7 @@ const RegisterInternshipPage = () => {
                     value={formData.newCompanyName}
                     onChange={handleChange}
                     placeholder="VD: Công ty TNHH Phần mềm ABC"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                   />
                   {errors.newCompanyName && (
                     <p className="text-xs text-rose-500 mt-1">{errors.newCompanyName}</p>
@@ -467,7 +467,7 @@ const RegisterInternshipPage = () => {
                     value={formData.newCompanyCode}
                     onChange={handleChange}
                     placeholder="VD: ABC_SOFT"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition uppercase font-mono"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition uppercase font-mono"
                   />
                 </div>
               </div>
@@ -482,7 +482,7 @@ const RegisterInternshipPage = () => {
                   value={formData.newCompanyAddress}
                   onChange={handleChange}
                   placeholder="VD: 123 Nguyễn Văn Bảo, Phường 4, Gò Vấp, TP.HCM"
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 />
                 {errors.newCompanyAddress && (
                   <p className="text-xs text-rose-500 mt-1">{errors.newCompanyAddress}</p>
@@ -500,7 +500,7 @@ const RegisterInternshipPage = () => {
                     value={formData.newCompanyEmail}
                     onChange={handleChange}
                     placeholder="hr@company.com"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                   />
                 </div>
 
@@ -514,7 +514,7 @@ const RegisterInternshipPage = () => {
                     value={formData.newCompanyPhone}
                     onChange={handleChange}
                     placeholder="02812345678"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                   />
                 </div>
 
@@ -528,7 +528,7 @@ const RegisterInternshipPage = () => {
                     value={formData.newCompanyWebsite}
                     onChange={handleChange}
                     placeholder="https://..."
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                   />
                 </div>
               </div>
@@ -539,7 +539,7 @@ const RegisterInternshipPage = () => {
         {/* SECTION 3: Internship Position & Dates */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-            <Calendar className="w-5 h-5 text-indigo-600" />
+            <Calendar className="w-5 h-5 text-[#153898]" />
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
               3. Vị trí & Thời gian Thực tập
             </h3>
@@ -556,7 +556,7 @@ const RegisterInternshipPage = () => {
                 value={formData.position}
                 onChange={handleChange}
                 placeholder="VD: Fullstack Node.js & React Intern"
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition font-medium"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-medium"
               />
               {errors.position && (
                 <p className="text-xs text-rose-500 mt-1">{errors.position}</p>
@@ -572,7 +572,7 @@ const RegisterInternshipPage = () => {
                 name="startDate"
                 value={formData.startDate}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
               {errors.startDate && (
                 <p className="text-xs text-rose-500 mt-1">{errors.startDate}</p>
@@ -588,7 +588,7 @@ const RegisterInternshipPage = () => {
                 name="endDate"
                 value={formData.endDate}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
               {errors.endDate && (
                 <p className="text-xs text-rose-500 mt-1">{errors.endDate}</p>
@@ -599,7 +599,7 @@ const RegisterInternshipPage = () => {
           {/* THÔNG TIN NGƯỜI ĐÁNH GIÁ TẠI DOANH NGHIỆP */}
           <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
             <div className="flex items-center gap-2 pb-2 border-b border-slate-200/80">
-              <UserCheck className="w-4 h-4 text-indigo-600" />
+              <UserCheck className="w-4 h-4 text-[#153898]" />
               <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
                 👤 Thông tin người đánh giá tại Doanh nghiệp
               </h4>
@@ -621,7 +621,7 @@ const RegisterInternshipPage = () => {
                   placeholder="Ví dụ: Nguyễn Văn Quản Lý"
                   className={`w-full px-3.5 py-2.5 text-xs bg-white border ${
                     errors.mentorName ? 'border-rose-300 ring-1 ring-rose-300' : 'border-slate-200'
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition`}
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition`}
                 />
                 {errors.mentorName && (
                   <p className="text-[11px] text-rose-500 mt-1">{errors.mentorName}</p>
@@ -640,7 +640,7 @@ const RegisterInternshipPage = () => {
                   placeholder="Ví dụ: Trưởng phòng IT / Tech Lead"
                   className={`w-full px-3.5 py-2.5 text-xs bg-white border ${
                     errors.mentorPosition ? 'border-rose-300 ring-1 ring-rose-300' : 'border-slate-200'
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition`}
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition`}
                 />
                 {errors.mentorPosition && (
                   <p className="text-[11px] text-rose-500 mt-1">{errors.mentorPosition}</p>
@@ -659,7 +659,7 @@ const RegisterInternshipPage = () => {
                   placeholder="manager@company.com"
                   className={`w-full px-3.5 py-2.5 text-xs bg-white border ${
                     errors.mentorEmail ? 'border-rose-300 ring-1 ring-rose-300' : 'border-slate-200'
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition`}
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition`}
                 />
                 {errors.mentorEmail && (
                   <p className="text-[11px] text-rose-500 mt-1">{errors.mentorEmail}</p>
@@ -678,7 +678,7 @@ const RegisterInternshipPage = () => {
                   placeholder="0901234567"
                   className={`w-full px-3.5 py-2.5 text-xs bg-white border ${
                     errors.mentorPhone ? 'border-rose-300 ring-1 ring-rose-300' : 'border-slate-200'
-                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition`}
+                  } rounded-xl focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition`}
                 />
                 {errors.mentorPhone && (
                   <p className="text-[11px] text-rose-500 mt-1">{errors.mentorPhone}</p>
@@ -698,7 +698,7 @@ const RegisterInternshipPage = () => {
               value={formData.registrationNote}
               onChange={handleChange}
               placeholder="Nguyện vọng, nội dung đề tài thực tập dự kiến tại doanh nghiệp..."
-              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
+              className="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-none"
             />
           </div>
         </div>
@@ -720,7 +720,7 @@ const RegisterInternshipPage = () => {
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-200 transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#153898] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
             >
               {submitting ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -55,7 +55,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 text-white font-mono">
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#153898] text-white font-mono">
                 Tuần #{report.weekNumber}
               </span>
               <StatusBadge status={report.status} size="sm" />
@@ -84,8 +84,8 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
         {report.secondStudentId && (
           <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-white shadow-2xs">
             <div className="font-bold uppercase tracking-wider text-[11px] flex items-center justify-between">
-              <span className="flex items-center gap-1.5 text-indigo-900">
-                <ShieldCheck className="w-4 h-4 text-indigo-600" />
+              <span className="flex items-center gap-1.5 text-[#0B1E48]">
+                <ShieldCheck className="w-4 h-4 text-[#153898]" />
                 Trạng thái xác nhận Sinh viên 2
               </span>
               {report.student2Status === 'CONFIRMED' ? (
@@ -119,10 +119,10 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
 
         {/* Uploaded File Card */}
         {report.file?.fileUrl ? (
-          <div className="p-4 rounded-2xl bg-indigo-50/50 border border-indigo-200/70 space-y-3">
+          <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/70 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-indigo-900">
-                <Paperclip className="w-4 h-4 text-indigo-600" />
+              <div className="font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5 text-[#0B1E48]">
+                <Paperclip className="w-4 h-4 text-[#153898]" />
                 Tài liệu nhật ký đính kèm
               </div>
               {report.file.size && (
@@ -132,9 +132,9 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
               )}
             </div>
 
-            <div className="p-3 bg-white rounded-xl border border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+            <div className="p-3 bg-white rounded-xl border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-blue-100 text-[#102d7d] flex items-center justify-center shrink-0">
                   <FileCheck className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
@@ -152,7 +152,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
                   href={fullFileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs shadow-2xs transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Xem file</span>

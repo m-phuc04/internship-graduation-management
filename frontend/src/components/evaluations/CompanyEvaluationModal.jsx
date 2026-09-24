@@ -256,11 +256,11 @@ const CompanyEvaluationModal = ({
     >
       <div className="space-y-6 text-xs max-h-[78vh] overflow-y-auto pr-1">
         {/* IUH Header Banner */}
-        <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 text-indigo-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 text-[#0B1E48] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <IUHLogo className="h-10 w-auto object-contain" />
             <div>
-              <div className="text-[11px] font-bold text-indigo-800 uppercase tracking-wider">
+              <div className="text-[11px] font-bold text-[#0d2a75] uppercase tracking-wider">
                 Khoa Công nghệ Thông tin — Trường ĐH Công nghiệp TP.HCM
               </div>
               <div className="font-bold text-sm text-slate-900 mt-0.5">
@@ -271,7 +271,7 @@ const CompanyEvaluationModal = ({
               </div>
             </div>
           </div>
-          <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-indigo-100 text-indigo-800 self-start sm:self-auto border border-indigo-200">
+          <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-blue-100 text-[#0d2a75] self-start sm:self-auto border border-blue-200">
             {internship.evaluation?.status || 'Chưa đánh giá'}
           </span>
         </div>
@@ -286,7 +286,7 @@ const CompanyEvaluationModal = ({
         {/* PHẦN I: THÔNG TIN CHUNG */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-2 border-b border-slate-100 flex items-center gap-1.5">
-            <Building2 className="w-4 h-4 text-indigo-600" />
+            <Building2 className="w-4 h-4 text-[#153898]" />
             <span>I. Thông Tin Chung</span>
           </div>
 
@@ -324,7 +324,7 @@ const CompanyEvaluationModal = ({
                 value={businessField}
                 onChange={(e) => setBusinessField(e.target.value)}
                 placeholder="VD: Công nghệ thông tin, Phát triển phần mềm..."
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition font-medium"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-medium"
               />
             </div>
 
@@ -338,7 +338,7 @@ const CompanyEvaluationModal = ({
                     key={opt}
                     className={`flex items-center gap-1.5 p-2 rounded-lg border cursor-pointer text-[11px] transition ${
                       companySize === opt
-                        ? 'bg-indigo-50 border-indigo-300 text-indigo-900 font-bold'
+                        ? 'bg-blue-50 border-blue-300 text-[#0B1E48] font-bold'
                         : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
@@ -348,7 +348,7 @@ const CompanyEvaluationModal = ({
                       value={opt}
                       checked={companySize === opt}
                       onChange={() => setCompanySize(opt)}
-                      className="text-indigo-600 focus:ring-indigo-500"
+                      className="text-[#153898] focus:ring-[#153898]"
                     />
                     <span>{opt}</span>
                   </label>
@@ -361,7 +361,7 @@ const CompanyEvaluationModal = ({
         {/* PHẦN II: CÔNG VIỆC THỰC TẬP */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-2 border-b border-slate-100 flex items-center gap-1.5">
-            <Briefcase className="w-4 h-4 text-indigo-600" />
+            <Briefcase className="w-4 h-4 text-[#153898]" />
             <span>1. Công việc thực tập hiện tại của Anh/Chị (A/C) tại doanh nghiệp là:</span>
           </div>
 
@@ -376,12 +376,12 @@ const CompanyEvaluationModal = ({
                     onClick={() => handleToggleWorkField(item)}
                     className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition ${
                       checked
-                        ? 'bg-indigo-50 border-indigo-300 text-indigo-950 font-bold shadow-2xs'
+                        ? 'bg-blue-50 border-blue-300 text-[#0B1E48] font-bold shadow-2xs'
                         : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                     }`}
                   >
                     {checked ? (
-                      <CheckSquare className="w-4 h-4 text-indigo-600 shrink-0" />
+                      <CheckSquare className="w-4 h-4 text-[#153898] shrink-0" />
                     ) : (
                       <Square className="w-4 h-4 text-slate-400 shrink-0" />
                     )}
@@ -398,7 +398,7 @@ const CompanyEvaluationModal = ({
                   value={workFieldOther}
                   onChange={(e) => setWorkFieldOther(e.target.value)}
                   placeholder="Nhập công việc khác..."
-                  className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 />
               </div>
             )}
@@ -408,7 +408,7 @@ const CompanyEvaluationModal = ({
         {/* PHẦN III: YÊU CẦU CỦA NGƯỜI SỬ DỤNG */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-            <Users className="w-4 h-4 text-indigo-600" />
+            <Users className="w-4 h-4 text-[#153898]" />
             <span>2. Yêu cầu của người sử dụng (End User) liên quan đến công việc thực tập của A/C</span>
           </div>
           <textarea
@@ -416,14 +416,14 @@ const CompanyEvaluationModal = ({
             value={endUserReq}
             onChange={(e) => setEndUserReq(e.target.value)}
             placeholder="Nhập nội dung yêu cầu của người sử dụng..."
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition leading-relaxed"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition leading-relaxed"
           />
         </div>
 
         {/* PHẦN IV: YÊU CẦU CỦA NGƯỜI LÃNH ĐẠO TRỰC TIẾP */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
-            <User className="w-4 h-4 text-indigo-600" />
+            <User className="w-4 h-4 text-[#153898]" />
             <span>3. Yêu cầu của người lãnh đạo trực tiếp liên quan đến công việc thực tập của A/C</span>
           </div>
           <textarea
@@ -431,14 +431,14 @@ const CompanyEvaluationModal = ({
             value={leaderReq}
             onChange={(e) => setLeaderReq(e.target.value)}
             placeholder="Nhập nội dung yêu cầu của người lãnh đạo trực tiếp..."
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition leading-relaxed"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition leading-relaxed"
           />
         </div>
 
         {/* PHẦN V: ĐÁNH GIÁ MỤC TIÊU ĐÀO TẠO (PEO) */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-2 border-b border-slate-100 flex items-center gap-1.5">
-            <FileText className="w-4 h-4 text-indigo-600" />
+            <FileText className="w-4 h-4 text-[#153898]" />
             <span>4. A/C cho biết ý kiến về mục tiêu chương trình đào tạo CNTT (PEO)</span>
           </div>
 
@@ -446,7 +446,7 @@ const CompanyEvaluationModal = ({
             {/* PEO 1 */}
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
               <div className="font-semibold text-slate-900 leading-snug">
-                <span className="text-indigo-700 font-bold mr-1">PEO 1.</span>
+                <span className="text-[#102d7d] font-bold mr-1">PEO 1.</span>
                 Thể hiện kiến thức lý thuyết và thực hành cơ bản và chuyên sâu liên quan đến CNTT để đáp ứng những yêu cầu trong việc quản trị, bảo mật và phát triển các hệ thống IT cho tổ chức và doanh nghiệp.
               </div>
               <textarea
@@ -454,14 +454,14 @@ const CompanyEvaluationModal = ({
                 value={peo1}
                 onChange={(e) => setPeo1(e.target.value)}
                 placeholder="Ý kiến đánh giá PEO 1..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
 
             {/* PEO 2 */}
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
               <div className="font-semibold text-slate-900 leading-snug">
-                <span className="text-indigo-700 font-bold mr-1">PEO 2.</span>
+                <span className="text-[#102d7d] font-bold mr-1">PEO 2.</span>
                 Thể hiện khả năng làm việc hiệu quả với tư cách là thành viên hay lãnh đạo trong nhóm đa quốc gia trong môi trường chuyên nghiệp không ngừng thay đổi.
               </div>
               <textarea
@@ -469,14 +469,14 @@ const CompanyEvaluationModal = ({
                 value={peo2}
                 onChange={(e) => setPeo2(e.target.value)}
                 placeholder="Ý kiến đánh giá PEO 2..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
 
             {/* PEO 3 */}
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-1.5">
               <div className="font-semibold text-slate-900 leading-snug">
-                <span className="text-indigo-700 font-bold mr-1">PEO 3.</span>
+                <span className="text-[#102d7d] font-bold mr-1">PEO 3.</span>
                 Thể hiện năng lực học tập suốt đời cũng như đạo đức tốt trong môi trường chuyên nghiệp.
               </div>
               <textarea
@@ -484,7 +484,7 @@ const CompanyEvaluationModal = ({
                 value={peo3}
                 onChange={(e) => setPeo3(e.target.value)}
                 placeholder="Ý kiến đánh giá PEO 3..."
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
           </div>
@@ -493,7 +493,7 @@ const CompanyEvaluationModal = ({
         {/* PHẦN VI: ĐÁNH GIÁ KHẢ NĂNG LÀM VIỆC NHÓM */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-2 border-b border-slate-100 flex items-center gap-1.5">
-            <Users className="w-4 h-4 text-indigo-600" />
+            <Users className="w-4 h-4 text-[#153898]" />
             <span>5. Đánh giá của quản lý trực tiếp về khả năng làm việc nhóm của thực tập viên</span>
           </div>
 
@@ -506,7 +506,7 @@ const CompanyEvaluationModal = ({
                   onClick={() => setTeamwork(opt)}
                   className={`p-2.5 rounded-xl border text-center font-bold text-xs transition cursor-pointer ${
                     teamwork === opt
-                      ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                      ? 'bg-[#153898] text-white border-[#153898] shadow-xs'
                       : 'bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100'
                   }`}
                 >
@@ -522,7 +522,7 @@ const CompanyEvaluationModal = ({
                   value={teamworkOther}
                   onChange={(e) => setTeamworkOther(e.target.value)}
                   placeholder="Nhập ý kiến khác..."
-                  className="w-full px-3 py-2 bg-white border border-indigo-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 />
               </div>
             )}
@@ -532,7 +532,7 @@ const CompanyEvaluationModal = ({
         {/* PHẦN VII: ĐÁNH GIÁ KẾT QUẢ THỰC TẬP (ĐIỂM & NHẬN XÉT) */}
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-4">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-2 border-b border-slate-100 flex items-center gap-1.5">
-            <Award className="w-4 h-4 text-indigo-600" />
+            <Award className="w-4 h-4 text-[#153898]" />
             <span>Đánh Giá Kết Quả Thực Tập</span>
           </div>
 
@@ -550,11 +550,11 @@ const CompanyEvaluationModal = ({
                   value={score}
                   onChange={(e) => setScore(e.target.value)}
                   placeholder="8.5"
-                  className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base font-black text-indigo-900 font-mono text-center focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  className="w-32 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-base font-black text-[#0B1E48] font-mono text-center focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 />
                 <span className="text-slate-500 font-bold">/ 10 điểm</span>
                 {score !== '' && !isNaN(score) && (
-                  <span className="text-xs font-semibold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-xl border border-indigo-100">
+                  <span className="text-xs font-semibold text-[#102d7d] bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-100">
                     (Bằng chữ: <strong>{numberToWords(score)}</strong>)
                   </span>
                 )}
@@ -570,7 +570,7 @@ const CompanyEvaluationModal = ({
                 value={comments}
                 onChange={(e) => setComments(e.target.value)}
                 placeholder="Nhận xét tổng quát về tinh thần thái độ, ý thức kỷ luật, năng lực chuyên môn và khả năng phát triển của sinh viên..."
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition leading-relaxed"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition leading-relaxed"
               />
             </div>
           </div>
@@ -579,12 +579,12 @@ const CompanyEvaluationModal = ({
         <div className="p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
           <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] pb-2 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <User className="w-4 h-4 text-indigo-600" />
+              <User className="w-4 h-4 text-[#153898]" />
               <span>👤 Thông Tin Người Đánh Giá</span>
             </div>
           </div>
 
-          <div className="p-2.5 rounded-xl bg-indigo-50/70 border border-indigo-100 text-indigo-900 text-[11px]">
+          <div className="p-2.5 rounded-xl bg-blue-50/70 border border-blue-100 text-[#0B1E48] text-[11px]">
             💡 <strong>Lưu ý:</strong> Thông tin được lấy từ hồ sơ đăng ký thực tập. Bạn có thể chỉnh sửa nếu thông tin người đánh giá đã thay đổi.
           </div>
 
@@ -598,7 +598,7 @@ const CompanyEvaluationModal = ({
                 value={evaluatorName}
                 onChange={(e) => setEvaluatorName(e.target.value)}
                 placeholder="Ví dụ: Nguyễn Văn Quản Lý"
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
 
@@ -611,7 +611,7 @@ const CompanyEvaluationModal = ({
                 value={evaluatorPosition}
                 onChange={(e) => setEvaluatorPosition(e.target.value)}
                 placeholder="Ví dụ: Trưởng phòng IT / Tech Lead"
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
 
@@ -624,7 +624,7 @@ const CompanyEvaluationModal = ({
                 value={evaluatorEmail}
                 onChange={(e) => setEvaluatorEmail(e.target.value)}
                 placeholder="manager@company.com"
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
 
@@ -637,7 +637,7 @@ const CompanyEvaluationModal = ({
                 value={evaluatorPhone}
                 onChange={(e) => setEvaluatorPhone(e.target.value)}
                 placeholder="0901234567"
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               />
             </div>
           </div>
@@ -667,7 +667,7 @@ const CompanyEvaluationModal = ({
             type="button"
             disabled={submitting}
             onClick={() => handleSubmit('SUBMITTED')}
-            className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-200 transition inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
+            className="px-6 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-200 transition inline-flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {submitting ? (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

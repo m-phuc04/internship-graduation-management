@@ -132,7 +132,7 @@ const InternshipManagement = () => {
       {/* Top Header Card */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
             <Briefcase className="w-7 h-7" />
           </div>
           <div>
@@ -150,10 +150,10 @@ const InternshipManagement = () => {
           <button
             type="button"
             onClick={() => setTimelineModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-indigo-700 hover:text-indigo-900 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#102d7d] hover:text-[#0B1E48] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer shadow-2xs"
             title="Cấu hình thời gian mở cổng đăng ký & nộp báo cáo TTDN"
           >
-            <Clock className="w-3.5 h-3.5 text-indigo-600" />
+            <Clock className="w-3.5 h-3.5 text-[#153898]" />
             <span>Thời gian mở TTDN</span>
             <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color}`}>
               {windowBadge.text}
@@ -197,7 +197,7 @@ const InternshipManagement = () => {
             <select
               value={status}
               onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               {STATUS_FILTERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -291,7 +291,7 @@ const InternshipManagement = () => {
                           name={`${item.lecturerId?.academicTitle ? item.lecturerId.academicTitle + ' ' : ''}${item.lecturerId?.userId?.fullName || 'Giảng viên'}`}
                           subtitle={item.lecturerId?.lecturerCode}
                           showAvatar={false}
-                          className="font-semibold text-indigo-700 hover:underline"
+                          className="font-semibold text-[#102d7d] hover:underline"
                         />
                       ) : (
                         <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
@@ -321,7 +321,7 @@ const InternshipManagement = () => {
                             setSelectedInternship(item);
                             setDetailModalOpen(true);
                           }}
-                          className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                          className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition cursor-pointer"
                           title="Xem chi tiết hồ sơ"
                         >
                           <Eye className="w-4 h-4" />
@@ -334,7 +334,7 @@ const InternshipManagement = () => {
                               setSelectedInternship(item);
                               setAssignModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition cursor-pointer"
+                            className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition cursor-pointer"
                             title={item.lecturerId ? 'Đổi Giảng viên HD' : 'Phân công Giảng viên HD'}
                           >
                             <BookOpen className="w-4 h-4" />

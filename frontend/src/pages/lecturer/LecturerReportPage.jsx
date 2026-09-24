@@ -96,7 +96,7 @@ const LecturerReportPage = () => {
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-violet-600 font-semibold text-xs tracking-wider uppercase">
+          <div className="flex items-center gap-2 text-[#153898] font-semibold text-xs tracking-wider uppercase">
             <BookOpen className="w-4 h-4" /> Đánh Giá & Chấm Điểm
           </div>
           <h2 className="text-xl font-bold text-slate-900 mt-1">
@@ -131,7 +131,7 @@ const LecturerReportPage = () => {
             <select
               value={status}
               onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -145,7 +145,7 @@ const LecturerReportPage = () => {
             <select
               value={reportType}
               onChange={(e) => handleFilterChange(setReportType, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               {TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -196,7 +196,7 @@ const LecturerReportPage = () => {
                     <td className="py-3.5 px-4 pl-6">
                       <div className="font-semibold text-slate-900 text-xs">
                         {report.studentId?.userId?.fullName}
-                        <span className="text-[11px] text-violet-700 font-mono ml-1">
+                        <span className="text-[11px] text-[#102d7d] font-mono ml-1">
                           ({report.studentId?.studentCode})
                         </span>
                       </div>
@@ -209,7 +209,7 @@ const LecturerReportPage = () => {
 
                     {/* Report Type */}
                     <td className="py-3.5 px-4">
-                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-violet-50 text-violet-700 border border-violet-200/60 font-mono">
+                      <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
                         {report.reportType === 'WEEKLY'
                           ? `Tuần ${report.weekNumber}`
                           : report.reportType === 'MONTHLY'
@@ -228,7 +228,7 @@ const LecturerReportPage = () => {
                           {report.internshipId?.companyId?.name || 'Doanh nghiệp'}
                         </span>
                         {report.file?.originalName && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-violet-700 font-semibold bg-violet-50 px-2 py-0.5 rounded-md truncate max-w-[130px]">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-[130px]">
                             <Paperclip className="w-3 h-3 shrink-0" />
                             <span className="truncate">{report.file.originalName}</span>
                           </span>
@@ -274,7 +274,7 @@ const LecturerReportPage = () => {
                           setSelectedReport(report);
                           setReviewModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-violet-700 bg-violet-50 hover:bg-violet-100 rounded-xl transition"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
                       >
                         <Award className="w-3.5 h-3.5" />
                         <span>Chấm điểm</span>

@@ -257,7 +257,7 @@ const NotificationDropdown = () => {
         return <Briefcase className="w-4 h-4 text-blue-600" />;
       case 'THESIS':
       case 'THESIS_PROGRESS':
-        return <GraduationCap className="w-4 h-4 text-indigo-600" />;
+        return <GraduationCap className="w-4 h-4 text-[#0B4DB7]" />;
       case 'SYSTEM':
       default:
         return <BookOpen className="w-4 h-4 text-purple-600" />;
@@ -300,7 +300,7 @@ const NotificationDropdown = () => {
             <div className="flex items-center gap-2 min-w-0">
               <span className="font-bold text-xs text-slate-900 truncate">Thông báo</span>
               {unreadCount > 0 && (
-                <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-bold border border-indigo-200 shrink-0">
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#083e96] text-[10px] font-bold border border-blue-200 shrink-0">
                   {unreadCount} mới
                 </span>
               )}
@@ -310,7 +310,7 @@ const NotificationDropdown = () => {
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 transition shrink-0 cursor-pointer"
+                className="text-[11px] font-semibold text-[#0B4DB7] hover:text-[#002855] flex items-center gap-1 transition shrink-0 cursor-pointer"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>Đọc tất cả</span>
@@ -333,7 +333,7 @@ const NotificationDropdown = () => {
                   key={item._id}
                   onClick={() => handleItemClick(item)}
                   className={`p-3.5 flex items-start gap-3 hover:bg-slate-50 transition cursor-pointer ${
-                    !item.isRead ? 'bg-indigo-50/40 font-medium' : ''
+                    !item.isRead ? 'bg-blue-50/40 font-medium' : ''
                   }`}
                 >
                   <div className="p-2 rounded-xl bg-slate-100 shrink-0 mt-0.5">
@@ -350,7 +350,7 @@ const NotificationDropdown = () => {
                           type="button"
                           onClick={(e) => handleMarkAsRead(item._id, e)}
                           title="Đánh dấu đã đọc"
-                          className="text-slate-400 hover:text-indigo-600 shrink-0 p-0.5 cursor-pointer"
+                          className="text-slate-400 hover:text-[#0B4DB7] shrink-0 p-0.5 cursor-pointer"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>

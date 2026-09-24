@@ -275,13 +275,13 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
         {/* Thesis Summary Card */}
-        <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-1.5 shadow-2xs">
+        <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1.5 shadow-2xs">
           <div className="flex items-start gap-2">
-            <BookOpen className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+            <BookOpen className="w-4 h-4 text-[#153898] shrink-0 mt-0.5" />
             <div className="font-bold text-slate-900 text-xs leading-snug">{thesis.thesisTitle}</div>
           </div>
 
-          <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-2 pt-1 border-t border-indigo-100/80">
+          <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-2 pt-1 border-t border-blue-100/80">
             <span>
               SV1: <strong>{thesis.studentId?.userId?.fullName}</strong> ({thesis.studentId?.studentCode})
             </span>
@@ -294,7 +294,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               </>
             )}
             <span>•</span>
-            <span className="font-bold text-indigo-700">
+            <span className="font-bold text-[#102d7d]">
               GVHD: {thesis.supervisorId?.academicTitle ? `${thesis.supervisorId.academicTitle} ` : ''}
               {thesis.supervisorId?.userId?.fullName} ({thesis.supervisorId?.lecturerCode})
             </span>
@@ -318,7 +318,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               type="button"
               onClick={handleAddRow}
               disabled={submitting}
-              className="inline-flex items-center gap-1 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-xl border border-indigo-200 text-xs transition cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 text-xs transition cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Thêm giảng viên</span>
@@ -336,9 +336,9 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                 <div
                   key={row.id}
                   className={`p-3.5 rounded-2xl border transition-all duration-150 space-y-2.5 ${isBoth
-                      ? 'bg-gradient-to-r from-violet-50/70 to-amber-50/70 border-indigo-300 ring-1 ring-indigo-400/30'
+                      ? 'bg-gradient-to-r from-violet-50/70 to-amber-50/70 border-blue-300 ring-1 ring-indigo-400/30'
                       : row.isPrivateReviewer
-                        ? 'bg-violet-50/40 border-violet-200'
+                        ? 'bg-blue-50/40 border-blue-200'
                         : row.isCouncilReviewer
                           ? 'bg-amber-50/40 border-amber-200'
                           : 'bg-white border-slate-200 shadow-2xs'
@@ -347,7 +347,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                   {/* Row Header & Delete button */}
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-slate-700 text-xs flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded-lg bg-indigo-100 text-indigo-700 font-bold text-[11px] flex items-center justify-center">
+                      <span className="w-5 h-5 rounded-lg bg-blue-100 text-[#102d7d] font-bold text-[11px] flex items-center justify-center">
                         {idx + 1}
                       </span>
                       <span>Giảng viên {idx + 1}</span>
@@ -372,7 +372,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                       value={row.lecturerId}
                       onChange={(e) => handleLecturerChange(row.id, e.target.value)}
                       disabled={loadingLecturers || submitting}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                     >
                       <option value="">-- Chọn giảng viên phản biện --</option>
                       {lecturers.map((lec) => {
@@ -393,7 +393,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                     {/* Checkbox PB KÍN */}
                     <label
                       className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold select-none transition cursor-pointer ${row.isPrivateReviewer
-                          ? 'bg-violet-600 border-violet-600 text-white shadow-xs'
+                          ? 'bg-[#153898] border-[#153898] text-white shadow-xs'
                           : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
                         }`}
                     >
@@ -405,7 +405,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                         className="sr-only"
                       />
                       <span
-                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition ${row.isPrivateReviewer ? 'bg-white border-white text-violet-600' : 'border-slate-400'
+                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition ${row.isPrivateReviewer ? 'bg-white border-white text-[#153898]' : 'border-slate-400'
                           }`}
                       >
                         {row.isPrivateReviewer && <Check className="w-3 h-3 stroke-[3]" />}
@@ -442,13 +442,13 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                     <div className="pt-1.5 border-t border-slate-100/80 flex flex-wrap items-center justify-between gap-1 text-[10.5px]">
                       <div className="flex items-center gap-2">
                         {row.isPrivateReviewer && (
-                          <span className="inline-flex items-center gap-1 text-violet-700 font-medium">
+                          <span className="inline-flex items-center gap-1 text-[#102d7d] font-medium">
                             <ShieldCheck className="w-3 h-3" />
                             <span>Quyền: <strong>GVPB_KIN</strong></span>
                             {hasPermKin ? (
                               <span className="text-emerald-600 font-bold">(✓ Đã có)</span>
                             ) : (
-                              <span className="text-indigo-600">(→ Tự cấp khi lưu)</span>
+                              <span className="text-[#153898]">(→ Tự cấp khi lưu)</span>
                             )}
                           </span>
                         )}
@@ -460,14 +460,14 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                             {hasPermHoidong ? (
                               <span className="text-emerald-600 font-bold">(✓ Đã có)</span>
                             ) : (
-                              <span className="text-indigo-600">(→ Tự cấp khi lưu)</span>
+                              <span className="text-[#153898]">(→ Tự cấp khi lưu)</span>
                             )}
                           </span>
                         )}
                       </div>
 
                       {isBoth && (
-                        <span className="font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                        <span className="font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                           ★ Đảm nhiệm cả 2 vai trò phản biện (PB Kín & PB Hội đồng)
                         </span>
                       )}
@@ -482,7 +482,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
         {/* Informational Guidance */}
         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
           <div className="font-semibold text-slate-800 flex items-center gap-1 mb-0.5">
-            <Info className="w-3.5 h-3.5 text-indigo-600" />
+            <Info className="w-3.5 h-3.5 text-[#153898]" />
             <span>Quy tắc phân công & vị trí hiển thị:</span>
           </div>
           • Mỗi giảng viên có 2 checkbox độc lập: <strong>[PB KÍN]</strong> và <strong>[PB HỘI ĐỒNG]</strong>.
@@ -511,7 +511,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               thesis.scores?.supervisorScore === null ||
               thesis.scores?.supervisorScore === undefined
             }
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <UserCheck className="w-3.5 h-3.5" />
             <span>{submitting ? 'Đang lưu...' : 'Lưu phân công phản biện'}</span>

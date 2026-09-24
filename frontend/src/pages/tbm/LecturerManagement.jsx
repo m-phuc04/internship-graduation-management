@@ -178,7 +178,7 @@ const LecturerManagement = () => {
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
             <BookOpen className="w-7 h-7" />
           </div>
           <div>
@@ -197,7 +197,7 @@ const LecturerManagement = () => {
                 setSelectedLecturer(null);
                 setFormModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 active:scale-98 transition shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#153898] text-white text-xs font-semibold hover:bg-[#102d7d] active:scale-98 transition shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Thêm giảng viên</span>
@@ -206,7 +206,7 @@ const LecturerManagement = () => {
             <button
               onClick={fetchLecturers}
               disabled={loading}
-              className="p-2.5 text-slate-600 hover:text-indigo-600 hover:bg-slate-100 rounded-xl transition border border-slate-200 bg-white"
+              className="p-2.5 text-slate-600 hover:text-[#153898] hover:bg-slate-100 rounded-xl transition border border-slate-200 bg-white"
               title="Tải lại danh sách"
             >
               <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
@@ -232,7 +232,7 @@ const LecturerManagement = () => {
             <select
               value={isActive}
               onChange={(e) => handleFilterChange(setIsActive, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               <option value="">-- Tất cả trạng thái tài khoản --</option>
               <option value="true">Đang hoạt động (Active)</option>
@@ -244,7 +244,7 @@ const LecturerManagement = () => {
             <select
               value={isAvailable}
               onChange={(e) => handleFilterChange(setIsAvailable, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
             >
               <option value="">-- Tất cả chỉ tiêu tiếp nhận --</option>
               <option value="true">Sẵn sàng nhận SV (Available)</option>
@@ -323,7 +323,7 @@ const LecturerManagement = () => {
 
                       {/* Đang nhận */}
                       <td className="py-3.5 px-4 text-center">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200/60">
+                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60">
                           {currentStudents} SV
                         </span>
                       </td>
@@ -332,7 +332,7 @@ const LecturerManagement = () => {
                       <td className="py-3.5 px-4 text-center">
                         <button
                           onClick={() => handleOpenCapacityModal(lec)}
-                          className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 hover:bg-indigo-100 hover:text-indigo-700 transition cursor-pointer border border-slate-200"
+                          className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 hover:bg-blue-100 hover:text-[#102d7d] transition cursor-pointer border border-slate-200"
                           title="Click để chỉnh số lượng tối đa"
                         >
                           {maxStudents} SV ✎
@@ -382,7 +382,7 @@ const LecturerManagement = () => {
                           {/* Quick Capacity Edit */}
                           <button
                             onClick={() => handleOpenCapacityModal(lec)}
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                            className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition"
                             title="Chỉnh số lượng SV hướng dẫn"
                           >
                             <Sliders className="w-4 h-4" />
@@ -393,7 +393,7 @@ const LecturerManagement = () => {
                               setSelectedLecturer(lec);
                               setDetailModalOpen(true);
                             }}
-                            className="p-1.5 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                            className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-4 h-4" />
@@ -466,10 +466,10 @@ const LecturerManagement = () => {
         maxWidth="max-w-md"
       >
         <form onSubmit={handleSaveCapacity} className="space-y-4">
-          <div className="p-3.5 bg-indigo-50/60 rounded-xl border border-indigo-100 text-xs space-y-1.5">
+          <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-xs space-y-1.5">
             <div className="flex justify-between font-medium text-slate-700">
               <span>Số sinh viên đang hướng dẫn:</span>
-              <span className="font-bold text-indigo-700">
+              <span className="font-bold text-[#102d7d]">
                 {selectedLecturer?.currentSupervisedStudents || 0} SV
               </span>
             </div>
@@ -491,7 +491,7 @@ const LecturerManagement = () => {
               max="50"
               value={editCapacityVal}
               onChange={(e) => setEditCapacityVal(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm font-bold text-indigo-700 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+              className="w-full px-3.5 py-2 text-sm font-bold text-[#102d7d] bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
               required
             />
             <p className="text-[11px] text-slate-400 mt-1">
@@ -513,7 +513,7 @@ const LecturerManagement = () => {
             <button
               type="submit"
               disabled={actionLoading}
-              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 text-xs font-semibold text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl transition cursor-pointer disabled:opacity-50"
             >
               {actionLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>

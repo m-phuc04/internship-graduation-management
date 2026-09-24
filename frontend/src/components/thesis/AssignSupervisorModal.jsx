@@ -71,7 +71,7 @@ const AssignSupervisorModal = ({ isOpen, onClose, thesis, onSuccess }) => {
       maxWidth="max-w-lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-        <div className="p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-200/80">
+        <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80">
           <div className="font-bold text-slate-900 text-xs leading-snug">{thesis.thesisTitle}</div>
           <div className="text-[11px] text-slate-500 mt-1">
             Sinh viên: <strong>{thesis.studentId?.userId?.fullName}</strong> ({thesis.studentId?.studentCode})
@@ -96,7 +96,7 @@ const AssignSupervisorModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               setError('');
             }}
             disabled={loadingSupervisors || submitting}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
           >
             <option value="">-- Chọn Giảng viên hướng dẫn --</option>
             {supervisors.map((s) => (
@@ -123,7 +123,7 @@ const AssignSupervisorModal = ({ isOpen, onClose, thesis, onSuccess }) => {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <UserCheck className="w-3.5 h-3.5" />
             <span>{submitting ? 'Đang lưu...' : 'Lưu phân công GVHD'}</span>

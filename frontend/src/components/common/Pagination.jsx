@@ -86,7 +86,7 @@ const Pagination = ({
             onClick={(e) => handlePageClick(p, e)}
             className={`w-8 h-8 text-xs font-semibold rounded-lg transition cursor-pointer ${
               p === page
-                ? 'bg-indigo-600 text-white shadow-sm shadow-indigo-200'
+                ? 'bg-[#153898] text-white shadow-sm shadow-blue-200'
                 : 'text-slate-600 hover:bg-slate-100'
             }`}
           >

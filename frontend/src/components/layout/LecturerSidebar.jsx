@@ -89,21 +89,21 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
     `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
       active
         ? 'bg-violet-50 text-violet-700 font-bold shadow-2xs'
-        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+        : 'text-slate-300 hover:text-white hover:bg-white/10'
     }`;
 
   const isAdmin = user?.role === 'ADMIN';
   const isTbm = user?.role === 'TBM';
 
   return (
-    <aside className="w-64 bg-white text-slate-800 flex flex-col shrink-0 h-full select-none shadow-2xs">
+    <aside className="w-64 bg-[#0B1E48] text-slate-300 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
       <Link
         to="/"
         onClick={onCloseMobile}
-        className="h-16 flex items-center gap-3 px-5 border-b border-slate-100 bg-slate-50/40 cursor-pointer group hover:bg-violet-50/30 transition"
+        className="h-16 flex items-center gap-3 px-5 border-b border-[#132c66] bg-slate-50/40 cursor-pointer group hover:bg-violet-50/30 transition"
       >
-        <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
+        <div className="p-1 bg-white rounded-xl border border-[#132c66] flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
           <img
             src="https://iuh.edu.vn/assets/images/iuh.png?v=51"
             alt="IUH Logo"
@@ -114,7 +114,7 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
           <div className="text-sm font-bold text-slate-900 tracking-tight leading-tight group-hover:text-violet-600 transition">
             Cổng Giảng Viên
           </div>
-          <div className="text-[10.5px] text-slate-400 font-medium truncate mt-0.5">
+          <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
             Quản lý Hướng dẫn TTDN & KLTN
           </div>
         </div>
@@ -287,7 +287,7 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
         </div>
 
         {/* 4. Common Module Group */}
-        <div className="pt-2 border-t border-slate-100 space-y-0.5">
+        <div className="pt-2 border-t border-[#132c66] space-y-0.5">
           <div className="px-3 pb-1.5 text-[10.5px] font-bold text-slate-400 uppercase tracking-wider">
             Tiện ích cá nhân
           </div>
@@ -334,14 +334,14 @@ const LecturerSidebar = ({ onCloseMobile, onOpenNotifications, onOpenScheduleMod
       </div>
 
       {/* Sidebar Footer / User & Logout */}
-      <div className="p-3 border-t border-slate-100 bg-slate-50/60">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200/70 shadow-2xs">
+      <div className="p-3 border-t border-[#132c66] bg-[#071638]/50">
+        <div className="flex items-center justify-between p-2 rounded-xl bg-[#081533] border border-[#132b60]">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
               {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
             </div>
             <div className="min-w-0">
-              <div className="text-xs font-bold text-slate-900 truncate">
+              <div className="text-xs font-bold text-white truncate">
                 {user?.fullName || (isAdmin ? 'Quản trị viên' : isTbm ? 'Trưởng Bộ Môn' : 'Giảng viên')}
               </div>
               <div className="text-[10px] font-bold uppercase tracking-wider font-mono truncate text-violet-600">

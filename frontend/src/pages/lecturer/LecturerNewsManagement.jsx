@@ -193,7 +193,7 @@ const LecturerNewsManagement = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-violet-900 via-indigo-900 to-slate-900 text-white shadow-xl relative overflow-hidden">
         <div className="relative z-10 space-y-1.5">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold backdrop-blur-xs border border-white/15">
-            <Newspaper className="w-3.5 h-3.5 text-violet-300" />
+            <Newspaper className="w-3.5 h-3.5 text-blue-300" />
             <span>Khoa Công Nghệ Thông Tin</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -207,7 +207,7 @@ const LecturerNewsManagement = () => {
         <button
           type="button"
           onClick={handleOpenCreateModal}
-          className="relative z-10 inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition active:scale-95 cursor-pointer shrink-0"
+          className="relative z-10 inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#153898] hover:bg-[#153898] text-white text-xs font-bold shadow-lg shadow-violet-600/30 transition active:scale-95 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Tin Tức Mới</span>
@@ -224,7 +224,7 @@ const LecturerNewsManagement = () => {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm theo tiêu đề, nội dung..."
-            className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition"
+            className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
           />
         </div>
 
@@ -233,7 +233,7 @@ const LecturerNewsManagement = () => {
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-violet-500 cursor-pointer"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-[#153898] cursor-pointer"
           >
             <option value="ALL">Tất cả danh mục</option>
             <option value="THONG_BAO">Thông báo</option>
@@ -244,7 +244,7 @@ const LecturerNewsManagement = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-violet-500 cursor-pointer"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-[#153898] cursor-pointer"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PUBLISHED">Đang hiển thị</option>
@@ -350,7 +350,7 @@ const LecturerNewsManagement = () => {
                           type="button"
                           onClick={() => handleOpenEditModal(item)}
                           title="Chỉnh sửa"
-                          className="p-1.5 text-slate-500 hover:text-violet-600 hover:bg-violet-50 rounded-lg transition cursor-pointer"
+                          className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition cursor-pointer"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
@@ -381,7 +381,7 @@ const LecturerNewsManagement = () => {
             {/* Modal Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-violet-100 text-violet-700 flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#102d7d] flex items-center justify-center font-bold">
                   <Newspaper className="w-4 h-4" />
                 </div>
                 <div>
@@ -415,7 +415,7 @@ const LecturerNewsManagement = () => {
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition cursor-pointer"
                   >
                     <option value="THONG_BAO">Thông Báo (Quan trọng)</option>
                     <option value="TIN_TUC">Tin Tức Đào Tạo & Hoạt Động</option>
@@ -430,7 +430,7 @@ const LecturerNewsManagement = () => {
                   <select
                     value={formData.isPublished ? 'TRUE' : 'FALSE'}
                     onChange={(e) => setFormData({ ...formData, isPublished: e.target.value === 'TRUE' })}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition cursor-pointer"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition cursor-pointer"
                   >
                     <option value="TRUE">Hiển thị ngay trên Trang Chủ</option>
                     <option value="FALSE">Lưu bản nháp (Ẩn bài)</option>
@@ -449,7 +449,7 @@ const LecturerNewsManagement = () => {
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="Ví dụ: Thông báo kế hoạch đăng ký đề tài Khóa luận tốt nghiệp HK1 2026-2027"
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 />
               </div>
 
@@ -463,7 +463,7 @@ const LecturerNewsManagement = () => {
                   value={formData.summary}
                   onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                   placeholder="Tóm tắt ngắn gọn 1-2 câu về nội dung chính của thông báo..."
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition resize-none"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-none"
                 />
               </div>
 
@@ -478,7 +478,7 @@ const LecturerNewsManagement = () => {
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder="Nhập đầy đủ nội dung thông báo, mốc thời gian, yêu cầu, liên hệ..."
                   required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500 transition resize-y"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-y"
                 />
               </div>
 
@@ -496,7 +496,7 @@ const LecturerNewsManagement = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold shadow-md shadow-violet-600/30 transition duration-150 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold shadow-md shadow-violet-600/30 transition duration-150 cursor-pointer disabled:opacity-50 flex items-center gap-2"
                 >
                   {submitting && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                   <span>{modalMode === 'CREATE' ? 'Đăng Bài Viết' : 'Lưu Thay Đổi'}</span>

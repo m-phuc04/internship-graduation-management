@@ -418,7 +418,7 @@ const TbmThesisEvaluationManagement = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
               <Award className="w-7 h-7" />
             </div>
             <div>
@@ -509,10 +509,10 @@ const TbmThesisEvaluationManagement = () => {
               <div className="text-[10px] text-emerald-600 mt-0.5">Đủ cả 3 cột điểm</div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-indigo-50/80 border border-indigo-200/80">
-              <div className="text-[11px] text-indigo-700 font-medium">Đã hoàn tất bảo vệ</div>
-              <div className="text-lg font-bold text-indigo-700 font-mono mt-0.5">{stats.completedCount}</div>
-              <div className="text-[10px] text-indigo-600 mt-0.5">COMPLETED</div>
+            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80">
+              <div className="text-[11px] text-[#102d7d] font-medium">Đã hoàn tất bảo vệ</div>
+              <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">{stats.completedCount}</div>
+              <div className="text-[10px] text-[#153898] mt-0.5">COMPLETED</div>
             </div>
           </div>
         )}
@@ -541,7 +541,7 @@ const TbmThesisEvaluationManagement = () => {
                   onClick={() => setStatusFilter(opt.value)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                     statusFilter === opt.value
-                      ? 'bg-white text-indigo-700 shadow-2xs font-bold'
+                      ? 'bg-white text-[#102d7d] shadow-2xs font-bold'
                       : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
                   }`}
                 >
@@ -595,7 +595,7 @@ const TbmThesisEvaluationManagement = () => {
 
                           {/* Title */}
                           <td className="py-3.5 px-4 min-w-[240px] max-w-sm" title={item.thesisTitle}>
-                            <strong className="text-slate-900 line-clamp-2 leading-snug hover:text-indigo-600 transition">
+                            <strong className="text-slate-900 line-clamp-2 leading-snug hover:text-[#153898] transition">
                               {item.thesisTitle}
                             </strong>
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono mt-1">
@@ -607,7 +607,7 @@ const TbmThesisEvaluationManagement = () => {
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-600" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#153898]" />
                                 <strong className="text-slate-900">{item.studentId?.userId?.fullName}</strong>
                                 <span className="text-[11px] font-mono text-slate-400">
                                   ({item.studentId?.studentCode})
@@ -615,7 +615,7 @@ const TbmThesisEvaluationManagement = () => {
                               </div>
                               {item.studentCount === 2 && item.secondStudentId && (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-violet-600" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#153898]" />
                                   <strong className="text-slate-900">
                                     {item.secondStudentId?.userId?.fullName}
                                   </strong>
@@ -674,7 +674,7 @@ const TbmThesisEvaluationManagement = () => {
                                 <strong
                                   className={
                                     s.supervisorScore !== null && s.supervisorScore !== undefined
-                                      ? 'text-indigo-600'
+                                      ? 'text-[#153898]'
                                       : 'text-slate-400 font-normal'
                                   }
                                 >
@@ -688,7 +688,7 @@ const TbmThesisEvaluationManagement = () => {
                                 <strong
                                   className={
                                     s.reviewer1Score !== null && s.reviewer1Score !== undefined
-                                      ? 'text-violet-600'
+                                      ? 'text-[#153898]'
                                       : 'text-slate-400 font-normal'
                                   }
                                 >
@@ -790,7 +790,7 @@ const TbmThesisEvaluationManagement = () => {
             <button
               type="button"
               onClick={() => handleOpenCriteriaModal()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Thêm tiêu chí mới</span>
@@ -870,7 +870,7 @@ const TbmThesisEvaluationManagement = () => {
                             <button
                               type="button"
                               onClick={() => handleOpenCriteriaModal(crit)}
-                              className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-indigo-600 rounded-lg transition cursor-pointer"
+                              className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#153898] rounded-lg transition cursor-pointer"
                               title="Sửa tiêu chí"
                             >
                               <Edit2 className="w-4 h-4" />
@@ -924,7 +924,7 @@ const TbmThesisEvaluationManagement = () => {
               <button
                 type="button"
                 onClick={() => handleOpenPeriodModal()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 <span>Tạo đợt nhập điểm mới</span>
@@ -1034,7 +1034,7 @@ const TbmThesisEvaluationManagement = () => {
                               <button
                                 type="button"
                                 onClick={() => handleOpenPeriodModal(period)}
-                                className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-indigo-600 rounded-lg transition cursor-pointer"
+                                className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#153898] rounded-lg transition cursor-pointer"
                                 title="Sửa đợt nhập điểm"
                               >
                                 <Edit2 className="w-4 h-4" />
@@ -1079,7 +1079,7 @@ const TbmThesisEvaluationManagement = () => {
               value={critForm.name}
               onChange={(e) => setCritForm({ ...critForm, name: e.target.value })}
               placeholder="VD: Đã nộp code, Đủ báo cáo..."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs"
               required
             />
           </div>
@@ -1091,7 +1091,7 @@ const TbmThesisEvaluationManagement = () => {
               value={critForm.description}
               onChange={(e) => setCritForm({ ...critForm, description: e.target.value })}
               placeholder="VD: Sinh viên đã nộp source code và tài liệu hướng dẫn theo yêu cầu của GVHD."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs resize-none"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs resize-none"
             />
           </div>
 
@@ -1103,7 +1103,7 @@ const TbmThesisEvaluationManagement = () => {
                 min="0"
                 value={critForm.order}
                 onChange={(e) => setCritForm({ ...critForm, order: Number(e.target.value) })}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs"
               />
             </div>
 
@@ -1113,7 +1113,7 @@ const TbmThesisEvaluationManagement = () => {
                   type="checkbox"
                   checked={critForm.isRequired}
                   onChange={(e) => setCritForm({ ...critForm, isRequired: e.target.checked })}
-                  className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                  className="w-4 h-4 text-[#153898] rounded border-slate-300 focus:ring-[#153898]"
                 />
                 <span className="font-bold text-slate-700 text-xs">Tiêu chí bắt buộc</span>
               </label>
@@ -1125,7 +1125,7 @@ const TbmThesisEvaluationManagement = () => {
               type="checkbox"
               checked={critForm.isActive}
               onChange={(e) => setCritForm({ ...critForm, isActive: e.target.checked })}
-              className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+              className="w-4 h-4 text-[#153898] rounded border-slate-300 focus:ring-[#153898]"
             />
             <span className="font-bold text-slate-700 text-xs">Kích hoạt tiêu chí ngay</span>
           </label>
@@ -1142,7 +1142,7 @@ const TbmThesisEvaluationManagement = () => {
             <button
               type="submit"
               disabled={actionLoading}
-              className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               {actionLoading ? 'Đang lưu...' : 'Lưu tiêu chí'}
             </button>
@@ -1169,7 +1169,7 @@ const TbmThesisEvaluationManagement = () => {
               value={periodForm.name}
               onChange={(e) => setPeriodForm({ ...periodForm, name: e.target.value })}
               placeholder="VD: Đợt nhập điểm KLTN Học kỳ 1 2026-2027"
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs"
               required
             />
           </div>
@@ -1183,7 +1183,7 @@ const TbmThesisEvaluationManagement = () => {
                 type="datetime-local"
                 value={periodForm.startDate}
                 onChange={(e) => setPeriodForm({ ...periodForm, startDate: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs"
                 required
               />
             </div>
@@ -1196,7 +1196,7 @@ const TbmThesisEvaluationManagement = () => {
                 type="datetime-local"
                 value={periodForm.endDate}
                 onChange={(e) => setPeriodForm({ ...periodForm, endDate: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs"
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs"
                 required
               />
             </div>
@@ -1263,7 +1263,7 @@ const TbmThesisEvaluationManagement = () => {
               value={periodForm.description}
               onChange={(e) => setPeriodForm({ ...periodForm, description: e.target.value })}
               placeholder="Nội dung thông báo gửi đến giảng viên..."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-xs resize-none"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] text-xs resize-none"
             />
           </div>
 
@@ -1279,7 +1279,7 @@ const TbmThesisEvaluationManagement = () => {
             <button
               type="submit"
               disabled={actionLoading}
-              className="inline-flex items-center gap-1.5 px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{actionLoading ? 'Đang lưu...' : 'Lưu & Phát thông báo'}</span>
@@ -1332,9 +1332,9 @@ const TbmThesisEvaluationManagement = () => {
           maxWidth="max-w-xl"
         >
           <div className="space-y-4 text-xs">
-            <div className="p-4 rounded-2xl bg-indigo-50/70 border border-indigo-200/80 space-y-2 shadow-2xs">
+            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2 shadow-2xs">
               <div className="font-bold text-slate-900 text-xs">{selectedThesis.thesisTitle}</div>
-              <div className="text-[11px] text-slate-600 flex flex-wrap gap-3 pt-2 border-t border-indigo-100">
+              <div className="text-[11px] text-slate-600 flex flex-wrap gap-3 pt-2 border-t border-blue-100">
                 <span>
                   <strong>SV1:</strong> {selectedThesis.studentId?.userId?.fullName} (
                   {selectedThesis.studentId?.studentCode})
@@ -1380,9 +1380,9 @@ const TbmThesisEvaluationManagement = () => {
 
             {/* Detailed Scores */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-2xl bg-indigo-50/50 border border-indigo-200 text-center">
-                <div className="text-[11px] text-indigo-700 font-bold">Điểm GVHD (40%)</div>
-                <div className="text-xl font-black font-mono text-indigo-900 mt-1">
+              <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
+                <div className="text-[11px] text-[#102d7d] font-bold">Điểm GVHD (40%)</div>
+                <div className="text-xl font-black font-mono text-[#0B1E48] mt-1">
                   {selectedThesis.scores?.supervisorScore ?? '—'}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">
@@ -1390,9 +1390,9 @@ const TbmThesisEvaluationManagement = () => {
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-violet-50/50 border border-violet-200 text-center">
-                <div className="text-[11px] text-violet-700 font-bold">Điểm PB Kín (30%)</div>
-                <div className="text-xl font-black font-mono text-violet-900 mt-1">
+              <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
+                <div className="text-[11px] text-[#102d7d] font-bold">Điểm PB Kín (30%)</div>
+                <div className="text-xl font-black font-mono text-[#0B1E48] mt-1">
                   {selectedThesis.scores?.reviewer1Score ?? '—'}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-0.5">

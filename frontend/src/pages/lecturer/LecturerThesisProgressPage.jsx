@@ -246,7 +246,7 @@ const LecturerThesisProgressPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-indigo-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#153898] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
@@ -280,9 +280,9 @@ const LecturerThesisProgressPage = () => {
             <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">{theses.length}</div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-indigo-50/80 border border-indigo-200/80">
-            <div className="text-[11px] text-indigo-700 font-medium">Tổng số nhật ký đã gửi</div>
-            <div className="text-lg font-bold text-indigo-700 font-mono mt-0.5">{totalReportsCount}</div>
+          <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200/80">
+            <div className="text-[11px] text-[#102d7d] font-medium">Tổng số nhật ký đã gửi</div>
+            <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">{totalReportsCount}</div>
           </div>
 
           <div className="p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80">
@@ -307,7 +307,7 @@ const LecturerThesisProgressPage = () => {
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="Tìm theo MSSV, tên SV, đề tài..."
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
           />
         </div>
 
@@ -319,7 +319,7 @@ const LecturerThesisProgressPage = () => {
             <select
               value={selectedThesisId}
               onChange={handleThesisFilterChange}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition max-w-[200px] truncate"
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition max-w-[200px] truncate"
             >
               <option value="ALL">Tất cả đề tài ({theses.length})</option>
               {theses.map((t) => (
@@ -334,7 +334,7 @@ const LecturerThesisProgressPage = () => {
           <select
             value={statusFilter}
             onChange={handleStatusFilterChange}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="SUBMITTED">Chờ duyệt (SUBMITTED)</option>
@@ -384,7 +384,7 @@ const LecturerThesisProgressPage = () => {
                       <tr key={item._id} className="hover:bg-slate-50/80 transition">
                         {/* Period Badge */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-bold text-[11px] px-2.5 py-1 rounded-xl bg-violet-50 text-violet-700 border border-violet-200">
+                          <span className="font-bold text-[11px] px-2.5 py-1 rounded-xl bg-blue-50 text-[#102d7d] border border-blue-200">
                             Tuần {item.weekNumber}
                           </span>
                         </td>
@@ -417,7 +417,7 @@ const LecturerThesisProgressPage = () => {
 
                         {/* Completion % */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                          <span className="font-mono font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                             {item.completionPercentage}%
                           </span>
                         </td>
@@ -430,7 +430,7 @@ const LecturerThesisProgressPage = () => {
                                 href={getFileUrl(item.file.fileUrl)}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-800 hover:underline max-w-[130px] truncate font-medium"
+                                className="inline-flex items-center gap-1 text-[#153898] hover:text-[#0d2a75] hover:underline max-w-[130px] truncate font-medium"
                                 title={item.file.originalName || item.file.fileName}
                               >
                                 <Paperclip className="w-3.5 h-3.5 shrink-0" />
@@ -492,7 +492,7 @@ const LecturerThesisProgressPage = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenReview(item)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-xs transition text-[11px]"
+                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition text-[11px]"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>{isPending ? 'Đánh giá' : 'Sửa đánh giá'}</span>
@@ -587,16 +587,16 @@ const LecturerThesisProgressPage = () => {
             </div>
 
             {/* Section 2: Thông tin đề tài */}
-            <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100 space-y-1">
+            <div className="p-3.5 bg-blue-50/60 rounded-2xl border border-blue-100 space-y-1">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                <div className="text-[10px] font-bold text-blue-400 uppercase tracking-wider">
                   2. Thông tin đề tài Khóa Luận
                 </div>
                 {selectedDetail.parentThesis && (
                   <button
                     type="button"
                     onClick={() => handleOpenTimelineModal(selectedDetail.parentThesis)}
-                    className="inline-flex items-center gap-1 text-[11px] text-indigo-700 hover:text-indigo-900 font-bold bg-white px-2 py-0.5 rounded-lg border border-indigo-200 transition"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#102d7d] hover:text-[#0B1E48] font-bold bg-white px-2 py-0.5 rounded-lg border border-blue-200 transition"
                   >
                     <Edit3 className="w-3 h-3" />
                     <span>Đổi thời gian đề tài</span>
@@ -619,7 +619,7 @@ const LecturerThesisProgressPage = () => {
             <div className="p-4 rounded-2xl bg-white border border-slate-200 space-y-2">
               <div className="flex items-center justify-between border-b border-slate-100 pb-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-xl bg-violet-600 text-white font-bold text-xs">
+                  <span className="px-2.5 py-1 rounded-xl bg-[#153898] text-white font-bold text-xs">
                     Tuần {selectedDetail.weekNumber}
                   </span>
                   <h4 className="font-bold text-sm text-slate-900">
@@ -627,7 +627,7 @@ const LecturerThesisProgressPage = () => {
                   </h4>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
+                  <span className="font-mono font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
                     {selectedDetail.completionPercentage}%
                   </span>
                   <StatusBadge status={selectedDetail.status} size="sm" />
@@ -656,9 +656,9 @@ const LecturerThesisProgressPage = () => {
                 4. Tài liệu / File đính kèm
               </div>
               {selectedDetail.file && (selectedDetail.file.fileUrl || selectedDetail.file.fileName) ? (
-                <div className="p-3.5 bg-violet-50/70 border border-violet-200 rounded-2xl flex items-center justify-between gap-3">
+                <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-[#153898] text-white flex items-center justify-center shrink-0">
                       <FileCheck className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">
@@ -676,7 +676,7 @@ const LecturerThesisProgressPage = () => {
                       href={getFileUrl(selectedDetail.file.fileUrl)}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-violet-600 hover:text-white border border-violet-200 text-violet-700 rounded-xl text-xs font-semibold transition shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#153898] hover:text-white border border-blue-200 text-[#102d7d] rounded-xl text-xs font-semibold transition shadow-xs"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
                       <span>Xem file</span>
@@ -684,7 +684,7 @@ const LecturerThesisProgressPage = () => {
                     <a
                       href={getFileUrl(selectedDetail.file.fileUrl)}
                       download={selectedDetail.file.originalName || selectedDetail.file.fileName}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-violet-600 hover:bg-violet-700 text-white rounded-xl text-xs font-bold transition shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold transition shadow-xs"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Tải về</span>
@@ -743,7 +743,7 @@ const LecturerThesisProgressPage = () => {
                   setDetailModalOpen(false);
                   handleOpenReview(selectedDetail);
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-md shadow-violet-200 transition"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Mở form đánh giá</span>
@@ -763,12 +763,12 @@ const LecturerThesisProgressPage = () => {
         >
           <div className="space-y-4 text-xs">
             {/* Submission preview */}
-            <div className="p-3.5 rounded-2xl bg-violet-50/60 border border-violet-200 space-y-1.5">
+            <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-violet-900 text-xs">
+                <span className="font-bold text-[#0B1E48] text-xs">
                   Tuần {selectedProgress.weekNumber}: "{selectedProgress.title}"
                 </span>
-                <span className="font-mono font-bold text-indigo-700">
+                <span className="font-mono font-bold text-[#102d7d]">
                   {selectedProgress.completionPercentage}%
                 </span>
               </div>
@@ -779,8 +779,8 @@ const LecturerThesisProgressPage = () => {
 
               {/* Quick file view in review modal */}
               {selectedProgress.file && (selectedProgress.file.fileUrl || selectedProgress.file.fileName) && (
-                <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-violet-100 mt-1">
-                  <div className="flex items-center gap-2 text-indigo-700 truncate">
+                <div className="flex items-center justify-between bg-white p-2 rounded-xl border border-blue-100 mt-1">
+                  <div className="flex items-center gap-2 text-[#102d7d] truncate">
                     <Paperclip className="w-3.5 h-3.5 shrink-0" />
                     <span className="truncate">
                       {selectedProgress.file.originalName || selectedProgress.file.fileName}
@@ -790,7 +790,7 @@ const LecturerThesisProgressPage = () => {
                     href={getFileUrl(selectedProgress.file.fileUrl)}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-[11px] text-indigo-600 hover:text-indigo-800 font-bold shrink-0 ml-2"
+                    className="inline-flex items-center gap-1 text-[11px] text-[#153898] hover:text-[#0d2a75] font-bold shrink-0 ml-2"
                   >
                     <ExternalLink className="w-3 h-3" />
                     <span>Mở file</span>
@@ -820,7 +820,7 @@ const LecturerThesisProgressPage = () => {
                   value={lecturerScore}
                   onChange={(e) => setLecturerScore(e.target.value)}
                   placeholder="VD: 9.0"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 />
               </div>
 
@@ -831,7 +831,7 @@ const LecturerThesisProgressPage = () => {
                 <select
                   value={reviewStatus}
                   onChange={(e) => setReviewStatus(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
                 >
                   <option value="APPROVED">Phê duyệt (APPROVED)</option>
                   <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
@@ -850,7 +850,7 @@ const LecturerThesisProgressPage = () => {
                 value={lecturerComment}
                 onChange={(e) => setLecturerComment(e.target.value)}
                 placeholder="Nhập nhận xét chi tiết, nhắc nhở các mục cần hoàn thiện trong tuần tiếp theo..."
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition resize-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-none"
               />
             </div>
 
@@ -869,7 +869,7 @@ const LecturerThesisProgressPage = () => {
                 type="button"
                 onClick={handleSubmitReview}
                 disabled={submitting}
-                className="inline-flex items-center gap-1.5 px-5 py-2 bg-violet-600 hover:bg-violet-700 text-white font-bold rounded-xl shadow-md shadow-violet-200 transition disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>{submitting ? 'Đang lưu...' : 'Lưu kết quả đánh giá'}</span>

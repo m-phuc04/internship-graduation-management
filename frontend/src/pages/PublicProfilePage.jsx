@@ -106,7 +106,7 @@ const PublicProfilePage = () => {
       case 'COMPANY':
         return {
           label: 'Doanh Nghiệp (Company)',
-          bg: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+          bg: 'bg-blue-50 text-[#102d7d] border-blue-200',
           icon: Building2,
         };
       default:
@@ -142,7 +142,7 @@ const PublicProfilePage = () => {
 
         {loading ? (
           <div className="p-12 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col items-center justify-center space-y-4">
-            <div className="w-10 h-10 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-3 border-[#153898] border-t-transparent rounded-full animate-spin" />
             <p className="text-xs text-slate-500 font-semibold">Đang tải hồ sơ...</p>
           </div>
         ) : error || !user ? (
@@ -165,7 +165,7 @@ const PublicProfilePage = () => {
                       className="w-24 h-24 rounded-full object-cover border-4 border-indigo-50 shadow-md"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white text-3xl font-bold border-4 border-indigo-50 shadow-md">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#153898] flex items-center justify-center text-white text-3xl font-bold border-4 border-indigo-50 shadow-md">
                       {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
@@ -190,7 +190,7 @@ const PublicProfilePage = () => {
                 <button
                   type="button"
                   onClick={handleStartChat}
-                  className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  className="w-full py-3 px-4 bg-[#153898] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Nhắn tin</span>
@@ -205,7 +205,7 @@ const PublicProfilePage = () => {
 
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-[#102d7d] flex items-center justify-center shrink-0">
                       <Mail className="w-5 h-5" />
                     </div>
                     <div className="min-w-0">

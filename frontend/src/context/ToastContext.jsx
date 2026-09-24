@@ -62,13 +62,13 @@ export const ToastProvider = ({ children }) => {
                 ? 'bg-emerald-50/95 border-emerald-200 text-emerald-900'
                 : item.type === 'error'
                 ? 'bg-rose-50/95 border-rose-200 text-rose-900'
-                : 'bg-indigo-50/95 border-indigo-200 text-indigo-900'
+                : 'bg-blue-50/95 border-blue-200 text-[#0B1E48]'
             }`}
           >
             <div className="shrink-0 mt-0.5">
               {item.type === 'success' && <CheckCircle2 className="w-5 h-5 text-emerald-600" />}
               {item.type === 'error' && <AlertCircle className="w-5 h-5 text-rose-600" />}
-              {item.type === 'info' && <Info className="w-5 h-5 text-indigo-600" />}
+              {item.type === 'info' && <Info className="w-5 h-5 text-[#153898]" />}
             </div>
             <div className="flex-1 text-xs font-semibold leading-relaxed">
               {item.message}

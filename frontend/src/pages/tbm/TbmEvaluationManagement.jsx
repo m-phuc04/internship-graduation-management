@@ -415,7 +415,7 @@ const TbmEvaluationManagement = () => {
       {/* Header Card */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#0B4DB7] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
             <Award className="w-7 h-7" />
           </div>
           <div>
@@ -470,7 +470,7 @@ const TbmEvaluationManagement = () => {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Link2 className="w-3.5 h-3.5 text-indigo-600" />
+            <Link2 className="w-3.5 h-3.5 text-[#153898]" />
             <span>Quản lý link đánh giá</span>
           </button>
         </div>
@@ -618,7 +618,7 @@ const TbmEvaluationManagement = () => {
                         <td className="py-3.5 px-4 text-xs text-slate-700">
                           {item.lecturerId ? (
                             <div>
-                              <div className="font-semibold text-indigo-700">
+                              <div className="font-semibold text-[#102d7d]">
                                 {item.lecturerId?.academicTitle} {item.lecturerId?.userId?.fullName}
                               </div>
                               <div className="text-[11px] text-slate-400 font-mono">
@@ -708,7 +708,7 @@ const TbmEvaluationManagement = () => {
                                 setSelectedInternship(item);
                                 setDetailModalOpen(true);
                               }}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-800 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition cursor-pointer"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#0d2a75] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
                               title="Xem chi tiết phiếu đánh giá"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -925,7 +925,7 @@ const TbmEvaluationManagement = () => {
                   setReqStatus(e.target.value);
                   setReqPage(1);
                 }}
-                className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20"
               >
                 <option value="">Tất cả trạng thái link</option>
                 <option value="PENDING">Chờ DN đánh giá (PENDING)</option>
@@ -936,7 +936,7 @@ const TbmEvaluationManagement = () => {
 
               <button
                 onClick={fetchRequests}
-                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition cursor-pointer"
+                className="p-2 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-xl transition cursor-pointer"
                 title="Tải lại danh sách"
               >
                 <RefreshCw className={`w-4 h-4 ${reqLoading ? 'animate-spin' : ''}`} />
@@ -1038,7 +1038,7 @@ const TbmEvaluationManagement = () => {
                               type="button"
                               disabled={resettingId === req._id}
                               onClick={() => handleResetRequest(req._id, req.studentId?.userId?.fullName)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold text-xs rounded-xl transition cursor-pointer disabled:opacity-50"
                               title="Cho phép sinh viên tạo lại link đánh giá mới"
                             >
                               <RotateCcw className={`w-3.5 h-3.5 ${resettingId === req._id ? 'animate-spin' : ''}`} />
@@ -1302,7 +1302,7 @@ const TbmEvaluationManagement = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 font-bold">
                 <RotateCcw className="w-5 h-5" />
               </div>
               <div>
@@ -1330,7 +1330,7 @@ const TbmEvaluationManagement = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-500">Điểm hiện tại:</span>
-                <strong className="text-indigo-700 font-mono font-bold">
+                <strong className="text-[#102d7d] font-mono font-bold">
                   {selectedRecreateReq.score !== null ? `${selectedRecreateReq.score} / 10` : '—'}
                 </strong>
               </div>

@@ -33,7 +33,7 @@ const NewsDetailModal = ({ news, isOpen, onClose }) => {
       default:
         return {
           label: 'Tin Tức',
-          className: 'bg-blue-50 text-[#0B4DB7] border-blue-200',
+          className: 'bg-blue-50 text-[#153898] border-blue-200',
         };
     }
   };
@@ -104,7 +104,7 @@ const NewsDetailModal = ({ news, isOpen, onClose }) => {
 
           {/* Summary Quote */}
           {news.summary && (
-            <div className="p-4 rounded-2xl bg-indigo-50/70 border-l-4 border-indigo-600 text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
+            <div className="p-4 rounded-2xl bg-blue-50/70 border-l-4 border-[#153898] text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
               {news.summary}
             </div>
           )}
