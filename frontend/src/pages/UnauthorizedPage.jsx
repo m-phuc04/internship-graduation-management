@@ -30,7 +30,7 @@ const UnauthorizedPage = () => {
 
         <p className="text-sm text-slate-500 max-w-md mb-8 leading-relaxed">
           Tài khoản hiện tại <strong>{user?.fullName}</strong> đang mang vai trò{' '}
-          <span className="font-semibold text-[#153898] font-mono">[{user?.role}]</span>.
+          <span className="font-semibold text-[#123891] font-mono">[{user?.role}]</span>.
           Phân hệ Quản lý Dữ liệu Nền tảng (Master Data) chỉ dành riêng cho <strong>Trưởng Bộ Môn (TBM)</strong>.
         </p>
 
@@ -44,7 +44,7 @@ const UnauthorizedPage = () => {
               else if (user?.role === 'COMPANY') navigate('/company/dashboard');
               else navigate('/');
             }}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-sm font-medium rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-sm font-medium rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
             Về Bảng Điều Khiển

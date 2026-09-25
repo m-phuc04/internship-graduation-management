@@ -18,11 +18,11 @@ const NotFoundPage = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-[#153898] mb-6 shadow-sm">
+        <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-200/60 flex items-center justify-center text-[#123891] mb-6 shadow-sm">
           <Compass className="w-10 h-10 animate-pulse" />
         </div>
 
-        <span className="text-xs font-bold uppercase tracking-widest text-[#153898] bg-blue-100/60 px-3 py-1 rounded-full mb-3">
+        <span className="text-xs font-bold uppercase tracking-widest text-[#123891] bg-blue-100/60 px-3 py-1 rounded-full mb-3">
           404 Not Found
         </span>
 
@@ -36,7 +36,7 @@ const NotFoundPage = () => {
 
         <Link
           to={getHomeLink()}
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-sm font-medium rounded-xl shadow-sm shadow-blue-200 transition"
+          className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-sm font-medium rounded-xl shadow-sm shadow-blue-200 transition"
         >
           <ArrowLeft className="w-4 h-4" />
           Về Bảng Điều Khiển

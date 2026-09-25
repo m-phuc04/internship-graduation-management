@@ -113,7 +113,7 @@ const StudentFormModal = ({
               value={formData.fullName}
               onChange={handleChange}
               placeholder="VD: Nguyễn Văn A"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.fullName ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -133,7 +133,7 @@ const StudentFormModal = ({
               onChange={handleChange}
               placeholder="VD: 22635271"
               maxLength={8}
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-mono ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-mono ${
                 errors.studentCode ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -155,7 +155,7 @@ const StudentFormModal = ({
               value={formData.email}
               onChange={handleChange}
               placeholder="VD: student@iuh.edu.vn"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.email ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -174,7 +174,7 @@ const StudentFormModal = ({
               value={formData.phone}
               onChange={handleChange}
               placeholder="VD: 0912345678"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
         </div>
@@ -191,7 +191,7 @@ const StudentFormModal = ({
               value={formData.className}
               onChange={handleChange}
               placeholder="VD: DHCNTT18A"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.className ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -211,7 +211,7 @@ const StudentFormModal = ({
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Mật khẩu"
-                className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+                className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                   errors.password ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
                 }`}
               />
@@ -233,7 +233,7 @@ const StudentFormModal = ({
                     isActive: e.target.value === 'true',
                   }))
                 }
-                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               >
                 <option value="true">Hoạt động (Active)</option>
                 <option value="false">Khóa / Vô hiệu hóa (Inactive)</option>
@@ -256,7 +256,7 @@ const StudentFormModal = ({
               name="gpa"
               value={formData.gpa}
               onChange={handleChange}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
 
@@ -270,7 +270,7 @@ const StudentFormModal = ({
               name="accumulatedCredits"
               value={formData.accumulatedCredits}
               onChange={handleChange}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
         </div>
@@ -283,7 +283,7 @@ const StudentFormModal = ({
               name="prerequisiteCompleted"
               checked={formData.prerequisiteCompleted}
               onChange={handleChange}
-              className="w-4 h-4 rounded text-[#153898] focus:ring-[#153898] border-slate-300 transition"
+              className="w-4 h-4 rounded text-[#123891] focus:ring-[#123891] border-slate-300 transition"
             />
             <div>
               <div className="text-xs font-semibold text-slate-900">
@@ -309,7 +309,7 @@ const StudentFormModal = ({
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-medium text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
           >
             {loading && (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

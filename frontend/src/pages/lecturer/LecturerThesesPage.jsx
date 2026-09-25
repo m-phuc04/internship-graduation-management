@@ -580,7 +580,7 @@ const LecturerThesesPage = () => {
                     ? 'bg-gradient-to-tr from-purple-600 to-violet-600 shadow-purple-200'
                     : isEvaluationView
                       ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 shadow-amber-200'
-                      : 'bg-gradient-to-tr from-[#0d2a75] to-[#153898] shadow-blue-200'
+                      : 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
                 }`}
             >
               {isTopicsView ? (
@@ -746,13 +746,13 @@ const LecturerThesesPage = () => {
               type="button"
               onClick={() => setActiveTab('SUPERVISOR')}
               className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'SUPERVISOR'
-                  ? 'bg-blue-50/80 border-[#153898]/60 ring-2 ring-indigo-500/20'
+                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-indigo-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
                 }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0B1E48] flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-[#153898]" />
+                <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-[#123891]" />
                   Đề tài hướng dẫn (GVHD - 40%)
                 </span>
                 <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
@@ -769,13 +769,13 @@ const LecturerThesesPage = () => {
               type="button"
               onClick={() => setActiveTab('REVIEWER_1')}
               className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'REVIEWER_1'
-                  ? 'bg-blue-50/80 border-[#153898]/60 ring-2 ring-violet-500/20'
+                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-violet-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
                 }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#0B1E48] flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-[#153898]" />
+                <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-[#123891]" />
                   Phản biện kín (GVPB Kín - 30%)
                 </span>
                 <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
@@ -1045,11 +1045,11 @@ const LecturerThesesPage = () => {
                                   )
                                   .every((t) => getRoleLockStatus(t))
                                   ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
-                                  : 'bg-white text-slate-400 border-slate-300 hover:text-[#153898] hover:border-blue-300'
+                                  : 'bg-white text-slate-400 border-slate-300 hover:text-[#123891] hover:border-blue-300'
                                 }`}
                             >
                               {lockingAll ? (
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#153898]" />
+                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
                               ) : currentList
                                 .filter(
                                   (t) =>
@@ -1094,7 +1094,7 @@ const LecturerThesesPage = () => {
                             className="text-left block group cursor-pointer"
                             title="Bấm để xem toàn bộ thông tin đề tài & phân công phản biện"
                           >
-                            <strong className="text-slate-900 group-hover:text-[#153898] line-clamp-2 leading-snug transition">
+                            <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
                               {item.thesisTitle}
                             </strong>
                           </button>
@@ -1200,7 +1200,7 @@ const LecturerThesesPage = () => {
                                       disabled={isLocked}
                                       className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
                                           ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#153898] focus:ring-2 focus:ring-indigo-100'
+                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-indigo-100'
                                         }`}
                                     />
                                   </div>
@@ -1221,7 +1221,7 @@ const LecturerThesesPage = () => {
                                       disabled={isLocked}
                                       className={`thesis-inline-grade-input thesis-inline-grade-input-s2 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
                                           ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#153898] focus:ring-2 focus:ring-violet-100'
+                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-violet-100'
                                         }`}
                                     />
                                   </div>
@@ -1234,11 +1234,11 @@ const LecturerThesesPage = () => {
                                   title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
                                   className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${isLocked
                                       ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-[#153898] hover:border-blue-300'
+                                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-[#123891] hover:border-blue-300'
                                     }`}
                                 >
                                   {lockingRowId === item._id ? (
-                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#153898]" />
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
                                   ) : isLocked ? (
                                     <Lock className="w-3.5 h-3.5 text-amber-600" />
                                   ) : (
@@ -1264,7 +1264,7 @@ const LecturerThesesPage = () => {
                                     disabled={isLocked}
                                     className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
                                         ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                        : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#153898] focus:ring-2 focus:ring-indigo-100'
+                                        : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-indigo-100'
                                       }`}
                                   />
                                 </div>
@@ -1276,11 +1276,11 @@ const LecturerThesesPage = () => {
                                   title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
                                   className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${isLocked
                                       ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
-                                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-[#153898] hover:border-blue-300'
+                                      : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-[#123891] hover:border-blue-300'
                                     }`}
                                 >
                                   {lockingRowId === item._id ? (
-                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#153898]" />
+                                    <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
                                   ) : isLocked ? (
                                     <Lock className="w-3.5 h-3.5 text-amber-600" />
                                   ) : (
@@ -1489,7 +1489,7 @@ const LecturerThesesPage = () => {
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#153898] flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -1548,16 +1548,16 @@ const LecturerThesesPage = () => {
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2 text-xs">
-                  <div className="font-bold text-[#0B1E48] flex items-center justify-between">
+                  <div className="font-bold text-[#123891] flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                      <span className="w-2 h-2 rounded-full bg-[#123891]" />
                       <span>Sinh viên 1 (Trưởng nhóm)</span>
                     </div>
                     <UserNameClickable
                       user={targetThesis.studentId}
                       name="Xem hồ sơ ↗"
                       showAvatar={false}
-                      className="text-[11px] font-bold text-[#153898] hover:underline"
+                      className="text-[11px] font-bold text-[#123891] hover:underline"
                     />
                   </div>
                   <div><strong>Họ tên:</strong> {targetThesis.studentId?.userId?.fullName}</div>
@@ -1570,16 +1570,16 @@ const LecturerThesesPage = () => {
 
                 {targetThesis.secondStudentId ? (
                   <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2 text-xs">
-                    <div className="font-bold text-[#0B1E48] flex items-center justify-between">
+                    <div className="font-bold text-[#123891] flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                        <span className="w-2 h-2 rounded-full bg-[#123891]" />
                         <span>Sinh viên 2</span>
                       </div>
                       <UserNameClickable
                         user={targetThesis.secondStudentId}
                         name="Xem hồ sơ ↗"
                         showAvatar={false}
-                        className="text-[11px] font-bold text-[#153898] hover:underline"
+                        className="text-[11px] font-bold text-[#123891] hover:underline"
                       />
                     </div>
                     <div><strong>Họ tên:</strong> {targetThesis.secondStudentId?.userId?.fullName}</div>
@@ -1601,8 +1601,8 @@ const LecturerThesesPage = () => {
             <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100/90 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#153898]" />
-                  <span className="font-bold text-xs text-[#0B1E48] uppercase tracking-wider">
+                  <Calendar className="w-4 h-4 text-[#123891]" />
+                  <span className="font-bold text-xs text-[#123891] uppercase tracking-wider">
                     Thời Gian Thực Hiện KLTN
                   </span>
                   {targetThesis.startDate ? (
@@ -1620,7 +1620,7 @@ const LecturerThesesPage = () => {
                   <button
                     type="button"
                     onClick={() => setEditingTimeline(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#153898] hover:text-[#0d2a75] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#123891] hover:text-[#0d2a75] hover:underline cursor-pointer"
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span>Đổi thời gian</span>
@@ -1661,7 +1661,7 @@ const LecturerThesesPage = () => {
                         type="date"
                         value={detailStartDate}
                         onChange={(e) => setDetailStartDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]"
                       />
                     </div>
 
@@ -1673,7 +1673,7 @@ const LecturerThesesPage = () => {
                         type="date"
                         value={detailEndDate}
                         onChange={(e) => setDetailEndDate(e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]"
+                        className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]"
                       />
                     </div>
                   </div>
@@ -1700,7 +1700,7 @@ const LecturerThesesPage = () => {
                       type="button"
                       onClick={handleSaveDetailTimeline}
                       disabled={savingDetailTimeline}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>{savingDetailTimeline ? 'Đang lưu...' : 'Lưu thời gian'}</span>
@@ -1719,8 +1719,8 @@ const LecturerThesesPage = () => {
                 {/* Supervisor */}
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#0B1E48] flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-[#153898]" />
+                    <span className="font-bold text-[#123891] flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-[#123891]" />
                       GV Hướng Dẫn (40%)
                     </span>
                     {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
@@ -1751,8 +1751,8 @@ const LecturerThesesPage = () => {
                 {/* Reviewer 1 */}
                 <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#0B1E48] flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5 text-[#153898]" />
+                    <span className="font-bold text-[#123891] flex items-center gap-1">
+                      <Shield className="w-3.5 h-3.5 text-[#123891]" />
                       PB Kín (30%)
                     </span>
                     {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
@@ -1876,7 +1876,7 @@ const LecturerThesesPage = () => {
                         setDetailModalOpen(false);
                         handleOpenGrade(targetThesis);
                       }}
-                      className="px-4 py-2 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
                     >
                       <Award className="w-3.5 h-3.5" />
                       <span>{targetThesis.status === 'COMPLETED' ? 'Xem điểm & nhận xét' : 'Chấm điểm'}</span>
@@ -2079,8 +2079,8 @@ const LecturerThesesPage = () => {
                         <div className={`grid ${group.secondStudentId ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-3`}>
                           {/* Student 1 */}
                           <div className="p-3 bg-white rounded-xl border border-blue-100 space-y-1">
-                            <div className="font-bold text-[#0B1E48] flex items-center gap-1.5 mb-1">
-                              <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                            <div className="font-bold text-[#123891] flex items-center gap-1.5 mb-1">
+                              <span className="w-2 h-2 rounded-full bg-[#123891]" />
                               <span>SV1 (Trưởng nhóm)</span>
                             </div>
                             <div>
@@ -2105,8 +2105,8 @@ const LecturerThesesPage = () => {
                           {/* Student 2 (if applicable) */}
                           {group.secondStudentId && (
                             <div className="p-3 bg-white rounded-xl border border-blue-100 space-y-1">
-                              <div className="font-bold text-[#0B1E48] flex items-center gap-1.5 mb-1">
-                                <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                              <div className="font-bold text-[#123891] flex items-center gap-1.5 mb-1">
+                                <span className="w-2 h-2 rounded-full bg-[#123891]" />
                                 <span>SV2</span>
                               </div>
                               <div>

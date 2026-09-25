@@ -80,7 +80,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           {/* Section 1: Student Information */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <GraduationCap className="w-4 h-4 text-[#153898]" />
+              <GraduationCap className="w-4 h-4 text-[#123891]" />
               Thông tin Sinh viên
             </div>
             <div className="space-y-2">
@@ -114,7 +114,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           {/* Section 2: Company Information */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <Building2 className="w-4 h-4 text-[#153898]" />
+              <Building2 className="w-4 h-4 text-[#123891]" />
               Đơn vị Thực tập
             </div>
             <div className="space-y-2">
@@ -140,7 +140,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           {/* Section 3: Internship Position & Time */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <Calendar className="w-4 h-4 text-[#153898]" />
+              <Calendar className="w-4 h-4 text-[#123891]" />
               Kế hoạch & Thời gian
             </div>
             <div className="space-y-2">
@@ -172,7 +172,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           {/* Section 4: Company Mentor (Contact Person) */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <UserCheck className="w-4 h-4 text-[#153898]" />
+              <UserCheck className="w-4 h-4 text-[#123891]" />
               Người hướng dẫn tại Doanh nghiệp
             </div>
             <div className="space-y-2">
@@ -205,7 +205,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
 
         {/* Read-Only Notice */}
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-slate-500 text-[11px]">
-          <Info className="w-4 h-4 text-[#153898] shrink-0 mt-0.5" />
+          <Info className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
           <span>
             Thông tin hồ sơ và quyết định phê duyệt do Trưởng Bộ Môn (TBM) điều phối. Giảng viên hướng dẫn có nhiệm vụ theo dõi tiến độ, phản hồi và hỗ trợ sinh viên hoàn thành kỳ thực tập.
           </span>

@@ -40,7 +40,7 @@ const UserNameClickable = ({
     return (
       <span
         onClick={handleClick}
-        className={`cursor-pointer hover:text-[#153898] transition-colors ${className}`}
+        className={`cursor-pointer hover:text-[#123891] transition-colors ${className}`}
         title={`Xem hồ sơ ${displayName}`}
       >
         {children}
@@ -68,7 +68,7 @@ const UserNameClickable = ({
       )}
 
       <div className="min-w-0">
-        <div className="text-xs font-bold text-slate-900 group-hover:text-[#153898] transition-colors truncate flex items-center gap-1">
+        <div className="text-xs font-bold text-slate-900 group-hover:text-[#123891] transition-colors truncate flex items-center gap-1">
           <span>{displayName}</span>
         </div>
         {subtitle && (

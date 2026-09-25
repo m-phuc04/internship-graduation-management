@@ -142,7 +142,7 @@ const PublicProfilePage = () => {
 
         {loading ? (
           <div className="p-12 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col items-center justify-center space-y-4">
-            <div className="w-10 h-10 border-3 border-[#153898] border-t-transparent rounded-full animate-spin" />
+            <div className="w-10 h-10 border-3 border-[#123891] border-t-transparent rounded-full animate-spin" />
             <p className="text-xs text-slate-500 font-semibold">Đang tải hồ sơ...</p>
           </div>
         ) : error || !user ? (
@@ -165,7 +165,7 @@ const PublicProfilePage = () => {
                       className="w-24 h-24 rounded-full object-cover border-4 border-indigo-50 shadow-md"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#153898] flex items-center justify-center text-white text-3xl font-bold border-4 border-indigo-50 shadow-md">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#123891] flex items-center justify-center text-white text-3xl font-bold border-4 border-indigo-50 shadow-md">
                       {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}
@@ -190,7 +190,7 @@ const PublicProfilePage = () => {
                 <button
                   type="button"
                   onClick={handleStartChat}
-                  className="w-full py-3 px-4 bg-[#153898] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                  className="w-full py-3 px-4 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
                   <MessageSquare className="w-4 h-4" />
                   <span>Nhắn tin</span>

@@ -198,7 +198,7 @@ const MyThesisPage = () => {
             {canRegisterNew && (
               <Link
                 to="/student/thesis/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>Đăng ký đề tài mới</span>
@@ -239,7 +239,7 @@ const MyThesisPage = () => {
           <div className="text-center mt-4">
             <Link
               to="/student/thesis/register"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition"
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Đăng ký đề tài Khóa luận ngay</span>
@@ -253,7 +253,7 @@ const MyThesisPage = () => {
             {/* 1. Description & Objectives */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
-                <BookOpen className="w-4 h-4 text-[#153898]" />
+                <BookOpen className="w-4 h-4 text-[#123891]" />
                 <span>Nội dung đề tài nghiên cứu</span>
               </div>
 
@@ -277,14 +277,14 @@ const MyThesisPage = () => {
               ref={evaluationSectionRef}
               className={`p-6 rounded-3xl bg-white border shadow-2xs space-y-6 transition-all duration-300 ${
                 isEvaluationView
-                  ? 'border-[#153898]/60 ring-2 ring-indigo-500/20 shadow-indigo-100/50'
+                  ? 'border-[#123891]/60 ring-2 ring-indigo-500/20 shadow-indigo-100/50'
                   : 'border-slate-200/80'
               }`}
             >
               {/* Header with Title & Overall Status */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#153898] flex items-center justify-center font-bold">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold">
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
@@ -325,13 +325,13 @@ const MyThesisPage = () => {
                       1. Điểm GVHD
                     </div>
                     <div className="text-[10px] text-slate-500 font-semibold mb-2">
-                      Trọng số: <span className="text-[#153898] font-bold">40%</span>
+                      Trọng số: <span className="text-[#123891] font-bold">40%</span>
                     </div>
                   </div>
 
                   <div className="py-1">
                     {supervisorScore !== null ? (
-                      <div className="font-mono text-2xl font-black text-[#0B1E48]">
+                      <div className="font-mono text-2xl font-black text-[#123891]">
                         {supervisorScore.toFixed(1)}{' '}
                         <span className="text-xs font-normal text-slate-400">/ 10</span>
                       </div>
@@ -344,7 +344,7 @@ const MyThesisPage = () => {
 
                   <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
                     {supervisorScore !== null ? (
-                      <span>Đóng góp: <strong className="text-[#0B1E48] font-mono">{(supervisorScore * 0.4).toFixed(2)} đ</strong></span>
+                      <span>Đóng góp: <strong className="text-[#123891] font-mono">{(supervisorScore * 0.4).toFixed(2)} đ</strong></span>
                     ) : (
                       <span>Chờ GVHD chấm</span>
                     )}
@@ -358,13 +358,13 @@ const MyThesisPage = () => {
                       2. Điểm PB Kín
                     </div>
                     <div className="text-[10px] text-slate-500 font-semibold mb-2">
-                      Trọng số: <span className="text-[#153898] font-bold">30%</span>
+                      Trọng số: <span className="text-[#123891] font-bold">30%</span>
                     </div>
                   </div>
 
                   <div className="py-1">
                     {reviewer1Score !== null ? (
-                      <div className="font-mono text-2xl font-black text-[#0B1E48]">
+                      <div className="font-mono text-2xl font-black text-[#123891]">
                         {reviewer1Score.toFixed(1)}{' '}
                         <span className="text-xs font-normal text-slate-400">/ 10</span>
                       </div>
@@ -377,7 +377,7 @@ const MyThesisPage = () => {
 
                   <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
                     {reviewer1Score !== null ? (
-                      <span>Đóng góp: <strong className="text-[#0B1E48] font-mono">{(reviewer1Score * 0.3).toFixed(2)} đ</strong></span>
+                      <span>Đóng góp: <strong className="text-[#123891] font-mono">{(reviewer1Score * 0.3).toFixed(2)} đ</strong></span>
                     ) : (
                       <span>Chờ PB Kín chấm</span>
                     )}
@@ -474,7 +474,7 @@ const MyThesisPage = () => {
               {/* Detailed Feedback & Comments from Each Lecturer */}
               <div className="space-y-3 pt-2">
                 <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-[#153898]" />
+                  <MessageSquare className="w-4 h-4 text-[#123891]" />
                   <span>Chi tiết đánh giá & nhận xét của Giảng viên</span>
                 </div>
 
@@ -491,7 +491,7 @@ const MyThesisPage = () => {
                             user={thesis.supervisorId}
                             name={`${thesis.supervisorId?.academicTitle ? thesis.supervisorId.academicTitle + ' ' : ''}${thesis.supervisorId?.userId?.fullName || 'Giảng viên Hướng dẫn'}`}
                             showAvatar={false}
-                            className="font-bold text-xs text-slate-900 hover:text-[#153898]"
+                            className="font-bold text-xs text-slate-900 hover:text-[#123891]"
                           />
                           <div className="text-[11px] text-slate-500">
                             Vai trò: <span className="font-semibold text-[#102d7d]">GVHD (Trọng số 40%)</span>
@@ -633,7 +633,7 @@ const MyThesisPage = () => {
                     user={thesis.supervisorId}
                     name="Xem hồ sơ ↗"
                     showAvatar={false}
-                    className="text-[11px] font-bold text-[#153898] hover:underline"
+                    className="text-[11px] font-bold text-[#123891] hover:underline"
                   />
                 )}
               </div>
@@ -678,7 +678,7 @@ const MyThesisPage = () => {
                       user={thesis.studentId}
                       name={`1. ${thesis.studentId?.userId?.fullName || 'Sinh viên 1'}`}
                       showAvatar={false}
-                      className="text-[#0B1E48] font-bold hover:underline"
+                      className="text-[#123891] font-bold hover:underline"
                     />
                     <span className="text-[10px] font-bold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
                       Trưởng nhóm
@@ -696,7 +696,7 @@ const MyThesisPage = () => {
                         user={thesis.secondStudentId}
                         name={`2. ${thesis.secondStudentId?.userId?.fullName || 'Sinh viên 2'}`}
                         showAvatar={false}
-                        className="text-[#0B1E48] font-bold hover:underline"
+                        className="text-[#123891] font-bold hover:underline"
                       />
                       <span className="text-[10px] font-bold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
                         Thành viên

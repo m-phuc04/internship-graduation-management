@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AlertTriangle } from 'lucide-react';
 import Modal from './Modal';
 
@@ -44,7 +44,7 @@ const ConfirmDialog = ({
           className={`px-5 py-2.5 text-sm font-medium text-white rounded-xl shadow-sm transition disabled:opacity-50 flex items-center gap-2 ${
             isDanger
               ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-200'
-              : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+              : 'bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] shadow-indigo-200'
           }`}
         >
           {loading && (
@@ -58,3 +58,4 @@ const ConfirmDialog = ({
 };
 
 export default ConfirmDialog;
+

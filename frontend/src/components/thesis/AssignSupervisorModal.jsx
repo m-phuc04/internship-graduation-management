@@ -96,7 +96,7 @@ const AssignSupervisorModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               setError('');
             }}
             disabled={loadingSupervisors || submitting}
-            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+            className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
           >
             <option value="">-- Chọn Giảng viên hướng dẫn --</option>
             {supervisors.map((s) => (
@@ -123,7 +123,7 @@ const AssignSupervisorModal = ({ isOpen, onClose, thesis, onSuccess }) => {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50"
           >
             <UserCheck className="w-3.5 h-3.5" />
             <span>{submitting ? 'Đang lưu...' : 'Lưu phân công GVHD'}</span>

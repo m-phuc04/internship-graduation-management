@@ -86,7 +86,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
     >
       <div className="space-y-4 text-xs">
         {/* Student & Report Header */}
-        <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#0B1E48] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#123891] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <div className="font-bold text-sm">
               {report.studentId?.userId?.fullName} ({report.studentId?.studentCode})
@@ -104,8 +104,8 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
         {report.file?.fileUrl ? (
           <div className="p-3.5 rounded-2xl bg-blue-50/40 border border-blue-200/70 space-y-2">
             <div className="flex items-center justify-between">
-              <div className="font-bold text-[#0B1E48] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-                <Paperclip className="w-4 h-4 text-[#153898]" />
+              <div className="font-bold text-[#123891] uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Paperclip className="w-4 h-4 text-[#123891]" />
                 File Báo Cáo Của Sinh Viên
               </div>
               {report.file.size && (
@@ -135,7 +135,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
                   href={fullFileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs shadow-2xs transition"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs shadow-2xs transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   <span>Xem báo cáo</span>
@@ -187,7 +187,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               >
                 <option value="APPROVED">Duyệt & Đạt yêu cầu (APPROVED)</option>
                 <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
@@ -208,7 +208,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
                 value={score}
                 onChange={(e) => setScore(e.target.value)}
                 placeholder="VD: 8.5"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               />
             </div>
           </div>
@@ -223,7 +223,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Nhập nhận xét tiến độ, thái độ thực tập, chất lượng báo cáo..."
-              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-none"
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none"
             />
           </div>
         </div>
@@ -242,7 +242,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
             type="button"
             disabled={submitting}
             onClick={handleReview}
-            className="inline-flex items-center gap-1.5 px-5 py-2 font-bold text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2 font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
           >
             <Award className="w-3.5 h-3.5" />
             <span>{submitting ? 'Đang lưu...' : 'Lưu kết quả đánh giá'}</span>

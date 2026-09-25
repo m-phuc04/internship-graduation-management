@@ -116,7 +116,7 @@ const LecturerFormModal = ({
               value={formData.fullName}
               onChange={handleChange}
               placeholder="VD: TS. Nguyễn Văn A"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.fullName ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -136,7 +136,7 @@ const LecturerFormModal = ({
               onChange={handleChange}
               placeholder="VD: 12345678"
               maxLength={8}
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-mono ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-mono ${
                 errors.lecturerCode ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -158,7 +158,7 @@ const LecturerFormModal = ({
               value={formData.email}
               onChange={handleChange}
               placeholder="VD: lecturer@iuh.edu.vn"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.email ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -177,7 +177,7 @@ const LecturerFormModal = ({
               value={formData.phone}
               onChange={handleChange}
               placeholder="VD: 0912345678"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
         </div>
@@ -192,7 +192,7 @@ const LecturerFormModal = ({
               name="academicTitle"
               value={formData.academicTitle}
               onChange={handleChange}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="ThS.">Thạc sĩ (ThS.)</option>
               <option value="TS.">Tiến sĩ (TS.)</option>
@@ -212,7 +212,7 @@ const LecturerFormModal = ({
               value={formData.specialization}
               onChange={handleChange}
               placeholder="VD: Trí tuệ nhân tạo, Mạng máy tính..."
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
         </div>
@@ -230,7 +230,7 @@ const LecturerFormModal = ({
               name="maxStudents"
               value={formData.maxStudents}
               onChange={handleChange}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
 
@@ -247,7 +247,7 @@ const LecturerFormModal = ({
                   isAvailable: e.target.value === 'true',
                 }))
               }
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="true">Sẵn sàng nhận SV (Available)</option>
               <option value="false">Tạm ngưng tiếp nhận (Unavailable)</option>
@@ -267,7 +267,7 @@ const LecturerFormModal = ({
               value={formData.password}
               onChange={handleChange}
               placeholder="Mật khẩu"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.password ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -289,7 +289,7 @@ const LecturerFormModal = ({
                   isActive: e.target.value === 'true',
                 }))
               }
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="true">Tài khoản hoạt động</option>
               <option value="false">Tài khoản bị khóa</option>
@@ -310,7 +310,7 @@ const LecturerFormModal = ({
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-medium text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
           >
             {loading && (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

@@ -21,7 +21,7 @@ const DocumentViewerModal = ({ isOpen, onClose, title, children }) => {
             {/* Print Button */}
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#153898] hover:bg-[#153898] text-white font-bold text-xs transition shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#123891] hover:bg-[#123891] text-white font-bold text-xs transition shadow-sm"
               title="In biểu mẫu này"
             >
               <Printer className="w-4 h-4" />

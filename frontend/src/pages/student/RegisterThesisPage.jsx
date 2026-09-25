@@ -197,7 +197,7 @@ const RegisterThesisPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
               <GraduationCap className="w-7 h-7" />
             </div>
             <div>
@@ -211,8 +211,8 @@ const RegisterThesisPage = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-3.5 py-2 rounded-xl bg-blue-50 text-[#153898] border border-blue-200/80 shadow-2xs flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#153898]" />
+            <span className="text-xs font-bold px-3.5 py-2 rounded-xl bg-blue-50 text-[#123891] border border-blue-200/80 shadow-2xs flex items-center gap-1.5">
+              <Clock className="w-4 h-4 text-[#123891]" />
               Nguyên tắc đăng ký: FIFO (Ưu tiên theo thời gian)
             </span>
           </div>
@@ -227,7 +227,7 @@ const RegisterThesisPage = () => {
             <div className="font-bold text-sm">Bạn đã có đề tài khóa luận đang hoạt động!</div>
             <div className="mt-0.5 leading-relaxed text-slate-700">
               Đề tài: <strong>"{existingThesis.thesisTitle}"</strong> • Trạng thái:{' '}
-              <span className="font-bold text-[#153898]">{existingThesis.status}</span>.
+              <span className="font-bold text-[#123891]">{existingThesis.status}</span>.
               Theo quy chế đào tạo, mỗi sinh viên chỉ được tham gia 1 đề tài KLTN trong học kỳ.
             </div>
           </div>
@@ -347,7 +347,7 @@ const RegisterThesisPage = () => {
                             className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs ${
                               isFull || existingThesis
                                 ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-                                : 'bg-[#153898] hover:bg-blue-700 text-white'
+                                : 'bg-[#123891] hover:bg-blue-700 text-white'
                             }`}
                             title={
                               isFull
@@ -378,7 +378,7 @@ const RegisterThesisPage = () => {
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
                 <div>
@@ -437,7 +437,7 @@ const RegisterThesisPage = () => {
                   }}
                   className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                     topicStudentCount === 1
-                      ? 'bg-blue-50 border-[#153898] text-[#153898]'
+                      ? 'bg-blue-50 border-[#123891] text-[#123891]'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -450,7 +450,7 @@ const RegisterThesisPage = () => {
                   onClick={() => setTopicStudentCount(2)}
                   className={`p-3 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-2 cursor-pointer ${
                     topicStudentCount === 2
-                      ? 'bg-blue-50 border-[#153898] text-[#153898]'
+                      ? 'bg-blue-50 border-[#123891] text-[#123891]'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
@@ -511,7 +511,7 @@ const RegisterThesisPage = () => {
                             st.isInActiveThesis
                               ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed opacity-60'
                               : isSelected
-                              ? 'bg-blue-50 border-[#153898] text-[#153898] shadow-xs cursor-pointer'
+                              ? 'bg-blue-50 border-[#123891] text-[#123891] shadow-xs cursor-pointer'
                               : 'bg-white border-slate-200 hover:bg-blue-50/40 hover:border-blue-200 cursor-pointer text-slate-800'
                           }`}
                         >
@@ -522,7 +522,7 @@ const RegisterThesisPage = () => {
                               checked={isSelected}
                               disabled={st.isInActiveThesis}
                               onChange={() => handleSelectPartner(st)}
-                              className="accent-[#153898] mt-1 shrink-0"
+                              className="accent-[#123891] mt-1 shrink-0"
                             />
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -629,7 +629,7 @@ const RegisterThesisPage = () => {
                 type="button"
                 disabled={registeringTopic || (topicStudentCount === 2 && !topicStudent2)}
                 onClick={handleConfirmTopicRegistration}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-[#153898] hover:bg-blue-700 disabled:opacity-50 rounded-xl transition cursor-pointer shadow-sm"
+                className="px-5 py-2.5 text-xs font-bold text-white bg-[#123891] hover:bg-blue-700 disabled:opacity-50 rounded-xl transition cursor-pointer shadow-sm"
               >
                 {registeringTopic ? 'Đang đăng ký...' : 'Xác nhận đăng ký'}
               </button>

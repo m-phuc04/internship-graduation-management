@@ -35,10 +35,10 @@ const StatusBadge = ({
     dotColor = 'bg-rose-500';
   } else if (status === 'PENDING_SUPERVISOR_APPROVAL') {
     badgeStyles = 'bg-blue-50 text-[#102d7d] border-blue-200/80';
-    dotColor = 'bg-[#153898]';
+    dotColor = 'bg-[#123891]';
   } else if (status === 'PENDING_SUPERVISOR_ACCEPTANCE') {
     badgeStyles = 'bg-blue-50 text-[#102d7d] border-blue-200/80';
-    dotColor = 'bg-[#153898]';
+    dotColor = 'bg-[#123891]';
   } else if (variant === 'warning' || status === 'PENDING' || status === 'PENDING_TBM_APPROVAL') {
     badgeStyles = 'bg-amber-50 text-amber-700 border-amber-200/80';
     dotColor = 'bg-amber-500';
@@ -47,7 +47,7 @@ const StatusBadge = ({
     dotColor = 'bg-sky-500';
   } else if (variant === 'purple' || status === 'COMPLETED' || status === 'GRADED' || status === 'ASSIGNED_REVIEWERS') {
     badgeStyles = 'bg-blue-50 text-[#102d7d] border-blue-200/80';
-    dotColor = 'bg-[#153898]';
+    dotColor = 'bg-[#123891]';
   }
 
   const sizeStyles =

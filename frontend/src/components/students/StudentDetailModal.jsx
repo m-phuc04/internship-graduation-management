@@ -17,7 +17,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
       <div className="space-y-6">
         {/* Header Summary Banner */}
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-slate-200/80">
-          <div className="w-14 h-14 rounded-2xl bg-[#153898] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             {student.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
           </div>
           <div className="flex-1 min-w-0">
@@ -43,7 +43,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
         {/* Academic Details Grid */}
         <div>
           <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Award className="w-4 h-4 text-[#153898]" /> Thông tin Học tập
+            <Award className="w-4 h-4 text-[#123891]" /> Thông tin Học tập
           </h5>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
@@ -62,7 +62,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
               <div className="text-xs text-slate-500 mb-0.5">Điểm GPA tích lũy</div>
-              <div className="text-sm font-bold text-[#153898]">
+              <div className="text-sm font-bold text-[#123891]">
                 {Number(student.gpa).toFixed(2)} / 4.0
               </div>
             </div>

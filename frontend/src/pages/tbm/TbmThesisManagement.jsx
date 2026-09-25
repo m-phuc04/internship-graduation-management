@@ -362,7 +362,7 @@ const TbmThesisManagement = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
               <GraduationCap className="w-7 h-7" />
             </div>
             <div>
@@ -393,10 +393,10 @@ const TbmThesisManagement = () => {
             {/* Quick Link to KLTN Grading Periods Management */}
             <Link
               to="/tbm/thesis-evaluations"
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#153898] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
               title="Quản lý đợt nhập điểm, tiêu chí đánh giá và bảng điểm KLTN"
             >
-              <Award className="w-3.5 h-3.5 text-[#153898]" />
+              <Award className="w-3.5 h-3.5 text-[#123891]" />
               <span>Thời gian nhập điểm KLTN</span>
             </Link>
 
@@ -426,7 +426,7 @@ const TbmThesisManagement = () => {
             onClick={() => setActiveMainTab('PROPOSED_TOPICS')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
               activeMainTab === 'PROPOSED_TOPICS'
-                ? 'bg-[#153898] text-white shadow-sm'
+                ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -442,7 +442,7 @@ const TbmThesisManagement = () => {
             onClick={() => setActiveMainTab('STUDENT_THESES')}
             className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
               activeMainTab === 'STUDENT_THESES'
-                ? 'bg-[#153898] text-white shadow-sm'
+                ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
@@ -505,7 +505,7 @@ const TbmThesisManagement = () => {
                 <select
                   value={topicStatusFilter}
                   onChange={(e) => setTopicStatusFilter(e.target.value)}
-                  className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 >
                   <option value="ALL">Tất cả trạng thái</option>
                   <option value="PENDING">Chờ duyệt (PENDING)</option>
@@ -571,7 +571,7 @@ const TbmThesisManagement = () => {
                         className="p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-gradient-to-r from-slate-50/90 to-indigo-50/30 border-b border-slate-100 hover:bg-slate-100/60 transition cursor-pointer select-none"
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#153898] text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
+                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#123891] text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
                             {group.fullName.charAt(0).toUpperCase()}
                           </div>
                           <div className="min-w-0">
@@ -637,11 +637,11 @@ const TbmThesisManagement = () => {
                           <button
                             type="button"
                             onClick={() => toggleLecturerExpand(group.id)}
-                            className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-[#153898] hover:bg-blue-50 transition cursor-pointer"
+                            className="p-1.5 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-[#123891] hover:bg-blue-50 transition cursor-pointer"
                           >
                             <ChevronDown
                               className={`w-4 h-4 transition-transform duration-200 ${
-                                isExpanded ? 'rotate-180 text-[#153898]' : ''
+                                isExpanded ? 'rotate-180 text-[#123891]' : ''
                               }`}
                             />
                           </button>
@@ -1054,7 +1054,7 @@ const TbmThesisManagement = () => {
                   setStatus(e.target.value);
                   setPage(1);
                 }}
-                className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               >
                 <option value="ALL">Tất cả trạng thái</option>
                 <option value="PENDING_TBM_APPROVAL">PENDING_TBM_APPROVAL (Chờ duyệt)</option>
@@ -1117,7 +1117,7 @@ const TbmThesisManagement = () => {
                                 setSelectedThesis(item);
                                 setDetailModalOpen(true);
                               }}
-                              className="font-bold text-slate-900 line-clamp-2 leading-snug hover:text-[#153898] cursor-pointer transition"
+                              className="font-bold text-slate-900 line-clamp-2 leading-snug hover:text-[#123891] cursor-pointer transition"
                             >
                               {item.thesisTitle}
                             </div>
@@ -1130,14 +1130,14 @@ const TbmThesisManagement = () => {
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#153898]" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
                                 <strong className="text-slate-900">{item.studentId?.userId?.fullName}</strong>
                                 <span className="text-[10px] font-mono text-slate-500">({item.studentId?.studentCode})</span>
                               </div>
 
                               {item.studentCount === 2 && item.secondStudentId && (
                                 <div className="flex items-center gap-1.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#153898]" />
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
                                   <strong className="text-slate-900">{item.secondStudentId?.userId?.fullName}</strong>
                                   <span className="text-[10px] font-mono text-slate-500">({item.secondStudentId?.studentCode})</span>
                                 </div>
@@ -1267,7 +1267,7 @@ const TbmThesisManagement = () => {
                                       setSelectedThesis(item);
                                       setAssignReviewersOpen(true);
                                     }}
-                                    className="p-1.5 text-[#153898] hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                    className="p-1.5 text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
                                     title="Phân công phản biện"
                                   >
                                     <UserCheck className="w-4 h-4" />
@@ -1378,7 +1378,7 @@ const TbmThesisManagement = () => {
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -1458,8 +1458,8 @@ const TbmThesisManagement = () => {
 
                       <div className={`grid ${grp.secondStudentId ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-2.5`}>
                         <div className="p-2.5 bg-white rounded-xl border border-blue-100 space-y-0.5 text-[11px]">
-                          <div className="font-bold text-[#0B1E48] flex items-center gap-1.5 mb-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#153898]" />
+                          <div className="font-bold text-[#123891] flex items-center gap-1.5 mb-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
                             <span>SV1: {grp.studentId?.userId?.fullName || 'Sinh viên 1'}</span>
                           </div>
                           <div><strong>MSSV:</strong> {grp.studentCode || grp.studentId?.studentCode}</div>
@@ -1469,8 +1469,8 @@ const TbmThesisManagement = () => {
 
                         {grp.secondStudentId && (
                           <div className="p-2.5 bg-white rounded-xl border border-blue-100 space-y-0.5 text-[11px]">
-                            <div className="font-bold text-[#0B1E48] flex items-center gap-1.5 mb-1">
-                              <span className="w-1.5 h-1.5 rounded-full bg-[#153898]" />
+                            <div className="font-bold text-[#123891] flex items-center gap-1.5 mb-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
                               <span>SV2: {grp.secondStudentId?.userId?.fullName || 'Sinh viên 2'}</span>
                             </div>
                             <div><strong>MSSV:</strong> {grp.secondStudentCode || grp.secondStudentId?.studentCode}</div>

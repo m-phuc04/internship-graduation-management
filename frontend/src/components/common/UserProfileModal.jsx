@@ -126,7 +126,7 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
     >
       {loading ? (
         <div className="py-12 flex flex-col items-center justify-center space-y-3">
-          <div className="w-10 h-10 border-3 border-[#153898] border-t-transparent rounded-full animate-spin" />
+          <div className="w-10 h-10 border-3 border-[#123891] border-t-transparent rounded-full animate-spin" />
           <p className="text-xs text-slate-500 font-medium">Đang tải thông tin hồ sơ...</p>
         </div>
       ) : !user ? (
@@ -154,7 +154,7 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
                   className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#153898] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#123891] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md">
                   {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                 </div>
               )}
@@ -181,7 +181,7 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
             <button
               type="button"
               onClick={handleStartChat}
-              className="w-full py-2.5 px-4 bg-[#153898] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+              className="w-full py-2.5 px-4 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
               <span>Nhắn tin</span>
@@ -196,7 +196,7 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
 
             <div className="flex items-center justify-between p-3 rounded-2xl bg-white border border-slate-200/80 shadow-2xs group hover:border-blue-300 transition">
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                   <Mail className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">

@@ -208,7 +208,7 @@ const StudentReportPage = () => {
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-[#153898] font-semibold text-xs tracking-wider uppercase">
+          <div className="flex items-center gap-2 text-[#123891] font-semibold text-xs tracking-wider uppercase">
             <BookOpen className="w-4 h-4" /> Theo Dõi Tiến Độ Thực Tập
           </div>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -244,7 +244,7 @@ const StudentReportPage = () => {
 
       {/* Internship Overview Summary Card */}
       {internship && (
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#071638] via-indigo-950 to-slate-950 text-white shadow-md border border-indigo-800/40 space-y-4">
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-indigo-950 to-slate-950 text-white shadow-md border border-indigo-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-indigo-800/60">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-blue-300 font-bold">
@@ -308,7 +308,7 @@ const StudentReportPage = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#153898]" />
+            <Calendar className="w-4 h-4 text-[#123891]" />
             Danh Sách Nhật Ký Hàng Tuần ({weeks.length} Tuần)
           </h2>
           <span className="text-xs text-slate-500">
@@ -452,7 +452,7 @@ const StudentReportPage = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenCreateForWeek(week)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Viết báo cáo</span>
@@ -464,7 +464,7 @@ const StudentReportPage = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenCreateForWeek(week, report)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
                           <span>Chỉnh sửa báo cáo</span>

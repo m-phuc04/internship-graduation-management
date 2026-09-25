@@ -17,7 +17,7 @@ const CompanyDetailModal = ({ isOpen, onClose, company }) => {
       <div className="space-y-6">
         {/* Header Banner */}
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-slate-200/80">
-          <div className="w-14 h-14 rounded-2xl bg-[#153898] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             <Building2 className="w-7 h-7" />
           </div>
           <div className="flex-1 min-w-0">
@@ -32,7 +32,7 @@ const CompanyDetailModal = ({ isOpen, onClose, company }) => {
               />
             </div>
             {company.code && (
-              <div className="text-xs text-[#153898] font-mono font-bold mt-0.5">
+              <div className="text-xs text-[#123891] font-mono font-bold mt-0.5">
                 Mã: {company.code}
               </div>
             )}
@@ -62,7 +62,7 @@ const CompanyDetailModal = ({ isOpen, onClose, company }) => {
               </div>
             )}
             {company.website && (
-              <div className="flex items-center gap-2 text-[#153898]">
+              <div className="flex items-center gap-2 text-[#123891]">
                 <Globe className="w-4 h-4 text-slate-400 shrink-0" />
                 <a href={company.website} target="_blank" rel="noreferrer" className="hover:underline">
                   {company.website}
@@ -90,10 +90,10 @@ const CompanyDetailModal = ({ isOpen, onClose, company }) => {
               </div>
             )}
             <div className="pt-2 border-t border-slate-200/60 mt-2 flex items-center gap-2 text-slate-700">
-              <Users className="w-4 h-4 text-[#153898] shrink-0" />
+              <Users className="w-4 h-4 text-[#123891] shrink-0" />
               <span>
                 Tổng số SV thực tập tiếp nhận:{' '}
-                <strong className="text-[#153898]">
+                <strong className="text-[#123891]">
                   {company.totalInternshipsCount || company.totalInternsCount || 0} SV
                 </strong>
               </span>

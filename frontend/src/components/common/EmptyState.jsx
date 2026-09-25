@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Inbox, Plus } from 'lucide-react';
 
 const EmptyState = ({
@@ -20,7 +20,7 @@ const EmptyState = ({
       {actionText && onAction && (
         <button
           onClick={onAction}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-xl shadow-sm shadow-indigo-200 transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] text-white text-sm font-medium rounded-xl shadow-sm shadow-indigo-200 transition"
         >
           <Plus className="w-4 h-4" />
           {actionText}
@@ -31,3 +31,4 @@ const EmptyState = ({
 };
 
 export default EmptyState;
+

@@ -107,7 +107,7 @@ const CompanyFormModal = ({
               value={formData.name}
               onChange={handleChange}
               placeholder="VD: TDSouth Technology JSC"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.name ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
             />
@@ -126,7 +126,7 @@ const CompanyFormModal = ({
               value={formData.code}
               onChange={handleChange}
               placeholder="VD: TDSOUTH"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition font-mono uppercase"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-mono uppercase"
             />
           </div>
         </div>
@@ -142,7 +142,7 @@ const CompanyFormModal = ({
             value={formData.address}
             onChange={handleChange}
             placeholder="VD: QTSC 9, Công viên phần mềm Quang Trung, Q.12, TP.HCM"
-            className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition ${
+            className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
               errors.address ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
             }`}
           />
@@ -163,7 +163,7 @@ const CompanyFormModal = ({
               value={formData.email}
               onChange={handleChange}
               placeholder="contact@tdsouth.com"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
 
@@ -177,7 +177,7 @@ const CompanyFormModal = ({
               value={formData.phone}
               onChange={handleChange}
               placeholder="02837155666"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
 
@@ -191,7 +191,7 @@ const CompanyFormModal = ({
               value={formData.website}
               onChange={handleChange}
               placeholder="https://..."
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
         </div>
@@ -208,7 +208,7 @@ const CompanyFormModal = ({
               value={formData.contactPerson}
               onChange={handleChange}
               placeholder="VD: Nguyễn Văn B"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
 
@@ -222,7 +222,7 @@ const CompanyFormModal = ({
               value={formData.contactEmail}
               onChange={handleChange}
               placeholder="hr@company.com"
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
         </div>
@@ -239,7 +239,7 @@ const CompanyFormModal = ({
               value={formData.description}
               onChange={handleChange}
               placeholder="Lĩnh vực hoạt động, công nghệ chính..."
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition resize-none"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none"
             />
           </div>
 
@@ -251,7 +251,7 @@ const CompanyFormModal = ({
               name="status"
               value={formData.status}
               onChange={handleChange}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="ACTIVE">Đang hợp tác (ACTIVE)</option>
               <option value="INACTIVE">Tạm ngưng (INACTIVE)</option>
@@ -272,7 +272,7 @@ const CompanyFormModal = ({
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 text-sm font-medium text-white bg-[#153898] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
+            className="px-5 py-2.5 text-sm font-medium text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
           >
             {loading && (
               <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

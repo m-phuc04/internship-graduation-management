@@ -321,7 +321,7 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
           {/* 2. Lecturer Assignment Window */}
           <div className="space-y-3 pt-2">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-              <Users className="w-4 h-4 text-[#153898]" />
+              <Users className="w-4 h-4 text-[#123891]" />
               2. Thời gian phân công GVHD & Phản biện
             </div>
 
@@ -334,7 +334,7 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                   type="date"
                   value={formData.assignmentStart}
                   onChange={(e) => setFormData({ ...formData, assignmentStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.assignmentStart && (
                   <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
@@ -352,7 +352,7 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                   type="date"
                   value={formData.assignmentEnd}
                   onChange={(e) => setFormData({ ...formData, assignmentEnd: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.assignmentEnd && (
                   <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">

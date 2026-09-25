@@ -277,7 +277,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
         {/* Thesis Summary Card */}
         <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1.5 shadow-2xs">
           <div className="flex items-start gap-2">
-            <BookOpen className="w-4 h-4 text-[#153898] shrink-0 mt-0.5" />
+            <BookOpen className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
             <div className="font-bold text-slate-900 text-xs leading-snug">{thesis.thesisTitle}</div>
           </div>
 
@@ -372,7 +372,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                       value={row.lecturerId}
                       onChange={(e) => handleLecturerChange(row.id, e.target.value)}
                       disabled={loadingLecturers || submitting}
-                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                     >
                       <option value="">-- Chọn giảng viên phản biện --</option>
                       {lecturers.map((lec) => {
@@ -393,7 +393,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                     {/* Checkbox PB KÍN */}
                     <label
                       className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold select-none transition cursor-pointer ${row.isPrivateReviewer
-                          ? 'bg-[#153898] border-[#153898] text-white shadow-xs'
+                          ? 'bg-[#123891] border-[#123891] text-white shadow-xs'
                           : 'bg-slate-50 hover:bg-slate-100 border-slate-200 text-slate-700'
                         }`}
                     >
@@ -405,7 +405,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                         className="sr-only"
                       />
                       <span
-                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition ${row.isPrivateReviewer ? 'bg-white border-white text-[#153898]' : 'border-slate-400'
+                        className={`w-3.5 h-3.5 rounded border flex items-center justify-center transition ${row.isPrivateReviewer ? 'bg-white border-white text-[#123891]' : 'border-slate-400'
                           }`}
                       >
                         {row.isPrivateReviewer && <Check className="w-3 h-3 stroke-[3]" />}
@@ -448,7 +448,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                             {hasPermKin ? (
                               <span className="text-emerald-600 font-bold">(✓ Đã có)</span>
                             ) : (
-                              <span className="text-[#153898]">(→ Tự cấp khi lưu)</span>
+                              <span className="text-[#123891]">(→ Tự cấp khi lưu)</span>
                             )}
                           </span>
                         )}
@@ -460,7 +460,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                             {hasPermHoidong ? (
                               <span className="text-emerald-600 font-bold">(✓ Đã có)</span>
                             ) : (
-                              <span className="text-[#153898]">(→ Tự cấp khi lưu)</span>
+                              <span className="text-[#123891]">(→ Tự cấp khi lưu)</span>
                             )}
                           </span>
                         )}
@@ -482,7 +482,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
         {/* Informational Guidance */}
         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 leading-relaxed">
           <div className="font-semibold text-slate-800 flex items-center gap-1 mb-0.5">
-            <Info className="w-3.5 h-3.5 text-[#153898]" />
+            <Info className="w-3.5 h-3.5 text-[#123891]" />
             <span>Quy tắc phân công & vị trí hiển thị:</span>
           </div>
           • Mỗi giảng viên có 2 checkbox độc lập: <strong>[PB KÍN]</strong> và <strong>[PB HỘI ĐỒNG]</strong>.
@@ -511,7 +511,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               thesis.scores?.supervisorScore === null ||
               thesis.scores?.supervisorScore === undefined
             }
-            className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >
             <UserCheck className="w-3.5 h-3.5" />
             <span>{submitting ? 'Đang lưu...' : 'Lưu phân công phản biện'}</span>

@@ -257,7 +257,7 @@ const NotificationDropdown = () => {
         return <Briefcase className="w-4 h-4 text-blue-600" />;
       case 'THESIS':
       case 'THESIS_PROGRESS':
-        return <GraduationCap className="w-4 h-4 text-[#0B4DB7]" />;
+        return <GraduationCap className="w-4 h-4 text-[#123891]" />;
       case 'SYSTEM':
       default:
         return <BookOpen className="w-4 h-4 text-purple-600" />;
@@ -310,7 +310,7 @@ const NotificationDropdown = () => {
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}
-                className="text-[11px] font-semibold text-[#0B4DB7] hover:text-[#002855] flex items-center gap-1 transition shrink-0 cursor-pointer"
+                className="text-[11px] font-semibold text-[#123891] hover:text-[#002855] flex items-center gap-1 transition shrink-0 cursor-pointer"
               >
                 <CheckCheck className="w-3.5 h-3.5" />
                 <span>Đọc tất cả</span>
@@ -350,7 +350,7 @@ const NotificationDropdown = () => {
                           type="button"
                           onClick={(e) => handleMarkAsRead(item._id, e)}
                           title="Đánh dấu đã đọc"
-                          className="text-slate-400 hover:text-[#0B4DB7] shrink-0 p-0.5 cursor-pointer"
+                          className="text-slate-400 hover:text-[#123891] shrink-0 p-0.5 cursor-pointer"
                         >
                           <Check className="w-3.5 h-3.5" />
                         </button>

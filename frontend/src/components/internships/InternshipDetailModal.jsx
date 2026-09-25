@@ -73,7 +73,7 @@ const InternshipDetailModal = ({
                 <StatusBadge status={internship.status} size="sm" />
               </div>
               <div className="text-xs text-slate-500 font-mono flex items-center gap-2 mt-0.5">
-                <span className="font-bold text-[#153898]">
+                <span className="font-bold text-[#123891]">
                   MSSV: {internship.studentId?.studentCode}
                 </span>
                 <span>•</span>
@@ -108,7 +108,7 @@ const InternshipDetailModal = ({
           {/* Section 1: Student Details */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <GraduationCap className="w-4 h-4 text-[#153898]" />
+              <GraduationCap className="w-4 h-4 text-[#123891]" />
               Thông tin Sinh viên
             </div>
             <div className="space-y-2">
@@ -142,7 +142,7 @@ const InternshipDetailModal = ({
           {/* Section 2: Company Details */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <Building2 className="w-4 h-4 text-[#153898]" />
+              <Building2 className="w-4 h-4 text-[#123891]" />
               Doanh nghiệp Thực tập
             </div>
             <div className="space-y-2">
@@ -168,7 +168,7 @@ const InternshipDetailModal = ({
           {/* Section 3: Internship Position & Time */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <Calendar className="w-4 h-4 text-[#153898]" />
+              <Calendar className="w-4 h-4 text-[#123891]" />
               Vị trí & Thời gian Thực tập
             </div>
             <div className="space-y-2">
@@ -200,7 +200,7 @@ const InternshipDetailModal = ({
           {/* Section 4: Mentor & Academic Supervisor */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
-              <UserCheck className="w-4 h-4 text-[#153898]" />
+              <UserCheck className="w-4 h-4 text-[#123891]" />
               Hướng dẫn & Giám sát
             </div>
             <div className="space-y-2">

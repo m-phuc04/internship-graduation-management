@@ -1,118 +1,182 @@
-import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+﻿import React from 'react';
+import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   ShieldCheck,
   Users,
   KeyRound,
-  GraduationCap,
-  Briefcase,
-  LogOut,
-  LayoutDashboard,
-  Award,
   Calendar,
+  X,
+  BookOpen,
+  Building2,
 } from 'lucide-react';
+import IUHLogo from '../common/IUHLogo';
 
 const AdminSidebar = ({ onCloseMobile }) => {
-  const { user, logout } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const isItemActive = (path) => location.pathname === path;
+  const handleNavClick = () => {
+    if (onCloseMobile) onCloseMobile();
+  };
 
-  const getSubLinkClass = (active) =>
-    `flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-      active
-        ? 'bg-rose-50 text-rose-700 font-bold border border-rose-200/80 shadow-2xs'
-        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-    }`;
+  const adminItems = [
+    {
+      to: '/admin/permissions',
+      label: 'Quản lý phân quyền',
+      icon: KeyRound,
+      badge: 'ADMIN',
+    },
+    {
+      to: '/admin/users',
+      label: 'Quản lý người dùng',
+      icon: Users,
+      badge: 'ADMIN',
+    },
+  ];
+
+  const adminMasterDataItems = [
+    {
+      to: '/admin/academic-terms',
+      label: 'Học kỳ & Năm học',
+      icon: Calendar,
+      badge: 'MASTER',
+    },
+    {
+      to: '/admin/students',
+      label: 'Quản lý Sinh viên',
+      icon: Users,
+      badge: 'MASTER',
+    },
+    {
+      to: '/admin/lecturers',
+      label: 'Quản lý Giảng viên',
+      icon: BookOpen,
+      badge: 'MASTER',
+    },
+    {
+      to: '/admin/companies',
+      label: 'Quản lý Doanh nghiệp',
+      icon: Building2,
+      badge: 'MASTER',
+    },
+  ];
 
   return (
-    <aside className="w-64 bg-white border-r border-slate-200/80 h-full flex flex-col justify-between select-none">
-      {/* 1. Header / Logo Area */}
-      <div>
-        <div className="p-5 border-b border-slate-100 flex items-center justify-between">
-          <Link
-            to="/"
-            onClick={onCloseMobile}
-            className="flex items-center gap-2.5 group cursor-pointer"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-rose-600 to-red-600 flex items-center justify-center text-white shadow-md shadow-rose-200 group-hover:scale-105 transition">
-              <ShieldCheck className="w-5 h-5" />
+    <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
+      {/* Brand Header */}
+      <div className="h-16 flex items-center justify-between px-4 sm:px-5 border-b border-[#0e2c73] bg-[#0e2c73]">
+        <Link
+          to="/admin/permissions"
+          onClick={handleNavClick}
+          className="flex items-center gap-3 cursor-pointer group hover:opacity-95 transition min-w-0"
+        >
+          <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
+            <IUHLogo className="h-7 w-auto object-contain" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-amber-300 transition truncate">
+              Cổng Quản Trị
             </div>
-            <div>
-              <div className="font-black text-sm text-slate-900 leading-tight group-hover:text-rose-600 transition">
-                Cổng Quản Trị
-              </div>
-              <div className="text-[10px] text-slate-400 font-medium">
-                Quản trị viên (ADMIN)
-              </div>
+            <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
+              Quản trị viên (ADMIN)
             </div>
-          </Link>
-        </div>
+          </div>
+        </Link>
 
-        {/* 2. Navigation Links */}
-        <nav className="p-3 space-y-1">
-          {/* Item 1: Quản lý Phân Quyền */}
-          <Link
-            to="/admin/permissions"
+        {onCloseMobile && (
+          <button
+            type="button"
             onClick={onCloseMobile}
-            className={getSubLinkClass(isItemActive('/admin/permissions'))}
+            aria-label="Đóng menu"
+            className="lg:hidden p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer shrink-0 ml-2"
+            title="Đóng menu"
           >
-            <KeyRound className="w-4 h-4 text-rose-600" />
-            <span>Quản lý phân quyền</span>
-          </Link>
-
-          {/* Item 2: Quản lý Người dùng */}
-          <Link
-            to="/admin/users"
-            onClick={onCloseMobile}
-            className={getSubLinkClass(isItemActive('/admin/users'))}
-          >
-            <Users className="w-4 h-4 text-slate-500" />
-            <span>Quản lý người dùng</span>
-          </Link>
-
-          {/* Item 3: Học kỳ & Năm học */}
-          <Link
-            to="/admin/academic-terms"
-            onClick={onCloseMobile}
-            className={getSubLinkClass(isItemActive('/admin/academic-terms'))}
-          >
-            <Calendar className="w-4 h-4 text-indigo-600" />
-            <span>Học kỳ & Năm học</span>
-          </Link>
-        </nav>
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
-      {/* 3. Footer / User & Logout */}
-      <div className="p-3 border-t border-slate-100 space-y-2">
-        <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-100 text-rose-700 font-bold text-sm flex items-center justify-center shrink-0">
-            A
+      {/* Navigation List */}
+      <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
+        {/* 1. QUẢN TRỊ HỆ THỐNG */}
+        <div className="space-y-1">
+          <div className="px-3 pb-1.5 text-[10.5px] font-bold text-blue-200/90 uppercase tracking-wider">
+            Quản Trị Hệ Thống
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-xs font-bold text-slate-900 truncate">
-              {user?.fullName || 'Quản trị viên'}
-            </div>
-            <div className="text-[10px] text-rose-600 font-bold uppercase tracking-wider">
-              {user?.code || 'ADMIN001'}
-            </div>
-          </div>
+          {adminItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                    isActive
+                      ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                      : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="whitespace-nowrap truncate">{item.label}</span>
+                    </div>
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                      isActive
+                        ? 'bg-slate-950/15 text-slate-950'
+                        : 'bg-white/15 text-white'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
         </div>
 
-        <button
-          type="button"
-          onClick={async () => {
-            if (onCloseMobile) onCloseMobile();
-            await logout();
-            navigate('/login', { replace: true });
-          }}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>Đăng xuất</span>
-        </button>
+        {/* 2. DỮ LIỆU NỀN TẢNG (MASTER) */}
+        <div className="space-y-1">
+          <div className="px-3 pb-1.5 text-[10.5px] font-bold text-blue-200/90 uppercase tracking-wider">
+            Dữ Liệu Nền Tảng (Master)
+          </div>
+          {adminMasterDataItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                onClick={handleNavClick}
+                className={({ isActive }) =>
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                    isActive
+                      ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                      : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
+                  }`
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <Icon className="w-4 h-4 shrink-0" />
+                      <span className="whitespace-nowrap truncate">{item.label}</span>
+                    </div>
+                    <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                      isActive
+                        ? 'bg-slate-950/15 text-slate-950'
+                        : 'bg-white/15 text-white'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            );
+          })}
+        </div>
       </div>
     </aside>
   );

@@ -85,10 +85,10 @@ const Student2ConfirmModal = ({ isOpen, onClose, report, onConfirmed }) => {
 
         {/* Verification Intro Banner */}
         <div className="p-4 bg-blue-50/70 border border-blue-100 rounded-2xl flex items-start gap-3">
-          <div className="w-8 h-8 rounded-xl bg-[#153898] text-white flex items-center justify-center shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0">
             <ShieldCheck className="w-4 h-4" />
           </div>
-          <div className="text-xs text-[#0B1E48]">
+          <div className="text-xs text-[#123891]">
             <div className="font-bold">Xác nhận báo cáo của nhóm 2 sinh viên</div>
             <div className="text-[11px] text-[#0d2a75] mt-0.5 leading-relaxed">
               Bạn đang ở vai trò <strong>Sinh viên 2</strong>. Vui lòng kiểm tra kỹ nội dung và file đính kèm dưới đây trước khi bấm xác nhận để chuyển báo cáo cho Giảng viên hướng dẫn xem và chấm điểm.
@@ -100,7 +100,7 @@ const Student2ConfirmModal = ({ isOpen, onClose, report, onConfirmed }) => {
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5 text-xs">
           <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200/60">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-white bg-[#153898] px-2.5 py-0.5 rounded-lg text-[11px]">
+              <span className="font-extrabold text-white bg-[#123891] px-2.5 py-0.5 rounded-lg text-[11px]">
                 Tuần #{report.weekNumber}
               </span>
               <span className="font-semibold text-slate-700">
@@ -153,13 +153,13 @@ const Student2ConfirmModal = ({ isOpen, onClose, report, onConfirmed }) => {
             </label>
             <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <Paperclip className="w-4 h-4 text-[#153898] shrink-0" />
+                <Paperclip className="w-4 h-4 text-[#123891] shrink-0" />
                 <div className="min-w-0">
-                  <div className="text-xs font-bold text-[#0B1E48] truncate">
+                  <div className="text-xs font-bold text-[#123891] truncate">
                     {report.file.originalName || report.file.fileName}
                   </div>
                   {report.file.size && (
-                    <div className="text-[10px] text-[#153898] font-mono">
+                    <div className="text-[10px] text-[#123891] font-mono">
                       {(report.file.size / (1024 * 1024)).toFixed(2)} MB
                     </div>
                   )}
@@ -170,7 +170,7 @@ const Student2ConfirmModal = ({ isOpen, onClose, report, onConfirmed }) => {
                 href={report.file.fileUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-xs transition shrink-0"
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-xs transition shrink-0"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Xem / Tải về</span>

@@ -431,17 +431,17 @@ const GradeThesisModal = ({
         <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1.5 shadow-2xs">
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2">
-              <BookOpen className="w-4 h-4 text-[#153898] shrink-0 mt-0.5" />
+              <BookOpen className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
               <div>
                 <div className="font-bold text-slate-900 text-xs leading-snug">{thesis.thesisTitle}</div>
                 <div className="text-[11px] text-slate-500 flex flex-wrap items-center gap-2 pt-1">
-                  <span className="font-semibold text-[#0B1E48]">
+                  <span className="font-semibold text-[#123891]">
                     SV1: {thesis.studentId?.userId?.fullName} ({thesis.studentId?.studentCode})
                   </span>
                   {isTwoStudents && (
                     <>
                       <span>•</span>
-                      <span className="font-semibold text-[#0B1E48]">
+                      <span className="font-semibold text-[#123891]">
                         SV2: {thesis.secondStudentId?.userId?.fullName} ({thesis.secondStudentId?.studentCode})
                       </span>
                     </>
@@ -572,7 +572,7 @@ const GradeThesisModal = ({
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-center">
                 <div className="text-[10.5px] font-bold text-[#102d7d] uppercase">Tổng báo cáo nộp</div>
-                <div className="text-base font-extrabold text-[#0B1E48] font-mono mt-0.5">
+                <div className="text-base font-extrabold text-[#123891] font-mono mt-0.5">
                   {loadingProgress ? '...' : progressList.length}
                 </div>
               </div>
@@ -584,7 +584,7 @@ const GradeThesisModal = ({
               </div>
               <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-center">
                 <div className="text-[10.5px] font-bold text-[#102d7d] uppercase">Tiến độ trung bình</div>
-                <div className="text-base font-extrabold text-[#0B1E48] font-mono mt-0.5">
+                <div className="text-base font-extrabold text-[#123891] font-mono mt-0.5">
                   {loadingProgress ? '...' : `${stats.avgPercentage || 0}%`}
                 </div>
               </div>
@@ -622,7 +622,7 @@ const GradeThesisModal = ({
                         }`}>
                           {rep.status === 'APPROVED' ? 'Đã duyệt' : rep.status === 'NEEDS_REVISION' ? 'Cần sửa' : 'Đã nộp'}
                         </span>
-                        <span className="text-[10px] font-mono font-bold text-[#153898] bg-blue-50 px-2 py-0.5 rounded-lg">
+                        <span className="text-[10px] font-mono font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded-lg">
                           {rep.completionPercentage || 0}% Hoàn thành
                         </span>
                       </div>
@@ -680,7 +680,7 @@ const GradeThesisModal = ({
               <button
                 type="button"
                 onClick={() => setActiveTabSection('CRITERIA')}
-                className="px-4 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1"
+                className="px-4 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1"
               >
                 <span>Chuyển sang Đánh giá Điều kiện</span>
                 <span>→</span>
@@ -819,7 +819,7 @@ const GradeThesisModal = ({
               <button
                 type="button"
                 onClick={() => setActiveTabSection('GRADE')}
-                className="px-4 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1"
+                className="px-4 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1"
               >
                 <span>Chuyển sang Nhập Điểm</span>
                 <span>→</span>
@@ -865,7 +865,7 @@ const GradeThesisModal = ({
             <div className="space-y-2">
               <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Award className="w-4 h-4 text-[#153898]" />
+                  <Award className="w-4 h-4 text-[#123891]" />
                   <span className="font-bold text-slate-800 text-xs">{roleTitle}</span>
                 </div>
                 <span className="px-2.5 py-1 rounded-lg bg-blue-50 text-[#102d7d] font-mono font-bold text-[11px] border border-blue-100 shadow-2xs">
@@ -931,8 +931,8 @@ const GradeThesisModal = ({
                 {/* Student 1 Box */}
                 <div className="p-3.5 rounded-2xl bg-white border-2 border-slate-200 hover:border-blue-300 transition space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#0B1E48] text-xs flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                    <span className="font-bold text-[#123891] text-xs flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-[#123891]" />
                       SV 1: {thesis.studentId?.userId?.fullName}
                     </span>
                     <span className="text-[11px] font-mono text-slate-400">
@@ -971,7 +971,7 @@ const GradeThesisModal = ({
                       className={`w-20 h-12 text-center border-2 rounded-xl text-lg font-mono font-extrabold transition ${
                         isFormLocked
                           ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-blue-50/40 border-blue-200 text-[#0B1E48] focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-[#153898]'
+                          : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-[#123891]'
                       }`}
                       required
                     />
@@ -996,8 +996,8 @@ const GradeThesisModal = ({
                 {isTwoStudents && (
                   <div className="p-3.5 rounded-2xl bg-white border-2 border-slate-200 hover:border-blue-300 transition space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-[#0B1E48] text-xs flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                      <span className="font-bold text-[#123891] text-xs flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-[#123891]" />
                         SV 2: {thesis.secondStudentId?.userId?.fullName}
                       </span>
                       <span className="text-[11px] font-mono text-slate-400">
@@ -1035,7 +1035,7 @@ const GradeThesisModal = ({
                         className={`w-20 h-12 text-center border-2 rounded-xl text-lg font-mono font-extrabold transition ${
                           isFormLocked
                             ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-blue-50/40 border-blue-200 text-[#0B1E48] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-[#153898]'
+                            : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-[#123891]'
                         }`}
                       />
                       <div className="text-[11px] text-slate-500">
@@ -1078,7 +1078,7 @@ const GradeThesisModal = ({
                 className={`w-full px-3.5 py-2.5 border rounded-xl text-xs transition resize-none ${
                   isFormLocked
                     ? 'bg-slate-100 border-slate-200 text-slate-700 cursor-not-allowed'
-                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898]'
+                    : 'bg-slate-50 border-slate-200 text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]'
                 }`}
               />
             </div>
@@ -1097,7 +1097,7 @@ const GradeThesisModal = ({
                 <button
                   type="submit"
                   disabled={submitting || isFormLocked}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{submitting ? 'Đang lưu...' : 'Lưu kết quả đánh giá (Enter)'}</span>
@@ -1141,16 +1141,16 @@ const GradeThesisModal = ({
             {/* Students Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2 text-xs">
-                <div className="font-bold text-[#0B1E48] flex items-center justify-between">
+                <div className="font-bold text-[#123891] flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                    <span className="w-2 h-2 rounded-full bg-[#123891]" />
                     <span>Sinh viên 1 (Trưởng nhóm)</span>
                   </div>
                   <UserNameClickable
                     user={thesis.studentId}
                     name="Hồ sơ ↗"
                     showAvatar={false}
-                    className="text-[11px] font-bold text-[#153898] hover:underline"
+                    className="text-[11px] font-bold text-[#123891] hover:underline"
                   />
                 </div>
                 <div><strong>Họ tên:</strong> {thesis.studentId?.userId?.fullName}</div>
@@ -1162,16 +1162,16 @@ const GradeThesisModal = ({
 
               {thesis.secondStudentId ? (
                 <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-2 text-xs">
-                  <div className="font-bold text-[#0B1E48] flex items-center justify-between">
+                  <div className="font-bold text-[#123891] flex items-center justify-between">
                     <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#153898]" />
+                      <span className="w-2 h-2 rounded-full bg-[#123891]" />
                       <span>Sinh viên 2</span>
                     </div>
                     <UserNameClickable
                       user={thesis.secondStudentId}
                       name="Hồ sơ ↗"
                       showAvatar={false}
-                      className="text-[11px] font-bold text-[#153898] hover:underline"
+                      className="text-[11px] font-bold text-[#123891] hover:underline"
                     />
                   </div>
                   <div><strong>Họ tên:</strong> {thesis.secondStudentId?.userId?.fullName}</div>

@@ -49,7 +49,7 @@ const ExportInternshipDiaryModal = ({
           <button
             type="button"
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#153898] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-sm shadow-blue-200 transition cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-sm shadow-blue-200 transition cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>In / Lưu PDF</span>
@@ -77,7 +77,7 @@ const ExportInternshipDiaryModal = ({
           {/* Student & Internship Info Box */}
           <div className="border border-slate-300 rounded-xl p-5 bg-slate-50/50 space-y-3 text-xs">
             <h2 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-[#153898]" />
+              <User className="w-3.5 h-3.5 text-[#123891]" />
               THÔNG TIN SINH VIÊN & ĐỢT THỰC TẬP
             </h2>
 
@@ -141,7 +141,7 @@ const ExportInternshipDiaryModal = ({
           {/* Weeks Diary Content List */}
           <div className="space-y-5 pt-2">
             <h2 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1.5 flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-[#153898]" />
+              <BookOpen className="w-3.5 h-3.5 text-[#123891]" />
               NỘI DUNG NHẬT KÝ THEO TỪNG TUẦN
             </h2>
 
@@ -168,7 +168,7 @@ const ExportInternshipDiaryModal = ({
                   {hasReport ? (
                     <div className="space-y-2">
                       {report.title && (
-                        <div className="font-bold text-[#0B1E48]">
+                        <div className="font-bold text-[#123891]">
                           <strong>Tiêu đề:</strong> {report.title}
                         </div>
                       )}
@@ -196,7 +196,7 @@ const ExportInternshipDiaryModal = ({
                           )}
                         </div>
                         {report.lecturerScore !== null && report.lecturerScore !== undefined && (
-                          <div className="font-bold text-[#0B1E48]">
+                          <div className="font-bold text-[#123891]">
                             Điểm GVHD: <span className="text-emerald-700 font-mono">{report.lecturerScore}/10</span>
                             {report.lecturerComment && ` (${report.lecturerComment})`}
                           </div>

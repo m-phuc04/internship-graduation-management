@@ -96,7 +96,7 @@ const LecturerReportPage = () => {
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2 text-[#153898] font-semibold text-xs tracking-wider uppercase">
+          <div className="flex items-center gap-2 text-[#123891] font-semibold text-xs tracking-wider uppercase">
             <BookOpen className="w-4 h-4" /> Đánh Giá & Chấm Điểm
           </div>
           <h2 className="text-xl font-bold text-slate-900 mt-1">
@@ -131,7 +131,7 @@ const LecturerReportPage = () => {
             <select
               value={status}
               onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               {STATUS_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -145,7 +145,7 @@ const LecturerReportPage = () => {
             <select
               value={reportType}
               onChange={(e) => handleFilterChange(setReportType, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               {TYPE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>

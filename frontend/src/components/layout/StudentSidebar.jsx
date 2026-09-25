@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+﻿import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   GraduationCap,
@@ -7,21 +7,14 @@ import {
   BookOpen,
   LayoutDashboard,
   PlusCircle,
-  FileText,
   Award,
   ChevronDown,
-  Calendar,
-  User,
-  LogOut,
-  Clock,
-  TrendingUp,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
-const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
-  const { user, logout } = useAuth();
+const StudentSidebar = ({ onCloseMobile }) => {
+  const { user } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
 
   // Accordion state: open by default if active route matches
   const isInternshipRoute =
@@ -37,12 +30,6 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
     if (isThesisRoute) setThesisOpen(true);
   }, [location.pathname, isInternshipRoute, isThesisRoute]);
 
-  const handleLogout = async () => {
-    if (onCloseMobile) onCloseMobile();
-    await logout();
-    navigate('/login', { replace: true });
-  };
-
   // Helper to check active state with query string precision
   const isItemActive = (path, requiredSearch = '') => {
     if (location.pathname !== path) return false;
@@ -55,17 +42,17 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
   const getSubLinkClass = (active) =>
     `flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all cursor-pointer ${
       active
-        ? 'bg-[#F7B928] text-slate-950 font-bold shadow-xs'
+        ? 'bg-[#ECA124] text-slate-950 font-bold shadow-xs'
         : 'text-slate-300 hover:text-white hover:bg-white/10'
     }`;
 
   return (
-    <aside className="w-64 bg-[#0B1E48] text-slate-200 flex flex-col shrink-0 h-full select-none">
+    <aside className="w-64 bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
       <Link
         to="/"
         onClick={onCloseMobile}
-        className="h-16 flex items-center gap-3 px-5 border-b border-[#132c66] bg-[#071638] cursor-pointer group transition"
+        className="h-16 flex items-center gap-3 px-5 border-b border-[#0e2c73] bg-[#0e2c73] cursor-pointer group transition"
       >
         <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
           <IUHLogo className="h-7 w-auto object-contain" />
@@ -89,7 +76,7 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
             onClick={onCloseMobile}
             className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
               location.pathname === '/student/dashboard'
-                ? 'bg-[#F7B928] text-slate-950 font-bold shadow-md'
+                ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                 : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
             }`}
           >
@@ -106,12 +93,12 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <Briefcase className="w-4 h-4 text-[#F7B928]" />
+              <Briefcase className="w-4 h-4 text-[#ECA124]" />
               <span>Thực tập Doanh nghiệp</span>
             </div>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                internshipOpen ? 'rotate-180 text-[#F7B928]' : ''
+                internshipOpen ? 'rotate-180 text-[#ECA124]' : ''
               }`}
             />
           </button>
@@ -169,12 +156,12 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <GraduationCap className="w-4 h-4 text-[#F7B928]" />
+              <GraduationCap className="w-4 h-4 text-[#ECA124]" />
               <span>Khóa luận Tốt nghiệp</span>
             </div>
             <ChevronDown
               className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                thesisOpen ? 'rotate-180 text-[#F7B928]' : ''
+                thesisOpen ? 'rotate-180 text-[#ECA124]' : ''
               }`}
             />
           </button>
@@ -222,66 +209,6 @@ const StudentSidebar = ({ onCloseMobile, onOpenScheduleModal }) => {
               </Link>
             </div>
           )}
-        </div>
-
-        {/* 4. Common Module Group */}
-        <div className="pt-2 border-t border-[#132c66] space-y-0.5">
-          <div className="px-3 pb-1.5 text-[10.5px] font-bold text-blue-200/90 uppercase tracking-wider">
-            Tiện ích cá nhân
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (onOpenScheduleModal) onOpenScheduleModal();
-              if (onCloseMobile) onCloseMobile();
-            }}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-200 hover:text-white hover:bg-white/10 transition cursor-pointer"
-          >
-            <Calendar className="w-4 h-4 text-[#F7B928]" />
-            <span>Lịch & Kế hoạch</span>
-          </button>
-
-          <Link
-            to="/student/profile"
-            onClick={onCloseMobile}
-            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              location.pathname === '/student/profile'
-                ? 'bg-[#F7B928] text-slate-950 font-bold shadow-md'
-                : 'text-slate-200 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            <User className="w-4 h-4 text-slate-300" />
-            <span>Hồ sơ cá nhân</span>
-          </Link>
-        </div>
-      </div>
-
-      {/* Sidebar Footer / User & Logout */}
-      <div className="p-3 border-t border-[#132c66] bg-[#071638]">
-        <div className="flex items-center justify-between p-2 rounded-xl bg-[#0B1E48] border border-[#132c66]">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-[#F7B928] text-slate-950 flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
-              {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'S'}
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-bold text-white truncate">
-                {user?.fullName || 'Sinh viên'}
-              </div>
-              <div className="text-[10px] text-[#F7B928] font-semibold font-mono truncate">
-                {user?.studentCode || 'Sinh viên'}
-              </div>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Đăng xuất"
-            className="p-1.5 text-slate-300 hover:text-rose-400 hover:bg-white/10 rounded-lg transition shrink-0 cursor-pointer"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
       </div>
     </aside>

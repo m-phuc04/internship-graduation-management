@@ -119,7 +119,7 @@ const AdminPermissionsPage = () => {
       {/* 1. Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
             <KeyRound className="w-7 h-7" />
           </div>
           <div>
@@ -273,7 +273,7 @@ const AdminPermissionsPage = () => {
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#153898] font-bold border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#123891] font-bold border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
                         >
                           Phân quyền
                         </button>
@@ -308,7 +308,7 @@ const AdminPermissionsPage = () => {
               <div className="text-slate-500 flex items-center gap-3">
                 <span>Mã GV: <strong className="font-mono text-slate-800">{selectedLecturer.lecturerCode}</strong></span>
                 <span>•</span>
-                <span>Role: <strong className="text-[#153898]">{selectedRole}</strong></span>
+                <span>Role: <strong className="text-[#123891]">{selectedRole}</strong></span>
               </div>
             </div>
 
@@ -327,7 +327,7 @@ const AdminPermissionsPage = () => {
                       onClick={() => handleTogglePermission(opt.id)}
                       className={`flex items-start gap-3 p-3 rounded-2xl border cursor-pointer transition select-none ${
                         isChecked
-                          ? 'bg-blue-50/70 border-[#153898] ring-1 ring-blue-500/20'
+                          ? 'bg-blue-50/70 border-[#123891] ring-1 ring-blue-500/20'
                           : 'bg-white border-slate-200 hover:bg-slate-50'
                       }`}
                     >
@@ -335,7 +335,7 @@ const AdminPermissionsPage = () => {
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => {}}
-                        className="mt-0.5 rounded text-[#153898] focus:ring-blue-500"
+                        className="mt-0.5 rounded text-[#123891] focus:ring-blue-500"
                       />
                       <div>
                         <div className="font-bold text-slate-900">{opt.label}</div>
@@ -397,7 +397,7 @@ const AdminPermissionsPage = () => {
                 type="button"
                 disabled={saving}
                 onClick={handleSavePermissions}
-                className="px-5 py-2 bg-[#153898] hover:bg-[#093e94] text-white font-bold rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50"
+                className="px-5 py-2 bg-[#123891] hover:bg-[#093e94] text-white font-bold rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>

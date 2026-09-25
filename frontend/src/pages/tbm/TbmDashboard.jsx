@@ -63,7 +63,7 @@ const TbmDashboard = () => {
       {/* Top Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
             <LayoutDashboard className="w-7 h-7" />
           </div>
           <div>
@@ -106,10 +106,10 @@ const TbmDashboard = () => {
           className="p-5 rounded-3xl bg-blue-50/70 border border-blue-200/80 hover:border-blue-300 transition space-y-2"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#0B1E48]">KLTN Chờ Duyệt</span>
-            <Clock className="w-4 h-4 text-[#153898]" />
+            <span className="text-xs font-bold text-[#123891]">KLTN Chờ Duyệt</span>
+            <Clock className="w-4 h-4 text-[#123891]" />
           </div>
-          <div className="text-2xl font-bold text-[#0B1E48] font-mono">{stats.pendingTheses || 0}</div>
+          <div className="text-2xl font-bold text-[#123891] font-mono">{stats.pendingTheses || 0}</div>
           <div className="text-[11px] text-[#102d7d] font-medium">Đề tài khóa luận mới nộp</div>
         </Link>
 
@@ -146,10 +146,10 @@ const TbmDashboard = () => {
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <Briefcase className="w-4 h-4 text-[#153898]" />
+              <Briefcase className="w-4 h-4 text-[#123891]" />
               <span>Đăng Ký Thực Tập Gần Nhất</span>
             </div>
-            <Link to="/tbm/internships" className="text-xs font-bold text-[#153898] hover:text-[#102d7d]">
+            <Link to="/tbm/internships" className="text-xs font-bold text-[#123891] hover:text-[#102d7d]">
               Xem tất cả →
             </Link>
           </div>
@@ -175,10 +175,10 @@ const TbmDashboard = () => {
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <GraduationCap className="w-4 h-4 text-[#153898]" />
+              <GraduationCap className="w-4 h-4 text-[#123891]" />
               <span>Đề Tài Khóa Luận Gần Nhất</span>
             </div>
-            <Link to="/tbm/theses" className="text-xs font-bold text-[#153898] hover:text-[#102d7d]">
+            <Link to="/tbm/theses" className="text-xs font-bold text-[#123891] hover:text-[#102d7d]">
               Xem tất cả →
             </Link>
           </div>

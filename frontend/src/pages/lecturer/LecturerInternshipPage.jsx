@@ -231,7 +231,7 @@ const LecturerInternshipPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#153898] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
@@ -256,7 +256,7 @@ const LecturerInternshipPage = () => {
             <button
               onClick={handleOpenConfirmationDoc}
               disabled={loadingDoc || internships.length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs shadow-sm shadow-blue-200 transition disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs shadow-sm shadow-blue-200 transition disabled:opacity-50"
               title="Xuất & In Giấy xác nhận hướng dẫn thực tập"
             >
               <Printer className="w-4 h-4" />
@@ -267,8 +267,8 @@ const LecturerInternshipPage = () => {
               <div className="text-[11px] font-semibold text-[#102d7d] uppercase tracking-wider">
                 Chỉ tiêu hướng dẫn
               </div>
-              <div className="text-lg font-extrabold text-[#0B1E48] mt-0.5">
-                {stats?.activeCount || 0} / {stats?.maxStudents || 10} <span className="text-xs font-semibold text-[#153898]">SV</span>
+              <div className="text-lg font-extrabold text-[#123891] mt-0.5">
+                {stats?.activeCount || 0} / {stats?.maxStudents || 10} <span className="text-xs font-semibold text-[#123891]">SV</span>
               </div>
             </div>
 

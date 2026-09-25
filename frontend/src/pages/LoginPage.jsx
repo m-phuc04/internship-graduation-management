@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -197,7 +197,7 @@ const LoginPage = () => {
           <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-white group-hover:text-amber-300 transition">
             Hệ Thống Quản Lý TTDN & KLTN
           </h2>
-          <p className="mt-1 text-center text-xs text-[#F7B928] font-semibold uppercase tracking-wider">
+          <p className="mt-1 text-center text-xs text-[#ECA124] font-semibold uppercase tracking-wider">
             Khoa Công Nghệ Thông Tin
           </p>
         </Link>
@@ -212,7 +212,7 @@ const LoginPage = () => {
               onClick={() => setActiveTab('LOGIN')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === 'LOGIN'
-                  ? 'bg-white text-[#0B1E48] shadow-xs'
+                  ? 'bg-white text-[#123891] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -224,7 +224,7 @@ const LoginPage = () => {
               onClick={() => setActiveTab('REGISTER')}
               className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
                 activeTab === 'REGISTER'
-                  ? 'bg-white text-[#0B1E48] shadow-xs'
+                  ? 'bg-white text-[#123891] shadow-xs'
                   : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -249,7 +249,7 @@ const LoginPage = () => {
                     onChange={(e) => setAccountCode(e.target.value)}
                     placeholder="MSSV / Mã giảng viên / Mã doanh nghiệp"
                     required
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -267,7 +267,7 @@ const LoginPage = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Mật khẩu"
                     required
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -278,7 +278,7 @@ const LoginPage = () => {
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Mã xác thực CAPTCHA
                   </label>
-                  <span className="text-[10px] text-[#F7B928] font-bold bg-indigo-50 px-1.5 py-0.5 rounded">
+                  <span className="text-[10px] text-[#ECA124] font-bold bg-blue-50 px-1.5 py-0.5 rounded">
                     Bắt buộc
                   </span>
                 </div>
@@ -309,7 +309,7 @@ const LoginPage = () => {
                     disabled={captchaLoading}
                     aria-label="Làm mới mã CAPTCHA"
                     title="Làm mới mã CAPTCHA"
-                    className="h-12 w-12 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 hover:text-[#F7B928] border border-slate-200 flex items-center justify-center transition cursor-pointer shrink-0 disabled:opacity-50"
+                    className="h-12 w-12 rounded-xl bg-slate-100 hover:bg-slate-200 active:scale-95 text-slate-600 hover:text-[#ECA124] border border-slate-200 flex items-center justify-center transition cursor-pointer shrink-0 disabled:opacity-50"
                   >
                     <RotateCw className={`w-5 h-5 ${captchaLoading ? 'animate-spin' : ''}`} />
                   </button>
@@ -326,7 +326,7 @@ const LoginPage = () => {
                     maxLength={6}
                     required
                     autoComplete="off"
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold tracking-widest text-slate-900 placeholder:text-slate-400 placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition uppercase"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold tracking-widest text-slate-900 placeholder:text-slate-400 placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition uppercase"
                   />
                 </div>
               </div>
@@ -336,7 +336,7 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] shadow-lg shadow-indigo-600/30 transition duration-200 disabled:opacity-50 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] active:scale-[0.99] shadow-lg shadow-blue-900/10 transition duration-200 disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -353,7 +353,7 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab('REGISTER')}
-                  className="text-xs text-[#F7B928] hover:text-indigo-800 font-semibold transition cursor-pointer"
+                  className="text-xs text-[#ECA124] hover:text-[#0e2c73] font-semibold transition cursor-pointer"
                 >
                   Chưa có tài khoản sinh viên? <span className="underline font-bold">Đăng ký ngay</span>
                 </button>
@@ -362,8 +362,8 @@ const LoginPage = () => {
           ) : (
             /* ================= FORM ĐĂNG KÝ SINH VIÊN ================= */
             <form onSubmit={handleRegister} className="space-y-3.5">
-              <div className="p-3 bg-indigo-50/80 rounded-2xl border border-indigo-100 flex items-center gap-2 text-[#0B1E48] text-xs font-medium">
-                <GraduationCap className="w-4 h-4 shrink-0 text-[#F7B928]" />
+              <div className="p-3 bg-blue-50/80 rounded-2xl border border-blue-100 flex items-center gap-2 text-[#123891] text-xs font-medium">
+                <GraduationCap className="w-4 h-4 shrink-0 text-[#ECA124]" />
                 <span>Cổng đăng ký dành riêng cho Sinh viên thực tập & làm KLTN</span>
               </div>
 
@@ -381,7 +381,7 @@ const LoginPage = () => {
                     placeholder="Nhập 8 chữ số MSSV (VD: 22635271)"
                     maxLength={8}
                     required
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -399,7 +399,7 @@ const LoginPage = () => {
                     onChange={(e) => setRegFullName(e.target.value)}
                     placeholder="Nhập họ và tên đầy đủ"
                     required
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -418,7 +418,7 @@ const LoginPage = () => {
                       onChange={(e) => setRegEmail(e.target.value)}
                       placeholder="VD: 22635271@student.iuh.edu.vn"
                       required
-                      className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                      className="w-full pl-10 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                     />
                   </div>
                 </div>
@@ -432,7 +432,7 @@ const LoginPage = () => {
                     value={regClassName}
                     onChange={(e) => setRegClassName(e.target.value)}
                     placeholder="VD: DHKTPM18A"
-                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -451,7 +451,7 @@ const LoginPage = () => {
                     placeholder="Tối thiểu 6 ký tự"
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -470,7 +470,7 @@ const LoginPage = () => {
                     placeholder="Nhập lại mật khẩu"
                     required
                     minLength={6}
-                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition"
+                    className="w-full pl-10 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] transition"
                   />
                 </div>
               </div>
@@ -480,7 +480,7 @@ const LoginPage = () => {
                 <button
                   type="submit"
                   disabled={regLoading}
-                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 active:scale-[0.99] shadow-lg shadow-indigo-600/30 transition duration-200 disabled:opacity-50 cursor-pointer"
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] active:scale-[0.99] shadow-lg shadow-blue-900/10 transition duration-200 disabled:opacity-50 cursor-pointer"
                 >
                   {regLoading ? (
                     <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -497,7 +497,7 @@ const LoginPage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveTab('LOGIN')}
-                  className="text-xs text-[#F7B928] hover:text-indigo-800 font-semibold transition cursor-pointer"
+                  className="text-xs text-[#ECA124] hover:text-[#0e2c73] font-semibold transition cursor-pointer"
                 >
                   Đã có tài khoản? <span className="underline font-bold">Đăng nhập ngay</span>
                 </button>
@@ -509,7 +509,7 @@ const LoginPage = () => {
           <div className="mt-5 text-center border-t border-slate-100 pt-3">
             <Link
               to="/"
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#F7B928] transition"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#ECA124] transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Quay lại Trang Chủ Công Khai</span>
@@ -524,5 +524,6 @@ const LoginPage = () => {
 };
 
 export default LoginPage;
+
 
 

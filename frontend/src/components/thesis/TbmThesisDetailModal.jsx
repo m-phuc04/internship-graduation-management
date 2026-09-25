@@ -86,7 +86,7 @@ const TbmThesisDetailModal = ({
         {/* Student Members */}
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5 text-[#153898]" />
+            <Users className="w-3.5 h-3.5 text-[#123891]" />
             Sinh viên thực hiện đề tài
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -154,7 +154,7 @@ const TbmThesisDetailModal = ({
                 <button
                   type="button"
                   onClick={() => onOpenAssignSupervisor(thesis)}
-                  className="text-[10px] font-bold text-[#153898] hover:underline cursor-pointer"
+                  className="text-[10px] font-bold text-[#123891] hover:underline cursor-pointer"
                 >
                   Đổi GVHD
                 </button>
@@ -178,7 +178,7 @@ const TbmThesisDetailModal = ({
                 <button
                   type="button"
                   onClick={() => onOpenAssignReviewers(thesis)}
-                  className="text-[10px] font-bold text-[#153898] hover:underline cursor-pointer"
+                  className="text-[10px] font-bold text-[#123891] hover:underline cursor-pointer"
                 >
                   Phân công
                 </button>
@@ -271,7 +271,7 @@ const TbmThesisDetailModal = ({
         {thesis.scores && (
           <div className="p-3.5 rounded-2xl bg-blue-50/40 border border-blue-100 space-y-2.5">
             <div className="font-bold text-slate-800 text-[11px] uppercase tracking-wider flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-[#153898]" />
+              <Award className="w-3.5 h-3.5 text-[#123891]" />
               Kết quả đánh giá & Bảng điểm khóa luận
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">

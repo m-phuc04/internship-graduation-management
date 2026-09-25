@@ -99,11 +99,11 @@ const Header = ({ onOpenMobile }) => {
               <div className="text-xs font-bold text-slate-900 leading-tight">
                 {user?.fullName || (isAdmin ? 'Quản Trị Viên Hệ Thống' : 'Trưởng Bộ Môn')}
               </div>
-              <div className="text-[9px] font-black uppercase tracking-wider text-[#0B4DB7]">
+              <div className="text-[9px] font-black uppercase tracking-wider text-[#123891]">
                 {user?.role === 'ADMIN' ? 'QUẢN TRỊ VIÊN' : user?.role === 'TBM' ? 'TRƯỞNG BỘ MÔN' : 'GIẢNG VIÊN'}
               </div>
             </div>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-[#0B1E48] text-white shadow-xs">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs bg-[#123891] text-white shadow-xs">
               {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'A'}
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-slate-400 mr-0.5" />
@@ -132,9 +132,9 @@ const Header = ({ onOpenMobile }) => {
                         setDropdownOpen(false);
                         navigate('/lecturer/dashboard');
                       }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-indigo-700 bg-indigo-50/70 hover:bg-indigo-100 rounded-lg transition"
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-[#123891] bg-blue-50/70 hover:bg-blue-100 rounded-lg transition"
                     >
-                      <BookOpen className="w-4 h-4 text-indigo-600" />
+                      <BookOpen className="w-4 h-4 text-[#1B4DA1]" />
                       <span>Cổng Giảng Viên</span>
                     </button>
                   )}
@@ -144,7 +144,7 @@ const Header = ({ onOpenMobile }) => {
                       setDropdownOpen(false);
                       setScheduleModalOpen(true);
                     }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
                   >
                     <Calendar className="w-4 h-4 text-slate-400" />
                     <span>Lịch & Kế hoạch</span>
@@ -155,7 +155,7 @@ const Header = ({ onOpenMobile }) => {
                       setDropdownOpen(false);
                       navigate('/tbm/profile');
                     }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-lg transition"
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
                   >
                     <User className="w-4 h-4 text-slate-400" />
                     <span>Hồ sơ cá nhân</span>

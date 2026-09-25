@@ -73,12 +73,12 @@ const LecturerDashboard = () => {
       {/* 1. Lecturer Identity Banner */}
       <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-violet-600 to-indigo-600 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-violet-200 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-violet-200 shrink-0">
             {lecturer?.academicTitle ? lecturer.academicTitle.charAt(0) : (user?.fullName?.charAt(0) || 'G')}
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-violet-50 text-violet-700 text-[11px] font-bold tracking-wide uppercase">
-              <Sparkles className="w-3 h-3 text-violet-600" />
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-[#123891] text-[11px] font-bold tracking-wide uppercase">
+              <Sparkles className="w-3 h-3 text-[#1B4DA1]" />
               <span>Cổng Thông Tin Giảng Viên</span>
             </div>
             <h1 className="text-xl font-black text-slate-900 mt-1">
@@ -135,20 +135,20 @@ const LecturerDashboard = () => {
         {/* Đề Tài KLTN */}
         <Link
           to="/lecturer/theses"
-          className="p-5 rounded-3xl bg-white border border-indigo-100 hover:border-indigo-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
+          className="p-5 rounded-3xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 group-hover:text-indigo-600 transition">
+            <span className="text-xs font-bold text-slate-600 group-hover:text-[#ECA124] transition">
               Đề Tài Hướng Dẫn (KLTN)
             </span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1B4DA1] flex items-center justify-center group-hover:scale-110 transition">
               <GraduationCap className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl font-black text-slate-900 font-mono">
             {stats.thesisStudentsCount || 0}
           </div>
-          <div className="text-[11px] text-indigo-600 font-semibold flex items-center gap-1">
+          <div className="text-[11px] text-[#1B4DA1] font-semibold flex items-center gap-1">
             <span>Xem các đề tài khóa luận</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
           </div>
@@ -179,20 +179,20 @@ const LecturerDashboard = () => {
         {/* Tiến Độ KLTN Chờ Duyệt */}
         <Link
           to="/lecturer/theses/progress"
-          className="p-5 rounded-3xl bg-white border border-violet-100 hover:border-violet-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
+          className="p-5 rounded-3xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 group-hover:text-violet-600 transition">
+            <span className="text-xs font-bold text-slate-600 group-hover:text-[#ECA124] transition">
               Tiến Độ KLTN Chờ Duyệt
             </span>
-            <div className="w-8 h-8 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center group-hover:scale-110 transition">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1B4DA1] flex items-center justify-center group-hover:scale-110 transition">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-violet-700 font-mono">
+          <div className="text-2xl font-black text-[#123891] font-mono">
             {stats.pendingThesisProgressCount || 0}
           </div>
-          <div className="text-[11px] text-violet-700 font-semibold flex items-center gap-1">
+          <div className="text-[11px] text-[#123891] font-semibold flex items-center gap-1">
             <span>Đánh giá tiến độ đề tài</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
           </div>
@@ -208,7 +208,7 @@ const LecturerDashboard = () => {
               <Clock className="w-4 h-4 text-amber-600" />
               <span>Báo Cáo Thực Tập Chờ Đánh Giá ({pendingReports.length})</span>
             </div>
-            <Link to="/lecturer/reports" className="text-xs font-bold text-violet-600 hover:text-violet-700">
+            <Link to="/lecturer/reports" className="text-xs font-bold text-[#1B4DA1] hover:text-[#ECA124]">
               Xem tất cả →
             </Link>
           </div>
@@ -244,10 +244,10 @@ const LecturerDashboard = () => {
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <GraduationCap className="w-4 h-4 text-indigo-600" />
+              <GraduationCap className="w-4 h-4 text-[#1B4DA1]" />
               <span>Đề Tài KLTN Đang Hướng Dẫn ({supervisedTheses.length})</span>
             </div>
-            <Link to="/lecturer/theses" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">
+            <Link to="/lecturer/theses" className="text-xs font-bold text-[#1B4DA1] hover:text-[#ECA124]">
               Xem tất cả →
             </Link>
           </div>

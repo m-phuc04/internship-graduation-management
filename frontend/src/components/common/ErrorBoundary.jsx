@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { RotateCcw, AlertTriangle, Home } from 'lucide-react';
 
 class ErrorBoundary extends React.Component {
@@ -53,7 +53,7 @@ class ErrorBoundary extends React.Component {
               <button
                 type="button"
                 onClick={this.handleReset}
-                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm shadow-indigo-600/30 cursor-pointer"
+                className="flex-1 py-3 px-4 bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] active:scale-[0.98] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm shadow-blue-900/10 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Tải lại trang</span>
@@ -78,4 +78,5 @@ class ErrorBoundary extends React.Component {
 }
 
 export default ErrorBoundary;
+
 

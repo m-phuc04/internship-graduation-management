@@ -369,7 +369,7 @@ const MyInternshipPage = () => {
 
         {/* Empty State Card */}
         <div className="p-12 bg-white rounded-3xl border border-slate-200/80 shadow-2xs text-center flex flex-col items-center">
-          <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-100 text-[#153898] flex items-center justify-center mb-5 shadow-sm">
+          <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-100 text-[#123891] flex items-center justify-center mb-5 shadow-sm">
             <Briefcase className="w-10 h-10" />
           </div>
           <h3 className="text-xl font-bold text-slate-900 mb-2">
@@ -381,7 +381,7 @@ const MyInternshipPage = () => {
 
           <Link
             to="/student/internship/register"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#153898] hover:bg-[#102d7d] active:scale-[0.99] text-white text-sm font-semibold rounded-2xl shadow-lg shadow-blue-200 transition duration-200"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-sm font-semibold rounded-2xl shadow-lg shadow-blue-200 transition duration-200"
           >
             <PlusCircle className="w-5 h-5" />
             <span>Đăng ký thực tập ngay</span>
@@ -430,7 +430,7 @@ const MyInternshipPage = () => {
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
                 <span>Doanh nghiệp: <strong className="text-slate-800">{internship.companyId?.name || internship.companyId?.companyName || '—'}</strong></span>
                 <span>•</span>
-                <span>Mã hồ sơ: <strong className="font-mono text-[#153898]">{internship._id}</strong></span>
+                <span>Mã hồ sơ: <strong className="font-mono text-[#123891]">{internship._id}</strong></span>
               </div>
             </div>
           </div>
@@ -451,7 +451,7 @@ const MyInternshipPage = () => {
             {canRegisterNew ? (
               <Link
                 to="/student/internship/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
               >
                 <PlusCircle className="w-4 h-4" />
                 <span>Đăng ký hồ sơ mới</span>
@@ -524,12 +524,12 @@ const MyInternshipPage = () => {
               className={`mt-5 p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 ${
                 isDanger
                   ? 'bg-rose-50/80 border-rose-200 text-rose-950'
-                  : 'bg-blue-50/60 border-blue-100 text-[#0B1E48]'
+                  : 'bg-blue-50/60 border-blue-100 text-[#123891]'
               }`}
             >
               <AlertCircle
                 className={`w-4 h-4 shrink-0 mt-0.5 ${
-                  isDanger ? 'text-rose-600' : 'text-[#153898]'
+                  isDanger ? 'text-rose-600' : 'text-[#123891]'
                 }`}
               />
               <div className="flex-1">{content}</div>
@@ -545,7 +545,7 @@ const MyInternshipPage = () => {
           {/* Company Card */}
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Building2 className="w-5 h-5 text-[#153898]" />
+              <Building2 className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Thông tin Doanh nghiệp Thực tập
               </h3>
@@ -559,7 +559,7 @@ const MyInternshipPage = () => {
 
               <div>
                 <span className="text-slate-400 block mb-0.5">Mã công ty (Code)</span>
-                <span className="font-mono font-bold text-[#153898] bg-blue-50 px-2 py-0.5 rounded-md">
+                <span className="font-mono font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded-md">
                   {internship.companyId?.code || 'Chưa đặt mã'}
                 </span>
               </div>
@@ -595,7 +595,7 @@ const MyInternshipPage = () => {
               {internship.companyId?.website && (
                 <div className="sm:col-span-2">
                   <span className="text-slate-400 block mb-0.5">Website</span>
-                  <div className="flex items-center gap-1.5 text-[#153898] font-medium">
+                  <div className="flex items-center gap-1.5 text-[#123891] font-medium">
                     <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <a href={internship.companyId?.website} target="_blank" rel="noreferrer" className="hover:underline">
                       {internship.companyId?.website}
@@ -609,7 +609,7 @@ const MyInternshipPage = () => {
           {/* Internship Timeline & Position Card */}
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Calendar className="w-5 h-5 text-[#153898]" />
+              <Calendar className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Vị trí & Thời gian Thực tập
               </h3>
@@ -630,7 +630,7 @@ const MyInternshipPage = () => {
                 <span className="text-slate-400 block mb-1">Ngày kết thúc</span>
                 <span className="font-bold text-slate-900 text-sm">{formatDate(internship.endDate)}</span>
                 {durationWeeks && (
-                  <span className="block text-[11px] text-[#153898] font-medium mt-0.5">
+                  <span className="block text-[11px] text-[#123891] font-medium mt-0.5">
                     (Khoảng {durationWeeks} tuần)
                   </span>
                 )}
@@ -653,7 +653,7 @@ const MyInternshipPage = () => {
           {/* Company Mentor */}
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <UserCheck className="w-5 h-5 text-[#153898]" />
+              <UserCheck className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Người hướng dẫn tại Doanh nghiệp
               </h3>
@@ -691,7 +691,7 @@ const MyInternshipPage = () => {
           {/* Academic Supervisor (GVHD) */}
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <BookOpen className="w-5 h-5 text-[#153898]" />
+              <BookOpen className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 Giảng viên Hướng dẫn (GVHD)
               </h3>
@@ -714,7 +714,7 @@ const MyInternshipPage = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] text-slate-600 pt-1">
                   <div>
                     <span className="text-slate-400 block mb-0.5">Mã giảng viên</span>
-                    <span className="font-mono font-bold text-[#153898]">
+                    <span className="font-mono font-bold text-[#123891]">
                       {internship.lecturerId?.lecturerCode}
                     </span>
                   </div>
@@ -741,7 +741,7 @@ const MyInternshipPage = () => {
           <div id="evaluation-section" className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
-                <Award className="w-5 h-5 text-[#153898]" />
+                <Award className="w-5 h-5 text-[#123891]" />
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                   Đánh Giá Thực Tập Doanh Nghiệp
                 </h3>
@@ -800,7 +800,7 @@ const MyInternshipPage = () => {
                 {/* Case 1: No Evaluation Request Created Yet */}
                 {!isEvaluated && !isPendingEvaluation && !isEvaluationDeletedByTbm && (
                   <div className="py-4 text-center space-y-3">
-                    <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-left text-xs text-[#0B1E48] space-y-1">
+                    <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-left text-xs text-[#123891] space-y-1">
                       <div className="font-bold">Quy trình đánh giá thực tập:</div>
                       <div>1. Sinh viên nhấn nút <strong>[Tạo link đánh giá]</strong> để nhận liên kết đánh giá an toàn.</div>
                       <div>2. Gửi liên kết cho Người phụ trách / Mentor tại Doanh nghiệp để họ điền phiếu online không cần đăng nhập.</div>
@@ -811,7 +811,7 @@ const MyInternshipPage = () => {
                       <button
                         type="button"
                         onClick={() => setCreateLinkModalOpen(true)}
-                        className="px-6 py-2.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-200 transition inline-flex items-center gap-2 cursor-pointer"
+                        className="px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-200 transition inline-flex items-center gap-2 cursor-pointer"
                       >
                         <PlusCircle className="w-4 h-4" />
                         <span>Tạo Link Đánh Giá Cho Doanh Nghiệp</span>
@@ -839,7 +839,7 @@ const MyInternshipPage = () => {
                         <button
                           type="button"
                           onClick={() => handleCopyLink(`${window.location.origin}/company-evaluation/${activeRequest.token}`)}
-                          className="px-3 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold text-[11px] rounded-lg transition shrink-0 cursor-pointer"
+                          className="px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-[11px] rounded-lg transition shrink-0 cursor-pointer"
                         >
                           {copied ? 'Đã sao chép!' : 'Sao chép link'}
                         </button>
@@ -1036,7 +1036,7 @@ const MyInternshipPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
             <div className="flex items-center gap-3 text-slate-900 pb-3 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                 <Award className="w-6 h-6" />
               </div>
               <div>
@@ -1076,7 +1076,7 @@ const MyInternshipPage = () => {
                 type="button"
                 disabled={creatingLink}
                 onClick={handleCreateEvaluationLink}
-                className="px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
               >
                 {creatingLink ? 'Đang tạo...' : 'Xác nhận tạo link'}
               </button>
@@ -1130,7 +1130,7 @@ const MyInternshipPage = () => {
                 value={recreateReason}
                 onChange={(e) => setRecreateReason(e.target.value)}
                 placeholder="Vui lòng nhập lý do cụ thể (Ví dụ: Doanh nghiệp gửi nhầm thông tin, thay đổi người đánh giá trực tiếp, v.v.)..."
-                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#153898] focus:ring-1 focus:ring-indigo-600 outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
+                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#123891] focus:ring-1 focus:ring-indigo-600 outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
               />
             </div>
 
@@ -1149,7 +1149,7 @@ const MyInternshipPage = () => {
                 type="button"
                 disabled={submittingRecreate || !recreateReason.trim()}
                 onClick={handleSendRecreateRequest}
-                className="px-5 py-2 bg-[#153898] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
+                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
               >
                 {submittingRecreate ? 'Đang gửi...' : 'Gửi yêu cầu'}
               </button>

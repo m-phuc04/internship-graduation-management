@@ -181,7 +181,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#153898]/20 text-blue-400 flex items-center justify-center border border-[#153898]/30">
+            <div className="w-8 h-8 rounded-xl bg-[#123891]/20 text-blue-400 flex items-center justify-center border border-[#123891]/30">
               <Briefcase className="w-4 h-4" />
             </div>
             <div>
@@ -217,7 +217,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
 
           {/* Quick Presets */}
           <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-2">
-            <div className="text-[11px] font-bold text-[#0B1E48] flex items-center justify-between">
+            <div className="text-[11px] font-bold text-[#123891] flex items-center justify-between">
               <span>⚡ Thiết lập nhanh thời hạn:</span>
               <button
                 type="button"
@@ -256,7 +256,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
           {/* 1. Registration Window */}
           <div className="space-y-3">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-              <CalendarCheck className="w-4 h-4 text-[#153898]" />
+              <CalendarCheck className="w-4 h-4 text-[#123891]" />
               1. Thời gian mở đăng ký TTDN trực tuyến
             </div>
 
@@ -269,7 +269,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                   type="date"
                   value={formData.registrationStart}
                   onChange={(e) => setFormData({ ...formData, registrationStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.registrationStart && (
                   <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
@@ -287,7 +287,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                   type="date"
                   value={formData.registrationEnd}
                   onChange={(e) => setFormData({ ...formData, registrationEnd: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.registrationEnd && (
                   <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
@@ -315,7 +315,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                   type="date"
                   value={formData.reportStart}
                   onChange={(e) => setFormData({ ...formData, reportStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.reportStart && (
                   <div className="text-[11px] font-semibold text-blue-700 mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
@@ -333,7 +333,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                   type="date"
                   value={formData.reportDeadline}
                   onChange={(e) => setFormData({ ...formData, reportDeadline: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] transition"
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.reportDeadline && (
                   <div className="text-[11px] font-semibold text-blue-700 mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
@@ -357,7 +357,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#153898] hover:bg-[#102d7d] shadow-md shadow-blue-600/20 transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] shadow-md shadow-blue-600/20 transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-2"
             >
               {submitting ? (
                 <>

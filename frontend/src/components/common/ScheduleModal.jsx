@@ -21,8 +21,8 @@ import {
 } from 'lucide-react';
 
 const SCHEDULE_TYPES = [
-  { value: 'INTERNSHIP', label: 'Thực tập Doanh nghiệp (TTDN)', color: 'text-[#153898] bg-blue-50 border-blue-200' },
-  { value: 'THESIS', label: 'Khóa luận Tốt nghiệp (KLTN)', color: 'text-[#153898] bg-blue-50 border-blue-200' },
+  { value: 'INTERNSHIP', label: 'Thực tập Doanh nghiệp (TTDN)', color: 'text-[#123891] bg-blue-50 border-blue-200' },
+  { value: 'THESIS', label: 'Khóa luận Tốt nghiệp (KLTN)', color: 'text-[#123891] bg-blue-50 border-blue-200' },
   { value: 'DEADLINE', label: 'Hạn chót / Phản biện (DEADLINE)', color: 'text-amber-600 bg-amber-50 border-amber-200' },
   { value: 'DEFENSE', label: 'Bảo vệ Khóa luận (DEFENSE)', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
   { value: 'MEETING', label: 'Họp / Thông báo (MEETING)', color: 'text-blue-600 bg-blue-50 border-blue-200' },
@@ -169,10 +169,10 @@ const ScheduleModal = ({ isOpen, onClose }) => {
     >
       <div className="space-y-4 text-xs">
         {/* Semester Header Badge */}
-        <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-[#0B1E48] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-[#123891] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
           <div>
             <div className="font-bold text-sm flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#153898]" />
+              <Calendar className="w-4 h-4 text-[#123891]" />
               <span>Học kỳ 1 — Năm học 2026 - 2027</span>
             </div>
             <div className="text-slate-600 text-[11px] mt-0.5">
@@ -185,7 +185,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
               <button
                 type="button"
                 onClick={handleOpenAdd}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Thêm lịch trình</span>
@@ -228,7 +228,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="VD: Đăng ký & Xét duyệt đề tài Khóa luận Tốt nghiệp"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] outline-none text-xs"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-none text-xs"
                   required
                 />
               </div>
@@ -238,7 +238,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                 <select
                   value={formData.type}
                   onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] outline-none text-xs"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-none text-xs"
                 >
                   {SCHEDULE_TYPES.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -255,7 +255,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                   value={formData.location}
                   onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                   placeholder="VD: Cổng trực tuyến / Văn phòng Bộ môn"
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] outline-none text-xs"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-none text-xs"
                 />
               </div>
 
@@ -267,7 +267,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                   type="datetime-local"
                   value={formData.startTime}
                   onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] outline-none text-xs"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-none text-xs"
                   required
                 />
               </div>
@@ -278,7 +278,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                   type="datetime-local"
                   value={formData.endTime}
                   onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] outline-none text-xs"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-none text-xs"
                 />
               </div>
 
@@ -289,7 +289,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Mô tả các yêu cầu cần hoàn thành trong mốc này..."
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#153898]/20 focus:border-[#153898] outline-none text-xs resize-none"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-none text-xs resize-none"
                 />
               </div>
             </div>
@@ -305,7 +305,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-4 py-1.5 bg-[#153898] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition disabled:opacity-50"
+                className="px-4 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition disabled:opacity-50"
               >
                 {submitting ? 'Đang lưu...' : editingId ? 'Lưu thay đổi' : 'Tạo mới'}
               </button>
@@ -353,7 +353,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                         <button
                           type="button"
                           onClick={() => handleOpenEdit(item)}
-                          className="p-1.5 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-lg transition"
+                          className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition"
                           title="Chỉnh sửa lịch trình"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -373,7 +373,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
                   {/* Metadata: Time and Location */}
                   <div className="pt-2 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500">
                     <div className="flex items-center gap-1.5 font-medium text-slate-700">
-                      <Clock className="w-3.5 h-3.5 text-[#153898] shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-[#123891] shrink-0" />
                       <span>
                         {formatDate(item.startTime)} {item.endTime ? `— ${formatDate(item.endTime)}` : ''}
                       </span>

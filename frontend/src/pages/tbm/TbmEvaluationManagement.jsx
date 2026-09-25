@@ -415,7 +415,7 @@ const TbmEvaluationManagement = () => {
       {/* Header Card */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
             <Award className="w-7 h-7" />
           </div>
           <div>
@@ -470,7 +470,7 @@ const TbmEvaluationManagement = () => {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Link2 className="w-3.5 h-3.5 text-[#153898]" />
+            <Link2 className="w-3.5 h-3.5 text-[#123891]" />
             <span>Quản lý link đánh giá</span>
           </button>
         </div>
@@ -925,7 +925,7 @@ const TbmEvaluationManagement = () => {
                   setReqStatus(e.target.value);
                   setReqPage(1);
                 }}
-                className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#153898]/20"
+                className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20"
               >
                 <option value="">Tất cả trạng thái link</option>
                 <option value="PENDING">Chờ DN đánh giá (PENDING)</option>
@@ -936,7 +936,7 @@ const TbmEvaluationManagement = () => {
 
               <button
                 onClick={fetchRequests}
-                className="p-2 text-slate-500 hover:text-[#153898] hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                className="p-2 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-xl transition cursor-pointer"
                 title="Tải lại danh sách"
               >
                 <RefreshCw className={`w-4 h-4 ${reqLoading ? 'animate-spin' : ''}`} />
@@ -1302,7 +1302,7 @@ const TbmEvaluationManagement = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#153898] flex items-center justify-center shrink-0 font-bold">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 font-bold">
                 <RotateCcw className="w-5 h-5" />
               </div>
               <div>
