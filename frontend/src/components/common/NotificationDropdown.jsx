@@ -142,6 +142,18 @@ const NotificationDropdown = () => {
       return;
     }
 
+    // If Topic Proposal / Topic Review notification -> Navigate to /lecturer/theses?tab=topics
+    const isTopicProposal =
+      item.title?.toLowerCase().includes('đề xuất') ||
+      item.title?.toLowerCase().includes('đề tài') ||
+      item.message?.toLowerCase().includes('đề tài') ||
+      item.message?.toLowerCase().includes('chờ duyệt');
+
+    if (isTopicProposal && (user?.role === 'TBM' || user?.role === 'LECTURER')) {
+      navigate('/lecturer/theses?tab=topics');
+      return;
+    }
+
     // Determine target URL based on notification type and title/message
     let targetLink = item.link;
     const role = user?.role;
@@ -155,6 +167,12 @@ const NotificationDropdown = () => {
       else if (role === 'LECTURER') targetLink = '/lecturer/internships';
       else if (role === 'STUDENT') targetLink = '/student/internship';
       else if (role === 'COMPANY') targetLink = '/company/evaluations';
+    }
+
+    if ((role === 'TBM' || role === 'LECTURER') && targetLink) {
+      if (targetLink.startsWith('/tbm/theses') || targetLink.startsWith('/tbm/dashboard')) {
+        targetLink = '/lecturer/theses?tab=topics';
+      }
     }
 
     if (role === 'STUDENT' && targetLink) {

@@ -9,15 +9,14 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import {
   LayoutDashboard,
   Briefcase,
-  GraduationCap,
+  BookOpen,
   Award,
   CheckCircle2,
   Clock,
   ArrowRight,
   RefreshCw,
-  TrendingUp,
+  Building2,
   Calendar,
-  Sparkles,
 } from 'lucide-react';
 
 const TbmDashboard = () => {
@@ -56,7 +55,6 @@ const TbmDashboard = () => {
 
   const stats = data?.stats || {};
   const recentInternships = data?.recentInternships || [];
-  const recentTheses = data?.recentTheses || [];
 
   return (
     <div className="space-y-6">
@@ -68,10 +66,10 @@ const TbmDashboard = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-slate-900">
-              Tổng quan Thực tập & Khóa luận
+              Tổng Quan Trưởng Bộ Môn (TBM)
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Theo dõi tiến độ thực tập doanh nghiệp, khóa luận tốt nghiệp và tình hình xét duyệt
+              Theo dõi tiến độ thực tập doanh nghiệp và quản lý chung của Bộ Môn
             </p>
           </div>
         </div>
@@ -85,7 +83,35 @@ const TbmDashboard = () => {
         </button>
       </div>
 
-      {/* 4 Workflow Status Cards */}
+      {/* Quick Navigation Card for KLTN Topics Approval */}
+      <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-900 via-[#123891] to-indigo-900 text-white shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+            <BookOpen className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-bold text-white">Duyệt & Quản Lý Đề Tài Khóa Luận (KLTN)</h2>
+              <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-extrabold text-[10px] uppercase">
+                Trực tiếp
+              </span>
+            </div>
+            <p className="text-xs text-blue-100 mt-0.5">
+              Duyệt đề tài do giảng viên đề xuất, quản lý nhóm sinh viên thực hiện và phân công phản biện
+            </p>
+          </div>
+        </div>
+
+        <Link
+          to="/lecturer/theses?tab=topics"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-[#123891] hover:bg-blue-50 font-bold text-xs shadow-sm transition shrink-0 self-start md:self-auto"
+        >
+          <span>Vào trang duyệt đề tài</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
+      {/* 4 Workflow Status Cards for Internship */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* TTDN Chờ Duyệt */}
         <Link
@@ -100,106 +126,72 @@ const TbmDashboard = () => {
           <div className="text-[11px] text-amber-700 font-medium">Hồ sơ thực tập mới đăng ký</div>
         </Link>
 
-        {/* KLTN Chờ Duyệt */}
+        {/* TTDN Đang Thực Tập */}
         <Link
-          to="/tbm/theses"
+          to="/tbm/internships"
           className="p-5 rounded-3xl bg-blue-50/70 border border-blue-200/80 hover:border-blue-300 transition space-y-2"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-[#123891]">KLTN Chờ Duyệt</span>
-            <Clock className="w-4 h-4 text-[#123891]" />
+            <span className="text-xs font-bold text-blue-900">Đang Thực Tập</span>
+            <Briefcase className="w-4 h-4 text-blue-600" />
           </div>
-          <div className="text-2xl font-bold text-[#123891] font-mono">{stats.pendingTheses || 0}</div>
-          <div className="text-[11px] text-[#102d7d] font-medium">Đề tài khóa luận mới nộp</div>
+          <div className="text-2xl font-bold text-blue-900 font-mono">{stats.interningCount || 0}</div>
+          <div className="text-[11px] text-blue-700 font-medium">Sinh viên đang thực tập tại DN</div>
         </Link>
 
-        {/* KLTN Đang Thực Hiện */}
+        {/* TTDN Đã Duyệt Hồ Sơ */}
         <Link
-          to="/tbm/theses"
-          className="p-5 rounded-3xl bg-blue-50/70 border border-blue-200/80 hover:border-blue-300 transition space-y-2"
+          to="/tbm/internships"
+          className="p-5 rounded-3xl bg-sky-50/70 border border-sky-200/80 hover:border-sky-300 transition space-y-2"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-900">KLTN Đang Thực Hiện</span>
-            <GraduationCap className="w-4 h-4 text-blue-600" />
+            <span className="text-xs font-bold text-sky-900">Đã Duyệt Hồ Sơ</span>
+            <CheckCircle2 className="w-4 h-4 text-sky-600" />
           </div>
-          <div className="text-2xl font-bold text-blue-900 font-mono">{stats.inProgressTheses || 0}</div>
-          <div className="text-[11px] text-blue-700 font-medium">Đã duyệt & đang làm đồ án</div>
+          <div className="text-2xl font-bold text-sky-900 font-mono">{stats.approvedInternships || 0}</div>
+          <div className="text-[11px] text-sky-700 font-medium">Hồ sơ đã được phê duyệt</div>
         </Link>
 
-        {/* KLTN Hoàn Thành */}
+        {/* TTDN Hoàn Thành */}
         <Link
-          to="/tbm/thesis-evaluations"
+          to="/tbm/evaluations"
           className="p-5 rounded-3xl bg-emerald-50/70 border border-emerald-200/80 hover:border-emerald-300 transition space-y-2"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-900">KLTN Hoàn Thành</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <span className="text-xs font-bold text-emerald-900">Hoàn Thành & Đánh Giá</span>
+            <Award className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold text-emerald-900 font-mono">{stats.completedTheses || 0}</div>
-          <div className="text-[11px] text-emerald-700 font-medium">Đã chấm điểm & nghiệm thu</div>
+          <div className="text-2xl font-bold text-emerald-900 font-mono">{stats.completedInternships || 0}</div>
+          <div className="text-[11px] text-emerald-700 font-medium">Đã hoàn thành đợt thực tập</div>
         </Link>
       </div>
 
-      {/* 2 Activity Tables */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Internships */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <Briefcase className="w-4 h-4 text-[#123891]" />
-              <span>Đăng Ký Thực Tập Gần Nhất</span>
-            </div>
-            <Link to="/tbm/internships" className="text-xs font-bold text-[#123891] hover:text-[#102d7d]">
-              Xem tất cả →
-            </Link>
+      {/* Activity Table: Recent Internships */}
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
+            <Briefcase className="w-4 h-4 text-[#123891]" />
+            <span>Đăng Ký Thực Tập Gần Nhất</span>
           </div>
-
-          <div className="divide-y divide-slate-100 text-xs">
-            {recentInternships.length === 0 ? (
-              <div className="py-4 text-center text-slate-400">Chưa có đăng ký thực tập nào trong học kỳ này</div>
-            ) : (
-              recentInternships.map((item) => (
-                <div key={item._id} className="py-2.5 flex items-center justify-between gap-2">
-                  <div>
-                    <strong className="text-slate-900 block">{item.studentId?.userId?.fullName || 'Sinh viên'}</strong>
-                    <span className="text-[11px] text-slate-500">{item.companyId?.companyName}</span>
-                  </div>
-                  <StatusBadge status={item.status} size="sm" />
-                </div>
-              ))
-            )}
-          </div>
+          <Link to="/tbm/internships" className="text-xs font-bold text-[#123891] hover:text-[#102d7d]">
+            Xem tất cả →
+          </Link>
         </div>
 
-        {/* Recent Theses */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <GraduationCap className="w-4 h-4 text-[#123891]" />
-              <span>Đề Tài Khóa Luận Gần Nhất</span>
-            </div>
-            <Link to="/tbm/theses" className="text-xs font-bold text-[#123891] hover:text-[#102d7d]">
-              Xem tất cả →
-            </Link>
-          </div>
-
-          <div className="divide-y divide-slate-100 text-xs">
-            {recentTheses.length === 0 ? (
-              <div className="py-4 text-center text-slate-400">Chưa có đề tài khóa luận nào trong học kỳ này</div>
-            ) : (
-              recentTheses.map((item) => (
-                <div key={item._id} className="py-2.5 flex items-center justify-between gap-2">
-                  <div className="max-w-[70%]">
-                    <strong className="text-slate-900 line-clamp-1 block">{item.thesisTitle}</strong>
-                    <span className="text-[11px] text-slate-500">
-                      SV: {item.studentId?.userId?.fullName} • GVHD: {item.supervisorId?.userId?.fullName}
-                    </span>
-                  </div>
-                  <StatusBadge status={item.status} size="sm" />
+        <div className="divide-y divide-slate-100 text-xs">
+          {recentInternships.length === 0 ? (
+            <div className="py-6 text-center text-slate-400">Chưa có đăng ký thực tập nào trong học kỳ này</div>
+          ) : (
+            recentInternships.map((item) => (
+              <div key={item._id} className="py-3 flex items-center justify-between gap-2">
+                <div>
+                  <strong className="text-slate-900 block text-sm">{item.studentId?.userId?.fullName || 'Sinh viên'}</strong>
+                  <span className="text-xs text-slate-500">{item.companyId?.companyName || 'Công ty'}</span>
                 </div>
-              ))
-            )}
-          </div>
+                <StatusBadge status={item.status} size="sm" />
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

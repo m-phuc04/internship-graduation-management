@@ -31,7 +31,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
     if (isThesisRoute) setThesisOpen(true);
   }, [location.pathname, isInternshipRoute, isThesisRoute]);
 
-  // Helper to check active state with query string precision
+  // Precise active check
   const isItemActive = (path, requiredSearch = '') => {
     if (location.pathname !== path) return false;
     if (requiredSearch === '?tab=topics') {
@@ -116,7 +116,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
                 : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
             }`}
           >
-            <LayoutDashboard className="w-4 h-4" />
+            <LayoutDashboard className="w-4 h-4 text-white" />
             <span>Tổng quan</span>
           </Link>
 
@@ -132,7 +132,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
               }`}
             >
               <div className="flex items-center gap-3">
-                <Sliders className="w-4 h-4 text-[#ECA124]" />
+                <Sliders className="w-4 h-4 text-white" />
                 <span>Dashboard {isAdmin ? 'Admin' : 'TBM'}</span>
               </div>
               <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wide">
@@ -150,12 +150,12 @@ const LecturerSidebar = ({ onCloseMobile }) => {
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <Briefcase className="w-4 h-4 text-[#ECA124]" />
+              <Briefcase className="w-4 h-4 text-white" />
               <span>Thực tập Doanh nghiệp</span>
             </div>
             <ChevronDown
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                internshipOpen ? 'rotate-180 text-[#ECA124]' : ''
+              className={`w-4 h-4 text-slate-300 transition-transform duration-200 ${
+                internshipOpen ? 'rotate-180 text-white' : ''
               }`}
             />
           </button>
@@ -203,59 +203,39 @@ const LecturerSidebar = ({ onCloseMobile }) => {
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-200 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
           >
             <div className="flex items-center gap-3">
-              <GraduationCap className="w-4 h-4 text-[#ECA124]" />
+              <GraduationCap className="w-4 h-4 text-white" />
               <span>Khóa luận Tốt nghiệp</span>
             </div>
             <ChevronDown
-              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
-                thesisOpen ? 'rotate-180 text-[#ECA124]' : ''
+              className={`w-4 h-4 text-slate-300 transition-transform duration-200 ${
+                thesisOpen ? 'rotate-180 text-white' : ''
               }`}
             />
           </button>
 
           {thesisOpen && (
             <div className="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-white/20 ml-5 animate-in slide-in-from-top-1 duration-150">
-              {/* Item 1: Đề xuất đề tài KLTN */}
+              {/* Item 1: Danh sách khóa luận */}
               <Link
                 to="/lecturer/theses?tab=topics"
                 onClick={onCloseMobile}
                 className={getSubLinkClass(isItemActive('/lecturer/theses', '?tab=topics'))}
               >
                 <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                <span>Đề xuất đề tài KLTN</span>
+                <span>Danh sách khóa luận</span>
               </Link>
 
-              {/* Item 2: Sinh viên hướng dẫn */}
+              {/* Item 2: Đề tài hướng dẫn */}
               <Link
                 to="/lecturer/theses?tab=supervisor"
                 onClick={onCloseMobile}
                 className={getSubLinkClass(isItemActive('/lecturer/theses', '?tab=supervisor'))}
               >
                 <Users className="w-3.5 h-3.5 shrink-0" />
-                <span>Sinh viên hướng dẫn</span>
+                <span>Đề tài hướng dẫn</span>
               </Link>
 
-              {/* Item 3: Nhật ký khóa luận */}
-              <Link
-                to="/lecturer/theses/progress"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(location.pathname === '/lecturer/theses/progress')}
-              >
-                <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                <span>Nhật ký khóa luận</span>
-              </Link>
-
-              {/* Item 4: Đánh giá khóa luận */}
-              <Link
-                to="/lecturer/theses?view=evaluation"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/lecturer/theses', '?view=evaluation'))}
-              >
-                <Award className="w-3.5 h-3.5 shrink-0" />
-                <span>Đánh giá khóa luận</span>
-              </Link>
-
-              {/* Item 5: Phản biện khóa luận */}
+              {/* Item 3: Phản biện khóa luận */}
               <Link
                 to="/lecturer/theses?tab=review"
                 onClick={onCloseMobile}

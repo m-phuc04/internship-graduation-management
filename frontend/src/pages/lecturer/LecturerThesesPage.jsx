@@ -28,6 +28,17 @@ import {
   Lock,
   Unlock,
   Calendar,
+  Paperclip,
+  ExternalLink,
+  Download,
+  Check,
+  FileText,
+  Save,
+  FileCheck,
+  MessageSquare,
+  X,
+  XCircle,
+  CheckCheck,
 } from 'lucide-react';
 
 const LecturerThesesPage = () => {
@@ -48,9 +59,12 @@ const LecturerThesesPage = () => {
   const [activeTab, setActiveTab] = useState(getInitialTab); // 'MY_TOPICS', 'SUPERVISOR', 'REVIEWER_1', 'REVIEWER_2'
   const [search, setSearch] = useState('');
 
+  const isTbmOrAdmin = user?.role === 'TBM' || user?.role === 'ADMIN' || user?.role === 'LECTURER';
+
   // Proposed Topics (KLTN Topic Management)
-  const [myTopics, setMyTopics] = useState([]);
-  const [loadingMyTopics, setLoadingMyTopics] = useState(false);
+  const [proposedTopics, setProposedTopics] = useState([]);
+  const [loadingProposedTopics, setLoadingProposedTopics] = useState(false);
+  const [topicStatusFilter, setTopicStatusFilter] = useState('ALL'); // 'ALL', 'PENDING', 'APPROVED', 'REJECTED'
   const [createTopicModalOpen, setCreateTopicModalOpen] = useState(false);
   const [batchTitleInput, setBatchTitleInput] = useState('');
   const [batchMaxGroups, setBatchMaxGroups] = useState(1);
@@ -58,8 +72,22 @@ const LecturerThesesPage = () => {
   const [createTopicLoading, setCreateTopicLoading] = useState(false);
   const [selectedTopicDetail, setSelectedTopicDetail] = useState(null);
 
+  // Reject Topic Modal State (for TBM / Lecturer)
+  const [rejectTopicModalOpen, setRejectTopicModalOpen] = useState(false);
+  const [targetTopicForReject, setTargetTopicForReject] = useState(null);
+  const [topicRejectReason, setTopicRejectReason] = useState('');
+
+  // Thesis Progress Diary Modal state
+  const [diaryModalOpen, setDiaryModalOpen] = useState(false);
+  const [diaryThesis, setDiaryThesis] = useState(null);
+  const [diaryReports, setDiaryReports] = useState([]);
+  const [diaryLoading, setDiaryLoading] = useState(false);
+  const [diaryEdits, setDiaryEdits] = useState({});
+  const [savingDiaryId, setSavingDiaryId] = useState(null);
+  const [savingAllDiary, setSavingAllDiary] = useState(false);
+
   useEffect(() => {
-    if (location.search.includes('tab=topics')) {
+    if (location.search.includes('tab=topics') || location.state?.tab === 'topics') {
       setActiveTab('MY_TOPICS');
     } else if (location.search.includes('tab=reviewer2')) {
       setActiveTab('REVIEWER_2');
@@ -68,7 +96,8 @@ const LecturerThesesPage = () => {
     } else if (location.search.includes('tab=supervisor') || !location.search) {
       setActiveTab('SUPERVISOR');
     }
-  }, [location.search]);
+  }, [location.search, location.state]);
+
   const [data, setData] = useState({
     supervisedTheses: [],
     reviewer1Theses: [],
@@ -138,26 +167,33 @@ const LecturerThesesPage = () => {
     });
   }, [gradingPeriods]);
 
-  const fetchMyTopics = useCallback(async () => {
-    setLoadingMyTopics(true);
+  const fetchProposedTopics = useCallback(async () => {
+    setLoadingProposedTopics(true);
     try {
-      const res = await thesisApi.getMyCreatedTopics({
+      let res = await thesisApi.getTopicsForTbm({
         academicTermId: currentTerm?._id || '',
-      });
-      if (res.success) {
-        setMyTopics(res.data || []);
+      }).catch(() => null);
+
+      if (!res || !res.success) {
+        res = await thesisApi.getMyCreatedTopics({
+          academicTermId: currentTerm?._id || '',
+        });
+      }
+
+      if (res && res.success) {
+        setProposedTopics(res.data || []);
       }
     } catch (err) {
-      console.warn('Cannot load created topics:', err.message);
+      console.warn('Cannot load proposed topics:', err.message);
     } finally {
-      setLoadingMyTopics(false);
+      setLoadingProposedTopics(false);
     }
   }, [currentTerm?._id]);
 
   useEffect(() => {
     fetchAssignedTheses();
-    fetchMyTopics();
-  }, [fetchAssignedTheses, fetchMyTopics]);
+    fetchProposedTopics();
+  }, [fetchAssignedTheses, fetchProposedTopics, location.key, location.state?.refreshedAt]);
 
   const handleBatchCreateTopics = async (e) => {
     if (e) e.preventDefault();
@@ -176,17 +212,197 @@ const LecturerThesesPage = () => {
       });
 
       if (res.success) {
-        showToast(res.message || 'Tạo danh sách đề tài KLTN thành công!', 'success');
+        showToast(res.message || 'Thêm danh sách đề tài KLTN thành công!', 'success');
         setCreateTopicModalOpen(false);
         setBatchTitleInput('');
         setBatchMaxGroups(1);
         setBatchDescription('');
-        fetchMyTopics();
+        fetchProposedTopics();
       }
     } catch (err) {
-      showToast(err.message || 'Tạo đề tài thất bại', 'error');
+      showToast(err.message || 'Thêm đề tài thất bại', 'error');
     } finally {
       setCreateTopicLoading(false);
+    }
+  };
+
+  const handleApproveTopic = async (topic) => {
+    setActionLoading(true);
+    try {
+      const res = await thesisApi.approveTopic(topic._id);
+      if (res.success) {
+        showToast(`Đã phê duyệt đề tài "${topic.title}" thành công!`, 'success');
+        fetchProposedTopics();
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể phê duyệt đề tài', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleApproveAllPending = async () => {
+    const pendingList = proposedTopics.filter((t) => t.status === 'PENDING');
+    if (pendingList.length === 0) return;
+    setActionLoading(true);
+    try {
+      await Promise.all(pendingList.map((t) => thesisApi.approveTopic(t._id)));
+      showToast(`Đã phê duyệt tất cả ${pendingList.length} đề tài đang chờ!`, 'success');
+      fetchProposedTopics();
+    } catch (err) {
+      showToast(err.message || 'Có lỗi xảy ra khi phê duyệt đề tài', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmRejectTopic = async (e) => {
+    if (e) e.preventDefault();
+    if (!targetTopicForReject) return;
+    if (!topicRejectReason.trim()) {
+      showToast('Vui lòng nhập lý do từ chối đề tài', 'warning');
+      return;
+    }
+
+    setActionLoading(true);
+    try {
+      const res = await thesisApi.rejectTopic(targetTopicForReject._id, {
+        reason: topicRejectReason.trim(),
+      });
+      if (res.success) {
+        showToast(`Đã từ chối đề tài "${targetTopicForReject.title}"`, 'info');
+        setRejectTopicModalOpen(false);
+        setTargetTopicForReject(null);
+        setTopicRejectReason('');
+        fetchProposedTopics();
+      }
+    } catch (err) {
+      showToast(err.message || 'Từ chối đề tài thất bại', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // ==================== DIARY MODAL HANDLERS ====================
+  const handleOpenDiaryModal = async (thesis) => {
+    setDiaryThesis(thesis);
+    setDiaryModalOpen(true);
+    setDiaryLoading(true);
+    setDiaryReports([]);
+    setDiaryEdits({});
+
+    try {
+      const res = await thesisProgressApi.getByThesisId(thesis._id);
+      if (res.success && res.data) {
+        const reports = Array.isArray(res.data) ? res.data : [res.data];
+        setDiaryReports(reports);
+
+        // Pre-fill edits map
+        const initialEdits = {};
+        reports.forEach((r) => {
+          initialEdits[r._id] = {
+            lecturerScore: r.lecturerScore !== null && r.lecturerScore !== undefined ? String(r.lecturerScore) : '',
+            status: r.status && r.status !== 'DRAFT' && r.status !== 'WAITING_STUDENT_2' ? r.status : 'APPROVED',
+            lecturerComment: r.lecturerComment || '',
+          };
+        });
+        setDiaryEdits(initialEdits);
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể tải nhật ký tiến độ của sinh viên', 'error');
+    } finally {
+      setDiaryLoading(false);
+    }
+  };
+
+  const handleDiaryEditChange = (reportId, field, value) => {
+    setDiaryEdits((prev) => ({
+      ...prev,
+      [reportId]: {
+        ...(prev[reportId] || {}),
+        [field]: value,
+      },
+    }));
+  };
+
+  const handleSaveDiaryRow = async (reportId) => {
+    const edit = diaryEdits[reportId];
+    if (!edit) return;
+
+    const scoreNum = edit.lecturerScore !== '' && edit.lecturerScore !== null && edit.lecturerScore !== undefined
+      ? Number(edit.lecturerScore)
+      : null;
+
+    if (scoreNum !== null && (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 10)) {
+      showToast('Điểm đánh giá phải từ 0 đến 10', 'warning');
+      return;
+    }
+
+    setSavingDiaryId(reportId);
+    try {
+      const res = await thesisProgressApi.reviewProgress(reportId, {
+        lecturerScore: scoreNum !== null ? scoreNum : undefined,
+        lecturerComment: edit.lecturerComment || '',
+        status: edit.status || 'APPROVED',
+      });
+
+      if (res.success) {
+        showToast('Đã lưu đánh giá và điểm nhật ký thành công!', 'success');
+        // Update local state
+        setDiaryReports((prev) =>
+          prev.map((r) => (r._id === reportId ? { ...r, ...res.data } : r))
+        );
+      }
+    } catch (err) {
+      showToast(err.message || 'Lưu đánh giá thất bại', 'error');
+    } finally {
+      setSavingDiaryId(null);
+    }
+  };
+
+  const handleSaveAllDiaryRows = async () => {
+    if (diaryReports.length === 0) return;
+
+    // Validate all scores first
+    for (const report of diaryReports) {
+      const edit = diaryEdits[report._id];
+      if (edit && edit.lecturerScore !== '' && edit.lecturerScore !== null && edit.lecturerScore !== undefined) {
+        const num = Number(edit.lecturerScore);
+        if (isNaN(num) || num < 0 || num > 10) {
+          showToast(`Điểm tuần ${report.weekNumber || ''} không hợp lệ (0-10)`, 'warning');
+          return;
+        }
+      }
+    }
+
+    setSavingAllDiary(true);
+    try {
+      const promises = diaryReports.map((report) => {
+        const edit = diaryEdits[report._id] || {};
+        const scoreNum = edit.lecturerScore !== '' && edit.lecturerScore !== null && edit.lecturerScore !== undefined
+          ? Number(edit.lecturerScore)
+          : undefined;
+
+        return thesisProgressApi.reviewProgress(report._id, {
+          lecturerScore: scoreNum,
+          lecturerComment: edit.lecturerComment || '',
+          status: edit.status || 'APPROVED',
+        });
+      });
+
+      await Promise.all(promises);
+      showToast('Đã lưu tất cả đánh giá nhật ký khóa luận!', 'success');
+
+      // Refresh reports
+      const res = await thesisProgressApi.getByThesisId(diaryThesis._id);
+      if (res.success && res.data) {
+        const reports = Array.isArray(res.data) ? res.data : [res.data];
+        setDiaryReports(reports);
+      }
+    } catch (err) {
+      showToast(err.message || 'Có lỗi xảy ra khi lưu đánh giá', 'error');
+    } finally {
+      setSavingAllDiary(false);
     }
   };
 
@@ -277,7 +493,11 @@ const LecturerThesesPage = () => {
   const [savingDetailTimeline, setSavingDetailTimeline] = useState(false);
 
   const handleOpenDetail = (thesis) => {
-    navigate(`/lecturer/theses/${thesis._id}/evaluate`);
+    setTargetThesis(thesis);
+    setDetailStartDate(thesis.startDate ? new Date(thesis.startDate).toISOString().split('T')[0] : '');
+    setDetailEndDate(thesis.endDate ? new Date(thesis.endDate).toISOString().split('T')[0] : '');
+    setEditingTimeline(false);
+    setDetailModalOpen(true);
   };
 
   const handleSaveDetailTimeline = async () => {
@@ -542,12 +762,15 @@ const LecturerThesesPage = () => {
   // Topic filter state for Topics view
   const [topicStatusFilter, setTopicStatusFilter] = useState('ALL'); // 'ALL', 'PENDING', 'APPROVED', 'REJECTED'
 
-  const filteredMyTopics = myTopics.filter((t) => {
+  const filteredTopics = proposedTopics.filter((t) => {
     if (topicStatusFilter !== 'ALL' && t.status !== topicStatusFilter) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       const matchTitle = t.title?.toLowerCase().includes(q);
       const matchDesc = t.description?.toLowerCase().includes(q);
+      const matchLec =
+        t.supervisorId?.userId?.fullName?.toLowerCase().includes(q) ||
+        t.supervisorId?.lecturerCode?.toLowerCase().includes(q);
       const matchStudent = t.registeredGroups?.some(
         (g) =>
           g.studentCode?.toLowerCase().includes(q) ||
@@ -555,16 +778,16 @@ const LecturerThesesPage = () => {
           g.secondStudentCode?.toLowerCase().includes(q) ||
           g.secondStudentId?.userId?.fullName?.toLowerCase().includes(q)
       );
-      return matchTitle || matchDesc || matchStudent;
+      return matchTitle || matchDesc || matchLec || matchStudent;
     }
     return true;
   });
 
   const topicStats = {
-    total: myTopics.length,
-    pending: myTopics.filter((t) => t.status === 'PENDING').length,
-    approved: myTopics.filter((t) => t.status === 'APPROVED').length,
-    rejected: myTopics.filter((t) => t.status === 'REJECTED').length,
+    total: proposedTopics.length,
+    pending: proposedTopics.filter((t) => t.status === 'PENDING').length,
+    approved: proposedTopics.filter((t) => t.status === 'APPROVED').length,
+    rejected: proposedTopics.filter((t) => t.status === 'REJECTED').length,
   };
 
   return (
@@ -574,14 +797,15 @@ const LecturerThesesPage = () => {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${isTopicsView
-                  ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-200'
+              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${
+                isTopicsView
+                  ? 'bg-[#123891]'
                   : isReviewView
                     ? 'bg-gradient-to-tr from-purple-600 to-violet-600 shadow-purple-200'
                     : isEvaluationView
                       ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 shadow-amber-200'
-                      : 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
-                }`}
+                      : 'bg-[#123891]'
+              }`}
             >
               {isTopicsView ? (
                 <BookOpen className="w-7 h-7" />
@@ -597,25 +821,26 @@ const LecturerThesesPage = () => {
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
                   {isTopicsView
-                    ? 'Đề Xuất & Quản Lý Đề Tài Khóa Luận (KLTN)'
+                    ? (isTbmOrAdmin ? 'Quản Lý & Duyệt Đề Tài Khóa Luận (TBM)' : 'Danh Sách Đề Tài Khóa Luận Tốt Nghiệp')
                     : isReviewView
                       ? 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
                       : isEvaluationView
                         ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 40%)'
-                        : 'Quản Lý Sinh Viên Hướng Dẫn Khóa Luận'}
+                        : 'Quản Lý Đề Tài & Sinh Viên Hướng Dẫn'}
                 </h2>
                 <span
-                  className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${isTopicsView
-                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                  className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                    isTopicsView
+                      ? 'bg-blue-50 text-[#123891] border-blue-200'
                       : isReviewView
                         ? 'bg-purple-50 text-purple-700 border-purple-200'
                         : isEvaluationView
                           ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-blue-50 text-[#102d7d] border-blue-200'
-                    }`}
+                          : 'bg-blue-50 text-[#123891] border-blue-200'
+                  }`}
                 >
                   {isTopicsView
-                    ? 'ĐỀ TÀI KLTN'
+                    ? (isTbmOrAdmin ? 'DUYỆT ĐỀ TÀI TBM' : 'DANH SÁCH ĐỀ TÀI')
                     : isReviewView
                       ? 'PHẢN BIỆN (30%)'
                       : isEvaluationView
@@ -625,7 +850,9 @@ const LecturerThesesPage = () => {
               </div>
               <p className="text-xs text-slate-500 mt-1">
                 {isTopicsView
-                  ? 'Tạo và nộp danh sách đề tài Khóa luận Tốt nghiệp gửi Trưởng Bộ Môn (TBM) xét duyệt để mở cho sinh viên đăng ký.'
+                  ? (isTbmOrAdmin
+                      ? 'Xét duyệt trực tiếp các đề tài do giảng viên gửi lên để mở cho sinh viên đăng ký theo thứ tự FIFO.'
+                      : 'Tạo và nộp danh sách đề tài Khóa luận Tốt nghiệp gửi Trưởng Bộ Môn (TBM) xét duyệt để mở cho sinh viên đăng ký.')
                   : isReviewView
                     ? 'Chấm điểm độc lập theo phân công Phản biện kín (30%) và Phản biện hội đồng (30%).'
                     : isEvaluationView
@@ -635,16 +862,30 @@ const LecturerThesesPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2.5 flex-wrap">
             {isTopicsView && (
-              <button
-                type="button"
-                onClick={() => setCreateTopicModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200 transition cursor-pointer"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>+ Đề xuất đề tài KLTN</span>
-              </button>
+              <>
+                {topicStats.pending > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleApproveAllPending}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-900/20 transition cursor-pointer disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>Duyệt tất cả ({topicStats.pending})</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setCreateTopicModalOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#0e2c73] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-900/20 transition cursor-pointer"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  <span>+ Thêm đề tài</span>
+                </button>
+              </>
             )}
 
             <button
@@ -667,14 +908,15 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('ALL')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'ALL'
-                  ? 'bg-blue-50/80 border-blue-400 ring-2 ring-blue-500/20'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
+                topicStatusFilter === 'ALL'
+                  ? 'bg-blue-50/80 border-[#123891]/50 ring-2 ring-[#123891]/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-900">Tất cả đề tài</span>
-                <span className="text-xs font-mono font-extrabold text-blue-700 bg-white px-2 py-0.5 rounded-lg border border-blue-200">
+                <span className="text-xs font-mono font-extrabold text-[#123891] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
                   {topicStats.total}
                 </span>
               </div>
@@ -684,10 +926,11 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('PENDING')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'PENDING'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
+                topicStatusFilter === 'PENDING'
                   ? 'bg-amber-50/80 border-amber-400 ring-2 ring-amber-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-amber-900 flex items-center gap-1">
@@ -704,10 +947,11 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('APPROVED')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'APPROVED'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
+                topicStatusFilter === 'APPROVED'
                   ? 'bg-emerald-50/80 border-emerald-400 ring-2 ring-emerald-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-emerald-900 flex items-center gap-1">
@@ -724,10 +968,11 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setTopicStatusFilter('REJECTED')}
-              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${topicStatusFilter === 'REJECTED'
+              className={`p-3 rounded-2xl border text-left transition cursor-pointer ${
+                topicStatusFilter === 'REJECTED'
                   ? 'bg-rose-50/80 border-rose-400 ring-2 ring-rose-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-rose-900">Bị từ chối</span>
@@ -745,17 +990,18 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('SUPERVISOR')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'SUPERVISOR'
-                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-indigo-500/20'
+              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                activeTab === 'SUPERVISOR'
+                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-[#123891]/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
                   <Users className="w-4 h-4 text-[#123891]" />
                   Đề tài hướng dẫn (GVHD - 40%)
                 </span>
-                <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
+                <span className="text-xs font-mono font-extrabold text-[#123891] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
                   {stats.supervisedCount}
                 </span>
               </div>
@@ -768,17 +1014,18 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_1')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'REVIEWER_1'
-                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-violet-500/20'
+              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                activeTab === 'REVIEWER_1'
+                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-[#123891]/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
                   <Shield className="w-4 h-4 text-[#123891]" />
                   Phản biện kín (GVPB Kín - 30%)
                 </span>
-                <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
+                <span className="text-xs font-mono font-extrabold text-[#123891] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
                   {stats.reviewer1Count}
                 </span>
               </div>
@@ -791,10 +1038,11 @@ const LecturerThesesPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_2')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${activeTab === 'REVIEWER_2'
+              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
+                activeTab === 'REVIEWER_2'
                   ? 'bg-purple-50/80 border-purple-400 ring-2 ring-purple-500/20'
                   : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-                }`}
+              }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-purple-950 flex items-center gap-1.5">
@@ -829,7 +1077,7 @@ const LecturerThesesPage = () => {
 
         <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
           <div className="text-xs text-slate-500 font-medium">
-            Hiển thị <strong>{isTopicsView ? filteredMyTopics.length : currentList.length}</strong> đề tài
+            Hiển thị <strong>{isTopicsView ? filteredTopics.length : currentList.length}</strong> đề tài
           </div>
         </div>
       </div>
@@ -838,30 +1086,31 @@ const LecturerThesesPage = () => {
       {isTopicsView ? (
         /* ================= BẢNG ĐỀ TÀI DO GIẢNG VIÊN ĐỀ XUẤT ================= */
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          {loadingMyTopics ? (
+          {loadingProposedTopics ? (
             <div className="p-6">
-              <LoadingSkeleton rows={4} cols={5} />
+              <LoadingSkeleton rows={4} cols={6} />
             </div>
-          ) : filteredMyTopics.length === 0 ? (
+          ) : filteredTopics.length === 0 ? (
             <div className="p-12 text-center space-y-3">
               <BookOpen className="w-12 h-12 mx-auto text-slate-300" />
               <div className="text-sm font-bold text-slate-700">
-                {myTopics.length === 0
-                  ? 'Bạn chưa đề xuất đề tài nào trong học kỳ này'
+                {proposedTopics.length === 0
+                  ? 'Chưa có đề tài nào trong danh sách'
                   : 'Không tìm thấy đề tài phù hợp với bộ lọc'}
               </div>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                {myTopics.length === 0
-                  ? 'Bấm vào nút bên dưới để tạo danh sách nhiều đề tài KLTN gửi Trưởng Bộ Môn xét duyệt.'
+                {proposedTopics.length === 0
+                  ? 'Bấm vào nút "+ Thêm đề tài" bên dưới để tạo danh sách đề tài KLTN gửi xét duyệt.'
                   : 'Thử thay đổi từ khóa tìm kiếm hoặc chọn bộ lọc trạng thái khác.'}
               </p>
-              {myTopics.length === 0 && (
+              {proposedTopics.length === 0 && (
                 <button
                   type="button"
                   onClick={() => setCreateTopicModalOpen(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-xs transition"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-[#123891] hover:bg-[#0e2c73] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                 >
-                  <span>+ Đề xuất đề tài ngay</span>
+                  <BookOpen className="w-4 h-4" />
+                  <span>+ Thêm đề tài ngay</span>
                 </button>
               )}
             </div>
@@ -871,51 +1120,70 @@ const LecturerThesesPage = () => {
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                     <th className="py-3.5 px-4">Tên đề tài KLTN</th>
+                    <th className="py-3.5 px-4">GV Đề xuất</th>
                     <th className="py-3.5 px-4 text-center">Số nhóm nhận</th>
                     <th className="py-3.5 px-4">Mô tả tóm tắt</th>
                     <th className="py-3.5 px-4">Trạng thái duyệt</th>
                     <th className="py-3.5 px-4">Nhóm SV đăng ký (FIFO)</th>
-                    <th className="py-3.5 px-4 text-right">Ngày tạo</th>
+                    <th className="py-3.5 px-4 text-right">Thao tác & Phê duyệt</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredMyTopics.map((topic) => {
+                  {filteredTopics.map((topic) => {
                     const isFull = topic.currentGroups >= topic.maxGroups;
                     return (
                       <tr key={topic._id} className="hover:bg-slate-50/80 transition">
+                        {/* Title & Description */}
                         <td className="py-3.5 px-4 max-w-sm">
                           <button
                             type="button"
                             onClick={() => setSelectedTopicDetail(topic)}
-                            className="text-left group cursor-pointer"
+                            className="text-left group cursor-pointer block"
                             title="Bấm để xem chi tiết đề tài và danh sách nhóm"
                           >
-                            <span className="text-slate-900 group-hover:text-blue-600 font-bold block leading-snug transition">
+                            <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
                               {topic.title}
                             </span>
                           </button>
                           {topic.rejectionReason && topic.status === 'REJECTED' && (
-                            <span className="text-[11px] text-rose-600 block mt-1">
+                            <span className="text-[11px] text-rose-600 block mt-1 font-medium bg-rose-50 px-2 py-1 rounded-lg border border-rose-100">
                               Lý do từ chối: {topic.rejectionReason}
                             </span>
                           )}
+                          <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                            Ngày tạo: {formatDate(topic.createdAt)}
+                          </div>
                         </td>
 
+                        {/* Lecturer info */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-semibold text-slate-900">
+                            {topic.supervisorId?.userId?.fullName || 'Giảng viên'}
+                          </div>
+                          <div className="text-[11px] text-slate-400 font-mono">
+                            {topic.supervisorId?.lecturerCode || ''}
+                          </div>
+                        </td>
+
+                        {/* Capacity */}
                         <td className="py-3.5 px-4 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold font-mono border ${isFull
+                            className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold font-mono border ${
+                              isFull
                                 ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                : 'bg-blue-50 text-blue-700 border-blue-200'
-                              }`}
+                                : 'bg-blue-50 text-[#123891] border-blue-200'
+                            }`}
                           >
                             {topic.currentGroups}/{topic.maxGroups} nhóm
                           </span>
                         </td>
 
+                        {/* Description */}
                         <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
                           {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
                         </td>
 
+                        {/* Status Badge */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {topic.status === 'APPROVED' && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -924,18 +1192,20 @@ const LecturerThesesPage = () => {
                             </span>
                           )}
                           {topic.status === 'PENDING' && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200 animate-pulse">
                               <Clock className="w-3 h-3" />
                               <span>Chờ TBM duyệt</span>
                             </span>
                           )}
                           {topic.status === 'REJECTED' && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              <XCircle className="w-3 h-3" />
                               <span>Bị từ chối</span>
                             </span>
                           )}
                         </td>
 
+                        {/* Registered Groups (FIFO) */}
                         <td className="py-3.5 px-4">
                           {topic.registeredGroups?.length > 0 ? (
                             <div className="space-y-1.5">
@@ -947,7 +1217,7 @@ const LecturerThesesPage = () => {
                                   className="w-full text-left text-[11px] text-slate-700 font-medium flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-50 hover:bg-blue-50/80 border border-slate-200/80 hover:border-blue-300 transition cursor-pointer group shadow-2xs"
                                   title="Bấm để xem thông tin chi tiết sinh viên"
                                 >
-                                  <span className="font-bold text-blue-700 shrink-0 bg-blue-100/70 px-1.5 py-0.5 rounded-md text-[10px]">
+                                  <span className="font-bold text-[#123891] shrink-0 bg-blue-100/70 px-1.5 py-0.5 rounded-md text-[10px]">
                                     Nhóm {g.groupOrder}:
                                   </span>
                                   <span className="truncate group-hover:text-blue-900">
@@ -968,8 +1238,50 @@ const LecturerThesesPage = () => {
                           )}
                         </td>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap text-right text-slate-500 text-[11px] font-mono">
-                          {formatDate(topic.createdAt)}
+                        {/* Actions & Direct Approval */}
+                        <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Direct Approval Controls */}
+                            {topic.status === 'PENDING' && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveTopic(topic)}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer disabled:opacity-50"
+                                  title="Phê duyệt đề tài này để mở cho sinh viên đăng ký"
+                                >
+                                  <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                                  <span>Duyệt</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setTargetTopicForReject(topic);
+                                    setTopicRejectReason('');
+                                    setRejectTopicModalOpen(true);
+                                  }}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-600 text-rose-600 hover:text-white font-bold rounded-xl text-xs border border-rose-200 hover:border-rose-600 transition cursor-pointer disabled:opacity-50"
+                                  title="Từ chối đề tài này"
+                                >
+                                  <X className="w-3.5 h-3.5 stroke-[2.5]" />
+                                  <span>Từ chối</span>
+                                </button>
+                              </>
+                            )}
+
+                            {/* View Detail Button */}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTopicDetail(topic)}
+                              className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                              title="Xem chi tiết đề tài và danh sách nhóm SV"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     );
@@ -1018,39 +1330,12 @@ const LecturerThesesPage = () => {
                             t.status !== 'PENDING_TBM_APPROVAL' &&
                             t.status !== 'COMPLETED'
                         ) && (
-                            <button
-                              type="button"
-                              onClick={() => handleToggleAllLock(currentList)}
-                              disabled={lockingAll}
-                              title={
-                                currentList
-                                  .filter(
-                                    (t) =>
-                                      t.status !== 'REJECTED' &&
-                                      t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                                      t.status !== 'PENDING_TBM_APPROVAL' &&
-                                      t.status !== 'COMPLETED'
-                                  )
-                                  .every((t) => getRoleLockStatus(t))
-                                  ? 'Mở khóa toàn bộ điểm'
-                                  : 'Khóa toàn bộ điểm'
-                              }
-                              className={`p-1 rounded-md border transition cursor-pointer flex items-center justify-center ${currentList
-                                  .filter(
-                                    (t) =>
-                                      t.status !== 'REJECTED' &&
-                                      t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                                      t.status !== 'PENDING_TBM_APPROVAL' &&
-                                      t.status !== 'COMPLETED'
-                                  )
-                                  .every((t) => getRoleLockStatus(t))
-                                  ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
-                                  : 'bg-white text-slate-400 border-slate-300 hover:text-[#123891] hover:border-blue-300'
-                                }`}
-                            >
-                              {lockingAll ? (
-                                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
-                              ) : currentList
+                          <button
+                            type="button"
+                            onClick={() => handleToggleAllLock(currentList)}
+                            disabled={lockingAll}
+                            title={
+                              currentList
                                 .filter(
                                   (t) =>
                                     t.status !== 'REJECTED' &&
@@ -1058,13 +1343,41 @@ const LecturerThesesPage = () => {
                                     t.status !== 'PENDING_TBM_APPROVAL' &&
                                     t.status !== 'COMPLETED'
                                 )
-                                .every((t) => getRoleLockStatus(t)) ? (
-                                <Lock className="w-3.5 h-3.5 text-amber-600" />
-                              ) : (
-                                <Unlock className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          )}
+                                .every((t) => getRoleLockStatus(t))
+                                ? 'Mở khóa toàn bộ điểm'
+                                : 'Khóa toàn bộ điểm'
+                            }
+                            className={`p-1 rounded-md border transition cursor-pointer flex items-center justify-center ${
+                              currentList
+                                .filter(
+                                  (t) =>
+                                    t.status !== 'REJECTED' &&
+                                    t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                                    t.status !== 'PENDING_TBM_APPROVAL' &&
+                                    t.status !== 'COMPLETED'
+                                )
+                                .every((t) => getRoleLockStatus(t))
+                                ? 'bg-amber-50 text-amber-700 border-amber-300 hover:bg-amber-100'
+                                : 'bg-white text-slate-400 border-slate-300 hover:text-[#123891] hover:border-blue-300'
+                            }`}
+                          >
+                            {lockingAll ? (
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
+                            ) : currentList
+                              .filter(
+                                (t) =>
+                                  t.status !== 'REJECTED' &&
+                                  t.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                                  t.status !== 'PENDING_TBM_APPROVAL' &&
+                                  t.status !== 'COMPLETED'
+                              )
+                              .every((t) => getRoleLockStatus(t)) ? (
+                              <Lock className="w-3.5 h-3.5 text-amber-600" />
+                            ) : (
+                              <Unlock className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+                        )}
                       </div>
                     </th>
                     <th className="py-3.5 px-4 text-center">Trạng thái</th>
@@ -1087,7 +1400,7 @@ const LecturerThesesPage = () => {
                         </td>
 
                         {/* Title - Clickable to open Detail */}
-                        <td className="py-3.5 px-4 min-w-[260px] max-w-sm">
+                        <td className="py-3.5 px-4 min-w-[240px] max-w-sm">
                           <button
                             type="button"
                             onClick={() => handleOpenDetail(item)}
@@ -1114,7 +1427,7 @@ const LecturerThesesPage = () => {
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="flex flex-col gap-2 min-w-[180px]">
                             <div className="flex items-center gap-1.5">
-                              <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                              <span className="text-[9px] font-bold text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                 SV1
                               </span>
                               <UserNameClickable
@@ -1126,7 +1439,7 @@ const LecturerThesesPage = () => {
                             </div>
                             {item.studentCount === 2 && item.secondStudentId && (
                               <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100">
-                                <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                <span className="text-[9px] font-bold text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                   SV2
                                 </span>
                                 <UserNameClickable
@@ -1185,7 +1498,7 @@ const LecturerThesesPage = () => {
                                 <div className="flex flex-col gap-2 items-center justify-center">
                                   {/* SV1 Box - Aligned with SV1 */}
                                   <div className="flex items-center gap-1.5" title={`SV1: ${item.studentId?.userId?.fullName} (${item.studentId?.studentCode})`}>
-                                    <span className="text-[10px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
+                                    <span className="text-[10px] font-bold text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
                                     <input
                                       type="number"
                                       step="0.1"
@@ -1198,15 +1511,16 @@ const LecturerThesesPage = () => {
                                       placeholder="—"
                                       readOnly={isLocked}
                                       disabled={isLocked}
-                                      className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
+                                      className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${
+                                        isLocked
                                           ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-indigo-100'
-                                        }`}
+                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-blue-100'
+                                      }`}
                                     />
                                   </div>
                                   {/* SV2 Box - Aligned with SV2 */}
                                   <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100 w-full justify-center" title={`SV2: ${item.secondStudentId?.userId?.fullName} (${item.secondStudentId?.studentCode})`}>
-                                    <span className="text-[10px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">SV2</span>
+                                    <span className="text-[10px] font-bold text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">SV2</span>
                                     <input
                                       type="number"
                                       step="0.1"
@@ -1219,10 +1533,11 @@ const LecturerThesesPage = () => {
                                       placeholder="—"
                                       readOnly={isLocked}
                                       disabled={isLocked}
-                                      className={`thesis-inline-grade-input thesis-inline-grade-input-s2 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
+                                      className={`thesis-inline-grade-input thesis-inline-grade-input-s2 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${
+                                        isLocked
                                           ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-violet-100'
-                                        }`}
+                                          : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-blue-100'
+                                      }`}
                                     />
                                   </div>
                                 </div>
@@ -1232,10 +1547,11 @@ const LecturerThesesPage = () => {
                                   onClick={() => handleToggleRowLock(item)}
                                   disabled={lockingRowId === item._id}
                                   title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
-                                  className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${isLocked
+                                  className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${
+                                    isLocked
                                       ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                                       : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-[#123891] hover:border-blue-300'
-                                    }`}
+                                  }`}
                                 >
                                   {lockingRowId === item._id ? (
                                     <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
@@ -1249,7 +1565,7 @@ const LecturerThesesPage = () => {
                             ) : (
                               <div className="flex items-center justify-center gap-2">
                                 <div className="inline-flex items-center gap-1.5 justify-center" title={`Nhập điểm cho ${item.studentId?.userId?.fullName}, ấn Enter để lưu`}>
-                                  <span className="text-[10px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
+                                  <span className="text-[10px] font-bold text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">SV1</span>
                                   <input
                                     type="number"
                                     step="0.1"
@@ -1262,10 +1578,11 @@ const LecturerThesesPage = () => {
                                     placeholder="—"
                                     readOnly={isLocked}
                                     disabled={isLocked}
-                                    className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${isLocked
+                                    className={`thesis-inline-grade-input thesis-inline-grade-input-s1 w-14 h-7 text-center font-mono font-bold text-xs rounded-lg shadow-2xs transition outline-none ${
+                                      isLocked
                                         ? 'bg-slate-100 text-slate-500 border border-slate-200 cursor-not-allowed'
-                                        : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-indigo-100'
-                                      }`}
+                                        : 'bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 focus:border-[#123891] focus:ring-2 focus:ring-blue-100'
+                                    }`}
                                   />
                                 </div>
                                 {/* Row Lock Button */}
@@ -1274,10 +1591,11 @@ const LecturerThesesPage = () => {
                                   onClick={() => handleToggleRowLock(item)}
                                   disabled={lockingRowId === item._id}
                                   title={isLocked ? 'Điểm đang khóa (Bấm để mở khóa)' : 'Điểm đang mở (Bấm để khóa)'}
-                                  className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${isLocked
+                                  className={`p-1.5 rounded-lg border transition cursor-pointer self-center ${
+                                    isLocked
                                       ? 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100'
                                       : 'bg-slate-50 text-slate-400 border-slate-200 hover:text-[#123891] hover:border-blue-300'
-                                    }`}
+                                  }`}
                                 >
                                   {lockingRowId === item._id ? (
                                     <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#123891]" />
@@ -1304,11 +1622,24 @@ const LecturerThesesPage = () => {
                         {/* Action */}
                         <td className="py-3.5 px-4 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Supervisor specific actions */}
+                            {activeTab === 'SUPERVISOR' && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDiaryModal(item)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#0e2c73] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+                                title="Xem và đánh giá nhật ký khóa luận của sinh viên"
+                              >
+                                <BookOpen className="w-3.5 h-3.5" />
+                                <span>Xem Nhật ký</span>
+                              </button>
+                            )}
+
                             <button
                               type="button"
                               onClick={() => handleOpenDetail(item)}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
-                              title="Xem chi tiết đề tài"
+                              title="Xem thông tin chi tiết sinh viên & đề tài"
                             >
                               <Eye className="w-3.5 h-3.5" />
                               <span>Chi tiết</span>
@@ -1344,6 +1675,271 @@ const LecturerThesesPage = () => {
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ================= MODAL: NHẬT KÝ KHÓA LUẬN & ĐÁNH GIÁ TIẾN ĐỘ ================= */}
+      {diaryModalOpen && diaryThesis && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-6xl bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+                      Nhật Ký Khóa Luận & Đánh Giá Tiến Độ
+                    </h3>
+                    <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-50 text-[#123891] border border-blue-200 rounded-full">
+                      GVHD Đánh giá
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                    <strong>Đề tài:</strong> {diaryThesis.thesisTitle} • <strong>SV1:</strong>{' '}
+                    {diaryThesis.studentId?.userId?.fullName} ({diaryThesis.studentId?.studentCode})
+                    {diaryThesis.secondStudentId && (
+                      <span>
+                        {' '}• <strong>SV2:</strong> {diaryThesis.secondStudentId?.userId?.fullName} ({diaryThesis.secondStudentId?.studentCode})
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {diaryReports.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSaveAllDiaryRows}
+                    disabled={savingAllDiary}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#0e2c73] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+                  >
+                    {savingAllDiary ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    <span>{savingAllDiary ? 'Đang lưu...' : 'Lưu tất cả đánh giá'}</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setDiaryModalOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body / Table */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-1">
+              {diaryLoading ? (
+                <div className="p-6">
+                  <LoadingSkeleton rows={4} cols={6} />
+                </div>
+              ) : diaryReports.length === 0 ? (
+                <div className="p-12 text-center space-y-3 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <FileText className="w-12 h-12 mx-auto text-slate-300" />
+                  <div className="text-sm font-bold text-slate-700">
+                    Sinh viên chưa nộp nhật ký khóa luận nào
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    Các đợt báo cáo tiến độ và nhật ký tuần do sinh viên thực hiện sẽ được hiển thị đầy đủ tại đây để bạn chấm điểm, nhận xét và đánh giá.
+                  </p>
+                </div>
+              ) : (
+                <div className="border border-slate-200/80 rounded-2xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/90 text-slate-600 font-bold border-b border-slate-200 uppercase text-[10px] tracking-wider sticky top-0 z-10 backdrop-blur-sm">
+                        <th className="py-3 px-3 w-20 text-center">Tuần</th>
+                        <th className="py-3 px-3 w-28 whitespace-nowrap">Ngày nộp</th>
+                        <th className="py-3 px-3 min-w-[200px]">Nội dung & Báo cáo</th>
+                        <th className="py-3 px-3 w-24 text-center">Tiến độ</th>
+                        <th className="py-3 px-3 w-32">Tài liệu</th>
+                        <th className="py-3 px-3 w-28 text-center bg-blue-50/40">Điểm (0-10)</th>
+                        <th className="py-3 px-3 w-36 bg-blue-50/40">Đánh giá</th>
+                        <th className="py-3 px-3 min-w-[220px] bg-blue-50/40">Nhận xét của GVHD</th>
+                        <th className="py-3 px-3 w-20 text-center">Lưu</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {diaryReports.map((report, idx) => {
+                        const edit = diaryEdits[report._id] || {
+                          lecturerScore: report.lecturerScore !== null && report.lecturerScore !== undefined ? String(report.lecturerScore) : '',
+                          status: report.status || 'APPROVED',
+                          lecturerComment: report.lecturerComment || '',
+                        };
+                        const isRowSaving = savingDiaryId === report._id;
+                        const fileObj = report.file || (report.fileUrl ? { fileUrl: report.fileUrl, originalName: 'Tài liệu đính kèm' } : null);
+
+                        return (
+                          <tr key={report._id} className="hover:bg-slate-50/60 transition">
+                            {/* Tuần */}
+                            <td className="py-3 px-3 text-center align-top">
+                              <span className="font-bold text-[#123891] bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg text-xs font-mono block">
+                                {report.weekNumber ? `Tuần ${report.weekNumber}` : `Đợt ${idx + 1}`}
+                              </span>
+                              {report.weekStartDate && report.weekEndDate && (
+                                <span className="text-[9.5px] text-slate-400 block mt-1 leading-tight">
+                                  {formatDate(report.weekStartDate)} - {formatDate(report.weekEndDate)}
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Ngày nộp */}
+                            <td className="py-3 px-3 text-slate-500 font-mono text-[11px] align-top whitespace-nowrap">
+                              {formatDate(report.submittedAt || report.createdAt)}
+                            </td>
+
+                            {/* Nội dung công việc & Báo cáo */}
+                            <td className="py-3 px-3 align-top">
+                              <div className="font-bold text-slate-900 text-xs mb-1">
+                                {report.title || 'Báo cáo tiến độ tuần'}
+                              </div>
+                              {report.description ? (
+                                <p className="text-slate-600 text-[11.5px] leading-relaxed whitespace-pre-line bg-slate-50/80 p-2.5 rounded-xl border border-slate-100 max-h-36 overflow-y-auto custom-scrollbar">
+                                  {report.description}
+                                </p>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Không có mô tả chi tiết</span>
+                              )}
+                            </td>
+
+                            {/* Tiến độ (%) */}
+                            <td className="py-3 px-3 text-center align-top whitespace-nowrap">
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="font-extrabold font-mono text-xs text-[#123891]">
+                                  {report.completionPercentage ?? 0}%
+                                </span>
+                                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+                                  <div
+                                    className="h-full bg-[#123891] rounded-full transition-all"
+                                    style={{ width: `${Math.min(100, Math.max(0, report.completionPercentage ?? 0))}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Tài liệu đính kèm */}
+                            <td className="py-3 px-3 align-top">
+                              {fileObj?.fileUrl ? (
+                                <a
+                                  href={fileObj.fileUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  download
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#123891] border border-blue-200 rounded-xl text-[11px] font-semibold transition group max-w-full truncate"
+                                  title={fileObj.originalName || 'Tải file đính kèm'}
+                                >
+                                  <Paperclip className="w-3.5 h-3.5 shrink-0 group-hover:scale-110 transition" />
+                                  <span className="truncate">{fileObj.originalName || 'Xem tài liệu'}</span>
+                                </a>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Không có</span>
+                              )}
+                            </td>
+
+                            {/* Điểm (0-10) - Tự điền */}
+                            <td className="py-3 px-3 text-center align-top bg-blue-50/20">
+                              <input
+                                type="number"
+                                step="0.1"
+                                min="0"
+                                max="10"
+                                value={edit.lecturerScore ?? ''}
+                                onChange={(e) => handleDiaryEditChange(report._id, 'lecturerScore', e.target.value)}
+                                placeholder="0 - 10"
+                                className="w-20 h-8 text-center font-mono font-bold text-xs bg-white border border-slate-300 rounded-xl focus:border-[#123891] focus:ring-2 focus:ring-blue-100 outline-none shadow-2xs transition"
+                              />
+                            </td>
+
+                            {/* Đánh giá - Tự chọn */}
+                            <td className="py-3 px-3 align-top bg-blue-50/20">
+                              <select
+                                value={edit.status || 'APPROVED'}
+                                onChange={(e) => handleDiaryEditChange(report._id, 'status', e.target.value)}
+                                className="w-full h-8 text-xs font-semibold bg-white border border-slate-300 rounded-xl px-2 focus:border-[#123891] focus:ring-2 focus:ring-blue-100 outline-none shadow-2xs transition cursor-pointer"
+                              >
+                                <option value="APPROVED">✓ Đạt (Duyệt)</option>
+                                <option value="REVIEWING">⏳ Đang xem xét</option>
+                                <option value="NEEDS_REVISION">✎ Cần chỉnh sửa</option>
+                                <option value="REJECTED">✕ Không đạt</option>
+                              </select>
+                            </td>
+
+                            {/* Nhận xét - Tự điền */}
+                            <td className="py-3 px-3 align-top bg-blue-50/20">
+                              <textarea
+                                rows={2}
+                                value={edit.lecturerComment || ''}
+                                onChange={(e) => handleDiaryEditChange(report._id, 'lecturerComment', e.target.value)}
+                                placeholder="Nhập nhận xét, hướng dẫn..."
+                                className="w-full text-[11.5px] p-2 bg-white border border-slate-300 rounded-xl focus:border-[#123891] focus:ring-2 focus:ring-blue-100 outline-none shadow-2xs transition resize-none"
+                              />
+                            </td>
+
+                            {/* Lưu từng dòng */}
+                            <td className="py-3 px-3 text-center align-top">
+                              <button
+                                type="button"
+                                onClick={() => handleSaveDiaryRow(report._id)}
+                                disabled={isRowSaving}
+                                className="p-2 bg-[#123891] hover:bg-[#0e2c73] text-white rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50 inline-flex items-center justify-center"
+                                title="Lưu dòng này"
+                              >
+                                {isRowSaving ? (
+                                  <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Save className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between border-t border-slate-100 pt-3 shrink-0">
+              <div className="text-xs text-slate-500">
+                Tổng cộng: <strong>{diaryReports.length}</strong> báo cáo nhật ký tiến độ
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDiaryModalOpen(false)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Đóng
+                </button>
+                {diaryReports.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleSaveAllDiaryRows}
+                    disabled={savingAllDiary}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#0e2c73] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+                  >
+                    {savingAllDiary ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Save className="w-3.5 h-3.5" />
+                    )}
+                    <span>{savingAllDiary ? 'Đang lưu...' : 'Lưu tất cả'}</span>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1597,7 +2193,7 @@ const LecturerThesesPage = () => {
               </div>
             </div>
 
-            {/* Thời gian thực hiện KLTN & Nhật ký */}
+            {/* Thời gian thực hiện KLTN */}
             <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100/90 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -1606,7 +2202,7 @@ const LecturerThesesPage = () => {
                     Thời Gian Thực Hiện KLTN
                   </span>
                   {targetThesis.startDate ? (
-                    <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-[#102d7d] rounded-md">
+                    <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-[#123891] rounded-md">
                       Đã sửa đổi bởi GVHD
                     </span>
                   ) : (
@@ -1620,7 +2216,7 @@ const LecturerThesesPage = () => {
                   <button
                     type="button"
                     onClick={() => setEditingTimeline(true)}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#123891] hover:text-[#0d2a75] hover:underline cursor-pointer"
+                    className="inline-flex items-center gap-1 text-xs font-bold text-[#123891] hover:text-[#0e2c73] hover:underline cursor-pointer"
                   >
                     <Clock className="w-3.5 h-3.5" />
                     <span>Đổi thời gian</span>
@@ -1679,9 +2275,9 @@ const LecturerThesesPage = () => {
                   </div>
 
                   {detailStartDate && detailEndDate && new Date(detailStartDate) < new Date(detailEndDate) && (
-                    <div className="text-[11px] text-[#102d7d] bg-blue-50 px-3 py-1.5 rounded-xl font-medium flex items-center justify-between">
+                    <div className="text-[11px] text-[#123891] bg-blue-50 px-3 py-1.5 rounded-xl font-medium flex items-center justify-between">
                       <span>Tổng số tuần dự kiến sinh ra:</span>
-                      <strong className="font-mono font-bold text-xs text-[#0d2a75]">
+                      <strong className="font-mono font-bold text-xs text-[#123891]">
                         {Math.ceil((new Date(detailEndDate) - new Date(detailStartDate)) / (1000 * 60 * 60 * 24 * 7))} tuần
                       </strong>
                     </div>
@@ -1700,7 +2296,7 @@ const LecturerThesesPage = () => {
                       type="button"
                       onClick={handleSaveDetailTimeline}
                       disabled={savingDetailTimeline}
-                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#123891] hover:bg-[#0e2c73] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
                     >
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       <span>{savingDetailTimeline ? 'Đang lưu...' : 'Lưu thời gian'}</span>
@@ -1725,10 +2321,10 @@ const LecturerThesesPage = () => {
                     </span>
                     {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
                       <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
+                        <span className="text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
                           SV1: {targetThesis.scores?.student1SupervisorScore ?? '—'}
                         </span>
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
+                        <span className="text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
                           SV2: {targetThesis.scores?.student2SupervisorScore ?? '—'}
                         </span>
                       </div>
@@ -1757,10 +2353,10 @@ const LecturerThesesPage = () => {
                     </span>
                     {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
                       <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
+                        <span className="text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
                           SV1: {targetThesis.scores?.student1Reviewer1Score ?? '—'}
                         </span>
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
+                        <span className="text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
                           SV2: {targetThesis.scores?.student2Reviewer1Score ?? '—'}
                         </span>
                       </div>
@@ -1789,10 +2385,10 @@ const LecturerThesesPage = () => {
                     </span>
                     {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
                       <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
+                        <span className="text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
                           SV1: {targetThesis.scores?.student1Reviewer2Score ?? '—'}
                         </span>
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
+                        <span className="text-[#123891] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
                           SV2: {targetThesis.scores?.student2Reviewer2Score ?? '—'}
                         </span>
                       </div>
@@ -1819,10 +2415,10 @@ const LecturerThesesPage = () => {
                   <span className="font-bold text-emerald-900">Điểm tổng kết khóa luận (Thang 10):</span>
                   {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
                     <div className="flex items-center gap-3">
-                      <span className="text-[#0d2a75] font-bold font-mono">
+                      <span className="text-[#123891] font-bold font-mono">
                         SV1: {targetThesis.scores?.student1FinalScore ?? targetThesis.scores.finalScore}/10
                       </span>
-                      <span className="text-[#0d2a75] font-bold font-mono">
+                      <span className="text-[#123891] font-bold font-mono">
                         SV2: {targetThesis.scores?.student2FinalScore ?? targetThesis.scores.finalScore}/10
                       </span>
                       <span className="font-mono font-extrabold text-sm text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-lg border border-emerald-300">
@@ -1840,9 +2436,9 @@ const LecturerThesesPage = () => {
 
             {/* Actions inside Detail Modal */}
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
-              <div>
+              <div className="flex items-center gap-2">
                 {targetThesis.status === 'PENDING_SUPERVISOR_APPROVAL' && activeTab === 'SUPERVISOR' && (
-                  <div className="flex items-center gap-2">
+                  <>
                     <button
                       type="button"
                       onClick={() => {
@@ -1864,7 +2460,21 @@ const LecturerThesesPage = () => {
                     >
                       <span>Từ chối</span>
                     </button>
-                  </div>
+                  </>
+                )}
+
+                {activeTab === 'SUPERVISOR' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDetailModalOpen(false);
+                      handleOpenDiaryModal(targetThesis);
+                    }}
+                    className="px-4 py-2 bg-[#123891] hover:bg-[#0e2c73] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Xem Nhật ký</span>
+                  </button>
                 )}
 
                 {targetThesis.status !== 'REJECTED' &&
@@ -1876,10 +2486,10 @@ const LecturerThesesPage = () => {
                         setDetailModalOpen(false);
                         handleOpenGrade(targetThesis);
                       }}
-                      className="px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5"
                     >
                       <Award className="w-3.5 h-3.5" />
-                      <span>{targetThesis.status === 'COMPLETED' ? 'Xem điểm & nhận xét' : 'Chấm điểm'}</span>
+                      <span>{targetThesis.status === 'COMPLETED' ? 'Xem điểm & nhận xét' : 'Trang chấm điểm'}</span>
                     </button>
                   )}
               </div>
@@ -1896,24 +2506,24 @@ const LecturerThesesPage = () => {
         </div>
       )}
 
-      {/* Modal: Tạo danh sách đề tài KLTN hàng loạt */}
+      {/* Modal: Thêm đề tài KLTN */}
       {createTopicModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-bold text-slate-900">Đề Xuất Danh Sách Đề Tài KLTN</h3>
-                  <p className="text-xs text-slate-500">Nhập nhiều đề tài cùng lúc để gửi Trưởng Bộ Môn xét duyệt</p>
+                  <h3 className="text-base font-bold text-slate-900">Thêm Đề Tài Khóa Luận Tốt Nghiệp</h3>
+                  <p className="text-xs text-slate-500">Nhập đề tài để gửi Trưởng Bộ Môn (TBM) xét duyệt</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setCreateTopicModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition"
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
               >
                 ✕
               </button>
@@ -1925,8 +2535,8 @@ const LecturerThesesPage = () => {
                   <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                     Danh sách tên đề tài (Mỗi đề tài 1 dòng hoặc cách nhau bằng dấu phẩy) <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded">
-                    Tạo hàng loạt
+                  <span className="text-[11px] text-[#123891] font-semibold bg-blue-50 px-2 py-0.5 rounded">
+                    Thêm đề tài
                   </span>
                 </div>
                 <textarea
@@ -1935,10 +2545,10 @@ const LecturerThesesPage = () => {
                   onChange={(e) => setBatchTitleInput(e.target.value)}
                   placeholder={`Ví dụ:\nXây dựng hệ thống quản lý thực tập doanh nghiệp,\nXây dựng hệ thống quản lý khóa luận tốt nghiệp,\nỨng dụng Trí tuệ nhân tạo nhận diện biển số xe`}
                   required
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#123891] focus:ring-2 focus:ring-blue-100 transition"
                 />
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Hệ thống sẽ tự động tách từng dòng hoặc theo dấu phẩy để tạo các đề tài độc lập.
+                  Hệ thống sẽ tự động tách từng dòng hoặc theo dấu phẩy để tạo các đề tài độc lập gửi TBM duyệt.
                 </p>
               </div>
 
@@ -1954,7 +2564,7 @@ const LecturerThesesPage = () => {
                     value={batchMaxGroups}
                     onChange={(e) => setBatchMaxGroups(e.target.value)}
                     required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-[#123891] focus:ring-2 focus:ring-blue-100"
                   />
                   <span className="text-[11px] text-slate-400 mt-1 block">
                     Khi số nhóm SV đăng ký đạt mức này, đề tài sẽ tự động đóng (FIFO).
@@ -1967,7 +2577,7 @@ const LecturerThesesPage = () => {
                   </label>
                   <div className="px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-2">
                     <User className="w-4 h-4 text-slate-500" />
-                    <span>{user?.fullName} ({user?.username})</span>
+                    <span>{user?.fullName} {user?.lecturerCode ? `(${user.lecturerCode})` : user?.username ? `(${user.username})` : ''}</span>
                   </div>
                 </div>
               </div>
@@ -1981,7 +2591,7 @@ const LecturerThesesPage = () => {
                   value={batchDescription}
                   onChange={(e) => setBatchDescription(e.target.value)}
                   placeholder="Yêu cầu công nghệ, mục tiêu nghiên cứu..."
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#123891] focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -1989,16 +2599,16 @@ const LecturerThesesPage = () => {
                 <button
                   type="button"
                   onClick={() => setCreateTopicModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={createTopicLoading}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2"
+                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#0e2c73] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-900/20 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
-                  {createTopicLoading ? 'Đang tạo...' : 'Gửi đề xuất đề tài'}
+                  {createTopicLoading ? 'Đang gửi...' : 'Gửi Trưởng Bộ Môn duyệt'}
                 </button>
               </div>
             </form>
@@ -2012,7 +2622,7 @@ const LecturerThesesPage = () => {
           <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div>
@@ -2027,7 +2637,7 @@ const LecturerThesesPage = () => {
               <button
                 type="button"
                 onClick={() => setSelectedTopicDetail(null)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition"
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
               >
                 ✕
               </button>
@@ -2063,7 +2673,7 @@ const LecturerThesesPage = () => {
                         {/* Group Header */}
                         <div className="flex items-center justify-between flex-wrap gap-2 pb-2 border-b border-slate-200/60">
                           <div className="flex items-center gap-2">
-                            <span className="px-2.5 py-0.5 rounded-full bg-blue-600 text-white font-bold text-[10px]">
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#123891] text-white font-bold text-[10px]">
                               Nhóm #{group.groupOrder}
                             </span>
                             <span className="text-[11px] font-semibold text-slate-600">
@@ -2144,11 +2754,77 @@ const LecturerThesesPage = () => {
               <button
                 type="button"
                 onClick={() => setSelectedTopicDetail(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
               >
                 Đóng
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Modal Từ chối đề tài */}
+      {rejectTopicModalOpen && targetTopicForReject && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5 text-rose-600 font-bold text-sm">
+                <div className="p-2 bg-rose-50 rounded-xl">
+                  <AlertCircle className="w-5 h-5 text-rose-600" />
+                </div>
+                <span>Từ chối đề tài KLTN</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setRejectTopicModalOpen(false);
+                  setTargetTopicForReject(null);
+                }}
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Bạn đang từ chối đề tài: <strong className="text-slate-900 font-bold">"{targetTopicForReject.title}"</strong> của giảng viên{' '}
+              <strong className="text-[#123891]">
+                {targetTopicForReject.supervisorId?.userId?.fullName || 'Giảng viên'}
+              </strong>
+              . Vui lòng nhập lý do để giảng viên biết và chỉnh sửa:
+            </p>
+
+            <form onSubmit={handleConfirmRejectTopic} className="space-y-4">
+              <div>
+                <textarea
+                  rows={4}
+                  value={topicRejectReason}
+                  onChange={(e) => setTopicRejectReason(e.target.value)}
+                  placeholder="Nhập lý do từ chối hoặc góp ý chỉnh sửa cho đề tài này..."
+                  required
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-100"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setRejectTopicModalOpen(false);
+                    setTargetTopicForReject(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition disabled:opacity-50 cursor-pointer"
+                >
+                  {actionLoading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
