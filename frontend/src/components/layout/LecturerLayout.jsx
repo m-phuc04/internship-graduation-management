@@ -138,10 +138,10 @@ const LecturerLayout = () => {
                 className="flex items-center gap-2.5 p-1.5 pl-2.5 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition cursor-pointer group"
               >
                 <div className="text-right hidden sm:block">
-                  <div className="text-xs font-bold text-slate-900 group-hover:text-violet-600 transition">
+                  <div className="text-xs font-bold text-slate-900 group-hover:text-[#ECA124] transition">
                     {user?.fullName || (user?.role === 'ADMIN' ? 'Quản trị viên' : user?.role === 'TBM' ? 'Trưởng Bộ Môn' : 'Giảng viên')}
                   </div>
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-violet-600">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#1B4DA1]">
                     {user?.role === 'ADMIN'
                       ? 'QUẢN TRỊ VIÊN'
                       : user?.role === 'TBM'
@@ -150,7 +150,7 @@ const LecturerLayout = () => {
                   </div>
                 </div>
 
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-violet-600 to-indigo-600 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white flex items-center justify-center font-bold text-xs shadow-xs">
                   {user?.fullName
                     ? user.fullName.charAt(0).toUpperCase()
                     : 'U'}
@@ -179,9 +179,9 @@ const LecturerLayout = () => {
                       <Link
                         to="/tbm/dashboard"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-violet-700 bg-violet-50/70 hover:bg-violet-100 transition"
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-[#123891] bg-blue-50/70 hover:bg-blue-100 transition"
                       >
-                        <span className="w-2 h-2 rounded-full bg-violet-600" />
+                        <span className="w-2 h-2 rounded-full bg-[#123891]" />
                         <span>Dashboard (Quản trị TBM)</span>
                       </Link>
                     )}
@@ -190,9 +190,9 @@ const LecturerLayout = () => {
                       <Link
                         to="/admin/permissions"
                         onClick={() => setUserMenuOpen(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-violet-700 bg-violet-50/70 hover:bg-violet-100 transition"
+                        className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-bold text-[#123891] bg-blue-50/70 hover:bg-blue-100 transition"
                       >
-                        <span className="w-2 h-2 rounded-full bg-violet-600" />
+                        <span className="w-2 h-2 rounded-full bg-[#123891]" />
                         <span>Dashboard (Quản trị ADMIN)</span>
                       </Link>
                     )}
@@ -203,7 +203,7 @@ const LecturerLayout = () => {
                         setUserMenuOpen(false);
                         setScheduleModalOpen(true);
                       }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition"
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#ECA124] transition"
                     >
                       <Calendar className="w-4 h-4 text-slate-400" />
                       <span>Lịch & Kế hoạch đào tạo</span>
@@ -212,7 +212,7 @@ const LecturerLayout = () => {
                     <Link
                       to="/lecturer/profile"
                       onClick={() => setUserMenuOpen(false)}
-                      className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-violet-50 hover:text-violet-700 transition"
+                      className="flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#ECA124] transition"
                     >
                       <User className="w-4 h-4 text-slate-400" />
                       <span>Hồ sơ cá nhân</span>

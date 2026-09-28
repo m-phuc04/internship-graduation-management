@@ -32,7 +32,7 @@ const TbmLayout = () => {
   return (
     <div className="flex min-h-screen bg-[#F4F7FC] text-slate-900 w-full">
       {/* Desktop Sidebar (Fixed Left, visible ONLY on >= 1024px) */}
-      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-[#0B1E48] border-r border-[#132c66]">
+      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-[#123891] border-r border-[#0e2c73]">
         <Sidebar />
       </div>
 
@@ -47,7 +47,7 @@ const TbmLayout = () => {
           />
 
           {/* Slide-in Sidebar Drawer */}
-          <div className="relative w-64 max-w-[85vw] bg-[#0B1E48] z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="relative w-64 max-w-[85vw] bg-[#123891] z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <Sidebar onCloseMobile={() => setMobileOpen(false)} />
           </div>
         </div>

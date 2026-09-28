@@ -72,7 +72,7 @@ const AcademicTermSelector = () => {
         className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-50 hover:bg-slate-100/90 border border-slate-200 hover:border-slate-300 transition-all cursor-pointer shadow-2xs group"
         title="Chọn học kỳ làm việc của hệ thống"
       >
-        <div className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 border border-indigo-100 group-hover:scale-105 transition-transform">
+        <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center text-[#1B4DA1] border border-blue-100 group-hover:scale-105 transition-transform">
           <GraduationCap className="w-4 h-4" />
         </div>
 
@@ -124,7 +124,7 @@ const AcademicTermSelector = () => {
                     }}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-indigo-50/90 text-indigo-900 border border-indigo-200/80 font-semibold'
+                        ? 'bg-blue-50/90 text-indigo-900 border border-blue-200/80 font-semibold'
                         : 'hover:bg-slate-50 text-slate-700 border border-transparent'
                     }`}
                   >
@@ -135,7 +135,7 @@ const AcademicTermSelector = () => {
                         </span>
                       </div>
                       <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
-                        <span className="font-mono font-medium text-indigo-600 bg-indigo-50 px-1 rounded text-[10px]">
+                        <span className="font-mono font-medium text-[#1B4DA1] bg-blue-50 px-1 rounded text-[10px]">
                           {term.code}
                         </span>
                         <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border ${badge.badge}`}>
@@ -146,7 +146,7 @@ const AcademicTermSelector = () => {
                     </div>
 
                     {isSelected && (
-                      <div className="w-5 h-5 rounded-full bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                      <div className="w-5 h-5 rounded-full bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-2xs">
                         <Check className="w-3 h-3 stroke-[2.5]" />
                       </div>
                     )}

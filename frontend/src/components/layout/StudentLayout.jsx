@@ -130,11 +130,11 @@ const StudentLayout = () => {
                       <div className="text-xs font-bold text-slate-900 leading-tight">
                         {user?.fullName || 'Sinh viên'}
                       </div>
-                      <div className="text-[10px] text-indigo-600 font-semibold uppercase tracking-wider">
+                      <div className="text-[10px] text-[#1B4DA1] font-semibold uppercase tracking-wider">
                         Sinh viên
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
+                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-[#123891] flex items-center justify-center font-bold text-xs shrink-0">
                       {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'S'}
                     </div>
                     <ChevronDown className="w-3.5 h-3.5 text-slate-400 mr-0.5" />
@@ -154,7 +154,7 @@ const StudentLayout = () => {
                           <div className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
                             {user?.email || `MSSV: ${user?.studentCode || 'N/A'}`}
                           </div>
-                          <div className="inline-flex items-center gap-1 text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md mt-1.5">
+                          <div className="inline-flex items-center gap-1 text-[10px] font-bold text-[#1B4DA1] bg-blue-50 px-2 py-0.5 rounded-md mt-1.5">
                             <GraduationCap className="w-3 h-3" /> Sinh viên chính quy
                           </div>
                         </div>
@@ -163,7 +163,7 @@ const StudentLayout = () => {
                           <NavLink
                             to="/student/profile"
                             onClick={() => setDropdownOpen(false)}
-                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition"
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-xl transition"
                           >
                             <User className="w-4 h-4 text-slate-400" />
                             <span>Hồ sơ cá nhân</span>
@@ -175,7 +175,7 @@ const StudentLayout = () => {
                               setDropdownOpen(false);
                               setScheduleModalOpen(true);
                             }}
-                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-indigo-600 rounded-xl transition text-left"
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-xl transition text-left"
                           >
                             <Calendar className="w-4 h-4 text-slate-400" />
                             <span>Lịch & Kế hoạch đào tạo</span>
