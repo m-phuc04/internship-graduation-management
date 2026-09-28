@@ -15,6 +15,8 @@ import AssignSupervisorModal from '../../components/thesis/AssignSupervisorModal
 import TbmThesisDetailModal from '../../components/thesis/TbmThesisDetailModal';
 import ExportModal from '../../components/common/ExportModal';
 import ThesisTimelineModal from '../../components/thesis/ThesisTimelineModal';
+import CouncilManagementSection from '../../components/thesis/CouncilManagementSection';
+import AssignCouncilToThesisModal from '../../components/thesis/AssignCouncilToThesisModal';
 
 import {
   GraduationCap,
@@ -241,6 +243,124 @@ const TbmThesisManagement = () => {
   const [assignSupervisorOpen, setAssignSupervisorOpen] = useState(false);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
+  const [assignCouncilToThesisModalOpen, setAssignCouncilToThesisModalOpen] = useState(false);
+  const [selectedThesisForCouncil, setSelectedThesisForCouncil] = useState(null);
+
+  const thesisCouncilStorageKey = `tbm_thesis_councils_${currentTerm?._id || 'default'}`;
+  const [thesisCouncilMap, setThesisCouncilMap] = useState(() => {
+    try {
+      const saved = localStorage.getItem(thesisCouncilStorageKey);
+      if (saved) return JSON.parse(saved) || {};
+    } catch {}
+    return {};
+  });
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(thesisCouncilStorageKey);
+      if (saved) setThesisCouncilMap(JSON.parse(saved) || {});
+    } catch {}
+  }, [thesisCouncilStorageKey]);
+
+  const getCouncilsList = useCallback(() => {
+    try {
+      const key = `tbm_councils_${currentTerm?._id || 'default'}`;
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch {}
+    return [];
+  }, [currentTerm?._id]);
+
+  const handleAssignCouncilToThesis = (thesisId, councilId) => {
+    setThesisCouncilMap((prev) => {
+      const next = { ...prev };
+      if (councilId) {
+        next[thesisId] = councilId;
+      } else {
+        delete next[thesisId];
+      }
+      try {
+        localStorage.setItem(thesisCouncilStorageKey, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+  };
+
+  // Tính Điểm HD + PB theo công thức: (Điểm GVHD + (Điểm GVPB1 + Điểm GVPB2)/2) / 2
+  const calculateScoreHDPB = useCallback((item) => {
+    const scoreHD = item.scores?.supervisorScore ?? item.scores?.student1SupervisorScore;
+    const scorePB1 = item.scores?.reviewer1Score ?? item.scores?.student1Reviewer1Score;
+    const scorePB2 = item.scores?.reviewer2Score ?? item.scores?.student1Reviewer2Score;
+
+    const validPB = [];
+    if (scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1) && scorePB1 !== '') {
+      validPB.push(Number(scorePB1));
+    }
+    if (scorePB2 !== null && scorePB2 !== undefined && !isNaN(scorePB2) && scorePB2 !== '') {
+      validPB.push(Number(scorePB2));
+    }
+
+    let avgPB = null;
+    if (validPB.length > 0) {
+      avgPB = validPB.reduce((a, b) => a + b, 0) / validPB.length;
+    }
+
+    const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && scoreHD !== '';
+    const numHD = hasHD ? Number(scoreHD) : null;
+
+    if (numHD !== null && avgPB !== null) {
+      const finalScore = (numHD + avgPB) / 2;
+      return {
+        score: Number(finalScore.toFixed(2)),
+        scoreHD: numHD,
+        scorePB1: scorePB1 !== null && scorePB1 !== undefined ? Number(scorePB1) : null,
+        scorePB2: scorePB2 !== null && scorePB2 !== undefined ? Number(scorePB2) : null,
+        avgPB: Number(avgPB.toFixed(2)),
+      };
+    }
+
+    if (numHD !== null) {
+      return {
+        score: Number(numHD.toFixed(2)),
+        scoreHD: numHD,
+        scorePB1: null,
+        scorePB2: null,
+        avgPB: null,
+      };
+    }
+
+    if (avgPB !== null) {
+      return {
+        score: Number(avgPB.toFixed(2)),
+        scoreHD: null,
+        scorePB1: scorePB1 !== null && scorePB1 !== undefined ? Number(scorePB1) : null,
+        scorePB2: scorePB2 !== null && scorePB2 !== undefined ? Number(scorePB2) : null,
+        avgPB: Number(avgPB.toFixed(2)),
+      };
+    }
+
+    return null;
+  }, []);
+
+  const calculateCouncilScore = useCallback((item, assignedCouncil) => {
+    const itemCouncilScore = item.scores?.councilScore ?? item.scores?.student1CouncilScore;
+    if (itemCouncilScore !== null && itemCouncilScore !== undefined && !isNaN(itemCouncilScore)) {
+      return Number(Number(itemCouncilScore).toFixed(2));
+    }
+    if (assignedCouncil && Array.isArray(assignedCouncil.lecturers)) {
+      const validScores = assignedCouncil.lecturers
+        .map((l) => l.score)
+        .filter((s) => s !== null && s !== undefined && !isNaN(s) && s !== '');
+      if (validScores.length > 0) {
+        const sum = validScores.reduce((acc, curr) => acc + Number(curr), 0);
+        return Number((sum / validScores.length).toFixed(2));
+      }
+    }
+    return null;
+  }, []);
 
   const fetchTheses = useCallback(async () => {
     setLoading(true);
@@ -292,6 +412,99 @@ const TbmThesisManagement = () => {
     }
     return theses;
   }, [theses, activeMainTab, hasBothReviewerScores]);
+
+  // Tính hình thức báo cáo:
+  // Đề tài nằm trong top 20% điểm cao nhất (của các đề tài có điểm) VÀ điểm >= 8.0 => 'ORAL' (Báo cáo Oral)
+  // Các đề tài còn lại => 'POSTER' (Báo cáo Poster)
+  const thesisReportFormatMap = React.useMemo(() => {
+    const eligibleTheses = theses.filter(hasBothReviewerScores);
+    const total = eligibleTheses.length;
+    if (total === 0) return {};
+
+    const scoredList = eligibleTheses.map((t) => {
+      const sObj = calculateScoreHDPB(t);
+      return {
+        id: t._id,
+        score: sObj ? sObj.score : -1,
+        thesis: t,
+      };
+    });
+
+    // Sắp xếp điểm giảm dần
+    scoredList.sort((a, b) => b.score - a.score);
+
+    // Top 20% số lượng đề tài
+    const top20Count = Math.max(1, Math.ceil(total * 0.2));
+    const cutoffScore = scoredList[top20Count - 1]?.score ?? -1;
+
+    const map = {};
+    scoredList.forEach((item, index) => {
+      const isTop20 = index < top20Count || (item.score === cutoffScore && item.score >= 8.0);
+      if (isTop20 && item.score >= 8.0) {
+        map[item.id] = 'ORAL';
+      } else {
+        map[item.id] = 'POSTER';
+      }
+    });
+
+    return map;
+  }, [theses, hasBothReviewerScores, calculateScoreHDPB]);
+
+  // Tự động kiểm tra và hủy phân công phòng nếu:
+  // 1. Phòng hội đồng có GVHD của đề tài làm thành viên
+  // 2. Hình thức phòng (Oral / Poster) không khớp với hình thức báo cáo của đề tài
+  useEffect(() => {
+    if (activeMainTab !== 'COUNCIL_REVIEWER') return;
+    const councilsList = getCouncilsList();
+    if (!councilsList.length || !displayedTheses.length) return;
+
+    let changed = false;
+    const nextMap = { ...thesisCouncilMap };
+    const warnings = [];
+
+    for (const item of displayedTheses) {
+      const assignedCouncilId = nextMap[item._id];
+      if (!assignedCouncilId) continue;
+
+      const council = councilsList.find((c) => c.id === assignedCouncilId);
+      if (!council) continue;
+
+      // 1. Kiểm tra GVHD có trong hội đồng không
+      const supId = String(item.supervisorId?._id || item.supervisorId?.id || item.supervisorId || '');
+      const supCode = item.supervisorId?.lecturerCode;
+      const hasSupervisor = Array.isArray(council.lecturers) && council.lecturers.some((l) => {
+        const lId = String(l.lecturerId?._id || l.lecturerId || l.id || l._id || '');
+        const lCode = l.lecturerCode;
+        return (supId && lId && lId === supId) || (supCode && lCode && lCode === supCode);
+      });
+
+      // 2. Kiểm tra khớp hình thức báo cáo
+      const reqFormat = thesisReportFormatMap[item._id] || 'POSTER';
+      const isTypeMismatch = council.type && council.type !== reqFormat;
+
+      if (hasSupervisor) {
+        delete nextMap[item._id];
+        changed = true;
+        const supName = (item.supervisorId?.academicTitle ? item.supervisorId.academicTitle + ' ' : '') + (item.supervisorId?.userId?.fullName || 'GVHD');
+        const cName = (council.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+        warnings.push('Đề tài "' + item.thesisTitle + '" có GVHD (' + supName + ') thuộc ' + cName + '. Hệ thống đã hủy phân công phòng cho đề tài này, vui lòng chọn phòng khác!');
+      } else if (isTypeMismatch) {
+        delete nextMap[item._id];
+        changed = true;
+        const cName = (council.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+        const reqText = reqFormat === 'ORAL' ? 'Báo cáo Oral' : 'Báo cáo Poster';
+        warnings.push('Đề tài "' + item.thesisTitle + '" có hình thức ' + reqText + ', không khớp với ' + cName + ' (' + (council.type === 'ORAL' ? 'Oral' : 'Poster') + '). Đã hủy phân công phòng!');
+      }
+    }
+
+    if (changed) {
+      setThesisCouncilMap(nextMap);
+      try {
+        localStorage.setItem(thesisCouncilStorageKey, JSON.stringify(nextMap));
+      } catch {}
+      // Cleaned silently to avoid repeated toasts
+    }
+  }, [displayedTheses, thesisReportFormatMap, getCouncilsList, activeMainTab, thesisCouncilStorageKey, showToast]);
 
   // Actions for Tab 2
   const handleApprove = async () => {
@@ -986,9 +1199,15 @@ const TbmThesisManagement = () => {
       {/* TAB 2 & 3: PHÂN CÔNG PHẢN BIỆN KÍN & PHÂN CÔNG HỘI ĐỒNG */}
       {/* ========================================================================= */}
       {(activeMainTab === 'PRIVATE_REVIEWER' || activeMainTab === 'COUNCIL_REVIEWER') && (
-        <div className="space-y-4">
-          {/* Stats Grid */}
-          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="space-y-6">
+          {/* Bảng Phòng Hội Đồng (Dành riêng cho Tab 3: Phân công hội đồng) */}
+          {activeMainTab === 'COUNCIL_REVIEWER' && (
+            <CouncilManagementSection theses={displayedTheses} />
+          )}
+
+          {/* Stats Grid (Chỉ hiển thị ở Tab 2: Phân công phản biện kín) */}
+          {activeMainTab === 'PRIVATE_REVIEWER' && (
+            <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
               <div
                 onClick={() => { setStatus('ALL'); setPage(1); }}
@@ -1063,6 +1282,7 @@ const TbmThesisManagement = () => {
               </div>
             </div>
           </div>
+          )}
 
           {/* Filter & Search Bar */}
           <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -1125,22 +1345,208 @@ const TbmThesisManagement = () => {
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                      <th className="py-3.5 px-4 text-center w-14">STT</th>
-                      <th className="py-3.5 px-4">Tên đề tài KLTN</th>
-                      <th className="py-3.5 px-4">Sinh viên</th>
-                      <th className="py-3.5 px-4">GV Hướng Dẫn</th>
-                      <th className="py-3.5 px-4">GVPB 1</th>
-                      <th className="py-3.5 px-4 text-center">Điểm GVPB 1</th>
-                      <th className="py-3.5 px-4">GVPB 2</th>
-                      <th className="py-3.5 px-4 text-center">Điểm GVPB 2</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
-                    </tr>
+                    {activeMainTab === 'COUNCIL_REVIEWER' ? (
+                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                        <th className="py-3.5 px-4 text-center w-12">STT</th>
+                        <th className="py-3.5 px-4 min-w-[200px]">Tên đề tài KLTN</th>
+                        <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
+                        <th className="py-3.5 px-4 min-w-[160px]">GV Hướng Dẫn</th>
+                        <th className="py-3.5 px-4 text-center min-w-[120px] whitespace-nowrap">Điểm HD + PB</th>
+                        <th className="py-3.5 px-4 text-center min-w-[130px] whitespace-nowrap">Hình thức báo cáo</th>
+                        <th className="py-3.5 px-4 min-w-[160px]">Phòng hội đồng</th>
+                        <th className="py-3.5 px-4 text-center min-w-[110px] whitespace-nowrap">Điểm Hội đồng</th>
+                        <th className="py-3.5 px-4 text-right whitespace-nowrap">Thao tác</th>
+                      </tr>
+                    ) : (
+                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                        <th className="py-3.5 px-4 text-center w-14">STT</th>
+                        <th className="py-3.5 px-4">Tên đề tài KLTN</th>
+                        <th className="py-3.5 px-4">Sinh viên</th>
+                        <th className="py-3.5 px-4">GV Hướng Dẫn</th>
+                        <th className="py-3.5 px-4">GVPB 1</th>
+                        <th className="py-3.5 px-4 text-center">Điểm GVPB 1</th>
+                        <th className="py-3.5 px-4">GVPB 2</th>
+                        <th className="py-3.5 px-4 text-center">Điểm GVPB 2</th>
+                        <th className="py-3.5 px-4 text-right">Thao tác</th>
+                      </tr>
+                    )}
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {displayedTheses.map((item, idx) => {
                       const isPending = item.status === 'PENDING_TBM_APPROVAL';
+                      const councilsList = getCouncilsList();
+                      const assignedCouncilId = thesisCouncilMap[item._id];
+                      const assignedCouncil = councilsList.find((c) => c.id === assignedCouncilId);
 
+                      if (activeMainTab === 'COUNCIL_REVIEWER') {
+                        const scoreHDPB = calculateScoreHDPB(item);
+                        const councilFinalScore = calculateCouncilScore(item, assignedCouncil);
+
+                        return (
+                          <tr
+                            key={item._id}
+                            className="hover:bg-slate-50/80 transition"
+                          >
+                            {/* 1. STT */}
+                            <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                              {(page - 1) * limit + idx + 1}
+                            </td>
+
+                            {/* 2. Tên đề tài KLTN */}
+                            <td className="py-3.5 px-4 min-w-[200px] max-w-sm" title={item.thesisTitle}>
+                              <div
+                                onClick={() => {
+                                  setSelectedThesis(item);
+                                  setDetailModalOpen(true);
+                                }}
+                                className="font-bold text-slate-900 line-clamp-2 leading-snug hover:text-[#123891] cursor-pointer transition"
+                              >
+                                {item.thesisTitle}
+                              </div>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono mt-1">
+                                {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                              </span>
+                            </td>
+
+                            {/* 3. Sinh viên */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
+                                  <strong className="text-slate-900">{item.studentId?.userId?.fullName}</strong>
+                                  <span className="text-[10px] font-mono text-slate-500">({item.studentId?.studentCode})</span>
+                                </div>
+
+                                {item.studentCount === 2 && item.secondStudentId && (
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
+                                    <strong className="text-slate-900">{item.secondStudentId?.userId?.fullName}</strong>
+                                    <span className="text-[10px] font-mono text-slate-500">({item.secondStudentId?.studentCode})</span>
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* 4. GV Hướng Dẫn */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-slate-900">
+                                {item.supervisorId?.academicTitle ? `${item.supervisorId.academicTitle} ` : ''}
+                                {item.supervisorId?.userId?.fullName}
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Mã GV: {item.supervisorId?.lecturerCode}
+                              </div>
+                            </td>
+
+                            {/* 5. Điểm HD + PB: (Điểm GVHD + (Điểm GVPB1 + Điểm GVPB2)/2) / 2 */}
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {scoreHDPB ? (
+                                <span
+                                  className="font-bold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs inline-block"
+                                  title={`GVHD: ${scoreHDPB.scoreHD ?? '—'} | GVPB1: ${scoreHDPB.scorePB1 ?? '—'} | GVPB2: ${scoreHDPB.scorePB2 ?? '—'} | TB PB: ${scoreHDPB.avgPB ?? '—'}`}
+                                >
+                                  {scoreHDPB.score}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">—</span>
+                              )}
+                            </td>
+
+                            {/* 6. Hình thức báo cáo (Top 20% & Điểm >= 8 -> Báo cáo Oral, còn lại -> Báo cáo Poster) */}
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {scoreHDPB ? (
+                                (() => {
+                                  const reqFormat = thesisReportFormatMap[item._id] || 'POSTER';
+                                  return reqFormat === 'ORAL' ? (
+                                    <span
+                                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-blue-50 text-[#102d7d] border-blue-200 shadow-2xs"
+                                      title="Top 20% điểm HD + PB và điểm ≥ 8.0"
+                                    >
+                                      Báo cáo Oral
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-purple-50 text-purple-700 border-purple-200 shadow-2xs"
+                                      title="Báo cáo Poster"
+                                    >
+                                      Báo cáo Poster
+                                    </span>
+                                  );
+                                })()
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">—</span>
+                              )}
+                            </td>
+
+                            {/* 7. Phòng hội đồng */}
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {assignedCouncil ? (
+                                <div className="space-y-0.5">
+                                  <strong className="text-slate-900 block font-bold text-xs">
+                                    {(assignedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}
+                                  </strong>
+                                  <div className="text-[10px] text-slate-500 font-mono">
+                                    Phòng: {assignedCouncil.room}
+                                  </div>
+                                  {assignedCouncil.reportTime && (
+                                    <div className="text-[10px] text-slate-600 font-mono flex items-center gap-1 mt-0.5">
+                                      <Clock className="w-3 h-3 text-[#123891]" />
+                                      <span>{assignedCouncil.reportTime}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200">
+                                  Chưa phân công
+                                </span>
+                              )}
+                            </td>
+
+                            {/* 8. Điểm Hội đồng */}
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {councilFinalScore !== null ? (
+                                <span className="font-extrabold text-emerald-800 font-mono text-xs bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+                                  {councilFinalScore}
+                                </span>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Chưa có điểm</span>
+                              )}
+                            </td>
+
+                            {/* 9. Thao tác */}
+                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {/* Phân công phòng hội đồng */}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedThesisForCouncil(item);
+                                    setAssignCouncilToThesisModalOpen(true);
+                                  }}
+                                  className="p-1.5 text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                  title="Phân công phòng hội đồng cho đề tài"
+                                >
+                                  <UserCheck className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedThesis(item);
+                                    setDetailModalOpen(true);
+                                  }}
+                                  className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                  title="Xem chi tiết"
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      }
+
+                      // TAB 2 (Phản biện kín) row rendering
                       // GVPB 1
                       let rev1Name = '';
                       if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
@@ -1596,6 +2002,20 @@ const TbmThesisManagement = () => {
           }
           fetchTheses();
         }}
+      />
+
+      {/* Assign Council To Thesis Modal */}
+      <AssignCouncilToThesisModal
+        isOpen={assignCouncilToThesisModalOpen}
+        onClose={() => {
+          setAssignCouncilToThesisModalOpen(false);
+          setSelectedThesisForCouncil(null);
+        }}
+        thesis={selectedThesisForCouncil}
+        councils={getCouncilsList()}
+        currentCouncilId={selectedThesisForCouncil ? thesisCouncilMap[selectedThesisForCouncil._id] : ''}
+        reportFormat={selectedThesisForCouncil ? (thesisReportFormatMap[selectedThesisForCouncil._id] || 'POSTER') : 'POSTER'}
+        onAssignCouncil={handleAssignCouncilToThesis}
       />
 
       {/* Approve Confirm Modal */}

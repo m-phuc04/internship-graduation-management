@@ -191,6 +191,18 @@ const thesisSchema = new mongoose.Schema(
       student2Reviewer2Score: { type: Number, min: 0, max: 10, default: null },
       student1FinalScore: { type: Number, min: 0, max: 10, default: null },
       student2FinalScore: { type: Number, min: 0, max: 10, default: null },
+      councilScore: { type: Number, min: 0, max: 10, default: null },
+      councilLecturerScores: [
+        {
+          lecturerId: { type: mongoose.Schema.Types.ObjectId, ref: "Lecturer" },
+          lecturerName: { type: String, default: "" },
+          student1Score: { type: Number, min: 0, max: 10, default: null },
+          student2Score: { type: Number, min: 0, max: 10, default: null },
+          score: { type: Number, min: 0, max: 10, default: null },
+          comment: { type: String, default: null },
+          gradedAt: { type: Date, default: Date.now },
+        },
+      ],
       isSupervisorScoreLocked: { type: Boolean, default: false },
       isReviewer1ScoreLocked: { type: Boolean, default: false },
       isReviewer2ScoreLocked: { type: Boolean, default: false },

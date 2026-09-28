@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import thesisApi from '../../api/thesisApi';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
-import StatusBadge from '../../components/common/StatusBadge';
 import SearchInput from '../../components/common/SearchInput';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Modal from '../../components/common/Modal';
+import PublishScoresModal from '../../components/thesis/PublishScoresModal';
 
 import {
   Award,
@@ -35,14 +35,15 @@ import {
   ToggleLeft,
   ToggleRight,
   ShieldAlert,
+  Building,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
   { value: 'ALL', label: 'Tất cả' },
-  { value: 'ASSIGNED_REVIEWERS', label: 'Đã gán PB' },
   { value: 'IN_PROGRESS', label: 'Đang thực hiện' },
-  { value: 'GRADED', label: 'Đã có điểm (GRADED)' },
-  { value: 'COMPLETED', label: 'Hoàn tất (COMPLETED)' },
+  { value: 'PB_KIN', label: 'Phản biện kín' },
+  { value: 'BC_HOIDONG', label: 'Báo cáo hội đồng' },
+  { value: 'COMPLETED', label: 'Hoàn tất' },
 ];
 
 const TbmThesisEvaluationManagement = () => {
@@ -56,15 +57,14 @@ const TbmThesisEvaluationManagement = () => {
   // TAB 1: EVALUATIONS STATE
   // ==========================================
   const [theses, setTheses] = useState([]);
-  const [stats, setStats] = useState({
-    totalEligible: 0,
-    gradedCount: 0,
-    completedCount: 0,
-    pendingGradeCount: 0,
-  });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+
+  // Councils & Storage mapping for Council Rooms
+  const [councilsMap, setCouncilsMap] = useState({});
+  const [thesisCouncilMap, setThesisCouncilMap] = useState({});
+  const [publishedScores, setPublishedScores] = useState({});
 
   // Complete Dialog
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
@@ -74,6 +74,11 @@ const TbmThesisEvaluationManagement = () => {
   // Detail Modal
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedThesis, setSelectedThesis] = useState(null);
+
+  // Publish Scores Modal
+  const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [thesisToPublish, setThesisToPublish] = useState(null);
+  const [thesisToPublishScoreInfo, setThesisToPublishScoreInfo] = useState(null);
 
   // ==========================================
   // TAB 2: CRITERIA STATE
@@ -108,6 +113,158 @@ const TbmThesisEvaluationManagement = () => {
   const [processingFail, setProcessingFail] = useState(false);
 
   // ==========================================
+  // LOAD LOCAL STORAGE DATA (COUNCILS & PUBLISHED SCORES)
+  // ==========================================
+  const loadLocalMappings = useCallback(() => {
+    try {
+      const termId = currentTerm?._id || 'default';
+      const cKey = `tbm_councils_${termId}`;
+      const tcKey = `tbm_thesis_councils_${termId}`;
+      const psKey = `tbm_published_scores_${termId}`;
+
+      const savedCouncils = localStorage.getItem(cKey);
+      if (savedCouncils) {
+        const parsed = JSON.parse(savedCouncils);
+        if (Array.isArray(parsed)) {
+          const map = {};
+          parsed.forEach((c) => {
+            const cid = c.id || c._id;
+            if (cid) map[cid] = c;
+          });
+          setCouncilsMap(map);
+        }
+      } else {
+        setCouncilsMap({});
+      }
+
+      const savedThesisCouncils = localStorage.getItem(tcKey);
+      if (savedThesisCouncils) {
+        setThesisCouncilMap(JSON.parse(savedThesisCouncils));
+      } else {
+        setThesisCouncilMap({});
+      }
+
+      const savedPubScores = localStorage.getItem(psKey);
+      if (savedPubScores) {
+        setPublishedScores(JSON.parse(savedPubScores));
+      } else {
+        setPublishedScores({});
+      }
+    } catch (e) {
+      console.warn('Error loading local council and publish mappings', e);
+    }
+  }, [currentTerm?._id]);
+
+  useEffect(() => {
+    loadLocalMappings();
+  }, [loadLocalMappings]);
+
+  // ==========================================
+  // SCORE HELPER CALCULATION
+  // ==========================================
+  const getThesisScoreInfo = useCallback(
+    (item) => {
+      const s = item.scores || {};
+      const scoreHD =
+        s.supervisorScore !== null && s.supervisorScore !== undefined
+          ? s.supervisorScore
+          : s.student1SupervisorScore !== null && s.student1SupervisorScore !== undefined
+          ? s.student1SupervisorScore
+          : null;
+
+      const scorePB1 =
+        s.reviewer1Score !== null && s.reviewer1Score !== undefined
+          ? s.reviewer1Score
+          : s.student1Reviewer1Score !== null && s.student1Reviewer1Score !== undefined
+          ? s.student1Reviewer1Score
+          : null;
+
+      // Lookup Council assignment
+      const councilId = thesisCouncilMap ? thesisCouncilMap[item._id] : null;
+      const assignedCouncil = councilId && councilsMap ? councilsMap[councilId] : null;
+
+      // Extract individual scores for GVHĐ 1 and GVHĐ 2
+      const councilScores = Array.isArray(s.councilLecturerScores) ? s.councilLecturerScores : [];
+      let scoreGVHD1 = null;
+      let scoreGVHD2 = null;
+
+      if (assignedCouncil && Array.isArray(assignedCouncil.lecturers) && assignedCouncil.lecturers.length >= 2) {
+        const lec1 = assignedCouncil.lecturers[0];
+        const lec2 = assignedCouncil.lecturers[1];
+
+        const entry1 = councilScores.find(
+          (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec1?.lecturerId || lec1?.userId) ||
+                 (lec1?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec1.name.trim().toLowerCase())
+        ) || councilScores[0];
+
+        const entry2 = councilScores.find(
+          (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec2?.lecturerId || lec2?.userId) ||
+                 (lec2?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec2.name.trim().toLowerCase())
+        ) || (councilScores.length > 1 ? councilScores[1] : null);
+
+        scoreGVHD1 = entry1 ? (entry1.score ?? entry1.student1Score) : null;
+        scoreGVHD2 = entry2 && entry2 !== entry1 ? (entry2.score ?? entry2.student1Score) : (councilScores.length > 1 ? councilScores[1].score : null);
+      } else if (councilScores.length >= 2) {
+        scoreGVHD1 = councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null;
+        scoreGVHD2 = councilScores[1]?.score ?? councilScores[1]?.student1Score ?? null;
+      } else if (councilScores.length === 1) {
+        scoreGVHD1 = councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null;
+      }
+
+      const hasTwoCouncilLecturers = (assignedCouncil && Array.isArray(assignedCouncil.lecturers) && assignedCouncil.lecturers.length >= 2) || councilScores.length >= 2;
+
+      let scoreCouncil = null;
+      if (hasTwoCouncilLecturers) {
+        // Strict: Điểm Hội Đồng chỉ tính trung bình khi có ĐỦ CẢ 2 CỘT GVHĐ 1 và GVHĐ 2!
+        if (scoreGVHD1 !== null && scoreGVHD1 !== undefined && scoreGVHD2 !== null && scoreGVHD2 !== undefined) {
+          scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
+        } else {
+          scoreCouncil = null;
+        }
+      } else {
+        if (scoreGVHD1 !== null && scoreGVHD1 !== undefined) {
+          scoreCouncil = Number(Number(scoreGVHD1).toFixed(2));
+        } else {
+          scoreCouncil = s.councilScore !== null && s.councilScore !== undefined
+            ? Number(s.councilScore)
+            : s.student1CouncilScore !== null && s.student1CouncilScore !== undefined
+            ? Number(s.student1CouncilScore)
+            : null;
+        }
+      }
+
+      const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
+      const hasPB1 = scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1);
+      const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
+
+      // Final Score: GVHD (50%) + PB kín (20%) + Hội đồng (30%)
+      let finalScore = null;
+      if (hasHD && hasPB1 && hasCouncil) {
+        finalScore = Number(
+          (Number(scoreHD) * 0.5 + Number(scorePB1) * 0.2 + Number(scoreCouncil) * 0.3).toFixed(2)
+        );
+      } else if (s.finalScore !== null && s.finalScore !== undefined && !isNaN(s.finalScore) && hasCouncil) {
+        finalScore = Number(s.finalScore);
+      }
+
+      return {
+        scoreHD: hasHD ? Number(scoreHD) : null,
+        scorePB1: hasPB1 ? Number(scorePB1) : null,
+        scoreGVHD1: scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null,
+        scoreGVHD2: scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null,
+        scoreCouncil: hasCouncil ? Number(scoreCouncil) : null,
+        hasTwoCouncilLecturers,
+        finalScore,
+        hasHD,
+        hasPB1,
+        hasCouncil,
+        assignedCouncil,
+      };
+    },
+    [thesisCouncilMap, councilsMap]
+  );
+
+  // ==========================================
   // FETCH METHODS
   // ==========================================
   const fetchEvaluations = useCallback(async () => {
@@ -115,20 +272,19 @@ const TbmThesisEvaluationManagement = () => {
     try {
       const res = await thesisApi.getEvaluations({
         search,
-        status: statusFilter,
+        status: 'ALL',
         academicTermId: currentTerm?._id || '',
       });
 
       if (res.success) {
         setTheses(res.data || []);
-        if (res.stats) setStats(res.stats);
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải danh sách đánh giá khóa luận', 'error');
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, currentTerm?._id, showToast]);
+  }, [search, currentTerm?._id, showToast]);
 
   const fetchCriteria = useCallback(async () => {
     setLoadingCriteria(true);
@@ -174,6 +330,62 @@ const TbmThesisEvaluationManagement = () => {
   }, [mainTab, fetchEvaluations, fetchCriteria, fetchGradingPeriods]);
 
   // ==========================================
+  // FILTERED THESES (CLIENT FILTER TABS)
+  // ==========================================
+  const filteredTheses = useMemo(() => {
+    return theses.filter((item) => {
+      const info = getThesisScoreInfo(item);
+
+      if (statusFilter === 'IN_PROGRESS') {
+        // "Đang thực hiện": GVHD chưa chấm điểm
+        if (info.hasHD) return false;
+      } else if (statusFilter === 'PB_KIN') {
+        // "Phản biện kín": Có điểm GVHD rồi, điểm GVPB1 hoặc GVPB2 chưa thấy
+        if (!info.hasHD || (info.hasPB1 && info.hasPB2)) return false;
+      } else if (statusFilter === 'BC_HOIDONG') {
+        // "Báo cáo hội đồng": Đã có điểm GVPB1, GVPB2 chưa có điểm hội đồng
+        if (!info.hasPB1 || !info.hasPB2 || info.hasCouncil) return false;
+      } else if (statusFilter === 'COMPLETED') {
+        // "Hoàn tất": Các nhóm đã có tất cả các điểm đầy đủ hoặc trạng thái COMPLETED
+        const isAllScored = info.hasHD && info.hasPB1 && info.hasPB2 && info.hasCouncil;
+        if (!isAllScored && item.status !== 'COMPLETED') return false;
+      }
+
+      return true;
+    });
+  }, [theses, statusFilter, getThesisScoreInfo]);
+
+  // ==========================================
+  // COMPUTED STATS FOR TOP STATS CARDS
+  // ==========================================
+  const computedStats = useMemo(() => {
+    const totalEligible = theses.length;
+    let pendingGradeCount = 0;
+    let gradedCount = 0;
+    let completedCount = 0;
+
+    theses.forEach((item) => {
+      const info = getThesisScoreInfo(item);
+      if (item.status === 'COMPLETED') {
+        completedCount += 1;
+      }
+      if (info.finalScore !== null) {
+        gradedCount += 1;
+      }
+      if (!info.hasHD || !info.hasPB1 || !info.hasPB2 || !info.hasCouncil) {
+        pendingGradeCount += 1;
+      }
+    });
+
+    return {
+      totalEligible,
+      pendingGradeCount,
+      gradedCount,
+      completedCount,
+    };
+  }, [theses, getThesisScoreInfo]);
+
+  // ==========================================
   // TAB 1 ACTIONS
   // ==========================================
   const handleConfirmComplete = async () => {
@@ -198,6 +410,23 @@ const TbmThesisEvaluationManagement = () => {
   const handleOpenDetail = (item) => {
     setSelectedThesis(item);
     setDetailModalOpen(true);
+  };
+
+  const handleOpenPublishModal = (item, scoreInfo) => {
+    setThesisToPublish(item);
+    setThesisToPublishScoreInfo(scoreInfo);
+    setPublishModalOpen(true);
+  };
+
+  const handleSavePublishedScores = async (thesisId, selectedScores) => {
+    const termId = currentTerm?._id || 'default';
+    const key = `tbm_published_scores_${termId}`;
+    const updated = {
+      ...publishedScores,
+      [thesisId]: selectedScores,
+    };
+    setPublishedScores(updated);
+    localStorage.setItem(key, JSON.stringify(updated));
   };
 
   // ==========================================
@@ -423,20 +652,22 @@ const TbmThesisEvaluationManagement = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">
-                Quản lý Đánh giá Khóa luận Tốt nghiệp (KLTN)
+                Đánh giá Khóa luận Tốt nghiệp (KLTN)
               </h1>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Quản lý quy trình đánh giá điều kiện, thiết lập thời gian nhập điểm và tổng hợp kết quả KLTN
-              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
             <button
               onClick={() => {
-                if (mainTab === 'EVALUATIONS') fetchEvaluations();
-                else if (mainTab === 'CRITERIA') fetchCriteria();
-                else if (mainTab === 'GRADING_PERIODS') fetchGradingPeriods();
+                if (mainTab === 'EVALUATIONS') {
+                  loadLocalMappings();
+                  fetchEvaluations();
+                } else if (mainTab === 'CRITERIA') {
+                  fetchCriteria();
+                } else if (mainTab === 'GRADING_PERIODS') {
+                  fetchGradingPeriods();
+                }
               }}
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer"
             >
@@ -493,26 +724,30 @@ const TbmThesisEvaluationManagement = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
               <div className="text-[11px] text-slate-500 font-medium">Đủ điều kiện hội đồng</div>
-              <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">{stats.totalEligible}</div>
-              <div className="text-[10px] text-slate-400 mt-0.5">Đã gán đủ PB1 & PB2</div>
+              <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">
+                {computedStats.totalEligible}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80">
               <div className="text-[11px] text-amber-700 font-medium">Chờ chấm điểm</div>
-              <div className="text-lg font-bold text-amber-700 font-mono mt-0.5">{stats.pendingGradeCount}</div>
-              <div className="text-[10px] text-amber-600 mt-0.5">Thiếu 1 hoặc nhiều điểm</div>
+              <div className="text-lg font-bold text-amber-700 font-mono mt-0.5">
+                {computedStats.pendingGradeCount}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80">
               <div className="text-[11px] text-emerald-700 font-medium">Đã có điểm tổng kết</div>
-              <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">{stats.gradedCount}</div>
-              <div className="text-[10px] text-emerald-600 mt-0.5">Đủ cả 3 cột điểm</div>
+              <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">
+                {computedStats.gradedCount}
+              </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80">
               <div className="text-[11px] text-[#102d7d] font-medium">Đã hoàn tất bảo vệ</div>
-              <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">{stats.completedCount}</div>
-              <div className="text-[10px] text-[#123891] mt-0.5">COMPLETED</div>
+              <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">
+                {computedStats.completedCount}
+              </div>
             </div>
           </div>
         )}
@@ -557,11 +792,11 @@ const TbmThesisEvaluationManagement = () => {
               <div className="p-6">
                 <LoadingSkeleton rows={5} cols={6} />
               </div>
-            ) : theses.length === 0 ? (
+            ) : filteredTheses.length === 0 ? (
               <div className="p-8">
                 <EmptyState
-                  title="Không có đề tài nào đủ điều kiện đánh giá"
-                  description="Chỉ những đề tài KLTN đã được phân công đủ cả 2 giảng viên phản biện (PB1 và PB2) mới hiển thị trong mục này."
+                  title="Không có đề tài nào phù hợp"
+                  description="Hiện không có đề tài khóa luận nào khớp với bộ lọc hoặc từ khóa tìm kiếm đã chọn."
                 />
               </div>
             ) : (
@@ -573,18 +808,21 @@ const TbmThesisEvaluationManagement = () => {
                       <th className="py-3.5 px-4">Tên đề tài KLTN</th>
                       <th className="py-3.5 px-4">Sinh viên thực hiện</th>
                       <th className="py-3.5 px-4">Điều kiện GVHD</th>
-                      <th className="py-3.5 px-4">Hội đồng (GVHD | PB Kín | PB Hội đồng)</th>
+                      <th className="py-3.5 px-4">Giảng viên Khóa Luận</th>
                       <th className="py-3.5 px-4">Bảng điểm thành phần</th>
                       <th className="py-3.5 px-4">Điểm Tổng Kết</th>
-                      <th className="py-3.5 px-4">Trạng thái</th>
                       <th className="py-3.5 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {theses.map((item, idx) => {
-                      const s = item.scores || {};
-                      const isFullyGraded = s.finalScore !== null && s.finalScore !== undefined;
+                    {filteredTheses.map((item, idx) => {
+                      const scoreInfo = getThesisScoreInfo(item);
+                      const isFullyGraded = scoreInfo.finalScore !== null;
                       const isCompleted = item.status === 'COMPLETED';
+
+                      // Check if any score is currently published for this thesis
+                      const pub = publishedScores[item._id] || {};
+                      const hasAnyPublished = Object.values(pub).some(Boolean);
 
                       return (
                         <tr key={item._id} className="hover:bg-slate-50/80 transition">
@@ -594,7 +832,7 @@ const TbmThesisEvaluationManagement = () => {
                           </td>
 
                           {/* Title */}
-                          <td className="py-3.5 px-4 min-w-[240px] max-w-sm" title={item.thesisTitle}>
+                          <td className="py-3.5 px-4 min-w-[220px] max-w-sm" title={item.thesisTitle}>
                             <strong className="text-slate-900 line-clamp-2 leading-snug hover:text-[#123891] transition">
                               {item.thesisTitle}
                             </strong>
@@ -608,7 +846,9 @@ const TbmThesisEvaluationManagement = () => {
                             <div className="space-y-1">
                               <div className="flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
-                                <strong className="text-slate-900">{item.studentId?.userId?.fullName}</strong>
+                                <strong className="text-slate-900">
+                                  {item.studentId?.userId?.fullName}
+                                </strong>
                                 <span className="text-[11px] font-mono text-slate-400">
                                   ({item.studentId?.studentCode})
                                 </span>
@@ -642,100 +882,117 @@ const TbmThesisEvaluationManagement = () => {
                             )}
                           </td>
 
-                          {/* Council Lecturers */}
+                          {/* Giảng viên Khóa Luận */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="space-y-1 text-[11px]">
                               <div>
                                 <span className="text-slate-400">GVHD:</span>{' '}
-                                <span className="font-semibold text-slate-700">
+                                <span className="font-semibold text-slate-800">
                                   {item.supervisorId?.userId?.fullName || '—'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-400">PB1:</span>{' '}
-                                <span className="font-semibold text-slate-700">
-                                  {item.reviewer1Id?.userId?.fullName || '—'}
+                                <span className="text-slate-400">GVPB1:</span>{' '}
+                                <span className="font-semibold text-slate-800">
+                                  {item.reviewer1Id?.userId?.fullName ||
+                                    (Array.isArray(item.reviewers) &&
+                                      item.reviewers.find((r) => r.isPrivateReviewer)?.lecturerId?.userId?.fullName) ||
+                                    '—'}
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-400">PB2:</span>{' '}
-                                <span className="font-semibold text-slate-700">
-                                  {item.reviewer2Id?.userId?.fullName || '—'}
+                                <span className="text-slate-400">GVPB2:</span>{' '}
+                                <span className="font-semibold text-slate-800">
+                                  {item.reviewer2Id?.userId?.fullName ||
+                                    (Array.isArray(item.reviewers) &&
+                                      item.reviewers.find((r) => r.isCouncilReviewer)?.lecturerId?.userId?.fullName) ||
+                                    '—'}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400">Hội đồng:</span>{' '}
+                                <span className="font-semibold text-[#123891]">
+                                  {scoreInfo.assignedCouncil?.name || '—'}
                                 </span>
                               </div>
                             </div>
                           </td>
 
-                          {/* Component Scores */}
+                          {/* Bảng điểm thành phần */}
                           <td className="py-3.5 px-4 whitespace-nowrap font-mono">
                             <div className="space-y-0.5 text-[11px]">
                               <div>
-                                <span className="text-slate-400">GVHD (40%):</span>{' '}
+                                <span className="text-slate-400 font-sans">GVHD (50%):</span>{' '}
                                 <strong
                                   className={
-                                    s.supervisorScore !== null && s.supervisorScore !== undefined
+                                    scoreInfo.hasHD
                                       ? 'text-[#123891]'
-                                      : 'text-slate-400 font-normal'
+                                      : 'text-slate-400 font-normal font-sans'
                                   }
                                 >
-                                  {s.supervisorScore !== null && s.supervisorScore !== undefined
-                                    ? s.supervisorScore
-                                    : '—'}
+                                  {scoreInfo.hasHD ? scoreInfo.scoreHD : '—'}
                                 </strong>
                               </div>
                               <div>
-                                <span className="text-slate-400">PB1 (30%):</span>{' '}
+                                <span className="text-slate-400 font-sans">PB kín (20%):</span>{' '}
                                 <strong
                                   className={
-                                    s.reviewer1Score !== null && s.reviewer1Score !== undefined
+                                    scoreInfo.hasPB1
                                       ? 'text-[#123891]'
-                                      : 'text-slate-400 font-normal'
+                                      : 'text-slate-400 font-normal font-sans'
                                   }
                                 >
-                                  {s.reviewer1Score !== null && s.reviewer1Score !== undefined
-                                    ? s.reviewer1Score
-                                    : '—'}
+                                  {scoreInfo.hasPB1 ? scoreInfo.scorePB1 : '—'}
                                 </strong>
                               </div>
+                              <div className="flex items-center gap-1 text-[10.5px]">
+                                <span className="text-slate-400 font-sans">GVHĐ 1:</span>{' '}
+                                <span className={scoreInfo.scoreGVHD1 !== null ? 'text-slate-800 font-bold' : 'text-slate-400 font-sans'}>
+                                  {scoreInfo.scoreGVHD1 !== null ? scoreInfo.scoreGVHD1 : '—'}
+                                </span>
+                                <span className="text-slate-300">|</span>
+                                <span className="text-slate-400 font-sans">GVHĐ 2:</span>{' '}
+                                <span className={scoreInfo.scoreGVHD2 !== null ? 'text-slate-800 font-bold' : 'text-slate-400 font-sans'}>
+                                  {scoreInfo.scoreGVHD2 !== null ? scoreInfo.scoreGVHD2 : '—'}
+                                </span>
+                              </div>
                               <div>
-                                <span className="text-slate-400">PB2 (30%):</span>{' '}
-                                <strong
-                                  className={
-                                    s.reviewer2Score !== null && s.reviewer2Score !== undefined
-                                      ? 'text-amber-600'
-                                      : 'text-slate-400 font-normal'
-                                  }
-                                >
-                                  {s.reviewer2Score !== null && s.reviewer2Score !== undefined
-                                    ? s.reviewer2Score
-                                    : '—'}
-                                </strong>
+                                <span className="text-slate-400 font-sans">Điểm hội đồng (30%):</span>{' '}
+                                {scoreInfo.hasCouncil ? (
+                                  <strong className="text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                    {scoreInfo.scoreCouncil}
+                                  </strong>
+                                ) : scoreInfo.hasTwoCouncilLecturers && (scoreInfo.scoreGVHD1 !== null || scoreInfo.scoreGVHD2 !== null) ? (
+                                  <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-sans border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính trung bình">
+                                    Chờ GV còn lại
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 font-normal font-sans">—</span>
+                                )}
                               </div>
                             </div>
                           </td>
 
                           {/* Final Score */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            {isFullyGraded ? (
+                            {scoreInfo.finalScore !== null ? (
                               <div className="inline-flex flex-col">
                                 <span className="text-base font-extrabold text-emerald-600 font-mono">
-                                  {s.finalScore}
+                                  {scoreInfo.finalScore}
                                 </span>
-                                <span className="text-[10px] text-slate-400 font-normal">Thang 10</span>
+                                <span className="text-[10px] text-slate-400 font-normal">
+                                  Thang 10
+                                </span>
                               </div>
                             ) : (
                               <span className="text-slate-400 italic">Chưa đủ điểm</span>
                             )}
                           </td>
 
-                          {/* Status */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <StatusBadge status={item.status} />
-                          </td>
-
                           {/* Actions */}
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
                             <div className="flex items-center justify-end gap-1.5">
+                              {/* View detail button */}
                               <button
                                 type="button"
                                 onClick={() => handleOpenDetail(item)}
@@ -745,6 +1002,25 @@ const TbmThesisEvaluationManagement = () => {
                                 <Eye className="w-4 h-4" />
                               </button>
 
+                              {/* Công bố điểm button */}
+                              <button
+                                type="button"
+                                onClick={() => handleOpenPublishModal(item, scoreInfo)}
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                                  hasAnyPublished
+                                    ? 'bg-blue-50 text-[#123891] border-blue-200 hover:bg-blue-100'
+                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                                }`}
+                                title="Công bố điểm cho sinh viên"
+                              >
+                                <Send className="w-3.5 h-3.5 text-[#123891]" />
+                                <span>Công bố điểm</span>
+                                {hasAnyPublished && (
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                                )}
+                              </button>
+
+                              {/* Nghiệm thu button */}
                               {!isCompleted && isFullyGraded && (
                                 <button
                                   type="button"
@@ -1061,6 +1337,22 @@ const TbmThesisEvaluationManagement = () => {
       )}
 
       {/* ========================================== */}
+      {/* MODAL: PUBLISH SCORES */}
+      {/* ========================================== */}
+      <PublishScoresModal
+        isOpen={publishModalOpen}
+        onClose={() => {
+          setPublishModalOpen(false);
+          setThesisToPublish(null);
+          setThesisToPublishScoreInfo(null);
+        }}
+        thesis={thesisToPublish}
+        scoreInfo={thesisToPublishScoreInfo}
+        publishedScores={publishedScores}
+        onPublishScores={handleSavePublishedScores}
+      />
+
+      {/* ========================================== */}
       {/* MODAL: ADD / EDIT CRITERIA */}
       {/* ========================================== */}
       <Modal
@@ -1321,145 +1613,167 @@ const TbmThesisEvaluationManagement = () => {
       {/* ========================================== */}
       {/* MODAL: DETAIL SCORE & EVALUATION VIEW */}
       {/* ========================================== */}
-      {selectedThesis && (
-        <Modal
-          isOpen={detailModalOpen}
-          onClose={() => {
-            setDetailModalOpen(false);
-            setSelectedThesis(null);
-          }}
-          title="Bảng Điểm Chi Tiết & Nhận Xét Đề Tài KLTN"
-          maxWidth="max-w-xl"
-        >
-          <div className="space-y-4 text-xs">
-            <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2 shadow-2xs">
-              <div className="font-bold text-slate-900 text-xs">{selectedThesis.thesisTitle}</div>
-              <div className="text-[11px] text-slate-600 flex flex-wrap gap-3 pt-2 border-t border-blue-100">
-                <span>
-                  <strong>SV1:</strong> {selectedThesis.studentId?.userId?.fullName} (
-                  {selectedThesis.studentId?.studentCode})
-                </span>
-                {selectedThesis.secondStudentId && (
+      {selectedThesis && (() => {
+        const modalScoreInfo = getThesisScoreInfo(selectedThesis);
+
+        return (
+          <Modal
+            isOpen={detailModalOpen}
+            onClose={() => {
+              setDetailModalOpen(false);
+              setSelectedThesis(null);
+            }}
+            title="Bảng Điểm Chi Tiết & Nhận Xét Đề Tài KLTN"
+            maxWidth="max-w-xl"
+          >
+            <div className="space-y-4 text-xs">
+              <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2 shadow-2xs">
+                <div className="font-bold text-slate-900 text-xs">{selectedThesis.thesisTitle}</div>
+                <div className="text-[11px] text-slate-600 flex flex-wrap gap-3 pt-2 border-t border-blue-100">
                   <span>
-                    <strong>SV2:</strong> {selectedThesis.secondStudentId?.userId?.fullName} (
-                    {selectedThesis.secondStudentId?.studentCode})
+                    <strong>SV1:</strong> {selectedThesis.studentId?.userId?.fullName} (
+                    {selectedThesis.studentId?.studentCode})
                   </span>
+                  {selectedThesis.secondStudentId && (
+                    <span>
+                      <strong>SV2:</strong> {selectedThesis.secondStudentId?.userId?.fullName} (
+                      {selectedThesis.secondStudentId?.studentCode})
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Criteria Evaluation List */}
+              {Array.isArray(selectedThesis.criteriaEvaluations) &&
+                selectedThesis.criteriaEvaluations.length > 0 && (
+                  <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                    <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                      <span>Kết quả đánh giá tiêu chí điều kiện của GVHD:</span>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      {selectedThesis.criteriaEvaluations.map((ce, cidx) => (
+                        <div
+                          key={cidx}
+                          className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs"
+                        >
+                          <span className="text-slate-700">{ce.criteriaName}</span>
+                          {ce.isPassed ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Đạt
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                              Không đạt
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
 
-            {/* Criteria Evaluation List */}
-            {Array.isArray(selectedThesis.criteriaEvaluations) &&
-              selectedThesis.criteriaEvaluations.length > 0 && (
-                <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                  <div className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                    <span>Kết quả đánh giá tiêu chí điều kiện của GVHD:</span>
+              {/* Detailed Scores Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div className="p-3 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
+                  <div className="text-[10.5px] text-[#102d7d] font-bold">Điểm GVHD (50%)</div>
+                  <div className="text-lg font-black font-mono text-[#123891] mt-1">
+                    {modalScoreInfo.hasHD ? modalScoreInfo.scoreHD : '—'}
                   </div>
-                  <div className="space-y-1.5 pt-1">
-                    {selectedThesis.criteriaEvaluations.map((ce, cidx) => (
-                      <div
-                        key={cidx}
-                        className="flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 text-xs"
-                      >
-                        <span className="text-slate-700">{ce.criteriaName}</span>
-                        {ce.isPassed ? (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Đạt
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            Không đạt
-                          </span>
-                        )}
-                      </div>
-                    ))}
+                  <div className="text-[9.5px] text-slate-500 mt-0.5 truncate">
+                    {selectedThesis.supervisorId?.userId?.fullName || 'Chưa có'}
                   </div>
                 </div>
-              )}
 
-            {/* Detailed Scores */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
-                <div className="text-[11px] text-[#102d7d] font-bold">Điểm GVHD (40%)</div>
-                <div className="text-xl font-black font-mono text-[#123891] mt-1">
-                  {selectedThesis.scores?.supervisorScore ?? '—'}
+                <div className="p-3 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
+                  <div className="text-[10.5px] text-[#102d7d] font-bold">Điểm PB Kín (20%)</div>
+                  <div className="text-lg font-black font-mono text-[#123891] mt-1">
+                    {modalScoreInfo.hasPB1 ? modalScoreInfo.scorePB1 : '—'}
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-0.5 truncate">
+                    {selectedThesis.reviewer1Id?.userId?.fullName || 'GVPB Kín'}
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
-                  {selectedThesis.supervisorId?.userId?.fullName || 'Chưa có'}
+
+                <div className="p-3 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
+                  <div className="text-[10.5px] text-[#102d7d] font-bold">Điểm GVHĐ 1 & 2</div>
+                  <div className="text-sm font-bold font-mono text-slate-800 mt-1.5 flex items-center justify-center gap-1.5">
+                    <span>{modalScoreInfo.scoreGVHD1 !== null ? modalScoreInfo.scoreGVHD1 : '—'}</span>
+                    <span className="text-slate-300">/</span>
+                    <span>{modalScoreInfo.scoreGVHD2 !== null ? modalScoreInfo.scoreGVHD2 : '—'}</span>
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-0.5 truncate">
+                    2 thành viên HĐ
+                  </div>
+                </div>
+
+                <div className="p-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-center">
+                  <div className="text-[10.5px] text-amber-700 font-bold">Điểm Hội đồng (30%)</div>
+                  <div className="text-lg font-black font-mono text-amber-900 mt-1">
+                    {modalScoreInfo.hasCouncil ? (
+                      modalScoreInfo.scoreCouncil
+                    ) : modalScoreInfo.hasTwoCouncilLecturers && (modalScoreInfo.scoreGVHD1 !== null || modalScoreInfo.scoreGVHD2 !== null) ? (
+                      <span className="text-xs text-amber-600 font-sans block">Chờ GV còn lại</span>
+                    ) : (
+                      '—'
+                    )}
+                  </div>
+                  <div className="text-[9.5px] text-slate-500 mt-0.5 truncate">
+                    {modalScoreInfo.assignedCouncil?.name || 'TB Hội đồng'}
+                  </div>
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
-                <div className="text-[11px] text-[#102d7d] font-bold">Điểm PB Kín (30%)</div>
-                <div className="text-xl font-black font-mono text-[#123891] mt-1">
-                  {selectedThesis.scores?.reviewer1Score ?? '—'}
+              {/* Final Score */}
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+                <div>
+                  <div className="font-bold text-emerald-900 text-sm">Điểm Tổng Kết Khóa Luận</div>
+                  <div className="text-[11px] text-emerald-700">
+                    Công thức: (GVHD × 0.5) + (PB Kín × 0.2) + (Hội đồng × 0.3)
+                  </div>
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
-                  {selectedThesis.reviewer1Id?.userId?.fullName || 'Chưa có'}
+                <div className="text-2xl font-black font-mono text-emerald-700">
+                  {modalScoreInfo.finalScore ?? '—'}
                 </div>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-amber-50/50 border border-amber-200 text-center">
-                <div className="text-[11px] text-amber-700 font-bold">Điểm PB HĐ (30%)</div>
-                <div className="text-xl font-black font-mono text-amber-900 mt-1">
-                  {selectedThesis.scores?.reviewer2Score ?? '—'}
+              {/* Comments */}
+              <div className="space-y-2">
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                  <div className="font-bold text-slate-800 text-[11px]">Nhận xét của GVHD:</div>
+                  <p className="text-slate-600 mt-0.5 italic">
+                    {selectedThesis.supervisorComment || 'Chưa có nhận xét.'}
+                  </p>
                 </div>
-                <div className="text-[10px] text-slate-500 mt-0.5">
-                  {selectedThesis.reviewer2Id?.userId?.fullName || 'Chưa có'}
+
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                  <div className="font-bold text-slate-800 text-[11px]">Nhận xét của PB Kín (GVPB1):</div>
+                  <p className="text-slate-600 mt-0.5 italic">
+                    {selectedThesis.reviewer1Comment || 'Chưa có nhận xét.'}
+                  </p>
                 </div>
+
+                <div className="p-3 bg-slate-50 border rounded-xl">
+                  <div className="font-bold text-slate-800 text-[11px]">Nhận xét của PB Hội đồng (GVPB2):</div>
+                  <p className="text-slate-600 mt-0.5 italic">
+                    {selectedThesis.reviewer2Comment || 'Chưa có nhận xét.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setDetailModalOpen(false)}
+                  className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Đóng
+                </button>
               </div>
             </div>
-
-            {/* Final Score */}
-            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
-              <div>
-                <div className="font-bold text-emerald-900 text-sm">Điểm Tổng Kết Khóa Luận</div>
-                <div className="text-[11px] text-emerald-700">
-                  Công thức: (GVHD × 0.4) + (PB1 × 0.3) + (PB2 × 0.3)
-                </div>
-              </div>
-              <div className="text-2xl font-black font-mono text-emerald-700">
-                {selectedThesis.scores?.finalScore ?? '—'}
-              </div>
-            </div>
-
-            {/* Comments */}
-            <div className="space-y-2">
-              <div className="p-3 bg-slate-50 border rounded-xl">
-                <div className="font-bold text-slate-800 text-[11px]">Nhận xét của GVHD:</div>
-                <p className="text-slate-600 mt-0.5 italic">
-                  {selectedThesis.supervisorComment || 'Chưa có nhận xét.'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border rounded-xl">
-                <div className="font-bold text-slate-800 text-[11px]">Nhận xét của PB Kín:</div>
-                <p className="text-slate-600 mt-0.5 italic">
-                  {selectedThesis.reviewer1Comment || 'Chưa có nhận xét.'}
-                </p>
-              </div>
-
-              <div className="p-3 bg-slate-50 border rounded-xl">
-                <div className="font-bold text-slate-800 text-[11px]">Nhận xét của PB Hội đồng:</div>
-                <p className="text-slate-600 mt-0.5 italic">
-                  {selectedThesis.reviewer2Comment || 'Chưa có nhận xét.'}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-3 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setDetailModalOpen(false)}
-                className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-              >
-                Đóng
-              </button>
-            </div>
-          </div>
-        </Modal>
-      )}
+          </Modal>
+        );
+      })()}
     </div>
   );
 };
