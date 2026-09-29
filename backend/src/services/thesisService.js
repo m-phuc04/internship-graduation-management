@@ -637,6 +637,7 @@ const approveThesis = async (thesisId, { supervisorId = null, tbmUserId }) => {
   thesis.status = "APPROVED";
   thesis.approvedAt = new Date();
   thesis.assignedBy = tbmUserId || null;
+  thesis.markModified('scores');
   await thesis.save();
 
   const populated = await Thesis.findById(thesis._id)
@@ -1665,50 +1666,122 @@ const gradeThesisByLecturer = async (
     activeRole === "REVIEWER2" ||
     activeRole === "GVPB_HOIDONG"
   ) {
-    const isRev2Legacy = thesis.reviewer2Id?.toString() === lecIdStr;
-    const isRev2Array = Array.isArray(thesis.reviewers) && thesis.reviewers.some(
-      (r) => ((r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr) && r.isCouncilReviewer
-    );
-    if (!isRev2Legacy && !isRev2Array) {
-      throw new AppError(
-        "Bạn không được phân công chấm Phản biện Hội đồng (GVPB_HOIDONG) cho đề tài này",
-        403,
-      );
-    }
     if (thesis.scores?.isReviewer2ScoreLocked) {
       throw new AppError("Điểm phản biện hội đồng của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
     }
-    if (s1 !== null) thesis.scores.student1Reviewer2Score = s1;
-    if (s2 !== null) thesis.scores.student2Reviewer2Score = s2;
 
-    const finalS1 = thesis.scores.student1Reviewer2Score ?? null;
-    const finalS2 = thesis.scores.student2Reviewer2Score ?? null;
-    if (finalS1 !== null && finalS2 !== null) {
-      thesis.scores.reviewer2Score = Number(((finalS1 + finalS2) / 2).toFixed(2));
-    } else {
-      thesis.scores.reviewer2Score = finalS1 ?? finalS2 ?? effectiveScore;
+    // Ensure lecturer is registered as council reviewer on the thesis
+    if (!thesis.reviewer2Id) {
+      thesis.reviewer2Id = lecturer._id;
     }
+    if (!Array.isArray(thesis.reviewers)) {
+      thesis.reviewers = [];
+    }
+    const alreadyInReviewers = thesis.reviewers.some(
+      (r) => (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr && r.isCouncilReviewer
+    );
+    if (!alreadyInReviewers) {
+      thesis.reviewers.push({
+        lecturerId: lecturer._id,
+        isCouncilReviewer: true,
+        assignedAt: new Date(),
+      });
+    }
+
+    // Store this lecturer's individual council score
+    if (!Array.isArray(thesis.scores.councilLecturerScores)) {
+      thesis.scores.councilLecturerScores = [];
+    }
+    const existingIdx = thesis.scores.councilLecturerScores.findIndex(
+      (entry) => (entry.lecturerId?.toString() || entry.lecturerId?._id?.toString()) === lecIdStr
+    );
+    const lecturerScoreData = {
+      lecturerId: lecturer._id,
+      lecturerName: lecturer.userId?.fullName || lecturer.fullName || "Giảng viên",
+      student1Score: s1,
+      student2Score: s2,
+      score: effectiveScore,
+      comment: comment !== undefined ? (comment ? comment.trim() : null) : null,
+      gradedAt: new Date(),
+    };
+
+    if (existingIdx >= 0) {
+      thesis.scores.councilLecturerScores[existingIdx] = lecturerScoreData;
+    } else {
+      thesis.scores.councilLecturerScores.push(lecturerScoreData);
+    }
+
+    // Calculate average council score across all lecturers in the council
+    // STRICT RULE: Hội đồng bắt buộc phải có ĐỦ ÍT NHẤT 2 GIẢNG VIÊN chấm điểm mới tính điểm hội đồng!
+    const validScores = thesis.scores.councilLecturerScores
+      .map((e) => e.score)
+      .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
+
+    if (validScores.length >= 2) {
+      const avgCouncilScore = Number(
+        ((validScores[0] + validScores[1]) / 2).toFixed(2)
+      );
+      thesis.scores.reviewer2Score = avgCouncilScore;
+      thesis.scores.councilScore = avgCouncilScore;
+
+      // Calculate average for student 1 & student 2
+      const validS1 = thesis.scores.councilLecturerScores
+        .map((e) => e.student1Score)
+        .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
+      if (validS1.length >= 2) {
+        thesis.scores.student1Reviewer2Score = Number(
+          ((validS1[0] + validS1[1]) / 2).toFixed(2)
+        );
+      } else {
+        thesis.scores.student1Reviewer2Score = null;
+      }
+
+      const validS2 = thesis.scores.councilLecturerScores
+        .map((e) => e.student2Score)
+        .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
+      if (validS2.length >= 2) {
+        thesis.scores.student2Reviewer2Score = Number(
+          ((validS2[0] + validS2[1]) / 2).toFixed(2)
+        );
+      } else {
+        thesis.scores.student2Reviewer2Score = null;
+      }
+    } else {
+      // Khi chỉ có 1 giảng viên chấm, KHÔNG tính điểm hội đồng và điểm tổng kết!
+      thesis.scores.reviewer2Score = null;
+      thesis.scores.councilScore = null;
+      thesis.scores.student1Reviewer2Score = null;
+      thesis.scores.student2Reviewer2Score = null;
+      thesis.scores.finalScore = null;
+      thesis.scores.student1FinalScore = null;
+      thesis.scores.student2FinalScore = null;
+    }
+
     if (comment !== undefined) thesis.reviewer2Comment = comment ? comment.trim() : null;
   } else {
     throw new AppError("Vai trò đánh giá không hợp lệ", 400);
   }
 
-  // Auto-calculate final score if all 3 scores are present
+  // Auto-calculate final score if all 3 scores are present: GVHD (50%) + PB Kín (20%) + Hội Đồng (30%)
   if (
     thesis.scores.supervisorScore !== null &&
     thesis.scores.supervisorScore !== undefined &&
     thesis.scores.reviewer1Score !== null &&
     thesis.scores.reviewer1Score !== undefined &&
-    thesis.scores.reviewer2Score !== null &&
-    thesis.scores.reviewer2Score !== undefined
+    thesis.scores.councilScore !== null &&
+    thesis.scores.councilScore !== undefined
   ) {
     const final =
-      thesis.scores.supervisorScore * 0.4 +
-      thesis.scores.reviewer1Score * 0.3 +
-      thesis.scores.reviewer2Score * 0.3;
+      thesis.scores.supervisorScore * 0.5 +
+      thesis.scores.reviewer1Score * 0.2 +
+      thesis.scores.councilScore * 0.3;
 
     thesis.scores.finalScore = Number(final.toFixed(2));
     thesis.status = "GRADED";
+  } else {
+    thesis.scores.finalScore = null;
+    thesis.scores.student1FinalScore = null;
+    thesis.scores.student2FinalScore = null;
   }
 
   // Calculate individual final scores if available
@@ -1719,8 +1792,8 @@ const gradeThesisByLecturer = async (
   ) {
     thesis.scores.student1FinalScore = Number(
       (
-        thesis.scores.student1SupervisorScore * 0.4 +
-        thesis.scores.student1Reviewer1Score * 0.3 +
+        thesis.scores.student1SupervisorScore * 0.5 +
+        thesis.scores.student1Reviewer1Score * 0.2 +
         thesis.scores.student1Reviewer2Score * 0.3
       ).toFixed(2),
     );
@@ -1732,8 +1805,8 @@ const gradeThesisByLecturer = async (
   ) {
     thesis.scores.student2FinalScore = Number(
       (
-        thesis.scores.student2SupervisorScore * 0.4 +
-        thesis.scores.student2Reviewer1Score * 0.3 +
+        thesis.scores.student2SupervisorScore * 0.5 +
+        thesis.scores.student2Reviewer1Score * 0.2 +
         thesis.scores.student2Reviewer2Score * 0.3
       ).toFixed(2),
     );

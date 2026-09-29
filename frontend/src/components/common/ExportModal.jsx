@@ -112,13 +112,13 @@ const ExportModal = ({
           {/* Term Selector */}
           <div>
             <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+              <GraduationCap className="w-3.5 h-3.5 text-[#1B4DA1]" />
               Chọn Học kỳ & Năm học:
             </label>
             <select
               value={selectedTermId}
               onChange={(e) => setSelectedTermId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 font-semibold text-slate-800"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] font-semibold text-slate-800"
             >
               {terms.map((t) => (
                 <option key={t._id} value={t._id}>
@@ -131,13 +131,13 @@ const ExportModal = ({
           {/* Status Filter */}
           <div>
             <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-indigo-600" />
+              <Filter className="w-3.5 h-3.5 text-[#1B4DA1]" />
               Trạng thái:
             </label>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-700"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] text-slate-700"
             >
               <option value="">Tất cả trạng thái</option>
               {type === 'INTERNSHIP' ? (
@@ -166,13 +166,13 @@ const ExportModal = ({
           {type === 'INTERNSHIP' && companies.length > 0 && (
             <div>
               <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                <Building2 className="w-3.5 h-3.5 text-indigo-600" />
+                <Building2 className="w-3.5 h-3.5 text-[#1B4DA1]" />
                 Doanh nghiệp:
               </label>
               <select
                 value={selectedCompanyId}
                 onChange={(e) => setSelectedCompanyId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-700"
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] text-slate-700"
               >
                 <option value="">Tất cả doanh nghiệp</option>
                 {companies.map((c) => (
@@ -187,13 +187,13 @@ const ExportModal = ({
           {type === 'THESIS' && lecturers.length > 0 && (
             <div>
               <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
-                <BookOpen className="w-3.5 h-3.5 text-indigo-600" />
+                <BookOpen className="w-3.5 h-3.5 text-[#1B4DA1]" />
                 Giảng viên hướng dẫn / Phản biện:
               </label>
               <select
                 value={selectedLecturerId}
                 onChange={(e) => setSelectedLecturerId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 text-slate-700"
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] text-slate-700"
               >
                 <option value="">Tất cả giảng viên</option>
                 {lecturers.map((l) => (
@@ -227,7 +227,7 @@ const ExportModal = ({
               type="button"
               disabled={loading}
               onClick={() => handleTriggerExport(true)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 transition cursor-pointer disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-[#123891] bg-blue-50 hover:bg-blue-100 border border-blue-200 transition cursor-pointer disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
               <span>{loading ? 'Đang tạo file...' : 'Xuất kết quả đang lọc'}</span>

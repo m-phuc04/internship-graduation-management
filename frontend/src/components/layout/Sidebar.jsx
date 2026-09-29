@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -31,13 +31,12 @@ const Sidebar = ({ onCloseMobile }) => {
   // 1. Dành cho TBM: Bảng Tổng quan (Tách riêng ở trên đầu)
   const tbmOverviewItem = {
     to: '/tbm/dashboard',
-    label: 'Bảng Tổng quan',
+    label: 'Tổng quan TBM',
     icon: LayoutDashboard,
     badge: 'TQ',
   };
 
-  // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ 5 mục nghiệp vụ chính)
-  // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ 4 mục nghiệp vụ chính)
+  // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ các mục nghiệp vụ chính)
   const tbmBusinessItems = [
     {
       to: '/tbm/academic-terms',
@@ -116,33 +115,23 @@ const Sidebar = ({ onCloseMobile }) => {
   ];
 
   return (
-    <aside className="w-64 max-w-[85vw] bg-[#0B1E48] text-slate-300 flex flex-col shrink-0 h-full select-none">
+    <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 sm:px-5 border-b border-[#132c66] bg-[#071638]/60">
+      <div className="h-16 flex items-center justify-between px-4 sm:px-5 border-b border-[#0e2c73] bg-[#0e2c73]">
         <Link
           to={isAdmin ? '/admin/permissions' : '/tbm/dashboard'}
           onClick={handleNavClick}
           className="flex items-center gap-3 cursor-pointer group hover:opacity-95 transition min-w-0"
         >
-          <div className="p-1 bg-white rounded-xl flex items-center justify-center shadow-md group-hover:scale-105 transition shrink-0">
+          <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
             <IUHLogo className="h-7 w-auto object-contain" />
           </div>
           <div className="min-w-0">
             <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-amber-300 transition truncate">
-              QL TTĐN & KLTN
+              {isAdmin ? 'Cổng Quản Trị' : 'Cổng Trưởng Bộ Môn'}
             </div>
-            <div className="text-[11px] font-semibold flex items-center gap-1 mt-0.5 text-blue-200/90 truncate">
-              {isAdmin ? (
-                <>
-                  <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
-                  <span className="truncate">Cổng Quản Trị (ADMIN)</span>
-                </>
-              ) : (
-                <>
-                  <Shield className="w-3 h-3 text-amber-400 shrink-0" />
-                  <span className="truncate">Cổng Trưởng Bộ Môn (TBM)</span>
-                </>
-              )}
+            <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
+              {isAdmin ? 'Quản trị viên (ADMIN)' : 'Quản lý Nghiệp vụ TBM'}
             </div>
           </div>
         </Link>
@@ -162,17 +151,17 @@ const Sidebar = ({ onCloseMobile }) => {
 
       {/* Quick Action: Back to Lecturer Portal (Chỉ hiển thị cho TBM) */}
       {!isAdmin && (
-        <div className="px-3.5 pt-3 pb-1 border-b border-[#132c66]">
+        <div className="px-3.5 pt-3 pb-1 border-b border-[#0e2c73]">
           <Link
             to="/lecturer/dashboard"
             onClick={handleNavClick}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-white bg-[#132c66] hover:bg-[#1a3a85] border border-[#1f408a] transition-all group shadow-xs cursor-pointer"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-[#0e2c73] hover:bg-white/10 border border-[#0e2c73] transition-all group shadow-xs cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4 text-blue-300 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="w-4 h-4 text-[#ECA124] group-hover:-translate-x-1 transition-transform" />
               <span>Về Cổng Giảng Viên</span>
             </div>
-            <span className="text-[10px] bg-[#F7B928] text-slate-950 font-black px-1.5 py-0.5 rounded font-mono shadow-xs">
+            <span className="text-[10px] bg-[#ECA124] text-slate-950 font-black px-1.5 py-0.5 rounded font-mono shadow-xs">
               GV
             </span>
           </Link>
@@ -180,34 +169,34 @@ const Sidebar = ({ onCloseMobile }) => {
       )}
 
       {/* Navigation List */}
-      <div className="flex-1 py-4 px-3.5 space-y-5 overflow-y-auto">
+      <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {/* ================= PHẦN DÀNH CHO TBM ================= */}
         {!isAdmin && (
           <div className="space-y-4">
-            {/* 1. BẢNG TỔNG QUAN (Tách riêng ở trên đầu) */}
-            <div className="space-y-1">
+            {/* 1. BẢNG TỔNG QUAN */}
+            <div>
               <NavLink
                 to={tbmOverviewItem.to}
                 onClick={handleNavClick}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                     isActive
-                      ? 'bg-[#F7B928] text-slate-950 font-bold shadow-md'
-                      : 'text-slate-200 hover:text-white hover:bg-white/10'
+                      ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                      : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                   }`
                 }
               >
                 {({ isActive }) => (
                   <>
                     <div className="flex items-center gap-3 min-w-0">
-                      <LayoutDashboard className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-slate-300 group-hover:text-white'}`} />
+                      <LayoutDashboard className="w-4 h-4 shrink-0" />
                       <span className="whitespace-nowrap truncate">{tbmOverviewItem.label}</span>
                     </div>
                     {tbmOverviewItem.badge && (
-                      <span className={`text-[10px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                      <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
                         isActive
-                          ? 'bg-[#E5A412] text-slate-950'
-                          : 'bg-[#F7B928] text-slate-950'
+                          ? 'bg-slate-950/15 text-slate-950'
+                          : 'bg-white/15 text-white'
                       }`}>
                         {tbmOverviewItem.badge}
                       </span>
@@ -219,8 +208,8 @@ const Sidebar = ({ onCloseMobile }) => {
 
             {/* 2. NGHIỆP VỤ BỘ MÔN */}
             <div className="space-y-1">
-              <div className="px-3 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                NGHIỆP VỤ BỘ MÔN
+              <div className="px-3 pb-1.5 text-[10.5px] font-bold text-blue-200/90 uppercase tracking-wider">
+                Nghiệp Vụ Bộ Môn
               </div>
               {tbmBusinessItems.map((item) => {
                 const Icon = item.icon;
@@ -230,24 +219,24 @@ const Sidebar = ({ onCloseMobile }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
-                          ? 'bg-[#F7B928] text-slate-950 font-bold shadow-md'
-                          : 'text-slate-200 hover:text-white hover:bg-white/10'
+                          ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                          : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
                         <div className="flex items-center gap-3 min-w-0">
-                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-slate-300 group-hover:text-white'}`} />
+                          <Icon className="w-4 h-4 shrink-0" />
                           <span className="whitespace-nowrap truncate">{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className={`text-[10px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                          <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
                             isActive
-                              ? 'bg-[#E5A412] text-slate-950'
-                              : 'bg-[#F7B928] text-slate-950'
+                              ? 'bg-slate-950/15 text-slate-950'
+                              : 'bg-white/15 text-white'
                           }`}>
                             {item.badge}
                           </span>
@@ -263,11 +252,11 @@ const Sidebar = ({ onCloseMobile }) => {
 
         {/* ================= PHẦN DÀNH CHO ADMIN ================= */}
         {isAdmin && (
-          <>
+          <div className="space-y-4">
             {/* 1. QUẢN TRỊ HỆ THỐNG */}
             <div className="space-y-1">
-              <div className="px-3 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                QUẢN TRỊ HỆ THỐNG
+              <div className="px-3 pb-1.5 text-[10.5px] font-bold text-blue-200/90 uppercase tracking-wider">
+                Quản Trị Hệ Thống
               </div>
               {adminItems.map((item) => {
                 const Icon = item.icon;
@@ -277,23 +266,23 @@ const Sidebar = ({ onCloseMobile }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
-                          ? 'bg-[#F7B928] text-slate-950 font-bold shadow-md'
-                          : 'text-slate-200 hover:text-white hover:bg-white/10'
+                          ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                          : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
                         <div className="flex items-center gap-3 min-w-0">
-                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-slate-300 group-hover:text-white'}`} />
+                          <Icon className="w-4 h-4 shrink-0" />
                           <span className="whitespace-nowrap truncate">{item.label}</span>
                         </div>
-                        <span className={`text-[10px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                        <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
                           isActive
-                            ? 'bg-[#E5A412] text-slate-950'
-                            : 'bg-[#F7B928] text-slate-950'
+                            ? 'bg-slate-950/15 text-slate-950'
+                            : 'bg-white/15 text-white'
                         }`}>
                           {item.badge}
                         </span>
@@ -306,8 +295,8 @@ const Sidebar = ({ onCloseMobile }) => {
 
             {/* 2. DỮ LIỆU NỀN TẢNG (MASTER) */}
             <div className="space-y-1">
-              <div className="px-3 pb-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                DỮ LIỆU NỀN TẢNG (MASTER)
+              <div className="px-3 pb-1.5 text-[10.5px] font-bold text-blue-200/90 uppercase tracking-wider">
+                Dữ Liệu Nền Tảng (Master)
               </div>
               {adminMasterDataItems.map((item) => {
                 const Icon = item.icon;
@@ -317,24 +306,24 @@ const Sidebar = ({ onCloseMobile }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all group ${
+                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
-                          ? 'bg-[#F7B928] text-slate-950 font-bold shadow-md'
-                          : 'text-slate-200 hover:text-white hover:bg-white/10'
+                          ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                          : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
                     {({ isActive }) => (
                       <>
                         <div className="flex items-center gap-3 min-w-0">
-                          <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-slate-950' : 'text-slate-300 group-hover:text-white'}`} />
+                          <Icon className="w-4 h-4 shrink-0" />
                           <span className="whitespace-nowrap truncate">{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className={`text-[10px] uppercase font-black tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                          <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
                             isActive
-                              ? 'bg-[#E5A412] text-slate-950'
-                              : 'bg-[#F7B928] text-slate-950'
+                              ? 'bg-slate-950/15 text-slate-950'
+                              : 'bg-white/15 text-white'
                           }`}>
                             {item.badge}
                           </span>
@@ -345,23 +334,8 @@ const Sidebar = ({ onCloseMobile }) => {
                 );
               })}
             </div>
-          </>
+          </div>
         )}
-      </div>
-
-      {/* Footer Info */}
-      <div className="p-4 border-t border-[#132c66] bg-[#071638]/50">
-        <div className="p-3 rounded-xl bg-[#081533] border border-[#132b60] text-xs text-slate-300 leading-relaxed">
-          <div className="font-bold text-white mb-0.5 flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            {isAdmin ? 'Quản Trị Hệ Thống' : 'Quản Trị Học Vụ'}
-          </div>
-          <div className="text-[11px] text-slate-400">
-            {isAdmin
-              ? 'ADMIN quản lý phân quyền, tài khoản và danh mục nền tảng.'
-              : 'TBM quản lý học kỳ, phân công đề tài, xét duyệt và đánh giá.'}
-          </div>
-        </div>
       </div>
     </aside>
   );
