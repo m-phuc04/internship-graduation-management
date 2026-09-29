@@ -17,8 +17,8 @@ const PublishScoresModal = ({
   const [selectedScores, setSelectedScores] = useState({
     supervisorScore: false,
     reviewer1Score: false,
-    reviewer2Score: false,
     councilScore: false,
+    finalScore: false,
   });
 
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -29,9 +29,9 @@ const PublishScoresModal = ({
       const prev = publishedScores[thesis._id] || {};
       setSelectedScores({
         supervisorScore: !!prev.supervisorScore,
-        reviewer1Score: !!prev.reviewer1Score,
-        reviewer2Score: !!prev.reviewer2Score,
+        reviewer1Score: !!(prev.reviewer1Score || prev.reviewerScore || prev.reviewer2Score),
         councilScore: !!prev.councilScore,
+        finalScore: !!prev.finalScore,
       });
       setConfirmOpen(false);
     }
@@ -49,17 +49,10 @@ const PublishScoresModal = ({
     },
     {
       key: 'reviewer1Score',
-      label: 'Điểm Giảng viên Phản biện 1 (GVPB 1)',
+      label: 'Điểm Phản biện kín',
       score: scoreInfo.scorePB1,
       hasScore: scoreInfo.hasPB1,
-      weight: 'PB kín',
-    },
-    {
-      key: 'reviewer2Score',
-      label: 'Điểm Giảng viên Phản biện 2 (GVPB 2)',
-      score: scoreInfo.scorePB2,
-      hasScore: scoreInfo.hasPB2,
-      weight: 'PB kín',
+      weight: '20%',
     },
     {
       key: 'councilScore',
@@ -67,6 +60,13 @@ const PublishScoresModal = ({
       score: scoreInfo.scoreCouncil,
       hasScore: scoreInfo.hasCouncil,
       weight: '30%',
+    },
+    {
+      key: 'finalScore',
+      label: 'Điểm Tổng kết Khóa Luận',
+      score: scoreInfo.finalScore,
+      hasScore: scoreInfo.finalScore !== null && scoreInfo.finalScore !== undefined,
+      weight: '100%',
     },
   ];
 
@@ -92,8 +92,8 @@ const PublishScoresModal = ({
     setSelectedScores({
       supervisorScore: false,
       reviewer1Score: false,
-      reviewer2Score: false,
       councilScore: false,
+      finalScore: false,
     });
   };
 
@@ -184,7 +184,7 @@ const PublishScoresModal = ({
           <div className="flex items-center justify-between pt-1">
             <label className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
               <Send className="w-3.5 h-3.5 text-[#123891]" />
-              <span>Chọn các đầu điểm muốn công bố cho sinh viên:</span>
+              <span>Công bố:</span>
             </label>
             <div className="flex items-center gap-2 text-[11px]">
               <button
@@ -240,7 +240,7 @@ const PublishScoresModal = ({
                         {item.label}
                       </span>
                       <span className="text-[10px] text-slate-400 font-mono block">
-                        Tỷ trọng: {item.weight}
+                        {item.weight}
                       </span>
                     </div>
                   </div>
@@ -299,9 +299,6 @@ const PublishScoresModal = ({
                   </div>
                 ))}
               </div>
-              <p className="text-slate-500 text-[11px] italic">
-                * Sinh viên sẽ có thể xem được các đầu điểm được chọn trong cổng thông tin sinh viên.
-              </p>
             </div>
           ) : (
             `Bạn có chắc chắn muốn bỏ công bố tất cả các đầu điểm cho đề tài "${thesis.thesisTitle}"? Sinh viên sẽ không thấy điểm nữa.`

@@ -1303,22 +1303,19 @@ const LecturerThesesPage = () => {
                           const scoreGVHD1 = scoreEntry1 ? (scoreEntry1.score ?? scoreEntry1.student1Score) : null;
                           const scoreGVHD2 = scoreEntry2 && scoreEntry2 !== scoreEntry1 ? (scoreEntry2.score ?? scoreEntry2.student1Score) : (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1].score : null);
 
-                          const hasTwoLecturers = Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2;
                           let scoreCouncil = null;
-
-                          // Only calculate Council average when BOTH GVHĐ 1 and GVHĐ 2 scores are present!
-                          if (hasTwoLecturers) {
-                            if (scoreGVHD1 !== null && scoreGVHD1 !== undefined && scoreGVHD2 !== null && scoreGVHD2 !== undefined) {
-                              scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
-                            } else {
-                              scoreCouncil = null; // Do not calculate average until both columns have scores!
-                            }
+                          // STRICT: Chỉ tính điểm hội đồng khi CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 và GVHĐ 2) ĐÃ CHẤM!
+                          if (
+                            scoreGVHD1 !== null &&
+                            scoreGVHD1 !== undefined &&
+                            !isNaN(scoreGVHD1) &&
+                            scoreGVHD2 !== null &&
+                            scoreGVHD2 !== undefined &&
+                            !isNaN(scoreGVHD2)
+                          ) {
+                            scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
                           } else {
-                            if (scoreGVHD1 !== null && scoreGVHD1 !== undefined) {
-                              scoreCouncil = Number(Number(scoreGVHD1).toFixed(2));
-                            } else {
-                              scoreCouncil = s.councilScore ?? s.student1CouncilScore ?? null;
-                            }
+                            scoreCouncil = null;
                           }
 
                           return (

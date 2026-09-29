@@ -118,7 +118,7 @@ const MyThesisPage = () => {
   const isFullGraded = scoredCount === 3;
   let finalScore = null;
   if (isFullGraded) {
-    finalScore = Number((supervisorScore * 0.4 + reviewer1Score * 0.3 + reviewer2Score * 0.3).toFixed(2));
+    finalScore = Number((supervisorScore * 0.5 + reviewer1Score * 0.2 + reviewer2Score * 0.3).toFixed(2));
   } else if (thesis?.scores?.finalScore !== null && thesis?.scores?.finalScore !== undefined) {
     finalScore = Number(thesis.scores.finalScore);
   }
@@ -133,16 +133,128 @@ const MyThesisPage = () => {
       text: 'Đã hoàn tất đánh giá',
       className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     };
-  } else if (scoredCount === 2) {
+  } else if (scoredCount > 0) {
     evalStatusBadge = {
-      text: 'Đã có 2/3 điểm',
+      text: 'Đang tiến hành đánh giá',
       className: 'bg-blue-50 text-[#102d7d] border-blue-200',
     };
-  } else if (scoredCount === 1) {
-    evalStatusBadge = {
-      text: 'Đã có 1/3 điểm',
-      className: 'bg-amber-50 text-amber-700 border-amber-200',
-    };
+  }
+
+  // Load Council info from local storage
+  const termId = thesis?.academicTermId?._id || thesis?.academicTermId || currentTerm?._id || 'default';
+  let assignedCouncil = null;
+  try {
+    const savedThesisCouncils = localStorage.getItem(`tbm_thesis_councils_${termId}`);
+    const tcMap = savedThesisCouncils ? JSON.parse(savedThesisCouncils) : {};
+    const councilId = thesis?._id ? tcMap[thesis._id] : null;
+    if (councilId) {
+      const savedCouncils = localStorage.getItem(`tbm_councils_${termId}`);
+      if (savedCouncils) {
+        const parsed = JSON.parse(savedCouncils);
+        assignedCouncil = parsed.find((c) => (c.id || c._id) === councilId);
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const councilFormat = assignedCouncil?.type === 'ORAL' ? 'Oral' : 'Poster';
+  const councilLecturers = assignedCouncil?.lecturers || [];
+  const councilScores = Array.isArray(thesis?.scores?.councilLecturerScores)
+    ? thesis.scores.councilLecturerScores
+    : [];
+
+  // Build dynamic evaluators list for comments
+  const evaluators = [];
+
+  if (thesis) {
+    // 1. GVHD (tên)
+    const gvhdName =
+      formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName) ||
+      'Giảng viên Hướng dẫn';
+    evaluators.push({
+      num: 1,
+      title: `1. GVHD (${gvhdName})`,
+      comment: thesis.supervisorComment?.trim(),
+    });
+
+    // 2. GVPB 1 (tên)
+    const gvpb1Name =
+      formatLecturerDisplay(thesis.reviewer1Id?.academicTitle, thesis.reviewer1Id?.userId?.fullName) ||
+      'Giảng viên Phản biện 1';
+    evaluators.push({
+      num: 2,
+      title: `2. GVPB 1 (${gvpb1Name})`,
+      comment: thesis.reviewer1Comment?.trim(),
+    });
+
+    // 3. GVPB 2 (tên)
+    const gvpb2Obj = Array.isArray(thesis.reviewers)
+      ? thesis.reviewers.find(
+          (r) =>
+            r.isPrivateReviewer &&
+            (r.lecturerId?._id?.toString() || r.lecturerId?.toString()) !==
+              (thesis.reviewer1Id?._id?.toString() || thesis.reviewer1Id?.toString())
+        )
+      : null;
+
+    const gvpb2Lecturer =
+      gvpb2Obj?.lecturerId ||
+      (thesis.reviewer2Id &&
+      !councilLecturers.some(
+        (l) => (l.lecturerId?._id || l.lecturerId || l.id) === (thesis.reviewer2Id._id || thesis.reviewer2Id)
+      )
+        ? thesis.reviewer2Id
+        : null);
+
+    const gvpb2Name = gvpb2Lecturer
+      ? formatLecturerDisplay(gvpb2Lecturer.academicTitle, gvpb2Lecturer.userId?.fullName || gvpb2Lecturer.fullName)
+      : 'Giảng viên Phản biện 2';
+    const gvpb2Comment = (thesis.reviewer2Comment || gvpb2Obj?.comment)?.trim();
+
+    evaluators.push({
+      num: 3,
+      title: `3. GVPB 2 (${gvpb2Name})`,
+      comment: gvpb2Comment,
+    });
+
+    // 4. GV Hội đồng 1 - (Loại hội đồng oral/poster) (tên)
+    const hđ1 = councilLecturers[0];
+    const hđ1ScoreObj = councilScores[0];
+    const hđ1Title = hđ1?.academicTitle || hđ1ScoreObj?.lecturerId?.academicTitle || '';
+    const hđ1RawName =
+      hđ1?.fullName ||
+      hđ1?.name ||
+      hđ1ScoreObj?.lecturerName ||
+      hđ1ScoreObj?.lecturerId?.userId?.fullName ||
+      '';
+    const hđ1Name = hđ1RawName ? formatLecturerDisplay(hđ1Title, hđ1RawName) : 'Giảng viên Hội đồng 1';
+    const hđ1Comment = hđ1ScoreObj?.comment?.trim();
+
+    evaluators.push({
+      num: 4,
+      title: `4. GV Hội đồng 1 - ${councilFormat} (${hđ1Name})`,
+      comment: hđ1Comment,
+    });
+
+    // 5. GV Hội đồng 2 - (Loại hội đồng oral/poster) (tên)
+    const hđ2 = councilLecturers[1];
+    const hđ2ScoreObj = councilScores[1];
+    const hđ2Title = hđ2?.academicTitle || hđ2ScoreObj?.lecturerId?.academicTitle || '';
+    const hđ2RawName =
+      hđ2?.fullName ||
+      hđ2?.name ||
+      hđ2ScoreObj?.lecturerName ||
+      hđ2ScoreObj?.lecturerId?.userId?.fullName ||
+      '';
+    const hđ2Name = hđ2RawName ? formatLecturerDisplay(hđ2Title, hđ2RawName) : 'Giảng viên Hội đồng 2';
+    const hđ2Comment = hđ2ScoreObj?.comment?.trim();
+
+    evaluators.push({
+      num: 5,
+      title: `5. GV Hội đồng 2 - ${councilFormat} (${hđ2Name})`,
+      comment: hđ2Comment,
+    });
   }
 
   if (loading) {
@@ -291,9 +403,6 @@ const MyThesisPage = () => {
                     <h3 className="font-bold text-sm text-slate-900">
                       KẾT QUẢ ĐÁNH GIÁ & ĐIỂM SỐ KHÓA LUẬN
                     </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Trọng số tính điểm: <strong>GVHD (40%)</strong> + <strong>PB Kín (30%)</strong> + <strong>PB Hội đồng (30%)</strong>
-                    </p>
                   </div>
                 </div>
 
@@ -318,307 +427,179 @@ const MyThesisPage = () => {
               ) : (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                {/* 1. Điểm GVHD (40%) */}
-                <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1 text-center relative flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-[#102d7d] uppercase tracking-wider">
-                      1. Điểm GVHD
-                    </div>
-                    <div className="text-[10px] text-slate-500 font-semibold mb-2">
-                      Trọng số: <span className="text-[#123891] font-bold">40%</span>
-                    </div>
-                  </div>
-
-                  <div className="py-1">
-                    {supervisorScore !== null ? (
-                      <div className="font-mono text-2xl font-black text-[#123891]">
-                        {supervisorScore.toFixed(1)}{' '}
-                        <span className="text-xs font-normal text-slate-400">/ 10</span>
+                    {/* 1. Điểm GVHD (50%) */}
+                    <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1 text-center relative flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] font-bold text-[#102d7d] uppercase tracking-wider">
+                          1. Điểm GVHD (50%)
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-xs font-medium text-slate-400 italic py-1">
-                        — Chưa có điểm
+
+                      <div className="py-2">
+                        {supervisorScore !== null ? (
+                          <div className="font-mono text-2xl font-black text-[#123891]">
+                            {supervisorScore.toFixed(1)}{' '}
+                            <span className="text-xs font-normal text-slate-400">/ 10</span>
+                          </div>
+                        ) : (
+                          <div className="text-xs font-medium text-slate-400 italic py-1">
+                            — Chưa có điểm
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
-                    {supervisorScore !== null ? (
-                      <span>Đóng góp: <strong className="text-[#123891] font-mono">{(supervisorScore * 0.4).toFixed(2)} đ</strong></span>
-                    ) : (
-                      <span>Chờ GVHD chấm</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 2. Điểm PB Kín (30%) */}
-                <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1 text-center relative flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-[#102d7d] uppercase tracking-wider">
-                      2. Điểm PB Kín
+                      <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
+                        {supervisorScore !== null ? (
+                          <span>Đã chấm điểm</span>
+                        ) : (
+                          <span>Chờ GVHD chấm</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-500 font-semibold mb-2">
-                      Trọng số: <span className="text-[#123891] font-bold">30%</span>
+
+                    {/* 2. Điểm PB Kín (20%) */}
+                    <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1 text-center relative flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] font-bold text-[#102d7d] uppercase tracking-wider">
+                          2. Điểm PB Kín (20%)
+                        </div>
+                      </div>
+
+                      <div className="py-2">
+                        {reviewer1Score !== null ? (
+                          <div className="font-mono text-2xl font-black text-[#123891]">
+                            {reviewer1Score.toFixed(1)}{' '}
+                            <span className="text-xs font-normal text-slate-400">/ 10</span>
+                          </div>
+                        ) : (
+                          <div className="text-xs font-medium text-slate-400 italic py-1">
+                            — Chưa có điểm
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
+                        {reviewer1Score !== null ? (
+                          <span>Đã chấm điểm</span>
+                        ) : (
+                          <span>Chờ PB Kín chấm</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="py-1">
-                    {reviewer1Score !== null ? (
-                      <div className="font-mono text-2xl font-black text-[#123891]">
-                        {reviewer1Score.toFixed(1)}{' '}
-                        <span className="text-xs font-normal text-slate-400">/ 10</span>
+                    {/* 3. Điểm PB Hội đồng (30%) */}
+                    <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-1 text-center relative flex flex-col justify-between">
+                      <div>
+                        <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
+                          3. Điểm PB Hội đồng (30%)
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-xs font-medium text-slate-400 italic py-1">
-                        — Chưa có điểm
+
+                      <div className="py-2">
+                        {reviewer2Score !== null ? (
+                          <div className="font-mono text-2xl font-black text-amber-950">
+                            {reviewer2Score.toFixed(1)}{' '}
+                            <span className="text-xs font-normal text-slate-400">/ 10</span>
+                          </div>
+                        ) : (
+                          <div className="text-xs font-medium text-slate-400 italic py-1">
+                            — Chưa có điểm
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
-                    {reviewer1Score !== null ? (
-                      <span>Đóng góp: <strong className="text-[#123891] font-mono">{(reviewer1Score * 0.3).toFixed(2)} đ</strong></span>
-                    ) : (
-                      <span>Chờ PB Kín chấm</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 3. Điểm PB Hội đồng (30%) */}
-                <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-1 text-center relative flex flex-col justify-between">
-                  <div>
-                    <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
-                      3. Điểm PB Hội đồng
+                      <div className="text-[10.5px] text-slate-500 pt-1 border-t border-amber-100/70">
+                        {reviewer2Score !== null ? (
+                          <span>Đã chấm điểm</span>
+                        ) : (
+                          <span>Chờ PB Hội đồng chấm</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-slate-500 font-semibold mb-2">
-                      Trọng số: <span className="text-amber-600 font-bold">30%</span>
-                    </div>
-                  </div>
 
-                  <div className="py-1">
-                    {reviewer2Score !== null ? (
-                      <div className="font-mono text-2xl font-black text-amber-950">
-                        {reviewer2Score.toFixed(1)}{' '}
-                        <span className="text-xs font-normal text-slate-400">/ 10</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs font-medium text-slate-400 italic py-1">
-                        — Chưa có điểm
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="text-[10.5px] text-slate-500 pt-1 border-t border-amber-100/70">
-                    {reviewer2Score !== null ? (
-                      <span>Đóng góp: <strong className="text-amber-900 font-mono">{(reviewer2Score * 0.3).toFixed(2)} đ</strong></span>
-                    ) : (
-                      <span>Chờ PB Hội đồng chấm</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 4. Điểm Tổng Kết */}
-                <div
-                  className={`p-4 rounded-2xl border space-y-1 text-center relative flex flex-col justify-between ${
-                    isFullGraded
-                      ? 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-200'
-                      : 'bg-slate-50 text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <div>
+                    {/* 4. Điểm Tổng Kết */}
                     <div
-                      className={`text-[11px] font-bold uppercase tracking-wider ${
-                        isFullGraded ? 'text-emerald-100' : 'text-slate-600'
+                      className={`p-4 rounded-2xl border space-y-1 text-center relative flex flex-col justify-between ${
+                        isFullGraded
+                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-200'
+                          : 'bg-slate-50 text-slate-700 border-slate-200'
                       }`}
                     >
-                      ĐIỂM TỔNG KẾT
-                    </div>
-                    <div
-                      className={`text-[10px] font-semibold mb-2 ${
-                        isFullGraded ? 'text-emerald-200' : 'text-slate-400'
-                      }`}
-                    >
-                      {isFullGraded ? 'Tổng hợp đủ 3 cột điểm' : 'Yêu cầu đủ 3 điểm'}
-                    </div>
-                  </div>
-
-                  <div className="py-1">
-                    {isFullGraded && finalScore !== null ? (
-                      <div className="font-mono text-2xl font-black text-white">
-                        {finalScore.toFixed(2)}{' '}
-                        <span className="text-xs font-normal text-emerald-200">/ 10</span>
-                      </div>
-                    ) : (
-                      <div className="text-xs font-semibold text-slate-500 py-1">
-                        Chưa có điểm tổng kết
-                      </div>
-                    )}
-                  </div>
-
-                  <div
-                    className={`text-[10.5px] pt-1 border-t ${
-                      isFullGraded
-                        ? 'border-emerald-500/60 text-emerald-100 font-medium'
-                        : 'border-slate-200 text-slate-400'
-                    }`}
-                  >
-                    {isFullGraded ? (
-                      <span>{finalScore >= 8.5 ? 'Xuất sắc' : finalScore >= 8.0 ? 'Giỏi' : finalScore >= 7.0 ? 'Khá' : 'Đạt'}</span>
-                    ) : (
-                      <span>Đã có <strong>{scoredCount}/3</strong> thành phần điểm</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Detailed Feedback & Comments from Each Lecturer */}
-              <div className="space-y-3 pt-2">
-                <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
-                  <MessageSquare className="w-4 h-4 text-[#123891]" />
-                  <span>Chi tiết đánh giá & nhận xét của Giảng viên</span>
-                </div>
-
-                <div className="grid grid-cols-1 gap-3.5">
-                  {/* Evaluator 1: GVHD */}
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-blue-100 text-[#102d7d] font-bold text-[11px] flex items-center justify-center shrink-0">
-                          1
-                        </div>
-                        <div>
-                          <UserNameClickable
-                            user={thesis.supervisorId}
-                            name={`${thesis.supervisorId?.academicTitle ? thesis.supervisorId.academicTitle + ' ' : ''}${thesis.supervisorId?.userId?.fullName || 'Giảng viên Hướng dẫn'}`}
-                            showAvatar={false}
-                            className="font-bold text-xs text-slate-900 hover:text-[#123891]"
-                          />
-                          <div className="text-[11px] text-slate-500">
-                            Vai trò: <span className="font-semibold text-[#102d7d]">GVHD (Trọng số 40%)</span>
-                            {thesis.supervisorId?.lecturerCode && (
-                              <span className="font-mono ml-2">• Mã GV: {thesis.supervisorId.lecturerCode}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-slate-500">Điểm chấm:</span>
-                        <span
-                          className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg border ${
-                            supervisorScore !== null
-                              ? 'bg-blue-50 text-[#102d7d] border-blue-200'
-                              : 'bg-slate-100 text-slate-400 border-slate-200'
+                      <div>
+                        <div
+                          className={`text-[11px] font-bold uppercase tracking-wider ${
+                            isFullGraded ? 'text-emerald-100' : 'text-slate-600'
                           }`}
                         >
-                          {supervisorScore !== null ? `${supervisorScore.toFixed(1)} / 10` : 'Chưa có điểm'}
-                        </span>
+                          ĐIỂM TỔNG KẾT
+                        </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <span className="text-slate-400 text-[11px] font-medium block mb-1">
-                        Nhận xét của GVHD:
-                      </span>
-                      <p className="text-slate-800 text-xs leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60 whitespace-pre-wrap">
-                        {thesis.supervisorComment?.trim() || 'Chưa có nhận xét.'}
-                      </p>
+                      <div className="py-2">
+                        {isFullGraded && finalScore !== null ? (
+                          <div className="font-mono text-2xl font-black text-white">
+                            {finalScore.toFixed(2)}{' '}
+                            <span className="text-xs font-normal text-emerald-200">/ 10</span>
+                          </div>
+                        ) : (
+                          <div className="text-xs font-semibold text-slate-500 py-1">
+                            Chưa có điểm tổng kết
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className={`text-[10.5px] pt-1 border-t ${
+                          isFullGraded
+                            ? 'border-emerald-500/60 text-emerald-100 font-medium'
+                            : 'border-slate-200 text-slate-400'
+                        }`}
+                      >
+                        {isFullGraded ? (
+                          <span>{finalScore >= 8.5 ? 'Xuất sắc' : finalScore >= 8.0 ? 'Giỏi' : finalScore >= 7.0 ? 'Khá' : 'Đạt'}</span>
+                        ) : (
+                          <span>Chưa hoàn tất</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Evaluator 2: Reviewer 1 (PB Kín) */}
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-blue-100 text-[#102d7d] font-bold text-[11px] flex items-center justify-center shrink-0">
-                          2
-                        </div>
-                        <div>
-                          <strong className="text-xs text-slate-900 block">
-                            {thesis.reviewer1Id?.academicTitle ? `${thesis.reviewer1Id.academicTitle} ` : ''}
-                            {thesis.reviewer1Id?.userId?.fullName || 'Giảng viên Phản biện Kín'}
-                          </strong>
-                          <div className="text-[11px] text-slate-500">
-                            Vai trò: <span className="font-semibold text-[#102d7d]">GVPB Kín (Trọng số 30%)</span>
-                            {thesis.reviewer1Id?.lecturerCode && (
-                              <span className="font-mono ml-2">• Mã GV: {thesis.reviewer1Id.lecturerCode}</span>
-                            )}
+                  {/* Detailed Feedback & Comments from Each Lecturer */}
+                  <div className="space-y-3 pt-2">
+                    <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#123891]" />
+                      <span>Chi tiết đánh giá & nhận xét của Giảng viên</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-3.5">
+                      {evaluators.map((ev, idx) => (
+                        <div
+                          key={idx}
+                          className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5"
+                        >
+                          <div className="flex items-center gap-2 pb-2 border-b border-slate-200/60">
+                            <div className="w-6 h-6 rounded-lg bg-blue-100 text-[#102d7d] font-bold text-[11px] flex items-center justify-center shrink-0">
+                              {ev.num}
+                            </div>
+                            <strong className="text-xs font-bold text-slate-900">
+                              {ev.title}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span className="text-slate-400 text-[11px] font-medium block mb-1">
+                              Nhận xét:
+                            </span>
+                            <p className="text-slate-800 text-xs leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60 whitespace-pre-wrap">
+                              {ev.comment || 'Chưa có nhận xét.'}
+                            </p>
                           </div>
                         </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-slate-500">Điểm chấm:</span>
-                        <span
-                          className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg border ${
-                            reviewer1Score !== null
-                              ? 'bg-blue-50 text-[#102d7d] border-blue-200'
-                              : 'bg-slate-100 text-slate-400 border-slate-200'
-                          }`}
-                        >
-                          {reviewer1Score !== null ? `${reviewer1Score.toFixed(1)} / 10` : 'Chưa có điểm'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] font-medium block mb-1">
-                        Nhận xét của GVPB Kín:
-                      </span>
-                      <p className="text-slate-800 text-xs leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60 whitespace-pre-wrap">
-                        {thesis.reviewer1Comment?.trim() || 'Chưa có nhận xét.'}
-                      </p>
+                      ))}
                     </div>
                   </div>
-
-                  {/* Evaluator 3: Reviewer 2 (PB Hội đồng) */}
-                  <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200/60">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 font-bold text-[11px] flex items-center justify-center shrink-0">
-                          3
-                        </div>
-                        <div>
-                          <strong className="text-xs text-slate-900 block">
-                            {thesis.reviewer2Id?.academicTitle ? `${thesis.reviewer2Id.academicTitle} ` : ''}
-                            {thesis.reviewer2Id?.userId?.fullName || 'Giảng viên Phản biện Hội đồng'}
-                          </strong>
-                          <div className="text-[11px] text-slate-500">
-                            Vai trò: <span className="font-semibold text-amber-700">GVPB Hội đồng (Trọng số 30%)</span>
-                            {thesis.reviewer2Id?.lecturerCode && (
-                              <span className="font-mono ml-2">• Mã GV: {thesis.reviewer2Id.lecturerCode}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] text-slate-500">Điểm chấm:</span>
-                        <span
-                          className={`font-mono text-xs font-bold px-2.5 py-0.5 rounded-lg border ${
-                            reviewer2Score !== null
-                              ? 'bg-amber-50 text-amber-700 border-amber-200'
-                              : 'bg-slate-100 text-slate-400 border-slate-200'
-                          }`}
-                        >
-                          {reviewer2Score !== null ? `${reviewer2Score.toFixed(1)} / 10` : 'Chưa có điểm'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div>
-                      <span className="text-slate-400 text-[11px] font-medium block mb-1">
-                        Nhận xét của GVPB Hội đồng:
-                      </span>
-                      <p className="text-slate-800 text-xs leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60 whitespace-pre-wrap">
-                        {thesis.reviewer2Comment?.trim() || 'Chưa có nhận xét.'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+                </>
+              )}
             </div>
           </div>
 
@@ -709,20 +690,6 @@ const MyThesisPage = () => {
                   </div>
                 )}
               </div>
-            </div>
-
-            {/* Application Timestamps */}
-            <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-2">
-              <div className="flex justify-between">
-                <span>Ngày gửi đăng ký:</span>
-                <strong className="text-slate-800">{formatDate(thesis.createdAt)}</strong>
-              </div>
-              {thesis.approvedAt && (
-                <div className="flex justify-between">
-                  <span>Ngày TBM phê duyệt:</span>
-                  <strong className="text-slate-800">{formatDate(thesis.approvedAt)}</strong>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -23,12 +23,12 @@ const PERMISSION_OPTIONS = [
   {
     id: 'GVHD',
     label: 'GVHD (Giảng viên hướng dẫn)',
-    desc: 'Được phân công hướng dẫn sinh viên KLTN và chấm điểm phần GVHD (Trọng số 40%).',
+    desc: 'Được phân công hướng dẫn sinh viên KLTN và chấm điểm phần GVHD (Trọng số 50%).',
   },
   {
     id: 'GVPB_KIN',
     label: 'GVPB KÍN (Phản biện 1)',
-    desc: 'Được phân công phản biện kín và nhập điểm phản biện 1 (Trọng số 30%).',
+    desc: 'Được phân công phản biện kín và nhập điểm phản biện 1 (Trọng số 20%).',
   },
   {
     id: 'GVPB_HOIDONG',

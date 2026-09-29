@@ -144,7 +144,7 @@ const TbmThesisDetailModal = ({
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-bold text-slate-500 uppercase">GVHD</span>
                 <span className="px-1.5 py-0.2 rounded bg-blue-50 text-[#102d7d] font-bold text-[9.5px] border border-blue-100">
-                  40%
+                  50%
                 </span>
                 <span className="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-bold text-[9.5px]">
                   Quyền: GVHD
@@ -276,13 +276,13 @@ const TbmThesisDetailModal = ({
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">GVHD (40%)</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">GVHD (50%)</div>
                 <div className="text-sm font-mono font-bold text-slate-900 mt-0.5">
                   {thesis.scores.supervisorScore !== null ? `${thesis.scores.supervisorScore}` : '—'}
                 </div>
               </div>
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (30%)</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (20%)</div>
                 <div className="text-sm font-mono font-bold text-[#102d7d] mt-0.5">
                   {thesis.scores.reviewer1Score !== null ? `${thesis.scores.reviewer1Score}` : '—'}
                 </div>

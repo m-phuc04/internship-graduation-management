@@ -1712,35 +1712,49 @@ const gradeThesisByLecturer = async (
     }
 
     // Calculate average council score across all lecturers in the council
+    // STRICT RULE: Hội đồng bắt buộc phải có ĐỦ ÍT NHẤT 2 GIẢNG VIÊN chấm điểm mới tính điểm hội đồng!
     const validScores = thesis.scores.councilLecturerScores
       .map((e) => e.score)
       .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
-    const avgCouncilScore =
-      validScores.length > 0
-        ? Number((validScores.reduce((a, b) => a + b, 0) / validScores.length).toFixed(2))
-        : effectiveScore;
 
-    thesis.scores.reviewer2Score = avgCouncilScore;
-    thesis.scores.councilScore = avgCouncilScore;
-
-    // Calculate average for student 1 & student 2
-    const validS1 = thesis.scores.councilLecturerScores
-      .map((e) => e.student1Score)
-      .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
-    thesis.scores.student1Reviewer2Score =
-      validS1.length > 0
-        ? Number((validS1.reduce((a, b) => a + b, 0) / validS1.length).toFixed(2))
-        : s1;
-
-    const validS2 = thesis.scores.councilLecturerScores
-      .map((e) => e.student2Score)
-      .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
-    if (validS2.length > 0) {
-      thesis.scores.student2Reviewer2Score = Number(
-        (validS2.reduce((a, b) => a + b, 0) / validS2.length).toFixed(2)
+    if (validScores.length >= 2) {
+      const avgCouncilScore = Number(
+        ((validScores[0] + validScores[1]) / 2).toFixed(2)
       );
-    } else if (s2 !== null) {
-      thesis.scores.student2Reviewer2Score = s2;
+      thesis.scores.reviewer2Score = avgCouncilScore;
+      thesis.scores.councilScore = avgCouncilScore;
+
+      // Calculate average for student 1 & student 2
+      const validS1 = thesis.scores.councilLecturerScores
+        .map((e) => e.student1Score)
+        .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
+      if (validS1.length >= 2) {
+        thesis.scores.student1Reviewer2Score = Number(
+          ((validS1[0] + validS1[1]) / 2).toFixed(2)
+        );
+      } else {
+        thesis.scores.student1Reviewer2Score = null;
+      }
+
+      const validS2 = thesis.scores.councilLecturerScores
+        .map((e) => e.student2Score)
+        .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
+      if (validS2.length >= 2) {
+        thesis.scores.student2Reviewer2Score = Number(
+          ((validS2[0] + validS2[1]) / 2).toFixed(2)
+        );
+      } else {
+        thesis.scores.student2Reviewer2Score = null;
+      }
+    } else {
+      // Khi chỉ có 1 giảng viên chấm, KHÔNG tính điểm hội đồng và điểm tổng kết!
+      thesis.scores.reviewer2Score = null;
+      thesis.scores.councilScore = null;
+      thesis.scores.student1Reviewer2Score = null;
+      thesis.scores.student2Reviewer2Score = null;
+      thesis.scores.finalScore = null;
+      thesis.scores.student1FinalScore = null;
+      thesis.scores.student2FinalScore = null;
     }
 
     if (comment !== undefined) thesis.reviewer2Comment = comment ? comment.trim() : null;
@@ -1754,16 +1768,20 @@ const gradeThesisByLecturer = async (
     thesis.scores.supervisorScore !== undefined &&
     thesis.scores.reviewer1Score !== null &&
     thesis.scores.reviewer1Score !== undefined &&
-    thesis.scores.reviewer2Score !== null &&
-    thesis.scores.reviewer2Score !== undefined
+    thesis.scores.councilScore !== null &&
+    thesis.scores.councilScore !== undefined
   ) {
     const final =
       thesis.scores.supervisorScore * 0.5 +
       thesis.scores.reviewer1Score * 0.2 +
-      thesis.scores.reviewer2Score * 0.3;
+      thesis.scores.councilScore * 0.3;
 
     thesis.scores.finalScore = Number(final.toFixed(2));
     thesis.status = "GRADED";
+  } else {
+    thesis.scores.finalScore = null;
+    thesis.scores.student1FinalScore = null;
+    thesis.scores.student2FinalScore = null;
   }
 
   // Calculate individual final scores if available

@@ -184,7 +184,10 @@ const TbmThesisEvaluationManagement = () => {
       const assignedCouncil = councilId && councilsMap ? councilsMap[councilId] : null;
 
       // Extract individual scores for GVHĐ 1 and GVHĐ 2
-      const councilScores = Array.isArray(s.councilLecturerScores) ? s.councilLecturerScores : [];
+      const councilScores = Array.isArray(s.councilLecturerScores)
+        ? s.councilLecturerScores.filter((e) => e && (e.score !== null || e.student1Score !== null))
+        : [];
+
       let scoreGVHD1 = null;
       let scoreGVHD2 = null;
 
@@ -202,49 +205,41 @@ const TbmThesisEvaluationManagement = () => {
                  (lec2?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec2.name.trim().toLowerCase())
         ) || (councilScores.length > 1 ? councilScores[1] : null);
 
-        scoreGVHD1 = entry1 ? (entry1.score ?? entry1.student1Score) : null;
-        scoreGVHD2 = entry2 && entry2 !== entry1 ? (entry2.score ?? entry2.student1Score) : (councilScores.length > 1 ? councilScores[1].score : null);
-      } else if (councilScores.length >= 2) {
-        scoreGVHD1 = councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null;
-        scoreGVHD2 = councilScores[1]?.score ?? councilScores[1]?.student1Score ?? null;
-      } else if (councilScores.length === 1) {
-        scoreGVHD1 = councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null;
+        scoreGVHD1 = entry1 ? (entry1.score ?? entry1.student1Score ?? null) : null;
+        scoreGVHD2 = entry2 && entry2 !== entry1 ? (entry2.score ?? entry2.student1Score ?? null) : (councilScores.length > 1 ? (councilScores[1].score ?? councilScores[1].student1Score ?? null) : null);
+      } else {
+        scoreGVHD1 = councilScores.length > 0 ? (councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null) : null;
+        scoreGVHD2 = councilScores.length > 1 ? (councilScores[1]?.score ?? councilScores[1]?.student1Score ?? null) : null;
       }
 
-      const hasTwoCouncilLecturers = (assignedCouncil && Array.isArray(assignedCouncil.lecturers) && assignedCouncil.lecturers.length >= 2) || councilScores.length >= 2;
-
+      // STRICT RULE: Điểm Hội Đồng (30%) CHỈ TÍNH KHI CÓ ĐỦ CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 VÀ GVHĐ 2)!
       let scoreCouncil = null;
-      if (hasTwoCouncilLecturers) {
-        // Strict: Điểm Hội Đồng chỉ tính trung bình khi có ĐỦ CẢ 2 CỘT GVHĐ 1 và GVHĐ 2!
-        if (scoreGVHD1 !== null && scoreGVHD1 !== undefined && scoreGVHD2 !== null && scoreGVHD2 !== undefined) {
-          scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
-        } else {
-          scoreCouncil = null;
-        }
+      if (
+        scoreGVHD1 !== null &&
+        scoreGVHD1 !== undefined &&
+        !isNaN(scoreGVHD1) &&
+        scoreGVHD2 !== null &&
+        scoreGVHD2 !== undefined &&
+        !isNaN(scoreGVHD2)
+      ) {
+        scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
       } else {
-        if (scoreGVHD1 !== null && scoreGVHD1 !== undefined) {
-          scoreCouncil = Number(Number(scoreGVHD1).toFixed(2));
-        } else {
-          scoreCouncil = s.councilScore !== null && s.councilScore !== undefined
-            ? Number(s.councilScore)
-            : s.student1CouncilScore !== null && s.student1CouncilScore !== undefined
-            ? Number(s.student1CouncilScore)
-            : null;
-        }
+        scoreCouncil = null;
       }
 
       const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
       const hasPB1 = scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1);
       const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
 
-      // Final Score: GVHD (50%) + PB kín (20%) + Hội đồng (30%)
+      // STRICT RULE: Điểm Tổng Kết (100%) CHỈ ĐƯỢC TÍNH KHI ĐỦ TẤT CẢ CÁC CỘT ĐIỂM (GVHD 50%, PB kín 20%, Hội đồng 30%)!
+      // Chưa đủ tất cả cột điểm thì tuyệt đối KHÔNG được tính, chỉ để null (để trống)!
       let finalScore = null;
       if (hasHD && hasPB1 && hasCouncil) {
         finalScore = Number(
           (Number(scoreHD) * 0.5 + Number(scorePB1) * 0.2 + Number(scoreCouncil) * 0.3).toFixed(2)
         );
-      } else if (s.finalScore !== null && s.finalScore !== undefined && !isNaN(s.finalScore) && hasCouncil) {
-        finalScore = Number(s.finalScore);
+      } else {
+        finalScore = null;
       }
 
       return {
@@ -253,7 +248,6 @@ const TbmThesisEvaluationManagement = () => {
         scoreGVHD1: scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null,
         scoreGVHD2: scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null,
         scoreCouncil: hasCouncil ? Number(scoreCouncil) : null,
-        hasTwoCouncilLecturers,
         finalScore,
         hasHD,
         hasPB1,
@@ -985,7 +979,7 @@ const TbmThesisEvaluationManagement = () => {
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-slate-400 italic">Chưa đủ điểm</span>
+                              <span className="text-slate-400 font-normal font-sans text-sm">—</span>
                             )}
                           </td>
 
