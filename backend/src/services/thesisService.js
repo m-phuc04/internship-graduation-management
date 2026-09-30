@@ -1720,6 +1720,7 @@ const gradeThesisByLecturer = async (
     }
 
     // Calculate average council score across all lecturers in the council
+    // STRICT RULE: Hội đồng bắt buộc phải có ĐỦ ÍT NHẤT 2 GIẢNG VIÊN chấm điểm mới tính điểm hội đồng!
     const validScores = thesis.scores.councilLecturerScores
       .map((e) => e.score)
       .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
@@ -1740,7 +1741,7 @@ const gradeThesisByLecturer = async (
           ((validS1[0] + validS1[1]) / 2).toFixed(2)
         );
       } else {
-        thesis.scores.student1Reviewer2Score = s1;
+        thesis.scores.student1Reviewer2Score = null;
       }
 
       const validS2 = thesis.scores.councilLecturerScores
@@ -1751,14 +1752,17 @@ const gradeThesisByLecturer = async (
           ((validS2[0] + validS2[1]) / 2).toFixed(2)
         );
       } else {
-        thesis.scores.student2Reviewer2Score = s2;
+        thesis.scores.student2Reviewer2Score = null;
       }
     } else {
-      // Khi có 1 giảng viên chấm, ghi nhận điểm cho GVPB 2
-      thesis.scores.reviewer2Score = effectiveScore;
-      thesis.scores.councilScore = effectiveScore;
-      if (s1 !== null) thesis.scores.student1Reviewer2Score = s1;
-      if (s2 !== null) thesis.scores.student2Reviewer2Score = s2;
+      // Khi chỉ có 1 giảng viên chấm, KHÔNG tính điểm hội đồng và điểm tổng kết!
+      thesis.scores.reviewer2Score = null;
+      thesis.scores.councilScore = null;
+      thesis.scores.student1Reviewer2Score = null;
+      thesis.scores.student2Reviewer2Score = null;
+      thesis.scores.finalScore = null;
+      thesis.scores.student1FinalScore = null;
+      thesis.scores.student2FinalScore = null;
     }
 
     if (comment !== undefined) thesis.reviewer2Comment = comment ? comment.trim() : null;
@@ -1766,20 +1770,19 @@ const gradeThesisByLecturer = async (
     throw new AppError("Vai trò đánh giá không hợp lệ", 400);
   }
 
-  // Auto-calculate final score if all 3 scores are present: GVHD (50%) + PB Kín (20%) + Hội Đồng / GVPB2 (30%)
-  const effectiveReviewer2Score = thesis.scores.councilScore ?? thesis.scores.reviewer2Score;
+  // Auto-calculate final score if all 3 scores are present: GVHD (50%) + PB Kín (20%) + Hội Đồng (30%)
   if (
     thesis.scores.supervisorScore !== null &&
     thesis.scores.supervisorScore !== undefined &&
     thesis.scores.reviewer1Score !== null &&
     thesis.scores.reviewer1Score !== undefined &&
-    effectiveReviewer2Score !== null &&
-    effectiveReviewer2Score !== undefined
+    thesis.scores.councilScore !== null &&
+    thesis.scores.councilScore !== undefined
   ) {
     const final =
       thesis.scores.supervisorScore * 0.5 +
       thesis.scores.reviewer1Score * 0.2 +
-      effectiveReviewer2Score * 0.3;
+      thesis.scores.councilScore * 0.3;
 
     thesis.scores.finalScore = Number(final.toFixed(2));
     thesis.status = "GRADED";
@@ -1790,34 +1793,31 @@ const gradeThesisByLecturer = async (
   }
 
   // Calculate individual final scores if available
-  const effectiveS1Rev2 = thesis.scores.student1Reviewer2Score;
   if (
     thesis.scores.student1SupervisorScore != null &&
     thesis.scores.student1Reviewer1Score != null &&
-    effectiveS1Rev2 != null
+    thesis.scores.student1Reviewer2Score != null
   ) {
     thesis.scores.student1FinalScore = Number(
       (
         thesis.scores.student1SupervisorScore * 0.5 +
         thesis.scores.student1Reviewer1Score * 0.2 +
-        effectiveS1Rev2 * 0.3
+        thesis.scores.student1Reviewer2Score * 0.3
       ).toFixed(2),
     );
   }
-  const effectiveS2Rev2 = thesis.scores.student2Reviewer2Score;
   if (
     thesis.scores.student2SupervisorScore != null &&
     thesis.scores.student2Reviewer1Score != null &&
-    effectiveS2Rev2 != null
+    thesis.scores.student2Reviewer2Score != null
   ) {
     thesis.scores.student2FinalScore = Number(
       (
         thesis.scores.student2SupervisorScore * 0.5 +
         thesis.scores.student2Reviewer1Score * 0.2 +
-        effectiveS2Rev2 * 0.3
+        thesis.scores.student2Reviewer2Score * 0.3
       ).toFixed(2),
     );
-  }
   }
 
   await thesis.save();
