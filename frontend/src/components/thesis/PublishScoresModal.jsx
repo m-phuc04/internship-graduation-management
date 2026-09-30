@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { useToast } from '../../context/ToastContext';
-import { Send, Check, BookOpen } from 'lucide-react';
+import { Send, Check, BookOpen, AlertCircle } from 'lucide-react';
 
 const PublishScoresModal = ({
   isOpen,
   onClose,
   isAll = false,
   thesesCount = 0,
+  batchScoreAvailability = null,
   thesis = null,
   scoreInfo = null,
   publishedScores = {},
@@ -26,28 +27,38 @@ const PublishScoresModal = ({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
+  const hdAvail = batchScoreAvailability?.supervisorScore || { hasAll: false, count: 0, total: thesesCount };
+  const pb1Avail = batchScoreAvailability?.reviewer1Score || { hasAll: false, count: 0, total: thesesCount };
+  const councilAvail = batchScoreAvailability?.councilScore || { hasAll: false, count: 0, total: thesesCount };
+  const finalAvail = batchScoreAvailability?.finalScore || { hasAll: false, count: 0, total: thesesCount };
+
   useEffect(() => {
     if (isOpen) {
       if (isAll) {
         const globalSetting = publishedScores['GLOBAL_ALL'] || {};
+        const isHdReady = !!hdAvail.hasAll;
+        const isPb1Ready = !!pb1Avail.hasAll;
+        const isCouncilReady = !!councilAvail.hasAll;
+        const isFinalReady = !!finalAvail.hasAll;
+
         setSelectedScores({
-          supervisorScore: !!globalSetting.supervisorScore,
-          reviewer1Score: !!(globalSetting.reviewer1Score || globalSetting.reviewerScore || globalSetting.reviewer2Score),
-          councilScore: !!globalSetting.councilScore,
-          finalScore: !!globalSetting.finalScore,
+          supervisorScore: isHdReady && !!globalSetting.supervisorScore,
+          reviewer1Score: isPb1Ready && !!(globalSetting.reviewer1Score || globalSetting.reviewerScore || globalSetting.reviewer2Score),
+          councilScore: isCouncilReady && !!globalSetting.councilScore,
+          finalScore: isFinalReady && !!globalSetting.finalScore,
         });
-      } else if (thesis) {
+      } else if (thesis && scoreInfo) {
         const prev = publishedScores[thesis._id] || {};
         setSelectedScores({
-          supervisorScore: !!prev.supervisorScore,
-          reviewer1Score: !!(prev.reviewer1Score || prev.reviewerScore || prev.reviewer2Score),
-          councilScore: !!prev.councilScore,
-          finalScore: !!prev.finalScore,
+          supervisorScore: !!scoreInfo.hasHD && !!prev.supervisorScore,
+          reviewer1Score: !!scoreInfo.hasPB1 && !!(prev.reviewer1Score || prev.reviewerScore || prev.reviewer2Score),
+          councilScore: !!scoreInfo.hasCouncil && !!prev.councilScore,
+          finalScore: (scoreInfo.finalScore !== null && scoreInfo.finalScore !== undefined) && !!prev.finalScore,
         });
       }
       setConfirmOpen(false);
     }
-  }, [isOpen, isAll, thesis, publishedScores]);
+  }, [isOpen, isAll, thesis, scoreInfo, publishedScores, batchScoreAvailability]);
 
   if (!isOpen) return null;
   if (!isAll && (!thesis || !scoreInfo)) return null;
@@ -58,28 +69,36 @@ const PublishScoresModal = ({
           key: 'supervisorScore',
           label: 'Điểm Giảng viên Hướng dẫn (GVHD)',
           score: null,
-          hasScore: true,
+          hasScore: hdAvail.hasAll,
+          count: hdAvail.count,
+          total: hdAvail.total,
           weight: '50%',
         },
         {
           key: 'reviewer1Score',
           label: 'Điểm Phản biện kín',
           score: null,
-          hasScore: true,
+          hasScore: pb1Avail.hasAll,
+          count: pb1Avail.count,
+          total: pb1Avail.total,
           weight: '20%',
         },
         {
           key: 'councilScore',
           label: 'Điểm Hội đồng bảo vệ',
           score: null,
-          hasScore: true,
+          hasScore: councilAvail.hasAll,
+          count: councilAvail.count,
+          total: councilAvail.total,
           weight: '30%',
         },
         {
           key: 'finalScore',
           label: 'Điểm Tổng kết Khóa Luận',
           score: null,
-          hasScore: true,
+          hasScore: finalAvail.hasAll,
+          count: finalAvail.count,
+          total: finalAvail.total,
           weight: '100%',
         },
       ]
@@ -141,6 +160,7 @@ const PublishScoresModal = ({
     });
   };
 
+  // Get human-readable list of selected scores for confirmation message
   const getSelectedLabelsList = () => {
     const list = [];
     scoreItems.forEach((item) => {
@@ -221,8 +241,8 @@ const PublishScoresModal = ({
                   <h4 className="font-bold text-slate-900 text-sm leading-snug">
                     Công bố điểm cho tất cả đề tài ({thesesCount} đề tài)
                   </h4>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
-                    Chọn các đầu điểm thành phần muốn công bố cho sinh viên của tất cả các đề tài khóa luận trong danh sách.
+                  <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                    Chỉ những đầu điểm đã được <strong>100% tất cả các đề tài</strong> hoàn tất chấm điểm mới được phép chọn để công bố đồng loạt cho sinh viên.
                   </p>
                 </div>
               </div>
@@ -272,7 +292,7 @@ const PublishScoresModal = ({
                 onClick={handleSelectAllAvailable}
                 className="text-[#123891] font-bold hover:underline cursor-pointer"
               >
-                Chọn tất cả
+                Chọn tất cả (đã đủ điểm)
               </button>
               <span className="text-slate-300">•</span>
               <button
@@ -297,39 +317,62 @@ const PublishScoresModal = ({
                   onClick={() => handleToggle(item.key, item.hasScore)}
                   className={`p-3 rounded-2xl border transition flex items-center justify-between gap-3 ${
                     disabled
-                      ? 'bg-slate-50/60 border-slate-200/80 opacity-60 cursor-not-allowed'
+                      ? 'bg-slate-50/70 border-slate-200/80 opacity-60 cursor-not-allowed'
                       : isChecked
                       ? 'bg-blue-50/90 border-[#123891] shadow-2xs cursor-pointer ring-1 ring-[#123891]/20'
                       : 'bg-white border-slate-200 hover:bg-slate-50 cursor-pointer'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2.5 min-w-0">
                     <input
                       type="checkbox"
                       checked={isChecked}
                       disabled={disabled}
                       onChange={() => handleToggle(item.key, item.hasScore)}
-                      className="w-4 h-4 rounded text-[#123891] focus:ring-[#123891] cursor-pointer"
+                      className="w-4 h-4 rounded text-[#123891] focus:ring-[#123891] cursor-pointer disabled:cursor-not-allowed shrink-0"
                     />
-                    <div>
+                    <div className="min-w-0">
                       <span
                         className={`text-xs block ${
-                          isChecked ? 'font-bold text-slate-900' : 'font-medium text-slate-700'
+                          isChecked ? 'font-bold text-slate-900' : disabled ? 'text-slate-500 font-medium' : 'font-medium text-slate-700'
                         }`}
                       >
                         {item.label}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono block">
-                        {item.weight}
-                      </span>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-slate-400 font-mono">
+                          {item.weight}
+                        </span>
+                        {isAll && (
+                          <>
+                            <span className="text-slate-300">•</span>
+                            {item.hasScore ? (
+                              <span className="text-[10.5px] text-emerald-600 font-medium">
+                                Đã đủ điểm ({item.count}/{item.total} đề tài)
+                              </span>
+                            ) : (
+                              <span className="text-[10.5px] text-amber-600 font-medium">
+                                Chưa đủ ({item.count}/{item.total} đề tài có điểm)
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
                     {isAll ? (
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
-                        {item.weight}
-                      </span>
+                      item.hasScore ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Check className="w-3 h-3" />
+                          <span>Đủ điểm</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
+                          <span>Chưa đủ</span>
+                        </span>
+                      )
                     ) : item.hasScore ? (
                       <span className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-white border border-slate-200 text-slate-900 shadow-2xs">
                         {item.score} đ
@@ -354,7 +397,8 @@ const PublishScoresModal = ({
             </button>
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition cursor-pointer flex items-center gap-1.5"
+              disabled={selectedLabels.length === 0 && !Object.values(publishedScores['GLOBAL_ALL'] || {}).some(Boolean)}
+              className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Xác nhận</span>

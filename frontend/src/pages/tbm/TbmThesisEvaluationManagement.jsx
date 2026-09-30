@@ -404,6 +404,60 @@ const TbmThesisEvaluationManagement = () => {
     setDetailModalOpen(true);
   };
 
+  // ==========================================
+  // BATCH SCORE AVAILABILITY (Kiểm tra 100% đề tài có điểm mới cho phép công bố)
+  // ==========================================
+  const batchScoreAvailability = useMemo(() => {
+    const list = theses;
+    const total = list.length;
+    if (total === 0) {
+      return {
+        totalTheses: 0,
+        supervisorScore: { hasAll: false, count: 0, total: 0 },
+        reviewer1Score: { hasAll: false, count: 0, total: 0 },
+        councilScore: { hasAll: false, count: 0, total: 0 },
+        finalScore: { hasAll: false, count: 0, total: 0 },
+      };
+    }
+
+    let hdCount = 0;
+    let pb1Count = 0;
+    let councilCount = 0;
+    let finalCount = 0;
+
+    list.forEach((item) => {
+      const info = getThesisScoreInfo(item);
+      if (info.hasHD) hdCount++;
+      if (info.hasPB1) pb1Count++;
+      if (info.hasCouncil) councilCount++;
+      if (info.finalScore !== null && info.finalScore !== undefined) finalCount++;
+    });
+
+    return {
+      totalTheses: total,
+      supervisorScore: {
+        hasAll: hdCount === total,
+        count: hdCount,
+        total,
+      },
+      reviewer1Score: {
+        hasAll: pb1Count === total,
+        count: pb1Count,
+        total,
+      },
+      councilScore: {
+        hasAll: councilCount === total,
+        count: councilCount,
+        total,
+      },
+      finalScore: {
+        hasAll: finalCount === total,
+        count: finalCount,
+        total,
+      },
+    };
+  }, [theses, getThesisScoreInfo]);
+
   const handleOpenPublishAllModal = () => {
     setPublishModalOpen(true);
   };
@@ -1330,6 +1384,7 @@ const TbmThesisEvaluationManagement = () => {
         onClose={() => setPublishModalOpen(false)}
         isAll={true}
         thesesCount={theses.length}
+        batchScoreAvailability={batchScoreAvailability}
         publishedScores={publishedScores}
         onPublishScores={handleSavePublishedScores}
       />
