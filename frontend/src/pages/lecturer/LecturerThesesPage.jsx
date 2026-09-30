@@ -45,12 +45,12 @@ const LecturerThesesPage = () => {
   // Read initial tab from search query
   const getInitialTab = () => {
     if (location.search.includes('tab=topics')) return 'MY_TOPICS';
-    if (location.search.includes('tab=reviewer2')) return 'REVIEWER_2';
-    if (location.search.includes('tab=review') || location.search.includes('tab=reviewer1')) return 'REVIEWER_1';
+    if (location.search.includes('tab=council')) return 'COUNCIL';
+    if (location.search.includes('tab=review') || location.search.includes('tab=reviewer1') || location.search.includes('tab=reviewer2')) return 'REVIEW_BLIND';
     return 'SUPERVISOR';
   };
 
-  const [activeTab, setActiveTab] = useState(getInitialTab); // 'MY_TOPICS', 'SUPERVISOR', 'REVIEWER_1', 'REVIEWER_2'
+  const [activeTab, setActiveTab] = useState(getInitialTab); // 'MY_TOPICS', 'SUPERVISOR', 'REVIEW_BLIND', 'COUNCIL'
   const [search, setSearch] = useState('');
 
   // Proposed Topics (KLTN Topic Management)
@@ -71,10 +71,10 @@ const LecturerThesesPage = () => {
   useEffect(() => {
     if (location.search.includes('tab=topics')) {
       setActiveTab('MY_TOPICS');
-    } else if (location.search.includes('tab=reviewer2')) {
-      setActiveTab('REVIEWER_2');
-    } else if (location.search.includes('tab=review') || location.search.includes('tab=reviewer1')) {
-      setActiveTab('REVIEWER_1');
+    } else if (location.search.includes('tab=council')) {
+      setActiveTab('COUNCIL');
+    } else if (location.search.includes('tab=review') || location.search.includes('tab=reviewer1') || location.search.includes('tab=reviewer2')) {
+      setActiveTab('REVIEW_BLIND');
     } else if (location.search.includes('tab=supervisor') || !location.search) {
       setActiveTab('SUPERVISOR');
     }
@@ -121,44 +121,115 @@ const LecturerThesesPage = () => {
   const loadCouncilData = useCallback(() => {
     try {
       const termId = currentTerm?._id || 'default';
-      const cKey = `tbm_councils_${termId}`;
-      const tcKey = `tbm_thesis_councils_${termId}`;
 
+      // 1. Load councils with multi-key merge fallback
+      let mergedCouncils = [];
+      const map = {};
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('tbm_councils_')) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(k) || '[]');
+            if (Array.isArray(parsed)) {
+              parsed.forEach((c) => {
+                const cid = c.id || c._id;
+                if (cid && !map[cid]) {
+                  map[cid] = c;
+                  mergedCouncils.push(c);
+                }
+              });
+            }
+          } catch (e) {}
+        }
+      }
+
+      // Also ensure exact term key is prioritized
+      const cKey = `tbm_councils_${termId}`;
       const savedCouncils = localStorage.getItem(cKey);
       if (savedCouncils) {
-        const parsed = JSON.parse(savedCouncils);
-        if (Array.isArray(parsed)) {
-          setCouncils(parsed);
-          const map = {};
-          parsed.forEach((c) => {
-            const cid = c.id || c._id;
-            if (cid) map[cid] = c;
-          });
-          setCouncilsMap(map);
-        }
-      } else {
-        setCouncils([]);
-        setCouncilsMap({});
+        try {
+          const parsed = JSON.parse(savedCouncils);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((c) => {
+              const cid = c.id || c._id;
+              if (cid) {
+                map[cid] = c;
+                const existingIdx = mergedCouncils.findIndex((mc) => (mc.id || mc._id) === cid);
+                if (existingIdx >= 0) {
+                  mergedCouncils[existingIdx] = c;
+                } else {
+                  mergedCouncils.push(c);
+                }
+              }
+            });
+          }
+        } catch (e) {}
       }
 
+      setCouncils(mergedCouncils);
+      setCouncilsMap(map);
+
+      // 2. Load thesis-council mappings with multi-key merge fallback
+      let mergedThesisCouncils = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('tbm_thesis_councils_')) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(k) || '{}');
+            if (parsed && typeof parsed === 'object') {
+              mergedThesisCouncils = { ...mergedThesisCouncils, ...parsed };
+            }
+          } catch (e) {}
+        }
+      }
+      const tcKey = `tbm_thesis_councils_${termId}`;
       const savedThesisCouncils = localStorage.getItem(tcKey);
       if (savedThesisCouncils) {
-        setThesisCouncilMap(JSON.parse(savedThesisCouncils));
-      } else {
-        setThesisCouncilMap({});
+        try {
+          mergedThesisCouncils = { ...mergedThesisCouncils, ...JSON.parse(savedThesisCouncils) };
+        } catch (e) {}
       }
+      setThesisCouncilMap(mergedThesisCouncils);
 
+      // 3. Load published scores
+      let mergedPub = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('tbm_published_scores_')) {
+          try {
+            const parsed = JSON.parse(localStorage.getItem(k) || '{}');
+            if (parsed && typeof parsed === 'object') {
+              mergedPub = { ...mergedPub, ...parsed };
+            }
+          } catch (e) {}
+        }
+      }
       const psKey = `tbm_published_scores_${termId}`;
       const savedPub = localStorage.getItem(psKey);
       if (savedPub) {
-        setPublishedScores(JSON.parse(savedPub));
-      } else {
-        setPublishedScores({});
+        try {
+          mergedPub = { ...mergedPub, ...JSON.parse(savedPub) };
+        } catch (e) {}
       }
+      setPublishedScores(mergedPub);
     } catch (e) {
       console.warn('Error loading council data in Lecturer page', e);
     }
   }, [currentTerm?._id]);
+
+  useEffect(() => {
+    const handleStorage = () => {
+      loadCouncilData();
+    };
+
+    window.addEventListener('storage', handleStorage);
+    window.addEventListener('focus', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window.removeEventListener('focus', handleStorage);
+    };
+  }, [loadCouncilData]);
 
   // Timeline edit in detail modal
   const [editingTimeline, setEditingTimeline] = useState(false);
@@ -260,91 +331,94 @@ const LecturerThesesPage = () => {
   const reviewer1Theses = data?.reviewer1Theses || (data?.theses || []).filter((t) => t.isReviewer1) || [];
   const reviewer2Theses = data?.reviewer2Theses || (data?.theses || []).filter((t) => t.isReviewer2) || [];
 
-  // Computations for Council Rooms
-  const myCouncils = useMemo(() => {
-    let result = [];
-    if (councils && councils.length > 0) {
-      // Match lecturer by id, name, or email
-      const matched = councils.filter((c) => {
-        if (!Array.isArray(c.lecturers)) return false;
-        return c.lecturers.some((l) => {
-          const matchesId =
-            (l.lecturerId && (l.lecturerId === user?._id || l.lecturerId === user?.userId)) ||
-            (l.userId && (l.userId === user?._id || l.userId === user?.userId));
-          const matchesName =
-            user?.fullName &&
-            ((l.name && l.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
-              (l.fullName && l.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase()));
-          const matchesEmail =
-            user?.email && l.email && l.email.trim().toLowerCase() === user.email.trim().toLowerCase();
-          return matchesId || matchesName || matchesEmail;
-        });
-      });
+  // Helper to find assigned council (STRICT: only return council if thesis is explicitly assigned)
+  const getAssignedCouncil = useCallback((item) => {
+    if (!item?._id) return null;
+    const councilId = thesisCouncilMap?.[item._id] || item.councilId || (item.council?._id || item.council?.id);
+    if (!councilId || councilId === 'default_council') return null;
 
-      if (matched.length > 0) {
-        result = matched;
-      } else {
-        // Check if any reviewer2 theses are mapped to a council
-        const reviewer2List = data?.reviewer2Theses || [];
-        const mappedIds = new Set(reviewer2List.map((t) => thesisCouncilMap[t._id]).filter(Boolean));
-        const matchedFromTheses = councils.filter((c) => mappedIds.has(c.id || c._id));
-        if (matchedFromTheses.length > 0) {
-          result = matchedFromTheses;
-        } else {
-          result = councils;
+    if (councilsMap && councilsMap[councilId]) {
+      return councilsMap[councilId];
+    }
+    if (Array.isArray(councils)) {
+      const found = councils.find((c) => (c.id && c.id === councilId) || (c._id && c._id === councilId));
+      if (found) return found;
+    }
+    return null;
+  }, [councils, councilsMap, thesisCouncilMap]);
+
+  // Helper to check if logged-in lecturer is in a council
+  const isLecturerInCouncil = useCallback(
+    (council) => {
+      if (!council || !Array.isArray(council.lecturers) || council.lecturers.length === 0) return false;
+      const myIds = [user?._id, user?.userId, user?.lecturerId, data?.lecturer?._id]
+        .filter(Boolean)
+        .map((id) => String(id).trim());
+      const myName = (user?.fullName || user?.name || data?.lecturer?.fullName || '').trim().toLowerCase();
+      const myEmail = (user?.email || data?.lecturer?.email || '').trim().toLowerCase();
+      const myCode = (user?.lecturerCode || user?.code || data?.lecturer?.lecturerCode || '').trim().toLowerCase();
+
+      return council.lecturers.some((l) => {
+        if (!l) return false;
+        if (typeof l === 'string') {
+          return myIds.includes(l.trim());
         }
-      }
-    }
+        const lIds = [
+          l.lecturerId?._id || l.lecturerId?.id || l.lecturerId,
+          l.userId?._id || l.userId?.id || l.userId,
+          l.id,
+          l._id,
+        ]
+          .filter(Boolean)
+          .map((id) => String(id).trim());
 
-    // Fallback: If no councils in storage or not matched, but reviewer2Theses exist
-    if (result.length === 0 && (data?.reviewer2Theses || []).length > 0) {
-      result = [
-        {
-          id: 'default_council',
-          _id: 'default_council',
-          name: 'Hội đồng Bảo vệ Khóa Luận Tốt Nghiệp',
-          room: 'Phòng Hội đồng Khoa CNTT',
-          reportDate: null,
-          reportTime: 'Theo lịch phân công',
-          type: 'ORAL',
-          format: 'ORAL',
-          description: 'Hội đồng đánh giá và chấm điểm bảo vệ Khóa luận tốt nghiệp',
-          lecturers: [
-            {
-              userId: user?._id,
-              lecturerId: user?._id,
-              name: user?.fullName || 'Giảng viên',
-              role: 'Ủy viên / Giảng viên chấm Hội đồng',
-            },
-          ],
-        },
-      ];
-    }
+        const matchesId = lIds.some((id) => myIds.includes(id));
+        if (matchesId) return true;
 
-    return result;
-  }, [councils, user, data?.reviewer2Theses, thesisCouncilMap]);
+        const lName = (l.fullName || l.name || '').trim().toLowerCase();
+        if (myName && lName && (myName === lName || lName.includes(myName) || myName.includes(lName))) return true;
+
+        const lEmail = (l.email || '').trim().toLowerCase();
+        if (myEmail && lEmail && myEmail === lEmail) return true;
+
+        const lCode = (l.lecturerCode || l.code || '').trim().toLowerCase();
+        if (myCode && lCode && myCode === lCode) return true;
+
+        return false;
+      });
+    },
+    [user, data?.lecturer]
+  );
+
+  // Computations for Council Rooms - STRICT: Only councils containing this lecturer
+  const myCouncils = useMemo(() => {
+    if (!councils || councils.length === 0) return [];
+    return councils.filter((c) => isLecturerInCouncil(c));
+  }, [councils, isLecturerInCouncil]);
 
   const activeCouncil = useMemo(() => {
     if (myCouncils.length === 0) return null;
     if (selectedCouncilId) {
-      const found = myCouncils.find((c) => (c.id || c._id) === selectedCouncilId);
+      const found = myCouncils.find((c) => (c.id || c._id) === selectedCouncilId || String(c.id || c._id) === String(selectedCouncilId));
       if (found) return found;
     }
     return myCouncils[0];
   }, [myCouncils, selectedCouncilId]);
 
   const councilTheses = useMemo(() => {
-    if (!activeCouncil) return [];
-    const cId = activeCouncil.id || activeCouncil._id;
-
     const allThesesPool = data?.allTheses || data?.theses || [];
-    const reviewer2Pool = data?.reviewer2Theses || [];
+    const targetCouncil = activeCouncil || (myCouncils.length > 0 ? myCouncils[0] : null);
 
-    // All theses mapped to this council
-    let list = allThesesPool.filter((t) => thesisCouncilMap[t._id] === cId);
-    if (list.length === 0 && reviewer2Pool.length > 0) {
-      list = reviewer2Pool;
-    }
+    if (!targetCouncil) return [];
+
+    const cId = targetCouncil.id || targetCouncil._id;
+    const cIdStr = String(cId);
+
+    // STRICT: Only include theses explicitly assigned to this council in thesisCouncilMap or t.councilId
+    let list = allThesesPool.filter((t) => {
+      const mappedCouncilId = thesisCouncilMap[t._id] || thesisCouncilMap[t.id] || t.councilId || (t.council?._id || t.council?.id);
+      return mappedCouncilId && String(mappedCouncilId) === cIdStr;
+    });
 
     if (search && search.trim()) {
       const q = search.trim().toLowerCase();
@@ -361,7 +435,13 @@ const LecturerThesesPage = () => {
     }
 
     return list;
-  }, [activeCouncil, data, thesisCouncilMap, search]);
+  }, [activeCouncil, myCouncils, data, thesisCouncilMap, search]);
+
+  const effectiveActiveCouncil = useMemo(() => {
+    if (activeCouncil) return activeCouncil;
+    if (myCouncils.length > 0) return myCouncils[0];
+    return null;
+  }, [activeCouncil, myCouncils]);
 
   const stats = {
     supervisedCount: data?.stats?.supervisedCount ?? supervisedTheses.length,
@@ -370,28 +450,63 @@ const LecturerThesesPage = () => {
     totalAssigned: data?.stats?.totalAssigned ?? (data?.theses?.length || 0),
   };
 
+  const filterBySearch = useCallback(
+    (list) => {
+      if (!search || !search.trim()) return list;
+      const q = search.trim().toLowerCase();
+      return (list || []).filter(
+        (t) =>
+          t.thesisTitle?.toLowerCase().includes(q) ||
+          t.studentId?.userId?.fullName?.toLowerCase().includes(q) ||
+          t.studentId?.studentCode?.toLowerCase().includes(q) ||
+          t.secondStudentId?.userId?.fullName?.toLowerCase().includes(q) ||
+          t.secondStudentId?.studentCode?.toLowerCase().includes(q) ||
+          t.supervisorId?.userId?.fullName?.toLowerCase().includes(q) ||
+          t.reviewer1Id?.userId?.fullName?.toLowerCase().includes(q) ||
+          t.reviewer2Id?.userId?.fullName?.toLowerCase().includes(q)
+      );
+    },
+    [search]
+  );
+
+  const filteredSupervisedTheses = useMemo(
+    () => filterBySearch(supervisedTheses),
+    [supervisedTheses, filterBySearch]
+  );
+  const filteredReviewer1Theses = useMemo(
+    () => filterBySearch(reviewer1Theses),
+    [reviewer1Theses, filterBySearch]
+  );
+  const filteredReviewer2Theses = useMemo(
+    () => filterBySearch(reviewer2Theses),
+    [reviewer2Theses, filterBySearch]
+  );
+
   let currentList = [];
   if (activeTab === 'SUPERVISOR') {
-    currentList = supervisedTheses;
+    currentList = filteredSupervisedTheses;
   } else if (activeTab === 'REVIEWER_1') {
-    currentList = reviewer1Theses;
+    currentList = filteredReviewer1Theses;
   } else if (activeTab === 'REVIEWER_2') {
-    currentList = reviewer2Theses;
+    currentList = filteredReviewer2Theses;
   }
 
   // Open Grade Box Modal
-  const handleOpenGradeBox = (thesis) => {
-    if (activeTab === 'SUPERVISOR') {
+  const handleOpenGradeBox = (thesis, targetRole = null) => {
+    if (activeTab === 'SUPERVISOR' && !targetRole) {
       navigate(`/lecturer/theses/${thesis._id}/evaluate`);
       return;
     }
     setGradeBoxThesis(thesis);
     const role =
-      activeTab === 'REVIEWER_1'
+      targetRole ||
+      (activeTab === 'REVIEWER_1' || activeTab === 'REVIEW_BLIND'
         ? 'REVIEWER1'
-        : activeTab === 'REVIEWER_2'
-          ? 'REVIEWER2'
-          : 'SUPERVISOR';
+        : activeTab === 'COUNCIL'
+          ? 'COUNCIL'
+          : activeTab === 'REVIEWER_2'
+            ? 'REVIEWER2'
+            : 'SUPERVISOR');
     setGradeBoxRole(role);
 
     const isTwo = thesis.studentCount === 2 && thesis.secondStudentId;
@@ -420,35 +535,32 @@ const LecturerThesesPage = () => {
         : '';
       c = thesis.scores?.reviewer1Comment || '';
     } else if (role === 'REVIEWER2') {
-      const myId = user?._id || user?.userId;
-      const myScoreEntry = Array.isArray(thesis.scores?.councilLecturerScores)
+      s1 = thesis.scores?.student1Reviewer2Score !== null && thesis.scores?.student1Reviewer2Score !== undefined
+        ? thesis.scores.student1Reviewer2Score
+        : !isTwo && thesis.scores?.reviewer2Score !== null && thesis.scores?.reviewer2Score !== undefined
+          ? thesis.scores.reviewer2Score
+          : '';
+      s2 = thesis.scores?.student2Reviewer2Score !== null && thesis.scores?.student2Reviewer2Score !== undefined
+        ? thesis.scores.student2Reviewer2Score
+        : '';
+      c = thesis.scores?.reviewer2Comment || '';
+    } else if (role === 'COUNCIL' || role === 'COUNCIL_MEMBER') {
+      const myEntry = Array.isArray(thesis.scores?.councilLecturerScores)
         ? thesis.scores.councilLecturerScores.find(
-            (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === myId ||
-                   (user?.fullName && e.lecturerName && e.lecturerName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
+            (e) =>
+              (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (user?._id || user?.userId) ||
+              (e.lecturerName && user?.fullName && e.lecturerName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
           )
         : null;
-
-      if (myScoreEntry) {
-        s1 = myScoreEntry.student1Score !== null && myScoreEntry.student1Score !== undefined
-          ? myScoreEntry.student1Score
-          : myScoreEntry.score !== null && myScoreEntry.score !== undefined
-          ? myScoreEntry.score
+      s1 = myEntry?.student1Score !== null && myEntry?.student1Score !== undefined
+        ? myEntry.student1Score
+        : !isTwo && myEntry?.score !== null && myEntry?.score !== undefined
+          ? myEntry.score
           : '';
-        s2 = myScoreEntry.student2Score !== null && myScoreEntry.student2Score !== undefined
-          ? myScoreEntry.student2Score
-          : '';
-        c = myScoreEntry.comment || '';
-      } else {
-        s1 = thesis.scores?.student1Reviewer2Score !== null && thesis.scores?.student1Reviewer2Score !== undefined
-          ? thesis.scores.student1Reviewer2Score
-          : !isTwo && thesis.scores?.reviewer2Score !== null && thesis.scores?.reviewer2Score !== undefined
-            ? thesis.scores.reviewer2Score
-            : '';
-        s2 = thesis.scores?.student2Reviewer2Score !== null && thesis.scores?.student2Reviewer2Score !== undefined
-          ? thesis.scores.student2Reviewer2Score
-          : '';
-        c = thesis.scores?.reviewer2Comment || '';
-      }
+      s2 = myEntry?.student2Score !== null && myEntry?.student2Score !== undefined
+        ? myEntry.student2Score
+        : '';
+      c = myEntry?.comment || '';
     }
 
     setGradeSv1(s1 !== '' && s1 !== null && s1 !== undefined ? String(s1) : '');
@@ -633,6 +745,10 @@ const LecturerThesesPage = () => {
   // Reviewer 1 Display Name
   const getReviewer1Display = (item) => {
     if (!item) return 'Chưa phân công';
+    if (item.reviewer1Id) {
+      const title = item.reviewer1Id.academicTitle ? `${item.reviewer1Id.academicTitle} ` : '';
+      return `${title}${item.reviewer1Id.userId?.fullName || item.reviewer1Id.fullName || 'Giảng viên'}`;
+    }
     if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
       const priv = item.reviewers.find((r) => r.isPrivateReviewer && r.lecturerId);
       if (priv) {
@@ -641,16 +757,16 @@ const LecturerThesesPage = () => {
         return `${title}${lec.userId?.fullName || lec.fullName || 'Giảng viên'}`;
       }
     }
-    if (item.reviewer1Id) {
-      const title = item.reviewer1Id.academicTitle ? `${item.reviewer1Id.academicTitle} ` : '';
-      return `${title}${item.reviewer1Id.userId?.fullName || item.reviewer1Id.fullName || 'Giảng viên'}`;
-    }
     return 'Chưa phân công';
   };
 
   // Reviewer 2 Display Name
   const getReviewer2Display = (item) => {
     if (!item) return 'Chưa phân công';
+    if (item.reviewer2Id) {
+      const title = item.reviewer2Id.academicTitle ? `${item.reviewer2Id.academicTitle} ` : '';
+      return `${title}${item.reviewer2Id.userId?.fullName || item.reviewer2Id.fullName || 'Giảng viên'}`;
+    }
     if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
       const coun = item.reviewers.find((r) => r.isCouncilReviewer && r.lecturerId);
       if (coun) {
@@ -659,28 +775,10 @@ const LecturerThesesPage = () => {
         return `${title}${lec.userId?.fullName || lec.fullName || 'Giảng viên'}`;
       }
     }
-    if (item.reviewer2Id) {
-      const title = item.reviewer2Id.academicTitle ? `${item.reviewer2Id.academicTitle} ` : '';
-      return `${title}${item.reviewer2Id.userId?.fullName || item.reviewer2Id.fullName || 'Giảng viên'}`;
-    }
     return 'Chưa phân công';
   };
 
-  // Helper to find assigned council (STRICT: only return council if thesis is explicitly assigned)
-  const getAssignedCouncil = (item) => {
-    if (!item?._id) return null;
-    const councilId = thesisCouncilMap?.[item._id] || item.councilId || (item.council?._id || item.council?.id);
-    if (!councilId || councilId === 'default_council') return null;
 
-    if (councilsMap && councilsMap[councilId]) {
-      return councilsMap[councilId];
-    }
-    if (Array.isArray(councils)) {
-      const found = councils.find((c) => (c.id && c.id === councilId) || (c._id && c._id === councilId));
-      if (found) return found;
-    }
-    return null;
-  };
 
   // 4. Tổng điểm: Hiển thị khi đã công bố đầy đủ hoặc hoàn tất chấm
   const renderFinalScore = (item) => {
@@ -766,30 +864,8 @@ const LecturerThesesPage = () => {
     );
   };
 
-  // 2. Điểm Phản biện kín: Chỉ hiển thị khi đã công bố điểm cho SV
+  // 2. Điểm Phản biện 1 (GVPB 1)
   const renderReviewer1Score = (item) => {
-    const globalPub = publishedScores['GLOBAL_ALL'] || {};
-    const thesisPub = publishedScores[item._id] || {};
-    const isPublished = !!(
-      thesisPub.reviewer1Score ||
-      thesisPub.reviewerScore ||
-      thesisPub.reviewer2Score ||
-      globalPub.reviewer1Score ||
-      globalPub.reviewerScore ||
-      globalPub.reviewer2Score
-    );
-
-    if (!isPublished) {
-      return (
-        <span
-          className="text-amber-700 bg-amber-50 text-[10px] font-semibold px-2 py-0.5 rounded border border-amber-200 inline-block"
-          title="Điểm phản biện kín chưa được công bố"
-        >
-          Chưa công bố
-        </span>
-      );
-    }
-
     const isTwo = item.studentCount === 2 && item.secondStudentId;
     const s1 = item.scores?.student1Reviewer1Score ?? item.scores?.reviewer1Score;
     const s2 = item.scores?.student2Reviewer1Score;
@@ -818,88 +894,267 @@ const LecturerThesesPage = () => {
     );
   };
 
-  // 3. Điểm Phản biện hội đồng: Chỉ hiển thị khi đã công bố điểm cho SV
-  const renderCouncilScore = (item) => {
-    const globalPub = publishedScores['GLOBAL_ALL'] || {};
-    const thesisPub = publishedScores[item._id] || {};
-    const isPublished = !!(thesisPub.councilScore || globalPub.councilScore);
+  // 2b. Điểm Phản biện 2 (GVPB 2)
+  const renderReviewer2Score = (item) => {
+    const isTwo = item.studentCount === 2 && item.secondStudentId;
+    const s1 = item.scores?.student1Reviewer2Score ?? item.scores?.reviewer2Score;
+    const s2 = item.scores?.student2Reviewer2Score;
 
-    if (!isPublished) {
+    if (s1 === null || s1 === undefined || s1 === '') {
+      return <span className="text-slate-400 italic text-[11px]">Chưa chấm</span>;
+    }
+
+    if (isTwo && s2 !== null && s2 !== undefined && s2 !== '') {
       return (
-        <span
-          className="text-amber-700 bg-amber-50 text-[10px] font-semibold px-2 py-0.5 rounded border border-amber-200 inline-block"
-          title="Điểm hội đồng chưa được công bố"
-        >
-          Chưa công bố
+        <div className="flex flex-col items-center gap-0.5 font-mono text-[11px]">
+          <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm SV1">
+            SV1: {s1}
+          </span>
+          <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm SV2">
+            SV2: {s2}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="font-bold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
+        {s1}
+      </span>
+    );
+  };
+
+  // 2c. Điểm phản biện kín tổng hợp (Trung bình cộng của GVPB 1 và GVPB 2)
+  const renderCombinedReviewerScore = (item) => {
+    const isTwo = item.studentCount === 2 && item.secondStudentId;
+    const s1_pb1 = item.scores?.student1Reviewer1Score ?? item.scores?.reviewer1Score;
+    const s1_pb2 = item.scores?.student1Reviewer2Score ?? item.scores?.reviewer2Score;
+    const s2_pb1 = item.scores?.student2Reviewer1Score;
+    const s2_pb2 = item.scores?.student2Reviewer2Score;
+
+    const calcCombined = (pb1, pb2) => {
+      if (
+        pb1 !== null &&
+        pb1 !== undefined &&
+        pb1 !== '' &&
+        pb2 !== null &&
+        pb2 !== undefined &&
+        pb2 !== ''
+      ) {
+        const val1 = Number(pb1);
+        const val2 = Number(pb2);
+        // Điểm phản biện kín là trung bình cộng của 2 điểm GVPB 1 và GVPB 2
+        return Number(((val1 + val2) / 2).toFixed(2));
+      }
+      return null;
+    };
+
+    const c1 = calcCombined(s1_pb1, s1_pb2);
+    const c2 = isTwo ? calcCombined(s2_pb1, s2_pb2) : null;
+
+    if (c1 !== null) {
+      if (isTwo && c2 !== null) {
+        return (
+          <div className="flex flex-col items-center gap-0.5 font-mono text-[11px]">
+            <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm PB kín SV1">
+              SV1: {c1}
+            </span>
+            <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm PB kín SV2">
+              SV2: {c2}
+            </span>
+          </div>
+        );
+      }
+      return (
+        <span className="font-extrabold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
+          {c1}
         </span>
       );
     }
 
-    const assignedCouncil = getAssignedCouncil(item);
-    const councilScores = Array.isArray(item.scores?.councilLecturerScores)
-      ? item.scores.councilLecturerScores.filter((e) => e && (e.score !== null || e.student1Score !== null))
-      : [];
-
-    let scoreGVHD1 = null;
-    let scoreGVHD2 = null;
-
-    if (assignedCouncil && Array.isArray(assignedCouncil.lecturers) && assignedCouncil.lecturers.length >= 2) {
-      const lec1 = assignedCouncil.lecturers[0];
-      const lec2 = assignedCouncil.lecturers[1];
-
-      const entry1 = councilScores.find(
-        (e) =>
-          (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec1?.lecturerId || lec1?.userId) ||
-          (lec1?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec1.name.trim().toLowerCase())
-      ) || councilScores[0];
-
-      const entry2 = councilScores.find(
-        (e) =>
-          (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec2?.lecturerId || lec2?.userId) ||
-          (lec2?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec2.name.trim().toLowerCase())
-      ) || (councilScores.length > 1 ? councilScores[1] : null);
-
-      scoreGVHD1 = entry1 ? (entry1.score ?? entry1.student1Score ?? null) : null;
-      scoreGVHD2 = entry2 && entry2 !== entry1 ? (entry2.score ?? entry2.student1Score ?? null) : (councilScores.length > 1 ? (councilScores[1].score ?? councilScores[1].student1Score ?? null) : null);
-    } else {
-      scoreGVHD1 = councilScores.length > 0 ? (councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null) : null;
-      scoreGVHD2 = councilScores.length > 1 ? (councilScores[1]?.score ?? councilScores[1]?.student1Score ?? null) : null;
-    }
-
-    let scoreCouncil = null;
     if (
-      scoreGVHD1 !== null &&
-      scoreGVHD1 !== undefined &&
-      !isNaN(scoreGVHD1) &&
-      scoreGVHD2 !== null &&
-      scoreGVHD2 !== undefined &&
-      !isNaN(scoreGVHD2)
+      (s1_pb1 !== null && s1_pb1 !== undefined && s1_pb1 !== '') ||
+      (s1_pb2 !== null && s1_pb2 !== undefined && s1_pb2 !== '')
     ) {
-      scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
-    } else if (item.scores?.councilScore !== null && item.scores?.councilScore !== undefined) {
-      scoreCouncil = item.scores.councilScore;
-    }
-
-    if (scoreCouncil !== null && scoreCouncil !== undefined) {
       return (
-        <span className="font-bold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
-          {scoreCouncil}
-        </span>
-      );
-    }
-
-    if (Array.isArray(assignedCouncil?.lecturers) && assignedCouncil.lecturers.length >= 2 && (scoreGVHD1 !== null || scoreGVHD2 !== null)) {
-      return (
-        <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ GV còn lại trong hội đồng chấm điểm">
+        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ giảng viên phản biện còn lại chấm điểm">
           Chờ GV còn lại
         </span>
       );
     }
 
+    return <span className="text-slate-400 italic text-[11px]">Chưa chấm</span>;
+  };
+
+  // Helper lấy thông tin điểm của Giảng viên Hội đồng theo vị trí (lecIndex: 0 hoặc 1)
+  const getCouncilLecturerScoreInfo = (item, lecIndex) => {
+    const council = activeCouncil || effectiveActiveCouncil || getAssignedCouncil(item);
+    const targetLec = Array.isArray(council?.lecturers) ? council.lecturers[lecIndex] : null;
+    const otherLec = Array.isArray(council?.lecturers) ? council.lecturers[lecIndex === 0 ? 1 : 0] : null;
+
+    const councilScores = Array.isArray(item.scores?.councilLecturerScores)
+      ? item.scores.councilLecturerScores.filter((e) => e && (e.score !== null || e.student1Score !== null || e.student2Score !== null))
+      : [];
+
+    let entry = null;
+
+    if (targetLec) {
+      const targetLecId = (
+        targetLec.lecturerId?._id ||
+        targetLec.lecturerId ||
+        targetLec.userId?._id ||
+        targetLec.userId ||
+        targetLec._id
+      )?.toString();
+      const rawName = (targetLec.name || targetLec.fullName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
+
+      // Tìm bài chấm khớp chính xác targetLec
+      entry = councilScores.find((e) => {
+        const eId = (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId)?.toString();
+        if (targetLecId && eId && eId === targetLecId) return true;
+        const eName = (e.lecturerName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
+        if (rawName && eName && (rawName === eName || rawName.includes(eName) || eName.includes(rawName))) return true;
+        return false;
+      });
+    }
+
+    // Fallback: nếu không tìm thấy bằng ID/tên, lấy theo vị trí mảng nhưng đảm bảo không lấy nhầm bài chấm của GV còn lại
+    if (!entry && councilScores.length > lecIndex) {
+      const candidate = councilScores[lecIndex];
+      if (otherLec) {
+        const otherLecId = (
+          otherLec.lecturerId?._id ||
+          otherLec.lecturerId ||
+          otherLec.userId?._id ||
+          otherLec.userId ||
+          otherLec._id
+        )?.toString();
+        const otherRawName = (otherLec.name || otherLec.fullName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
+        const candId = (candidate.lecturerId?._id || candidate.lecturerId?.toString() || candidate.lecturerId)?.toString();
+        const candName = (candidate.lecturerName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
+
+        const belongsToOther = (otherLecId && candId && otherLecId === candId) ||
+          (otherRawName && candName && (otherRawName === candName || otherRawName.includes(candName) || candName.includes(otherRawName)));
+
+        if (!belongsToOther) {
+          entry = candidate;
+        }
+      } else {
+        entry = candidate;
+      }
+    }
+
+    let s1 = null;
+    let s2 = null;
+
+    if (entry) {
+      s1 = entry.student1Score !== null && entry.student1Score !== undefined && entry.student1Score !== ''
+        ? Number(entry.student1Score)
+        : (entry.score !== null && entry.score !== undefined && entry.score !== '' ? Number(entry.score) : null);
+      s2 = entry.student2Score !== null && entry.student2Score !== undefined && entry.student2Score !== ''
+        ? Number(entry.student2Score)
+        : null;
+    } else {
+      // Fallback: Nếu GVHĐ 2 đã chấm qua role GVPB 2
+      if (lecIndex === 1 && (item.scores?.student1Reviewer2Score !== null && item.scores?.student1Reviewer2Score !== undefined || item.scores?.reviewer2Score !== null && item.scores?.reviewer2Score !== undefined)) {
+        s1 = item.scores.student1Reviewer2Score !== null && item.scores.student1Reviewer2Score !== undefined ? Number(item.scores.student1Reviewer2Score) : Number(item.scores.reviewer2Score);
+        s2 = item.scores.student2Reviewer2Score !== null && item.scores.student2Reviewer2Score !== undefined ? Number(item.scores.student2Reviewer2Score) : null;
+      }
+    }
+
+    const hasScore = s1 !== null && !isNaN(s1);
+    return { entry, s1, s2, hasScore };
+  };
+
+  // 3a. Điểm của từng Giảng viên Hội đồng (GVHĐ 1 - index 0, GVHĐ 2 - index 1)
+  const renderCouncilLecturerScore = (item, lecIndex) => {
     const isTwo = item.studentCount === 2 && item.secondStudentId;
-    const s1 = item.scores?.student1Reviewer2Score ?? item.scores?.reviewer2Score;
-    const s2 = item.scores?.student2Reviewer2Score;
-    if (s1 !== null && s1 !== undefined && s1 !== '') {
+    const { s1, s2, hasScore } = getCouncilLecturerScoreInfo(item, lecIndex);
+
+    if (!hasScore) {
+      return <span className="text-slate-400 italic text-[11px]">Chưa chấm</span>;
+    }
+
+    if (isTwo && s2 !== null && !isNaN(s2)) {
+      return (
+        <div className="flex flex-col items-center gap-0.5 font-mono text-[11px]">
+          <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm SV1">
+            SV1: {s1}
+          </span>
+          <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm SV2">
+            SV2: {s2}
+          </span>
+        </div>
+      );
+    }
+
+    return (
+      <span className="font-bold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100 shadow-2xs">
+        {s1}
+      </span>
+    );
+  };
+
+  // 3b. Điểm Hội đồng tổng hợp (Tính trung bình cộng của 2 GV Hội Đồng khi cả 2 GV đã chấm)
+  const renderCouncilAverageScore = (item) => {
+    const isTwo = item.studentCount === 2 && item.secondStudentId;
+    const gv1 = getCouncilLecturerScoreInfo(item, 0);
+    const gv2 = getCouncilLecturerScoreInfo(item, 1);
+
+    const hasGV1 = gv1.hasScore && (!isTwo || (gv1.s2 !== null && !isNaN(gv1.s2)));
+    const hasGV2 = gv2.hasScore && (!isTwo || (gv2.s2 !== null && !isNaN(gv2.s2)));
+
+    // Khi CẢ 2 GV HỘI ĐỒNG đã chấm điểm -> Điểm hội đồng = TRUNG BÌNH CỘNG của 2 GV
+    if (hasGV1 && hasGV2) {
+      const avgSv1 = Number(((gv1.s1 + gv2.s1) / 2).toFixed(2));
+      if (isTwo) {
+        const avgSv2 = Number(((gv1.s2 + gv2.s2) / 2).toFixed(2));
+        return (
+          <div className="flex flex-col items-center gap-0.5 font-mono text-[11px]">
+            <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm HĐ SV1">
+              SV1: {avgSv1}
+            </span>
+            <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded font-bold" title="Điểm HĐ SV2">
+              SV2: {avgSv2}
+            </span>
+          </div>
+        );
+      }
+      return (
+        <span className="font-extrabold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
+          {avgSv1}
+        </span>
+      );
+    }
+
+    // Nếu chỉ mới 1 GV chấm điểm
+    if (hasGV1 || hasGV2) {
+      return (
+        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính điểm hội đồng">
+          Chờ GV còn lại
+        </span>
+      );
+    }
+
+    // Chưa GV nào chấm điểm
+    return <span className="text-slate-400 italic text-[11px]">Chưa chấm</span>;
+  };
+
+  // Legacy/Fallback aliases
+  const renderCouncilScore = renderCouncilAverageScore;
+  const renderMyCouncilScore = (item) => {
+    const isTwo = item.studentCount === 2 && item.secondStudentId;
+    const myEntry = Array.isArray(item.scores?.councilLecturerScores)
+      ? item.scores.councilLecturerScores.find(
+          (e) =>
+            (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (user?._id || user?.userId) ||
+            (e.lecturerName && user?.fullName && e.lecturerName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
+        )
+      : null;
+
+    if (myEntry) {
+      const s1 = myEntry.student1Score !== null && myEntry.student1Score !== undefined ? myEntry.student1Score : myEntry.score;
+      const s2 = myEntry.student2Score;
       if (isTwo && s2 !== null && s2 !== undefined && s2 !== '') {
         return (
           <div className="flex flex-col items-center gap-0.5 font-mono text-[11px]">
@@ -923,12 +1178,16 @@ const LecturerThesesPage = () => {
   };
 
   const isTopicsView = activeTab === 'MY_TOPICS' || location.search.includes('tab=topics');
+  const isCouncilTab = activeTab === 'COUNCIL' || location.search.includes('tab=council');
   const isReviewView =
+    activeTab === 'REVIEW_BLIND' ||
     activeTab === 'REVIEWER_1' ||
     activeTab === 'REVIEWER_2' ||
+    activeTab === 'COUNCIL' ||
     location.search.includes('tab=review') ||
     location.search.includes('tab=reviewer1') ||
-    location.search.includes('tab=reviewer2');
+    location.search.includes('tab=reviewer2') ||
+    location.search.includes('tab=council');
   const isEvaluationView = location.search.includes('view=evaluation');
 
   const filteredApprovedTopics = approvedTopics.filter((topic) => {
@@ -970,7 +1229,7 @@ const LecturerThesesPage = () => {
               {isTopicsView ? (
                 <BookOpen className="w-7 h-7" />
               ) : isReviewView ? (
-                <Shield className="w-7 h-7" />
+                isCouncilTab ? <Award className="w-7 h-7" /> : <Shield className="w-7 h-7" />
               ) : isEvaluationView ? (
                 <Award className="w-7 h-7" />
               ) : (
@@ -983,7 +1242,9 @@ const LecturerThesesPage = () => {
                   {isTopicsView
                     ? 'Danh Sách Đề Tài Khóa Luận Tốt Nghiệp'
                     : isReviewView
-                      ? 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
+                      ? isCouncilTab
+                        ? 'Chấm Điểm Phản Biện Hội Đồng (30%)'
+                        : 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
                       : isEvaluationView
                         ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 50%)'
                         : 'Đề tài hướng dẫn'}
@@ -992,14 +1253,18 @@ const LecturerThesesPage = () => {
                   <span
                     className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
                       isReviewView
-                        ? 'bg-blue-50 text-[#102d7d] border-blue-200'
+                        ? isCouncilTab
+                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          : 'bg-blue-50 text-[#102d7d] border-blue-200'
                         : isEvaluationView
                           ? 'bg-amber-50 text-amber-700 border-amber-200'
                           : 'bg-blue-50 text-[#102d7d] border-blue-200'
                     }`}
                   >
                     {isReviewView
-                      ? 'PHẢN BIỆN (GVPB 1: 20% - GVPB 2: 30%)'
+                      ? isCouncilTab
+                        ? 'PHẢN BIỆN HỘI ĐỒNG (30%)'
+                        : 'PHẢN BIỆN KÍN (GVPB 1 & GVPB 2)'
                       : isEvaluationView
                         ? 'ĐÁNH GIÁ (50%)'
                         : 'HƯỚNG DẪN (50%)'}
@@ -1009,7 +1274,9 @@ const LecturerThesesPage = () => {
               {!isTopicsView && (isReviewView || isEvaluationView) && (
                 <p className="text-xs text-slate-500 mt-1">
                   {isReviewView
-                    ? 'Chấm điểm độc lập theo phân công Phản biện kín (20%) và Phản biện hội đồng (30%).'
+                    ? isCouncilTab
+                      ? 'Đánh giá và chấm điểm trực tiếp cho sinh viên báo cáo trước Hội đồng bảo vệ Khóa luận tốt nghiệp (trọng số 30%).'
+                      : 'Chấm điểm độc lập theo phân công Giảng viên phản biện 1 và Giảng viên phản biện 2. Điểm phản biện kín là điểm trung bình cộng của cả 2 GVPB.'
                     : 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (50%) cho sinh viên khóa luận.'}
                 </p>
               )}
@@ -1042,49 +1309,43 @@ const LecturerThesesPage = () => {
           </div>
         </div>
 
-        {/* Dynamic Context Tabs for Review View */}
+        {/* Navigation Tabs for Review Section */}
         {isReviewView && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-100">
-            {/* Tab 1: Reviewer 1 (PB Kín - 20%) */}
+          <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2">
             <button
               type="button"
-              onClick={() => setActiveTab('REVIEWER_1')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                activeTab === 'REVIEWER_1'
-                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-violet-500/20'
-                  : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
+              onClick={() => navigate('/lecturer/theses?tab=review')}
+              className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
+                !isCouncilTab
+                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
-                  <Shield className="w-4 h-4 text-[#123891]" />
-                  Phản biện kín (20%)
-                </span>
-                <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
-                  {stats.reviewer1Count}
-                </span>
-              </div>
+              <Shield className="w-4 h-4" />
+              <span>1. Phản biện kín (GVPB 1 & GVPB 2)</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                !isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {filteredReviewer1Theses.length + filteredReviewer2Theses.length} đề tài
+              </span>
             </button>
 
-            {/* Tab 2: Reviewer 2 (PB Hội đồng - 30%) */}
             <button
               type="button"
-              onClick={() => setActiveTab('REVIEWER_2')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                activeTab === 'REVIEWER_2'
-                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-indigo-500/20'
-                  : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
+              onClick={() => navigate('/lecturer/theses?tab=council')}
+              className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
+                isCouncilTab
+                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
-                  <Award className="w-4 h-4 text-[#123891]" />
-                  Phản biện hội đồng (30%)
-                </span>
-                <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
-                  {stats.reviewer2Count}
-                </span>
-              </div>
+              <Award className="w-4 h-4" />
+              <span>2. Phản biện hội đồng</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {councilTheses.length} đề tài
+              </span>
             </button>
           </div>
         )}
@@ -1232,420 +1493,679 @@ const LecturerThesesPage = () => {
             </div>
           )}
         </div>
-      ) : activeTab === 'REVIEWER_2' ? (
-        /* ================= GIAO DIỆN PHẢN BIỆN HỘI ĐỒNG: TÊN PHÒNG + THÔNG TIN + BẢNG ĐỀ TÀI ================= */
-        <div className="space-y-4">
-          {!activeCouncil ? (
-            <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
-              <EmptyState
-                title="Chưa có thông tin phòng hội đồng"
-                description="Trưởng Bộ Môn chưa thiết lập phòng hội đồng bảo vệ hoặc bạn chưa được phân công vào hội đồng nào trong học kỳ này."
-              />
+      ) : isReviewView ? (
+        isCouncilTab ? (
+          myCouncils.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-12 text-center space-y-3">
+              <Award className="w-12 h-12 mx-auto text-slate-300" />
+              <div className="text-sm font-bold text-slate-700">
+                Bạn chưa được phân công vào hội đồng nào
+              </div>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Hiện tại bạn chưa có lịch tham gia hội đồng chấm phản biện khóa luận tốt nghiệp trong học kỳ này.
+              </p>
             </div>
           ) : (
-            <>
-              {/* 1. DÒNG TÊN PHÒNG HỘI ĐỒNG */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl bg-gradient-to-r from-[#0a2368] via-[#0d2a75] to-[#123891] text-white shadow-md border border-blue-900/40">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-xs">
-                    <Building className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] text-blue-200 font-semibold uppercase tracking-wider">
-                      Phòng Hội Đồng Bảo Vệ Khóa Luận
-                    </div>
-                    <h3 className="text-base font-extrabold text-white flex items-center gap-2">
-                      <span>{activeCouncil.name}</span>
-                      {activeCouncil.room && (
-                        <span className="text-blue-200 font-mono text-xs font-normal">
-                          (Phòng {activeCouncil.room})
+          <div className="space-y-6">
+            {/* Council Selector Pills (if multiple councils exist for user) */}
+            {myCouncils.length > 1 && (
+              <div className="flex flex-wrap items-center gap-2 p-3 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
+                <span className="text-xs font-bold text-slate-500 mr-2 flex items-center gap-1.5">
+                  <Award className="w-3.5 h-3.5 text-[#123891]" />
+                  Chọn phòng hội đồng:
+                </span>
+                {myCouncils.map((c, idx) => {
+                  const cId = c.id || c._id;
+                  const isActive = (effectiveActiveCouncil?.id || effectiveActiveCouncil?._id) === cId;
+                  return (
+                    <button
+                      key={cId || idx}
+                      type="button"
+                      onClick={() => setSelectedCouncilId(cId)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer flex items-center gap-2 ${
+                        isActive
+                          ? 'bg-[#123891] text-white shadow-xs'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                      }`}
+                    >
+                      <span>{c.name || `Hội đồng ${idx + 1}`}</span>
+                      {c.room && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-white text-slate-600 border border-slate-200'
+                        }`}>
+                          P.{c.room}
                         </span>
                       )}
-                    </h3>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Active Council Information Card */}
+            {effectiveActiveCouncil && (
+              <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white border border-blue-200/80 shadow-2xs space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                      <Award className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-900 leading-tight">
+                        {effectiveActiveCouncil.name || 'Hội đồng Đánh giá Khóa Luận Tốt Nghiệp'}
+                      </h3>
+                      <div className="flex flex-wrap items-center gap-3 mt-1 text-xs text-slate-600">
+                        {effectiveActiveCouncil.room && (
+                          <span className="flex items-center gap-1 font-semibold text-[#123891]">
+                            <MapPin className="w-3.5 h-3.5 text-[#123891]" />
+                            Phòng: <span className="font-bold">{effectiveActiveCouncil.room}</span>
+                          </span>
+                        )}
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <Calendar className="w-3.5 h-3.5" />
+                          {effectiveActiveCouncil.reportDate ? new Date(effectiveActiveCouncil.reportDate).toLocaleDateString('vi-VN') : 'Lịch theo thông báo khoa'}
+                        </span>
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-blue-100/80 text-[#102d7d] border border-blue-200">
+                          {effectiveActiveCouncil.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral / Hội đồng'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-extrabold text-xs font-mono border border-blue-200 shadow-2xs">
+                      {councilTheses.length} đề tài trong hội đồng
+                    </span>
                   </div>
                 </div>
 
-                {/* Switch council tabs if lecturer participates in multiple councils */}
-                {myCouncils.length > 1 && (
-                  <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-2xl">
-                    {myCouncils.map((c) => {
-                      const cId = c.id || c._id;
-                      const isCur = (activeCouncil.id || activeCouncil._id) === cId;
+                {/* Council Lecturers List */}
+                {Array.isArray(effectiveActiveCouncil.lecturers) && effectiveActiveCouncil.lecturers.length > 0 && (
+                  <div className="pt-2 border-t border-blue-100/70 flex flex-wrap items-center gap-2 text-xs">
+                    <span className="font-bold text-slate-500 flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-[#123891]" />
+                      Thành viên hội đồng:
+                    </span>
+                    {effectiveActiveCouncil.lecturers.map((lec, lIdx) => {
+                      const isMe =
+                        (lec.userId && (lec.userId === user?._id || lec.userId === user?.userId)) ||
+                        (lec.lecturerId && (lec.lecturerId === user?._id || lec.lecturerId === user?.userId || lec.lecturerId === data?.lecturer?._id)) ||
+                        (lec._id && (lec._id === user?._id || lec._id === data?.lecturer?._id)) ||
+                        (lec.name && user?.fullName && lec.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
+                        (lec.fullName && user?.fullName && lec.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase());
                       return (
-                        <button
-                          key={cId}
-                          type="button"
-                          onClick={() => setSelectedCouncilId(cId)}
-                          className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
-                            isCur
-                              ? 'bg-white text-[#123891] shadow-sm'
-                              : 'text-blue-100 hover:text-white hover:bg-white/10'
+                        <span
+                          key={lIdx}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] ${
+                            isMe
+                              ? 'bg-[#123891] text-white font-bold border-[#123891] shadow-2xs'
+                              : 'bg-white/80 text-slate-700 font-medium border-blue-100'
                           }`}
                         >
-                          {c.name}
-                        </button>
+                          <span>{lec.name || lec.fullName || `GV ${lIdx + 1}`}</span>
+                          {lec.role && <span className="opacity-75 text-[10px]">({lec.role})</span>}
+                          {isMe && <span className="text-[10px] bg-white/20 px-1 rounded ml-0.5 font-bold">Bạn</span>}
+                        </span>
                       );
                     })}
                   </div>
                 )}
               </div>
+            )}
 
-              {/* 2. KHUNG THÔNG TIN PHÒNG HỘI ĐỒNG */}
-              <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  {/* 1. Tên hội đồng & Phòng */}
-                  <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80">
-                    <div className="text-[11px] font-semibold text-[#102d7d] flex items-center gap-1.5">
-                      <Building className="w-3.5 h-3.5 text-[#123891]" />
-                      <span>Hội đồng & Phòng bảo vệ</span>
-                    </div>
-                    <div className="text-sm font-bold text-[#102d7d] mt-1">
-                      {activeCouncil.name}
-                    </div>
-                    <div className="text-xs text-blue-800 font-medium mt-0.5">
-                      Địa điểm: <strong>{activeCouncil.room || 'Chưa cập nhật phòng'}</strong>
-                    </div>
+            {/* Table: Đề tài Hội đồng */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50/90 to-blue-50/40 border-b border-indigo-100/80 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
+                    <Award className="w-4 h-4" />
                   </div>
-
-                  {/* 2. Thời gian bảo vệ */}
-                  <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/70">
-                    <div className="text-[11px] font-semibold text-[#102d7d] flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5 text-[#123891]" />
-                      <span>Thời gian báo cáo</span>
-                    </div>
-                    <div className="text-sm font-bold text-slate-900 mt-1 font-mono">
-                      {activeCouncil.reportTime ||
-                        (activeCouncil.reportStartTime && activeCouncil.reportEndTime
-                          ? `${activeCouncil.reportStartTime} - ${activeCouncil.reportEndTime}${activeCouncil.reportDate ? `, ${new Date(activeCouncil.reportDate).toLocaleDateString('vi-VN')}` : ''}`
-                          : 'Chưa xếp thời gian')}
-                    </div>
-                    <div className="text-xs text-slate-500 mt-0.5">
-                      Ngày: {activeCouncil.reportDate ? new Date(activeCouncil.reportDate).toLocaleDateString('vi-VN') : 'Theo lịch học kỳ'}
-                    </div>
-                  </div>
-
-                  {/* 3. Hình thức bảo vệ */}
-                  <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/70">
-                    <div className="text-[11px] font-semibold text-amber-800 flex items-center gap-1.5">
-                      <Award className="w-3.5 h-3.5 text-amber-600" />
-                      <span>Hình thức bảo vệ</span>
-                    </div>
-                    <div className="text-sm font-bold text-amber-950 mt-1">
-                      {activeCouncil.type === 'POSTER' || activeCouncil.format === 'POSTER'
-                        ? 'Báo cáo Poster (POSTER)'
-                        : 'Báo cáo Trực tiếp (ORAL)'}
-                    </div>
-                    <div className="text-xs text-amber-700 mt-0.5">
-                      {activeCouncil.description || 'Chấm điểm hội đồng theo quy chế KLTN'}
-                    </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span>Danh Sách Đề Tài Phản Biện Hội Đồng</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Nhập điểm đánh giá bảo vệ trực tiếp trước Hội đồng cho từng đề tài
+                    </p>
                   </div>
                 </div>
-
-                {/* Thành viên hội đồng */}
-                <div className="pt-3 border-t border-slate-100">
-                  <div className="text-xs font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
-                    <Users className="w-4 h-4 text-[#123891]" />
-                    <span>Thành viên Hội đồng chấm bảo vệ:</span>
-                  </div>
-                  {Array.isArray(activeCouncil.lecturers) && activeCouncil.lecturers.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
-                      {activeCouncil.lecturers.map((lec, idx) => {
-                        const isMe =
-                          lec.lecturerId === user?._id ||
-                          lec.lecturerId === user?.userId ||
-                          lec.userId === user?._id ||
-                          (user?.fullName && (lec.name?.trim().toLowerCase() === user.fullName.trim().toLowerCase() || lec.fullName?.trim().toLowerCase() === user.fullName.trim().toLowerCase()));
-
-                        const gradedCount = councilTheses.filter((t) =>
-                          Array.isArray(t.scores?.councilLecturerScores) &&
-                          t.scores.councilLecturerScores.some(
-                            (cls) =>
-                              (cls.lecturerId?._id || cls.lecturerId?.toString() || cls.lecturerId) === (lec.lecturerId || lec.userId) ||
-                              (lec.name && cls.lecturerName && cls.lecturerName.trim().toLowerCase() === lec.name.trim().toLowerCase())
-                          )
-                        ).length;
-
-                        return (
-                          <div
-                            key={idx}
-                            className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
-                              isMe
-                                ? 'bg-blue-50/90 border-blue-300 ring-1 ring-blue-400/30'
-                                : 'bg-slate-50 border-slate-200'
-                            }`}
-                          >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                                isMe ? 'bg-[#123891] text-white' : 'bg-slate-200 text-slate-700'
-                              }`}>
-                                {idx + 1}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="text-xs font-bold text-slate-900 truncate">
-                                  {lec.name || lec.fullName || 'Giảng viên'}
-                                  {isMe && (
-                                    <span className="ml-1.5 text-[10px] font-extrabold text-[#123891] bg-blue-100 px-1.5 py-0.2 rounded font-sans">
-                                      (Bạn)
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="text-[10px] text-slate-500 truncate">
-                                  {lec.role || 'Thành viên hội đồng'}
-                                </div>
-                              </div>
-                            </div>
-
-                            {councilTheses.length > 0 && (
-                              <div className="shrink-0 text-right">
-                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                                  gradedCount === councilTheses.length
-                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    : gradedCount > 0
-                                    ? 'bg-blue-50 text-[#123891] border border-blue-200'
-                                    : 'bg-slate-100 text-slate-500'
-                                }`}>
-                                  Đã chấm {gradedCount}/{councilTheses.length}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-slate-400 italic">
-                      Chưa có danh sách giảng viên thành viên trong hội đồng này.
-                    </div>
-                  )}
-                </div>
+                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-indigo-200 shadow-2xs">
+                  {councilTheses.length} đề tài
+                </span>
               </div>
 
-              {/* 3. BẢNG ĐỀ TÀI SẼ BÁO CÁO TRONG HỘI ĐỒNG NÀY */}
-              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
-                  <div className="flex items-center gap-2">
-                    <Award className="w-4 h-4 text-[#123891]" />
-                    <h4 className="text-xs font-bold text-slate-900">
-                      Danh sách Đề tài Báo cáo tại {activeCouncil.name}
-                    </h4>
-                  </div>
-                  <div className="text-xs font-semibold text-slate-500">
-                    Tổng số: <strong>{councilTheses.length}</strong> đề tài
-                  </div>
+              {loading ? (
+                <div className="p-6">
+                  <LoadingSkeleton rows={4} cols={10} />
                 </div>
+              ) : councilTheses.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState
+                    title="Chưa có đề tài nào trong hội đồng này"
+                    description="Hiện tại chưa có đề tài khóa luận nào được phân công vào hội đồng bạn phụ trách hoặc chưa khớp từ khóa tìm kiếm."
+                  />
+                </div>
+              ) : (
+                (() => {
+                  const lec1 = Array.isArray(effectiveActiveCouncil?.lecturers) ? effectiveActiveCouncil.lecturers[0] : null;
+                  const lec2 = Array.isArray(effectiveActiveCouncil?.lecturers) ? effectiveActiveCouncil.lecturers[1] : null;
 
-                {councilTheses.length === 0 ? (
-                  <div className="p-8">
-                    <EmptyState
-                      title="Chưa có đề tài nào được xếp vào hội đồng này"
-                      description="Hội đồng này hiện chưa có đề tài KLTN nào được phân công báo cáo hoặc chưa có kết quả tìm kiếm phù hợp."
-                    />
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse text-xs">
-                      <thead>
-                        <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                          <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                          <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
-                          <th className="py-3.5 px-4 min-w-[180px]">Sinh viên thực hiện</th>
-                          <th className="py-3.5 px-4 min-w-[150px]">GV Hướng dẫn</th>
-                          <th className="py-3.5 px-4 min-w-[150px]">GVPB 1 (PB Kín)</th>
-                          <th className="py-3.5 px-4 text-center whitespace-nowrap">Điểm GVHD (50%)</th>
-                          <th className="py-3.5 px-4 text-center whitespace-nowrap">Điểm PB Kín (20%)</th>
-                          <th className="py-3.5 px-4 text-center whitespace-nowrap">
-                            Điểm GVHĐ 1
-                            {activeCouncil?.lecturers?.[0]?.name && (
-                              <span className="block text-[9px] font-normal text-slate-400 truncate max-w-[90px] mx-auto">
-                                ({activeCouncil.lecturers[0].name.split(' ').slice(-1)[0]})
-                              </span>
-                            )}
-                          </th>
-                          <th className="py-3.5 px-4 text-center whitespace-nowrap">
-                            Điểm GVHĐ 2
-                            {activeCouncil?.lecturers?.[1]?.name && (
-                              <span className="block text-[9px] font-normal text-slate-400 truncate max-w-[90px] mx-auto">
-                                ({activeCouncil.lecturers[1].name.split(' ').slice(-1)[0]})
-                              </span>
-                            )}
-                          </th>
-                          <th className="py-3.5 px-4 text-center whitespace-nowrap">Điểm Hội Đồng (30%)</th>
-                          <th className="py-3.5 px-4 text-right whitespace-nowrap">Thao tác</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                        {councilTheses.map((item, idx) => {
-                          const s = item.scores || {};
-                          const scoreHD = s.supervisorScore ?? s.student1SupervisorScore;
-                          const scorePB1 = s.reviewer1Score ?? s.student1Reviewer1Score;
-                          const scorePB2 = s.reviewer2Score ?? s.student1Reviewer2Score;
+                  const isLec1Me = lec1 && (
+                    (lec1.userId && (lec1.userId === user?._id || lec1.userId === user?.userId)) ||
+                    (lec1.lecturerId && (lec1.lecturerId === user?._id || lec1.lecturerId === user?.userId || lec1.lecturerId === data?.lecturer?._id)) ||
+                    (lec1._id && (lec1._id === user?._id || lec1._id === data?.lecturer?._id)) ||
+                    (lec1.name && user?.fullName && lec1.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
+                    (lec1.fullName && user?.fullName && lec1.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
+                  );
 
-                          // Retrieve individual scores of GVHĐ 1 & GVHĐ 2
-                          const lec1 = activeCouncil?.lecturers?.[0];
-                          const lec2 = activeCouncil?.lecturers?.[1];
+                  const isLec2Me = lec2 && (
+                    (lec2.userId && (lec2.userId === user?._id || lec2.userId === user?.userId)) ||
+                    (lec2.lecturerId && (lec2.lecturerId === user?._id || lec2.lecturerId === user?.userId || lec2.lecturerId === data?.lecturer?._id)) ||
+                    (lec2._id && (lec2._id === user?._id || lec2._id === data?.lecturer?._id)) ||
+                    (lec2.name && user?.fullName && lec2.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
+                    (lec2.fullName && user?.fullName && lec2.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
+                  );
 
-                          const scoreEntry1 = (s.councilLecturerScores || []).find(
-                            (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec1?.lecturerId || lec1?.userId) ||
-                                   (lec1?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec1.name.trim().toLowerCase())
-                          ) || (s.councilLecturerScores || [])[0];
-
-                          const scoreEntry2 = (s.councilLecturerScores || []).find(
-                            (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec2?.lecturerId || lec2?.userId) ||
-                                   (lec2?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec2.name.trim().toLowerCase())
-                          ) || (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1] : null);
-
-                          const scoreGVHD1 = scoreEntry1 ? (scoreEntry1.score ?? scoreEntry1.student1Score) : null;
-                          const scoreGVHD2 = scoreEntry2 && scoreEntry2 !== scoreEntry1 ? (scoreEntry2.score ?? scoreEntry2.student1Score) : (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1].score : null);
-                          const hasTwoLecturers = Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2;
-                          let scoreCouncil = null;
-                          // STRICT: Chỉ tính điểm hội đồng khi CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 và GVHĐ 2) ĐÃ CHẤM!
-                          if (
-                            scoreGVHD1 !== null &&
-                            scoreGVHD1 !== undefined &&
-                            !isNaN(scoreGVHD1) &&
-                            scoreGVHD2 !== null &&
-                            scoreGVHD2 !== undefined &&
-                            !isNaN(scoreGVHD2)
-                          ) {
-                            scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
-                          } else {
-                            scoreCouncil = null;
-                          }
-
-                          return (
-                            <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                              <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                                {idx + 1}
-                              </td>
-                              <td className="py-3.5 px-4 max-w-sm">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenDetail(item)}
-                                  className="text-left block group cursor-pointer"
-                                  title="Xem chi tiết đề tài"
-                                >
-                                  <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
-                                    {item.thesisTitle}
-                                  </strong>
-                                </button>
-                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
-                                  {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
-                                </span>
-                              </td>
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                <div className="space-y-1">
-                                  <div className="font-semibold text-slate-900">
-                                    {item.studentId?.userId?.fullName}
-                                    <span className="text-slate-400 font-mono text-[11px] ml-1">
-                                      ({item.studentId?.studentCode})
-                                    </span>
-                                  </div>
-                                  {item.studentCount === 2 && item.secondStudentId && (
-                                    <div className="font-semibold text-slate-900">
-                                      {item.secondStudentId?.userId?.fullName}
-                                      <span className="text-slate-400 font-mono text-[11px] ml-1">
-                                        ({item.secondStudentId?.studentCode})
-                                      </span>
-                                    </div>
-                                  )}
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                            <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                            <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
+                            <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
+                            <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
+                            <th className="py-3.5 px-4 min-w-[130px]">GVPB 1</th>
+                            <th className="py-3.5 px-4 min-w-[130px]">GVPB 2</th>
+                            <th className="py-3.5 px-4 min-w-[140px]">Hội đồng</th>
+                            <th className={`py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] ${isLec1Me ? 'bg-indigo-50/70 text-[#102d7d]' : ''}`}>
+                              <div>Điểm GVHĐ 1</div>
+                              {(lec1?.name || lec1?.fullName) && (
+                                <div className="text-[9px] font-normal normal-case opacity-80 truncate max-w-[110px] mx-auto">
+                                  {lec1.name || lec1.fullName} {isLec1Me && <span className="font-bold text-[#123891]">(Bạn)</span>}
                                 </div>
-                              </td>
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                <div className="font-medium text-slate-800">
-                                  {item.supervisorId?.userId?.fullName || '—'}
+                              )}
+                            </th>
+                            <th className={`py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] ${isLec2Me ? 'bg-indigo-50/70 text-[#102d7d]' : ''}`}>
+                              <div>Điểm GVHĐ 2</div>
+                              {(lec2?.name || lec2?.fullName) && (
+                                <div className="text-[9px] font-normal normal-case opacity-80 truncate max-w-[110px] mx-auto">
+                                  {lec2.name || lec2.fullName} {isLec2Me && <span className="font-bold text-[#123891]">(Bạn)</span>}
                                 </div>
-                              </td>
-                              <td className="py-3.5 px-4 whitespace-nowrap">
-                                <div className="font-medium text-slate-800">
-                                  {item.reviewer1Id?.userId?.fullName || '—'}
-                                </div>
-                              </td>
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
-                                {scoreHD !== null && scoreHD !== undefined ? (
-                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded">
-                                    {scoreHD}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
-                                {scorePB1 !== null && scorePB1 !== undefined ? (
-                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded">
-                                    {scorePB1}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                              </td>
-                              {/* Điểm GVHĐ 1 */}
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
-                                {scoreGVHD1 !== null && scoreGVHD1 !== undefined ? (
-                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                                    {scoreGVHD1}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                              </td>
-
-                              {/* Điểm GVHĐ 2 */}
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
-                                {scoreGVHD2 !== null && scoreGVHD2 !== undefined ? (
-                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                                    {scoreGVHD2}
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400">—</span>
-                                )}
-                              </td>
-
-                              {/* Điểm Hội Đồng (30%) - Trung bình cộng của GVHĐ 1 và GVHĐ 2 (chỉ tính khi đủ cả 2 điểm) */}
-                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
-                                {scoreCouncil !== null && scoreCouncil !== undefined ? (
-                                  <span className="font-bold text-[#123891] bg-blue-100/90 px-2.5 py-1 rounded-lg border border-blue-300 shadow-2xs">
-                                    {scoreCouncil}
-                                  </span>
-                                ) : (Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2 && (scoreGVHD1 !== null || scoreGVHD2 !== null)) ? (
-                                  <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính trung bình">
-                                    Chờ GV còn lại
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 italic">Chưa chấm</span>
-                                )}
-                              </td>
-                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                                <div className="flex items-center justify-end gap-1.5">
+                              )}
+                            </th>
+                            <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] bg-blue-50/70 text-[#102d7d]">
+                              <div>Điểm Hội Đồng</div>
+                            </th>
+                            <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[130px]">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {councilTheses.map((item, index) => {
+                            return (
+                              <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                                <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                                  {index + 1}
+                                </td>
+                                <td className="py-3.5 px-4 max-w-sm">
                                   <button
                                     type="button"
                                     onClick={() => handleOpenDetail(item)}
-                                    className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg transition cursor-pointer"
-                                    title="Xem chi tiết"
+                                    className="text-left block group cursor-pointer"
+                                    title="Bấm để xem toàn bộ thông tin đề tài"
                                   >
-                                    <Eye className="w-4 h-4" />
+                                    <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                                      {item.thesisTitle}
+                                    </strong>
                                   </button>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                    {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                                  </span>
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  <div className="flex flex-col gap-1.5 min-w-[170px]">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV1
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.studentId}
+                                        name={item.studentId?.userId?.fullName}
+                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                        avatarSize="w-6 h-6"
+                                      />
+                                    </div>
+                                    {item.studentCount === 2 && item.secondStudentId && (
+                                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                        <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                          SV2
+                                        </span>
+                                        <UserNameClickable
+                                          user={item.secondStudentId}
+                                          name={item.secondStudentId?.userId?.fullName}
+                                          subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                          avatarSize="w-6 h-6"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  <div className="font-semibold text-slate-800">
+                                    {formatLecturerDisplay(item.supervisorId)}
+                                  </div>
+                                  {item.supervisorId?.lecturerCode && (
+                                    <span className="text-slate-400 font-mono text-[10px]">
+                                      Mã GV: {item.supervisorId.lecturerCode}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  {getReviewer1Display(item) !== 'Chưa phân công' ? (
+                                    <span className="font-semibold text-slate-800">
+                                      {getReviewer1Display(item)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  {getReviewer2Display(item) !== 'Chưa phân công' ? (
+                                    <span className="font-semibold text-slate-800">
+                                      {getReviewer2Display(item)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                                  )}
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap">
+                                  <div className="font-semibold text-slate-800">
+                                    {effectiveActiveCouncil?.name || getAssignedCouncil(item)?.name || 'Hội đồng KLTN'}
+                                  </div>
+                                  {(effectiveActiveCouncil?.room || getAssignedCouncil(item)?.room) && (
+                                    <span className="text-[10px] font-mono text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded mt-0.5 inline-block border border-blue-100 font-semibold">
+                                      Phòng: {effectiveActiveCouncil?.room || getAssignedCouncil(item)?.room}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec1Me ? 'bg-indigo-50/30 font-bold' : ''}`}>
+                                  {renderCouncilLecturerScore(item, 0)}
+                                </td>
+                                <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec2Me ? 'bg-indigo-50/30 font-bold' : ''}`}>
+                                  {renderCouncilLecturerScore(item, 1)}
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap text-center bg-blue-50/40 font-bold">
+                                  {renderCouncilAverageScore(item)}
+                                </td>
+                                <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenDetail(item)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                      title="Xem chi tiết đề tài"
+                                    >
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Chi tiết</span>
+                                    </button>
+                                    {item.status !== 'REJECTED' && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleOpenGradeBox(item, 'COUNCIL')}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+                                        title="Chấm điểm Hội đồng"
+                                      >
+                                        <Award className="w-3.5 h-3.5" />
+                                        <span>Chấm điểm</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()
+              )}
+            </div>
+          </div>
+          )
+        ) : (
+          <div className="space-y-8">
+            {/* ========================================================================= */}
+            {/* BẢNG 1: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 1 (GVPB 1) */}
+            {/* ========================================================================= */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/40 border-b border-blue-100/80 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span>Đề tài Giảng viên Phản biện 1 (GVPB 1)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Danh sách các đề tài bạn được phân công làm Giảng viên phản biện 1
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
+                  {filteredReviewer1Theses.length} đề tài
+                </span>
+              </div>
+
+              {loading ? (
+                <div className="p-6">
+                  <LoadingSkeleton rows={4} cols={10} />
+                </div>
+              ) : filteredReviewer1Theses.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState
+                    title="Chưa có đề tài nào làm Giảng viên phản biện 1"
+                    description="Bạn hiện chưa được phân công làm GVPB 1 cho đề tài nào trong học kỳ này hoặc chưa khớp với từ khóa tìm kiếm."
+                  />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                        <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                        <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
+                        <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
+                        <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
+                        <th className="py-3.5 px-4 min-w-[150px] bg-blue-50/70 text-[#102d7d]">GVPB 1 (Bạn)</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 1</th>
+                        <th className="py-3.5 px-4 min-w-[150px]">GVPB 2</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px]">Điểm GVPB 2</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[125px]">Điểm phản biện kín</th>
+                        <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[130px]">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredReviewer1Theses.map((item, index) => {
+                        return (
+                          <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                              {index + 1}
+                            </td>
+                            <td className="py-3.5 px-4 max-w-sm">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDetail(item)}
+                                className="text-left block group cursor-pointer"
+                                title="Bấm để xem toàn bộ thông tin đề tài"
+                              >
+                                <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                                  {item.thesisTitle}
+                                </strong>
+                              </button>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="flex flex-col gap-1.5 min-w-[170px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                    SV1
+                                  </span>
+                                  <UserNameClickable
+                                    user={item.studentId}
+                                    name={item.studentId?.userId?.fullName}
+                                    subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                    avatarSize="w-6 h-6"
+                                  />
+                                </div>
+                                {item.studentCount === 2 && item.secondStudentId && (
+                                  <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                    <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                      SV2
+                                    </span>
+                                    <UserNameClickable
+                                      user={item.secondStudentId}
+                                      name={item.secondStudentId?.userId?.fullName}
+                                      subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                      avatarSize="w-6 h-6"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-slate-800">
+                                {formatLecturerDisplay(item.supervisorId)}
+                              </div>
+                              {item.supervisorId?.lecturerCode && (
+                                <span className="text-slate-400 font-mono text-[10px]">
+                                  Mã GV: {item.supervisorId.lecturerCode}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
+                              {getReviewer1Display(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center bg-blue-50/40 font-bold">
+                              {renderReviewer1Score(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {getReviewer2Display(item) !== 'Chưa phân công' ? (
+                                <span className="font-semibold text-slate-800">
+                                  {getReviewer2Display(item)}
+                                </span>
+                              ) : (
+                                <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {renderReviewer2Score(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {renderCombinedReviewerScore(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDetail(item)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  title="Xem chi tiết đề tài"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Chi tiết</span>
+                                </button>
+                                {item.status !== 'REJECTED' && (
                                   <button
                                     type="button"
-                                    onClick={() => handleOpenGradeBox(item)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                                    title="Chấm điểm Hội đồng bảo vệ"
+                                    onClick={() => handleOpenGradeBox(item, 'REVIEWER1')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+                                    title="Chấm điểm Giảng viên phản biện 1"
                                   >
-                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <Award className="w-3.5 h-3.5" />
                                     <span>Chấm điểm</span>
                                   </button>
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* ========================================================================= */}
+            {/* BẢNG 2: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 2 (GVPB 2) */}
+            {/* ========================================================================= */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/40 border-b border-blue-100/80 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
+                    <Award className="w-4 h-4" />
                   </div>
-                )}
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span>Đề tài Giảng viên Phản biện 2 (GVPB 2)</span>
+                    </h3>
+                    <p className="text-[11px] text-slate-500">
+                      Danh sách các đề tài bạn được phân công làm Giảng viên phản biện 2
+                    </p>
+                  </div>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
+                  {filteredReviewer2Theses.length} đề tài
+                </span>
               </div>
-            </>
-          )}
-        </div>
+
+              {loading ? (
+                <div className="p-6">
+                  <LoadingSkeleton rows={4} cols={10} />
+                </div>
+              ) : filteredReviewer2Theses.length === 0 ? (
+                <div className="p-8">
+                  <EmptyState
+                    title="Chưa có đề tài nào làm Giảng viên phản biện 2"
+                    description="Bạn hiện chưa được phân công làm GVPB 2 cho đề tài nào trong học kỳ này hoặc chưa khớp với từ khóa tìm kiếm."
+                  />
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                        <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                        <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
+                        <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
+                        <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
+                        <th className="py-3.5 px-4 min-w-[150px]">GVPB 1</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px]">Điểm GVPB 1</th>
+                        <th className="py-3.5 px-4 min-w-[150px] bg-blue-50/70 text-[#102d7d]">GVPB 2 (Bạn)</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 2</th>
+                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[125px]">Điểm phản biện kín</th>
+                        <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[130px]">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredReviewer2Theses.map((item, index) => {
+                        return (
+                          <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                              {index + 1}
+                            </td>
+                            <td className="py-3.5 px-4 max-w-sm">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDetail(item)}
+                                className="text-left block group cursor-pointer"
+                                title="Bấm để xem toàn bộ thông tin đề tài"
+                              >
+                                <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                                  {item.thesisTitle}
+                                </strong>
+                              </button>
+                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="flex flex-col gap-1.5 min-w-[170px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                    SV1
+                                  </span>
+                                  <UserNameClickable
+                                    user={item.studentId}
+                                    name={item.studentId?.userId?.fullName}
+                                    subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                    avatarSize="w-6 h-6"
+                                  />
+                                </div>
+                                {item.studentCount === 2 && item.secondStudentId && (
+                                  <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                    <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                      SV2
+                                    </span>
+                                    <UserNameClickable
+                                      user={item.secondStudentId}
+                                      name={item.secondStudentId?.userId?.fullName}
+                                      subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                      avatarSize="w-6 h-6"
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-slate-800">
+                                {formatLecturerDisplay(item.supervisorId)}
+                              </div>
+                              {item.supervisorId?.lecturerCode && (
+                                <span className="text-slate-400 font-mono text-[10px]">
+                                  Mã GV: {item.supervisorId.lecturerCode}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              {getReviewer1Display(item) !== 'Chưa phân công' ? (
+                                <span className="font-semibold text-slate-800">
+                                  {getReviewer1Display(item)}
+                                </span>
+                              ) : (
+                                <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {renderReviewer1Score(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
+                              {getReviewer2Display(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center bg-blue-50/40 font-bold">
+                              {renderReviewer2Score(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                              {renderCombinedReviewerScore(item)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDetail(item)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  title="Xem chi tiết đề tài"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Chi tiết</span>
+                                </button>
+                                {item.status !== 'REJECTED' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenGradeBox(item, 'REVIEWER2')}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+                                    title="Chấm điểm Giảng viên phản biện 2"
+                                  >
+                                    <Award className="w-3.5 h-3.5" />
+                                    <span>Chấm điểm</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )
       ) : (
         /* ================= BẢNG 12 CỘT THEO YÊU CẦU ================= */
         <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
@@ -1905,7 +2425,9 @@ const LecturerThesesPage = () => {
                       ? 'bg-blue-600 shadow-blue-200'
                       : gradeBoxRole === 'REVIEWER2'
                         ? 'bg-[#123891] shadow-blue-200'
-                        : 'bg-[#123891] shadow-indigo-200'
+                        : gradeBoxRole === 'COUNCIL'
+                          ? 'bg-indigo-600 shadow-indigo-200'
+                          : 'bg-[#123891] shadow-indigo-200'
                   }`}
                 >
                   <Award className="w-5 h-5" />
@@ -1921,14 +2443,18 @@ const LecturerThesesPage = () => {
                           ? 'bg-blue-50 text-blue-700 border-blue-200'
                           : gradeBoxRole === 'REVIEWER2'
                             ? 'bg-blue-50 text-[#102d7d] border-blue-200'
-                            : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                            : gradeBoxRole === 'COUNCIL'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
                       }`}
                     >
                       {gradeBoxRole === 'REVIEWER1'
                         ? 'GVPB 1 (20%)'
                         : gradeBoxRole === 'REVIEWER2'
-                          ? 'GVPB 2 (30%)'
-                          : 'GVHD (50%)'}
+                          ? 'GVPB 2 (20%)'
+                          : gradeBoxRole === 'COUNCIL'
+                            ? 'HỘI ĐỒNG (30%)'
+                            : 'GVHD (50%)'}
                     </span>
                   </div>
                 </div>
@@ -1963,7 +2489,7 @@ const LecturerThesesPage = () => {
             </div>
 
             {/* Other council members scores info */}
-            {gradeBoxRole === 'REVIEWER2' && Array.isArray(gradeBoxThesis.scores?.councilLecturerScores) && gradeBoxThesis.scores.councilLecturerScores.length > 0 && (
+            {(gradeBoxRole === 'COUNCIL' || gradeBoxRole === 'REVIEWER2') && Array.isArray(gradeBoxThesis.scores?.councilLecturerScores) && gradeBoxThesis.scores.councilLecturerScores.length > 0 && (
               <div className="p-3 bg-blue-50/70 rounded-2xl border border-blue-200 text-xs space-y-1.5">
                 <div className="font-bold text-[#123891] flex items-center gap-1.5">
                   <Users className="w-3.5 h-3.5" />
@@ -2134,10 +2660,6 @@ const LecturerThesesPage = () => {
               </div>
             </div>
 
-            <p className="text-xs text-slate-600">
-              Bạn có chắc chắn muốn duyệt đề tài này không? Sau khi duyệt, đề tài sẽ được chuyển sang trạng thái <strong>Đã phê duyệt (APPROVED)</strong>.
-            </p>
-
             <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -2153,7 +2675,7 @@ const LecturerThesesPage = () => {
                 disabled={actionLoading}
                 className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition"
               >
-                {actionLoading ? 'Đang xử lý...' : 'Đồng ý duyệt đề tài'}
+                {actionLoading ? 'Đang xử lý...' : 'Xác nhận'}
               </button>
             </div>
           </div>

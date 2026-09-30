@@ -41,6 +41,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
     if (requiredSearch === '?tab=review') {
       return (
         location.search.includes('tab=review') ||
+        location.search.includes('tab=council') ||
         location.search.includes('tab=reviewer1') ||
         location.search.includes('tab=reviewer2')
       );
@@ -53,6 +54,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
         location.search.includes('tab=supervisor') ||
         (!location.search.includes('tab=topics') &&
           !location.search.includes('tab=review') &&
+          !location.search.includes('tab=council') &&
           !location.search.includes('tab=reviewer1') &&
           !location.search.includes('tab=reviewer2') &&
           !location.search.includes('view=evaluation') &&
@@ -68,6 +70,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
         location.search !== '?view=progress' &&
         !location.search.includes('tab=topics') &&
         !location.search.includes('tab=review') &&
+        !location.search.includes('tab=council') &&
         !location.search.includes('tab=reviewer1') &&
         !location.search.includes('tab=reviewer2'))
     );

@@ -87,10 +87,8 @@ const TbmThesisManagement = () => {
   }, [topicStatusFilter, topicSearch, currentTerm?._id]);
 
   useEffect(() => {
-    if (activeMainTab === 'PROPOSED_TOPICS') {
-      fetchProposedTopics();
-    }
-  }, [activeMainTab, fetchProposedTopics]);
+    fetchProposedTopics();
+  }, [fetchProposedTopics]);
 
   // Tự động mở rộng tất cả danh sách giảng viên khi người dùng đang nhập tìm kiếm
   useEffect(() => {
@@ -400,10 +398,8 @@ const TbmThesisManagement = () => {
   }, [page, limit, status, search, currentTerm?._id, showToast]);
 
   useEffect(() => {
-    if (activeMainTab === 'PRIVATE_REVIEWER' || activeMainTab === 'COUNCIL_REVIEWER') {
-      fetchTheses();
-    }
-  }, [activeMainTab, fetchTheses]);
+    fetchTheses();
+  }, [fetchTheses]);
 
   // Check if a thesis has received scores from both Reviewer 1 and Reviewer 2
   const hasBothReviewerScores = useCallback((item) => {
@@ -1215,84 +1211,7 @@ const TbmThesisManagement = () => {
             <CouncilManagementSection theses={displayedTheses} />
           )}
 
-          {/* Stats Grid (Chỉ hiển thị ở Tab 2: Phân công phản biện kín) */}
-          {activeMainTab === 'PRIVATE_REVIEWER' && (
-            <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-              <div
-                onClick={() => { setStatus('ALL'); setPage(1); }}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  status === 'ALL'
-                    ? 'bg-blue-50/80 border-blue-300 ring-2 ring-indigo-500/20'
-                    : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
-                }`}
-              >
-                <div className="text-[11px] text-slate-500 font-medium">Tổng số đề tài</div>
-                <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">{stats.total}</div>
-              </div>
 
-              <div
-                onClick={() => { setStatus('PENDING_TBM_APPROVAL'); setPage(1); }}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  status === 'PENDING_TBM_APPROVAL'
-                    ? 'bg-amber-50/80 border-amber-300 ring-2 ring-amber-500/20'
-                    : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
-                }`}
-              >
-                <div className="text-[11px] text-amber-700 font-medium">Chờ TBM duyệt</div>
-                <div className="text-lg font-bold text-amber-700 font-mono mt-0.5">{stats.pendingCount}</div>
-              </div>
-
-              <div
-                onClick={() => { setStatus('APPROVED'); setPage(1); }}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  status === 'APPROVED'
-                    ? 'bg-emerald-50/80 border-emerald-300 ring-2 ring-emerald-500/20'
-                    : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
-                }`}
-              >
-                <div className="text-[11px] text-emerald-700 font-medium">Đã duyệt đề tài</div>
-                <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">{stats.approvedCount}</div>
-              </div>
-
-              <div
-                onClick={() => { setStatus('ASSIGNED_REVIEWERS'); setPage(1); }}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  status === 'ASSIGNED_REVIEWERS'
-                    ? 'bg-blue-50/80 border-blue-300 ring-2 ring-violet-500/20'
-                    : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
-                }`}
-              >
-                <div className="text-[11px] text-[#102d7d] font-medium">Đã gán 2 Phản biện</div>
-                <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">{stats.assignedReviewersCount}</div>
-              </div>
-
-              <div
-                onClick={() => { setStatus('IN_PROGRESS'); setPage(1); }}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  status === 'IN_PROGRESS'
-                    ? 'bg-blue-50/80 border-blue-300 ring-2 ring-blue-500/20'
-                    : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
-                }`}
-              >
-                <div className="text-[11px] text-blue-700 font-medium">Đang thực hiện</div>
-                <div className="text-lg font-bold text-blue-700 font-mono mt-0.5">{stats.inProgressCount}</div>
-              </div>
-
-              <div
-                onClick={() => { setStatus('GRADED'); setPage(1); }}
-                className={`p-3 rounded-2xl border cursor-pointer transition ${
-                  status === 'GRADED'
-                    ? 'bg-purple-50/80 border-purple-300 ring-2 ring-purple-500/20'
-                    : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100/80'
-                }`}
-              >
-                <div className="text-[11px] text-purple-700 font-medium">Đã chấm điểm</div>
-                <div className="text-lg font-bold text-purple-700 font-mono mt-0.5">{stats.gradedCount}</div>
-              </div>
-            </div>
-          </div>
-          )}
 
           {/* Filter & Search Bar */}
           <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -1559,32 +1478,30 @@ const TbmThesisManagement = () => {
                       // TAB 2 (Phản biện kín) row rendering
                       // GVPB 1
                       let rev1Name = '';
-                      if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
+                      if (item.reviewer1Id) {
+                        const title = item.reviewer1Id.academicTitle ? `${item.reviewer1Id.academicTitle} ` : '';
+                        rev1Name = `${title}${item.reviewer1Id.userId?.fullName || item.reviewer1Id.fullName || 'Giảng viên'}`;
+                      } else if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
                         const priv = item.reviewers.find((r) => r.isPrivateReviewer && r.lecturerId);
                         if (priv) {
                           const lec = priv.lecturerId;
                           const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
-                          rev1Name = `${title}${lec.userId?.fullName || 'Giảng viên'}`;
+                          rev1Name = `${title}${lec.userId?.fullName || lec.fullName || 'Giảng viên'}`;
                         }
-                      }
-                      if (!rev1Name && item.reviewer1Id) {
-                        const title = item.reviewer1Id.academicTitle ? `${item.reviewer1Id.academicTitle} ` : '';
-                        rev1Name = `${title}${item.reviewer1Id.userId?.fullName || 'Giảng viên'}`;
                       }
 
                       // GVPB 2
                       let rev2Name = '';
-                      if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
+                      if (item.reviewer2Id) {
+                        const title = item.reviewer2Id.academicTitle ? `${item.reviewer2Id.academicTitle} ` : '';
+                        rev2Name = `${title}${item.reviewer2Id.userId?.fullName || item.reviewer2Id.fullName || 'Giảng viên'}`;
+                      } else if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
                         const coun = item.reviewers.find((r) => r.isCouncilReviewer && r.lecturerId);
                         if (coun) {
                           const lec = coun.lecturerId;
                           const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
-                          rev2Name = `${title}${lec.userId?.fullName || 'Giảng viên'}`;
+                          rev2Name = `${title}${lec.userId?.fullName || lec.fullName || 'Giảng viên'}`;
                         }
-                      }
-                      if (!rev2Name && item.reviewer2Id) {
-                        const title = item.reviewer2Id.academicTitle ? `${item.reviewer2Id.academicTitle} ` : '';
-                        rev2Name = `${title}${item.reviewer2Id.userId?.fullName || 'Giảng viên'}`;
                       }
 
                       const score1 = item.scores?.reviewer1Score ?? item.scores?.student1Reviewer1Score;

@@ -37,6 +37,10 @@ export const thesisApi = {
   completeEvaluation: (id) =>
     axiosClient.patch(`/theses/${id}/complete`),
 
+  // TBM publishes score components for all theses
+  publishScores: (data) =>
+    axiosClient.post('/theses/publish-scores', data),
+
   // ==========================================
   // Thesis Evaluation Criteria & Grading Periods
   // ==========================================

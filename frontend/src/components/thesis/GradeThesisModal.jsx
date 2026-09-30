@@ -280,7 +280,7 @@ const GradeThesisModal = ({
 
   // Toggle single criteria checkbox
   const handleToggleCriteria = (criteriaId) => {
-    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+    if (isCompleted || isRejected) {
       return;
     }
     const idStr = criteriaId.toString();
@@ -291,7 +291,7 @@ const GradeThesisModal = ({
 
   // Check all criteria button
   const handleCheckAllCriteria = () => {
-    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+    if (isCompleted || isRejected) {
       return;
     }
     setCheckedCriteriaIds(criteriaList.map((c) => c._id.toString()));
@@ -299,7 +299,7 @@ const GradeThesisModal = ({
 
   // Uncheck all criteria button
   const handleUncheckAllCriteria = () => {
-    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+    if (isCompleted || isRejected) {
       return;
     }
     setCheckedCriteriaIds([]);
@@ -702,12 +702,13 @@ const GradeThesisModal = ({
                     Tiêu chí đánh giá điều kiện thực hiện KLTN <span className="text-rose-500">*</span>
                   </span>
                 </div>
-                {!isCompleted && !isRejected && !isPeriodClosedForSupervisor && (
+                {!isCompleted && !isRejected && (
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
                       onClick={handleCheckAllCriteria}
                       className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold rounded-lg border border-emerald-200 transition cursor-pointer"
+                      title="Đánh dấu đạt tất cả các tiêu chí"
                     >
                       <CheckSquare className="w-3.5 h-3.5" />
                       <span>Tick tất cả</span>
@@ -716,9 +717,10 @@ const GradeThesisModal = ({
                       type="button"
                       onClick={handleUncheckAllCriteria}
                       className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-50 hover:bg-slate-100 text-slate-600 text-[11px] font-bold rounded-lg border border-slate-200 transition cursor-pointer"
+                      title="Bỏ chọn tất cả tiêu chí"
                     >
                       <X className="w-3.5 h-3.5" />
-                      <span>Bỏ chọn</span>
+                      <span>Bỏ chọn tất cả</span>
                     </button>
                   </div>
                 )}
@@ -751,7 +753,7 @@ const GradeThesisModal = ({
                           type="checkbox"
                           checked={isChecked}
                           onChange={() => handleToggleCriteria(crit._id)}
-                          disabled={isCompleted || isRejected || isPeriodClosedForSupervisor}
+                          disabled={isCompleted || isRejected}
                           className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 mt-0.5 cursor-pointer"
                         />
                         <div className="flex-1">

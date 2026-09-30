@@ -92,13 +92,42 @@ const MyThesisPage = () => {
     return `${trimmedTitle} ${trimmedName}`;
   };
 
+  const [publishedVersion, setPublishedVersion] = useState(0);
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setPublishedVersion((v) => v + 1);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
+  }, []);
+
   const isPendingApproval = ['PENDING_SUPERVISOR_APPROVAL', 'PENDING_TBM_APPROVAL', 'PENDING_SUPERVISOR_ACCEPTANCE'].includes(thesis?.status);
 
   // Calculations for Thesis Evaluation
-  const supervisorScore =
-    thesis?.scores?.supervisorScore !== null && thesis?.scores?.supervisorScore !== undefined
-      ? Number(thesis.scores.supervisorScore)
-      : null;
+  const isStudent2 =
+    thesis?.studentCount === 2 &&
+    student?._id &&
+    thesis?.secondStudentId &&
+    (thesis.secondStudentId?._id?.toString() === student._id.toString() ||
+      thesis.secondStudentId?.toString() === student._id.toString());
+
+  const supervisorScore = (() => {
+    if (isStudent2 && thesis?.scores?.student2SupervisorScore !== null && thesis?.scores?.student2SupervisorScore !== undefined) {
+      return Number(thesis.scores.student2SupervisorScore);
+    }
+    if (!isStudent2 && thesis?.scores?.student1SupervisorScore !== null && thesis?.scores?.student1SupervisorScore !== undefined) {
+      return Number(thesis.scores.student1SupervisorScore);
+    }
+    if (thesis?.scores?.supervisorScore !== null && thesis?.scores?.supervisorScore !== undefined) {
+      return Number(thesis.scores.supervisorScore);
+    }
+    return null;
+  })();
 
   const reviewer1Score =
     thesis?.scores?.reviewer1Score !== null && thesis?.scores?.reviewer1Score !== undefined
@@ -110,38 +139,130 @@ const MyThesisPage = () => {
       ? Number(thesis.scores.reviewer2Score)
       : null;
 
+  // 2. Điểm Phản biện kín (20%) = Trung bình cộng GVPB 1 và GVPB 2
+  let privateReviewerScore = null;
+  if (reviewer1Score !== null && reviewer2Score !== null) {
+    privateReviewerScore = Number(((reviewer1Score + reviewer2Score) / 2).toFixed(2));
+  } else if (thesis?.scores?.reviewerScore !== null && thesis?.scores?.reviewerScore !== undefined) {
+    privateReviewerScore = Number(thesis.scores.reviewerScore);
+  } else if (reviewer1Score !== null) {
+    privateReviewerScore = reviewer1Score;
+  } else if (reviewer2Score !== null) {
+    privateReviewerScore = reviewer2Score;
+  }
+
+  // 3. Điểm Hội đồng (30%) = Trung bình cộng các GV Hội đồng
+  let councilScore = null;
+  if (thesis?.scores?.councilScore !== null && thesis?.scores?.councilScore !== undefined) {
+    councilScore = Number(thesis.scores.councilScore);
+  } else if (Array.isArray(thesis?.scores?.councilLecturerScores) && thesis.scores.councilLecturerScores.length > 0) {
+    const validScores = thesis.scores.councilLecturerScores.filter((s) => s && s.score !== null && s.score !== undefined);
+    if (validScores.length > 0) {
+      const sum = validScores.reduce((acc, curr) => acc + Number(curr.score), 0);
+      councilScore = Number((sum / validScores.length).toFixed(2));
+    }
+  }
+
   let scoredCount = 0;
   if (supervisorScore !== null) scoredCount++;
-  if (reviewer1Score !== null) scoredCount++;
-  if (reviewer2Score !== null) scoredCount++;
+  if (privateReviewerScore !== null && (reviewer1Score !== null && reviewer2Score !== null)) scoredCount++;
+  if (councilScore !== null) scoredCount++;
 
-  const isFullGraded = scoredCount === 3;
+  const isFullGraded = supervisorScore !== null && privateReviewerScore !== null && councilScore !== null;
   let finalScore = null;
   if (isFullGraded) {
-    finalScore = Number((supervisorScore * 0.5 + reviewer1Score * 0.2 + reviewer2Score * 0.3).toFixed(2));
+    finalScore = Number((supervisorScore * 0.5 + privateReviewerScore * 0.2 + councilScore * 0.3).toFixed(2));
   } else if (thesis?.scores?.finalScore !== null && thesis?.scores?.finalScore !== undefined) {
     finalScore = Number(thesis.scores.finalScore);
   }
 
+  const termId = thesis?.academicTermId?._id || thesis?.academicTermId || currentTerm?._id || 'default';
+
+  // Check publication status configured by TBM
+  let isSupervisorPublished = false;
+  let isReviewerPublished = false;
+  let isCouncilPublished = false;
+  let isFinalPublished = false;
+
+  try {
+    let globalPub = {};
+    let thesisPub = {};
+
+    // 1. Direct global published scores
+    const directGlobal =
+      localStorage.getItem('tbm_global_published_scores') ||
+      localStorage.getItem('tbm_published_scores_global');
+    if (directGlobal) {
+      try {
+        const parsed = JSON.parse(directGlobal);
+        if (parsed && typeof parsed === 'object') {
+          globalPub = { ...globalPub, ...parsed };
+        }
+      } catch (e) {}
+    }
+
+    // 2. Scan all localStorage keys
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && (k.startsWith('tbm_published_scores') || k.startsWith('tbm_global_published'))) {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(k) || '{}');
+          if (parsed && typeof parsed === 'object') {
+            if (parsed['GLOBAL_ALL']) {
+              globalPub = { ...globalPub, ...parsed['GLOBAL_ALL'] };
+            }
+            if (thesis?._id && parsed[thesis._id]) {
+              thesisPub = { ...thesisPub, ...parsed[thesis._id] };
+            }
+            if (parsed.supervisorScore !== undefined) {
+              globalPub = { ...globalPub, ...parsed };
+            }
+          }
+        } catch (e) {}
+      }
+    }
+
+    // 3. From backend database thesis object
+    if (thesis?.publishedScores && typeof thesis.publishedScores === 'object') {
+      thesisPub = { ...thesisPub, ...thesis.publishedScores };
+    }
+
+    isSupervisorPublished = !!(globalPub.supervisorScore || thesisPub.supervisorScore);
+    isReviewerPublished = !!(
+      globalPub.reviewer1Score ||
+      globalPub.reviewerScore ||
+      globalPub.reviewer2Score ||
+      thesisPub.reviewer1Score ||
+      thesisPub.reviewerScore ||
+      thesisPub.reviewer2Score
+    );
+    isCouncilPublished = !!(globalPub.councilScore || thesisPub.councilScore);
+    isFinalPublished = !!(globalPub.finalScore || thesisPub.finalScore);
+  } catch (e) {
+    // ignore
+  }
+
+  const hasAnyPublished = isSupervisorPublished || isReviewerPublished || isCouncilPublished || isFinalPublished;
+  const isAllPublished = isSupervisorPublished && isReviewerPublished && isCouncilPublished && isFinalPublished;
+
   // Evaluation Overview Status Text & Style
   let evalStatusBadge = {
-    text: 'Đang chờ đánh giá',
+    text: 'Chưa công bố điểm',
     className: 'bg-slate-100 text-slate-700 border-slate-200',
   };
-  if (scoredCount === 3) {
+  if (isAllPublished && isFullGraded) {
     evalStatusBadge = {
-      text: 'Đã hoàn tất đánh giá',
+      text: 'Đã hoàn tất đánh giá & công bố',
       className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
     };
-  } else if (scoredCount > 0) {
+  } else if (hasAnyPublished) {
     evalStatusBadge = {
-      text: 'Đang tiến hành đánh giá',
+      text: 'Đã công bố một phần điểm',
       className: 'bg-blue-50 text-[#102d7d] border-blue-200',
     };
   }
 
   // Load Council info from local storage
-  const termId = thesis?.academicTermId?._id || thesis?.academicTermId || currentTerm?._id || 'default';
   let assignedCouncil = null;
   try {
     const savedThesisCouncils = localStorage.getItem(`tbm_thesis_councils_${termId}`);
@@ -176,6 +297,7 @@ const MyThesisPage = () => {
       num: 1,
       title: `1. GVHD (${gvhdName})`,
       comment: thesis.supervisorComment?.trim(),
+      isPublished: isSupervisorPublished,
     });
 
     // 2. GVPB 1 (tên)
@@ -186,6 +308,7 @@ const MyThesisPage = () => {
       num: 2,
       title: `2. GVPB 1 (${gvpb1Name})`,
       comment: thesis.reviewer1Comment?.trim(),
+      isPublished: isReviewerPublished,
     });
 
     // 3. GVPB 2 (tên)
@@ -216,6 +339,7 @@ const MyThesisPage = () => {
       num: 3,
       title: `3. GVPB 2 (${gvpb2Name})`,
       comment: gvpb2Comment,
+      isPublished: isReviewerPublished,
     });
 
     // 4. GV Hội đồng 1 - (Loại hội đồng oral/poster) (tên)
@@ -235,6 +359,7 @@ const MyThesisPage = () => {
       num: 4,
       title: `4. GV Hội đồng 1 - ${councilFormat} (${hđ1Name})`,
       comment: hđ1Comment,
+      isPublished: isCouncilPublished,
     });
 
     // 5. GV Hội đồng 2 - (Loại hội đồng oral/poster) (tên)
@@ -254,6 +379,7 @@ const MyThesisPage = () => {
       num: 5,
       title: `5. GV Hội đồng 2 - ${councilFormat} (${hđ2Name})`,
       comment: hđ2Comment,
+      isPublished: isCouncilPublished,
     });
   }
 
@@ -436,7 +562,12 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="py-2">
-                        {supervisorScore !== null ? (
+                        {!isSupervisorPublished ? (
+                          <div className="text-xs font-semibold text-slate-400 py-1 flex items-center justify-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full bg-slate-300"></span>
+                            <span>Chưa công bố</span>
+                          </div>
+                        ) : supervisorScore !== null ? (
                           <div className="font-mono text-2xl font-black text-[#123891]">
                             {supervisorScore.toFixed(1)}{' '}
                             <span className="text-xs font-normal text-slate-400">/ 10</span>
@@ -449,8 +580,10 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
-                        {supervisorScore !== null ? (
-                          <span>Đã chấm điểm</span>
+                        {!isSupervisorPublished ? (
+                          <span className="text-slate-400">—</span>
+                        ) : supervisorScore !== null ? (
+                          <span className="text-emerald-600 font-medium">Đã công bố điểm</span>
                         ) : (
                           <span>Chờ GVHD chấm</span>
                         )}
@@ -466,9 +599,14 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="py-2">
-                        {reviewer1Score !== null ? (
+                        {!isReviewerPublished ? (
+                          <div className="text-xs font-semibold text-slate-400 py-1 flex items-center justify-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full bg-slate-300"></span>
+                            <span>Chưa công bố</span>
+                          </div>
+                        ) : privateReviewerScore !== null ? (
                           <div className="font-mono text-2xl font-black text-[#123891]">
-                            {reviewer1Score.toFixed(1)}{' '}
+                            {privateReviewerScore.toFixed(1)}{' '}
                             <span className="text-xs font-normal text-slate-400">/ 10</span>
                           </div>
                         ) : (
@@ -479,10 +617,16 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
-                        {reviewer1Score !== null ? (
-                          <span>Đã chấm điểm</span>
+                        {!isReviewerPublished ? (
+                          <span className="text-slate-400">—</span>
+                        ) : reviewer1Score !== null && reviewer2Score !== null ? (
+                          <span>GVPB 1: {reviewer1Score.toFixed(1)} | GVPB 2: {reviewer2Score.toFixed(1)}</span>
+                        ) : reviewer1Score !== null ? (
+                          <span>GVPB 1: {reviewer1Score.toFixed(1)} (Chờ GVPB 2)</span>
+                        ) : reviewer2Score !== null ? (
+                          <span>GVPB 2: {reviewer2Score.toFixed(1)} (Chờ GVPB 1)</span>
                         ) : (
-                          <span>Chờ PB Kín chấm</span>
+                          <span>Chờ 2 GVPB chấm</span>
                         )}
                       </div>
                     </div>
@@ -496,9 +640,14 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="py-2">
-                        {reviewer2Score !== null ? (
+                        {!isCouncilPublished ? (
+                          <div className="text-xs font-semibold text-slate-400 py-1 flex items-center justify-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full bg-slate-300"></span>
+                            <span>Chưa công bố</span>
+                          </div>
+                        ) : councilScore !== null ? (
                           <div className="font-mono text-2xl font-black text-amber-950">
-                            {reviewer2Score.toFixed(1)}{' '}
+                            {councilScore.toFixed(1)}{' '}
                             <span className="text-xs font-normal text-slate-400">/ 10</span>
                           </div>
                         ) : (
@@ -509,10 +658,14 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="text-[10.5px] text-slate-500 pt-1 border-t border-amber-100/70">
-                        {reviewer2Score !== null ? (
-                          <span>Đã chấm điểm</span>
+                        {!isCouncilPublished ? (
+                          <span className="text-slate-400">—</span>
+                        ) : councilScores.length >= 2 && councilScores[0]?.score !== null && councilScores[1]?.score !== null ? (
+                          <span>GVHĐ 1: {Number(councilScores[0].score).toFixed(1)} | GVHĐ 2: {Number(councilScores[1].score).toFixed(1)}</span>
+                        ) : councilScore !== null ? (
+                          <span className="text-emerald-600 font-medium">Đã công bố điểm</span>
                         ) : (
-                          <span>Chờ PB Hội đồng chấm</span>
+                          <span>Chờ Hội đồng chấm</span>
                         )}
                       </div>
                     </div>
@@ -520,7 +673,7 @@ const MyThesisPage = () => {
                     {/* 4. Điểm Tổng Kết */}
                     <div
                       className={`p-4 rounded-2xl border space-y-1 text-center relative flex flex-col justify-between ${
-                        isFullGraded
+                        isFinalPublished && isFullGraded && finalScore !== null
                           ? 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-200'
                           : 'bg-slate-50 text-slate-700 border-slate-200'
                       }`}
@@ -528,7 +681,7 @@ const MyThesisPage = () => {
                       <div>
                         <div
                           className={`text-[11px] font-bold uppercase tracking-wider ${
-                            isFullGraded ? 'text-emerald-100' : 'text-slate-600'
+                            isFinalPublished && isFullGraded && finalScore !== null ? 'text-emerald-100' : 'text-slate-600'
                           }`}
                         >
                           ĐIỂM TỔNG KẾT
@@ -536,7 +689,12 @@ const MyThesisPage = () => {
                       </div>
 
                       <div className="py-2">
-                        {isFullGraded && finalScore !== null ? (
+                        {!isFinalPublished ? (
+                          <div className="text-xs font-semibold text-slate-400 py-1 flex items-center justify-center gap-1.5">
+                            <span className="inline-block w-2 h-2 rounded-full bg-slate-300"></span>
+                            <span>Chưa công bố</span>
+                          </div>
+                        ) : isFullGraded && finalScore !== null ? (
                           <div className="font-mono text-2xl font-black text-white">
                             {finalScore.toFixed(2)}{' '}
                             <span className="text-xs font-normal text-emerald-200">/ 10</span>
@@ -550,15 +708,17 @@ const MyThesisPage = () => {
 
                       <div
                         className={`text-[10.5px] pt-1 border-t ${
-                          isFullGraded
+                          isFinalPublished && isFullGraded && finalScore !== null
                             ? 'border-emerald-500/60 text-emerald-100 font-medium'
                             : 'border-slate-200 text-slate-400'
                         }`}
                       >
-                        {isFullGraded ? (
+                        {!isFinalPublished ? (
+                          <span className="text-slate-400">—</span>
+                        ) : isFullGraded && finalScore !== null ? (
                           <span>{finalScore >= 8.5 ? 'Xuất sắc' : finalScore >= 8.0 ? 'Giỏi' : finalScore >= 7.0 ? 'Khá' : 'Đạt'}</span>
                         ) : (
-                          <span>Chưa hoàn tất</span>
+                          <span>Chưa hoàn tất các cột điểm</span>
                         )}
                       </div>
                     </div>
@@ -591,7 +751,11 @@ const MyThesisPage = () => {
                               Nhận xét:
                             </span>
                             <p className="text-slate-800 text-xs leading-relaxed bg-white p-3 rounded-xl border border-slate-200/60 whitespace-pre-wrap">
-                              {ev.comment || 'Chưa có nhận xét.'}
+                              {!ev.isPublished ? (
+                                <span className="text-slate-400 italic">Nhận xét sẽ hiển thị khi điểm được công bố.</span>
+                              ) : (
+                                ev.comment || <span className="text-slate-400 italic">Chưa có nhận xét.</span>
+                              )}
                             </p>
                           </div>
                         </div>

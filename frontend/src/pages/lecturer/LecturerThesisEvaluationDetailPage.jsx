@@ -258,7 +258,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Toggle criteria checkbox
   const handleToggleCriteria = (criteriaId) => {
-    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+    if (isCompleted || isRejected) {
       return;
     }
     const idStr = criteriaId.toString();
@@ -269,7 +269,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Check all criteria
   const handleCheckAllCriteria = () => {
-    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+    if (isCompleted || isRejected) {
       return;
     }
     setCheckedCriteriaIds(criteriaList.map((c) => c._id.toString()));
@@ -277,7 +277,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Uncheck all criteria
   const handleUncheckAllCriteria = () => {
-    if (isCompleted || isRejected || (activeRoleTab === 'SUPERVISOR' && isPeriodClosedForSupervisor)) {
+    if (isCompleted || isRejected) {
       return;
     }
     setCheckedCriteriaIds([]);
@@ -752,12 +752,13 @@ const LecturerThesisEvaluationDetailPage = () => {
                 </p>
               </div>
 
-              {!isCompleted && !isRejected && !isPeriodClosedForSupervisor && (
+              {!isCompleted && !isRejected && (
                 <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={handleCheckAllCriteria}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl border border-emerald-200 transition cursor-pointer shadow-2xs"
+                    title="Đánh dấu đạt tất cả các tiêu chí"
                   >
                     <CheckSquare className="w-4 h-4" />
                     <span>Tick tất cả</span>
@@ -766,9 +767,10 @@ const LecturerThesisEvaluationDetailPage = () => {
                     type="button"
                     onClick={handleUncheckAllCriteria}
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-600 text-xs font-bold rounded-xl border border-slate-200 transition cursor-pointer"
+                    title="Bỏ chọn tất cả tiêu chí"
                   >
                     <X className="w-4 h-4" />
-                    <span>Bỏ chọn</span>
+                    <span>Bỏ chọn tất cả</span>
                   </button>
                 </div>
               )}
@@ -796,7 +798,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                         type="checkbox"
                         checked={isChecked}
                         onChange={() => handleToggleCriteria(crit._id)}
-                        disabled={isCompleted || isRejected || isPeriodClosedForSupervisor}
+                        disabled={isCompleted || isRejected}
                         className="w-5 h-5 text-emerald-600 rounded-lg border-slate-300 focus:ring-emerald-500 mt-0.5 cursor-pointer"
                       />
                       <div className="flex-1">

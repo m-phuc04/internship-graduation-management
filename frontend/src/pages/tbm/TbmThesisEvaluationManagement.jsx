@@ -77,6 +77,7 @@ const TbmThesisEvaluationManagement = () => {
 
   // Publish Scores Modal
   const [publishModalOpen, setPublishModalOpen] = useState(false);
+  const [publishTargetThesis, setPublishTargetThesis] = useState(null);
 
   // ==========================================
   // TAB 2: CRITERIA STATE
@@ -459,6 +460,12 @@ const TbmThesisEvaluationManagement = () => {
   }, [theses, getThesisScoreInfo]);
 
   const handleOpenPublishAllModal = () => {
+    setPublishTargetThesis(null);
+    setPublishModalOpen(true);
+  };
+
+  const handleOpenPublishIndividualModal = (thesis) => {
+    setPublishTargetThesis(thesis);
     setPublishModalOpen(true);
   };
 
@@ -466,12 +473,27 @@ const TbmThesisEvaluationManagement = () => {
     const termId = currentTerm?._id || 'default';
     const key = `tbm_published_scores_${termId}`;
     const updated = { ...publishedScores };
+
     theses.forEach((t) => {
       updated[t._id] = { ...selectedScores };
     });
     updated['GLOBAL_ALL'] = { ...selectedScores };
+
     setPublishedScores(updated);
     localStorage.setItem(key, JSON.stringify(updated));
+    localStorage.setItem('tbm_published_scores_default', JSON.stringify(updated));
+    localStorage.setItem('tbm_global_published_scores', JSON.stringify(selectedScores));
+    localStorage.setItem('tbm_published_scores_global', JSON.stringify(selectedScores));
+    window.dispatchEvent(new Event('storage'));
+
+    try {
+      await thesisApi.publishScores({
+        academicTermId: currentTerm?._id || '',
+        selectedScores,
+      });
+    } catch (err) {
+      console.warn('Could not sync published scores to database:', err);
+    }
   };
 
   // ==========================================
@@ -1381,9 +1403,14 @@ const TbmThesisEvaluationManagement = () => {
       {/* ========================================== */}
       <PublishScoresModal
         isOpen={publishModalOpen}
-        onClose={() => setPublishModalOpen(false)}
-        isAll={true}
+        onClose={() => {
+          setPublishModalOpen(false);
+          setPublishTargetThesis(null);
+        }}
+        isAll={!publishTargetThesis}
         thesesCount={theses.length}
+        thesis={publishTargetThesis}
+        scoreInfo={publishTargetThesis ? getThesisScoreInfo(publishTargetThesis) : null}
         batchScoreAvailability={batchScoreAvailability}
         publishedScores={publishedScores}
         onPublishScores={handleSavePublishedScores}

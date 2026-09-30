@@ -790,6 +790,27 @@ const processExpiredGradingPeriods = async (req, res, next) => {
   }
 };
 
+// ====================
+// Publish Scores (TBM)
+// ====================
+const publishScores = async (req, res, next) => {
+  try {
+    const { academicTermId, selectedScores } = req.body;
+    const result = await thesisService.publishScores({
+      academicTermId,
+      selectedScores,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật công bố điểm cho các đề tài thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createThesis,
   lookupStudent,
@@ -812,6 +833,7 @@ export default {
   toggleAllThesisScoresLock,
   getThesesForEvaluation,
   completeThesisEvaluation,
+  publishScores,
   exportTheses,
   // Criteria & Grading Period Management
   getThesisEvaluationCriteria,

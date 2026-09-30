@@ -242,6 +242,15 @@ const thesisSchema = new mongoose.Schema(
       trim: true,
       default: null,
     },
+
+    publishedScores: {
+      supervisorScore: { type: Boolean, default: false },
+      reviewer1Score: { type: Boolean, default: false },
+      reviewerScore: { type: Boolean, default: false },
+      reviewer2Score: { type: Boolean, default: false },
+      councilScore: { type: Boolean, default: false },
+      finalScore: { type: Boolean, default: false },
+    },
   },
   {
     timestamps: true,

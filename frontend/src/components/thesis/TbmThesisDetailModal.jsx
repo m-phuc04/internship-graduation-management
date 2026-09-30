@@ -194,6 +194,14 @@ const TbmThesisDetailModal = ({
                 </span>
               </div>
               {(() => {
+                if (thesis.reviewer1Id) {
+                  return (
+                    <div className="text-slate-900 font-medium">
+                      {thesis.reviewer1Id.academicTitle ? `${thesis.reviewer1Id.academicTitle} ` : ''}
+                      {thesis.reviewer1Id.userId?.fullName || thesis.reviewer1Id.fullName} ({thesis.reviewer1Id.lecturerCode})
+                    </div>
+                  );
+                }
                 let list = [];
                 if (Array.isArray(thesis.reviewers) && thesis.reviewers.length > 0) {
                   list = thesis.reviewers.filter((r) => r.isPrivateReviewer && r.lecturerId);
@@ -206,18 +214,10 @@ const TbmThesisDetailModal = ({
                         const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
                         return (
                           <div key={i} className="text-slate-900 font-medium">
-                            {title}{lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                            {title}{lec.userId?.fullName || lec.fullName || 'Giảng viên'} ({lec.lecturerCode})
                           </div>
                         );
                       })}
-                    </div>
-                  );
-                }
-                if (thesis.reviewer1Id) {
-                  return (
-                    <div className="text-slate-900 font-medium">
-                      {thesis.reviewer1Id.academicTitle ? `${thesis.reviewer1Id.academicTitle} ` : ''}
-                      {thesis.reviewer1Id.userId?.fullName} ({thesis.reviewer1Id.lecturerCode})
                     </div>
                   );
                 }
@@ -234,6 +234,14 @@ const TbmThesisDetailModal = ({
                 </span>
               </div>
               {(() => {
+                if (thesis.reviewer2Id) {
+                  return (
+                    <div className="text-slate-900 font-medium">
+                      {thesis.reviewer2Id.academicTitle ? `${thesis.reviewer2Id.academicTitle} ` : ''}
+                      {thesis.reviewer2Id.userId?.fullName || thesis.reviewer2Id.fullName} ({thesis.reviewer2Id.lecturerCode})
+                    </div>
+                  );
+                }
                 let list = [];
                 if (Array.isArray(thesis.reviewers) && thesis.reviewers.length > 0) {
                   list = thesis.reviewers.filter((r) => r.isCouncilReviewer && r.lecturerId);
@@ -246,18 +254,10 @@ const TbmThesisDetailModal = ({
                         const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
                         return (
                           <div key={i} className="text-slate-900 font-medium">
-                            {title}{lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                            {title}{lec.userId?.fullName || lec.fullName || 'Giảng viên'} ({lec.lecturerCode})
                           </div>
                         );
                       })}
-                    </div>
-                  );
-                }
-                if (thesis.reviewer2Id) {
-                  return (
-                    <div className="text-slate-900 font-medium">
-                      {thesis.reviewer2Id.academicTitle ? `${thesis.reviewer2Id.academicTitle} ` : ''}
-                      {thesis.reviewer2Id.userId?.fullName} ({thesis.reviewer2Id.lecturerCode})
                     </div>
                   );
                 }
@@ -284,13 +284,26 @@ const TbmThesisDetailModal = ({
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
                 <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (20%)</div>
                 <div className="text-sm font-mono font-bold text-[#102d7d] mt-0.5">
-                  {thesis.scores.reviewer1Score !== null ? `${thesis.scores.reviewer1Score}` : '—'}
+                  {thesis.scores.reviewerScore !== null && thesis.scores.reviewerScore !== undefined
+                    ? `${thesis.scores.reviewerScore}`
+                    : thesis.scores.reviewer1Score !== null && thesis.scores.reviewer2Score !== null
+                    ? `${((thesis.scores.reviewer1Score + thesis.scores.reviewer2Score) / 2).toFixed(1)}`
+                    : thesis.scores.reviewer1Score !== null
+                    ? `${thesis.scores.reviewer1Score}`
+                    : thesis.scores.reviewer2Score !== null
+                    ? `${thesis.scores.reviewer2Score}`
+                    : '—'}
                 </div>
+                {(thesis.scores.reviewer1Score !== null || thesis.scores.reviewer2Score !== null) && (
+                  <div className="text-[9px] text-slate-400 font-mono mt-0.5">
+                    GVPB1: {thesis.scores.reviewer1Score ?? '—'} | GVPB2: {thesis.scores.reviewer2Score ?? '—'}
+                  </div>
+                )}
               </div>
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">PB Hội đồng (30%)</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Hội đồng (30%)</div>
                 <div className="text-sm font-mono font-bold text-amber-700 mt-0.5">
-                  {thesis.scores.reviewer2Score !== null ? `${thesis.scores.reviewer2Score}` : '—'}
+                  {thesis.scores.councilScore !== null && thesis.scores.councilScore !== undefined ? `${thesis.scores.councilScore}` : '—'}
                 </div>
               </div>
               <div className="p-2 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
@@ -312,13 +325,13 @@ const TbmThesisDetailModal = ({
                 )}
                 {thesis.reviewer1Comment && (
                   <div className="p-2 bg-white rounded-xl border border-slate-200/80 text-[11px]">
-                    <span className="text-slate-400 font-medium block">Nhận xét của GVPB Kín:</span>
+                    <span className="text-slate-400 font-medium block">Nhận xét của GVPB 1:</span>
                     <span className="text-slate-800">{thesis.reviewer1Comment}</span>
                   </div>
                 )}
                 {thesis.reviewer2Comment && (
                   <div className="p-2 bg-white rounded-xl border border-slate-200/80 text-[11px]">
-                    <span className="text-slate-400 font-medium block">Nhận xét của GVPB Hội đồng:</span>
+                    <span className="text-slate-400 font-medium block">Nhận xét của GVPB 2:</span>
                     <span className="text-slate-800">{thesis.reviewer2Comment}</span>
                   </div>
                 )}

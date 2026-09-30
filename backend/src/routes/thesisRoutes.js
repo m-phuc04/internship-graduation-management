@@ -199,6 +199,14 @@ router.get(
   thesisController.getThesesForEvaluation,
 );
 
+// TBM / ADMIN: Publish score columns for all theses in term
+router.post(
+  "/publish-scores",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.publishScores,
+);
+
 // ==========================================
 // 4. Lecturer / Reviewer / Admin Supervision & Grading Routes
 // ==========================================

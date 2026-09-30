@@ -875,28 +875,10 @@ const assignReviewers = async (
   const supervisorIdStr = thesis.supervisorId.toString();
 
   // If reviewers array is provided from the UI, extract private and council reviewers
-  let effectiveReviewer1Id = reviewer1Id;
-  let effectiveReviewer2Id = reviewer2Id;
-  let effectiveReviewersList = [];
+  if (reviewer1Id !== undefined || reviewer2Id !== undefined) {
+    effectiveReviewer1Id = reviewer1Id || null;
+    effectiveReviewer2Id = reviewer2Id || null;
 
-  if (Array.isArray(reviewers)) {
-    const activeAssignments = reviewers.filter(
-      (r) => r.isPrivateReviewer || r.isCouncilReviewer,
-    );
-
-    const privateRev = reviewers.find((r) => r.isPrivateReviewer);
-    const councilRev = reviewers.find((r) => r.isCouncilReviewer);
-
-    effectiveReviewer1Id = privateRev ? privateRev.lecturerId : null;
-    effectiveReviewer2Id = councilRev ? councilRev.lecturerId : null;
-
-    effectiveReviewersList = activeAssignments.map((r) => ({
-      lecturerId: r.lecturerId,
-      isPrivateReviewer: Boolean(r.isPrivateReviewer),
-      isCouncilReviewer: Boolean(r.isCouncilReviewer),
-    }));
-  } else {
-    // Build reviewers array from reviewer1Id & reviewer2Id
     const map = new Map();
     if (effectiveReviewer1Id) {
       const idStr = effectiveReviewer1Id.toString();
@@ -919,6 +901,22 @@ const assignReviewers = async (
       }
     }
     effectiveReviewersList = Array.from(map.values());
+  } else if (Array.isArray(reviewers)) {
+    const activeAssignments = reviewers.filter(
+      (r) => r.isPrivateReviewer || r.isCouncilReviewer,
+    );
+
+    const privateRev = reviewers.find((r) => r.isPrivateReviewer);
+    const councilRev = reviewers.find((r) => r.isCouncilReviewer);
+
+    effectiveReviewer1Id = privateRev ? privateRev.lecturerId : null;
+    effectiveReviewer2Id = councilRev ? councilRev.lecturerId : null;
+
+    effectiveReviewersList = activeAssignments.map((r) => ({
+      lecturerId: r.lecturerId,
+      isPrivateReviewer: Boolean(r.isPrivateReviewer),
+      isCouncilReviewer: Boolean(r.isCouncilReviewer),
+    }));
   }
 
   // Validate Supervisor != Reviewers (GVHD cannot review their own supervised thesis)
@@ -1414,11 +1412,84 @@ const getThesesForLecturerRole = async (
 
     const isReviewer1 =
       (t.reviewer1Id?._id?.toString() || t.reviewer1Id?.toString()) === idStr ||
-      isPrivateRevInArray;
+      (!t.reviewer1Id && isPrivateRevInArray);
 
     const isReviewer2 =
       (t.reviewer2Id?._id?.toString() || t.reviewer2Id?.toString()) === idStr ||
-      isCouncilRevInArray;
+      (!t.reviewer2Id && isCouncilRevInArray);
+
+    const roles = [];
+    if (isSupervisor) roles.push("GVHD");
+    if (isReviewer1) roles.push("GVPB_KIN");
+    if (isReviewer2) roles.push("GVPB_HOIDONG");
+
+    return {
+      ...t,
+      userRoles: roles,
+      isSupervisor,
+      isReviewer1,
+      isReviewer2,
+      canGradeSupervisor: isSupervisor && !["COMPLETED", "REJECTED"].includes(t.status),
+      canGradeReviewer1: isReviewer1 && !["COMPLETED", "REJECTED"].includes(t.status),
+      canGradeReviewer2: isReviewer2 && !["COMPLETED", "REJECTED"].includes(t.status),
+    };
+  });
+
+  // Also fetch all active theses in the term so council/room assignments can locate any thesis
+  const termQuery = {};
+  if (academicTermId && academicTermId !== "ALL") {
+    termQuery.academicTermId = academicTermId;
+  }
+  const allTermTheses = await Thesis.find({
+    ...termQuery,
+    status: { $nin: ["CANCELLED"] },
+  })
+    .sort({ createdAt: -1 })
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer1Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer2Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewers.lecturerId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("academicTermId")
+    .lean();
+
+  const allThesesAnnotated = allTermTheses.map((t) => {
+    const isSupervisor =
+      (t.supervisorId?._id?.toString() || t.supervisorId?.toString()) === idStr;
+
+    const isPrivateRevInArray = Array.isArray(t.reviewers) && t.reviewers.some(
+      (r) => ((r.lecturerId?._id?.toString() || r.lecturerId?.toString()) === idStr) && r.isPrivateReviewer
+    );
+    const isCouncilRevInArray = Array.isArray(t.reviewers) && t.reviewers.some(
+      (r) => ((r.lecturerId?._id?.toString() || r.lecturerId?.toString()) === idStr) && r.isCouncilReviewer
+    );
+
+    const isReviewer1 =
+      (t.reviewer1Id?._id?.toString() || t.reviewer1Id?.toString()) === idStr ||
+      (!t.reviewer1Id && isPrivateRevInArray);
+
+    const isReviewer2 =
+      (t.reviewer2Id?._id?.toString() || t.reviewer2Id?.toString()) === idStr ||
+      (!t.reviewer2Id && isCouncilRevInArray);
 
     const roles = [];
     if (isSupervisor) roles.push("GVHD");
@@ -1449,7 +1520,7 @@ const getThesesForLecturerRole = async (
       lecturerCode: lecturer.lecturerCode,
     },
     theses: results,
-    allTheses: results,
+    allTheses: allThesesAnnotated,
     supervisedTheses,
     reviewer1Theses,
     reviewer2Theses,
@@ -1672,30 +1743,36 @@ const gradeThesisByLecturer = async (
   } else if (
     activeRole === "REVIEWER_2" ||
     activeRole === "REVIEWER2" ||
-    activeRole === "GVPB_HOIDONG"
+    activeRole === "GVPB_2" ||
+    activeRole === "GVPB2"
   ) {
     if (thesis.scores?.isReviewer2ScoreLocked) {
-      throw new AppError("Điểm phản biện hội đồng của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
+      throw new AppError("Điểm phản biện 2 của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
     }
 
-    // Ensure lecturer is registered as council reviewer on the thesis
     if (!thesis.reviewer2Id) {
       thesis.reviewer2Id = lecturer._id;
     }
-    if (!Array.isArray(thesis.reviewers)) {
-      thesis.reviewers = [];
-    }
-    const alreadyInReviewers = thesis.reviewers.some(
-      (r) => (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr && r.isCouncilReviewer
-    );
-    if (!alreadyInReviewers) {
-      thesis.reviewers.push({
-        lecturerId: lecturer._id,
-        isCouncilReviewer: true,
-        assignedAt: new Date(),
-      });
+
+    if (s1 !== null) thesis.scores.student1Reviewer2Score = s1;
+    if (s2 !== null) thesis.scores.student2Reviewer2Score = s2;
+
+    const finalS1 = thesis.scores.student1Reviewer2Score ?? null;
+    const finalS2 = thesis.scores.student2Reviewer2Score ?? null;
+    if (finalS1 !== null && finalS2 !== null) {
+      thesis.scores.reviewer2Score = Number(((finalS1 + finalS2) / 2).toFixed(2));
+    } else {
+      thesis.scores.reviewer2Score = finalS1 ?? finalS2 ?? effectiveScore;
     }
 
+    if (comment !== undefined) thesis.reviewer2Comment = comment ? comment.trim() : null;
+  } else if (
+    activeRole === "COUNCIL" ||
+    activeRole === "COUNCIL_MEMBER" ||
+    activeRole === "GV_HOIDONG" ||
+    activeRole === "HOIDONG" ||
+    activeRole === "GVPB_HOIDONG"
+  ) {
     // Store this lecturer's individual council score
     if (!Array.isArray(thesis.scores.councilLecturerScores)) {
       thesis.scores.councilLecturerScores = [];
@@ -1705,7 +1782,7 @@ const gradeThesisByLecturer = async (
     );
     const lecturerScoreData = {
       lecturerId: lecturer._id,
-      lecturerName: lecturer.userId?.fullName || lecturer.fullName || "Giảng viên",
+      lecturerName: lecturer.userId?.fullName || lecturer.fullName || "Giảng viên Hội đồng",
       student1Score: s1,
       student2Score: s2,
       score: effectiveScore,
@@ -1719,69 +1796,88 @@ const gradeThesisByLecturer = async (
       thesis.scores.councilLecturerScores.push(lecturerScoreData);
     }
 
-    // Calculate average council score across all lecturers in the council
-    // STRICT RULE: Hội đồng bắt buộc phải có ĐỦ ÍT NHẤT 2 GIẢNG VIÊN chấm điểm mới tính điểm hội đồng!
-    const validScores = thesis.scores.councilLecturerScores
-      .map((e) => e.score)
-      .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
-
+    // Auto-compute average council score from councilLecturerScores ONLY when at least 2 council lecturers have graded
+    const validScores = thesis.scores.councilLecturerScores.filter(
+      (entry) => entry && entry.score !== null && entry.score !== undefined
+    );
     if (validScores.length >= 2) {
-      const avgCouncilScore = Number(
-        ((validScores[0] + validScores[1]) / 2).toFixed(2)
-      );
-      thesis.scores.reviewer2Score = avgCouncilScore;
-      thesis.scores.councilScore = avgCouncilScore;
-
-      // Calculate average for student 1 & student 2
-      const validS1 = thesis.scores.councilLecturerScores
-        .map((e) => e.student1Score)
-        .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
-      if (validS1.length >= 2) {
-        thesis.scores.student1Reviewer2Score = Number(
-          ((validS1[0] + validS1[1]) / 2).toFixed(2)
-        );
-      } else {
-        thesis.scores.student1Reviewer2Score = null;
-      }
-
-      const validS2 = thesis.scores.councilLecturerScores
-        .map((e) => e.student2Score)
-        .filter((sc) => sc !== null && sc !== undefined && !isNaN(sc));
-      if (validS2.length >= 2) {
-        thesis.scores.student2Reviewer2Score = Number(
-          ((validS2[0] + validS2[1]) / 2).toFixed(2)
-        );
-      } else {
-        thesis.scores.student2Reviewer2Score = null;
-      }
+      const sum = validScores.reduce((acc, curr) => acc + Number(curr.score), 0);
+      thesis.scores.councilScore = Number((sum / validScores.length).toFixed(2));
     } else {
-      // Khi chỉ có 1 giảng viên chấm, KHÔNG tính điểm hội đồng và điểm tổng kết!
-      thesis.scores.reviewer2Score = null;
       thesis.scores.councilScore = null;
-      thesis.scores.student1Reviewer2Score = null;
-      thesis.scores.student2Reviewer2Score = null;
-      thesis.scores.finalScore = null;
-      thesis.scores.student1FinalScore = null;
-      thesis.scores.student2FinalScore = null;
     }
 
-    if (comment !== undefined) thesis.reviewer2Comment = comment ? comment.trim() : null;
+    const s1List = thesis.scores.councilLecturerScores
+      .map((e) => e.student1Score)
+      .filter((v) => v !== null && v !== undefined);
+    if (s1List.length >= 2) {
+      thesis.scores.student1CouncilScore = Number(
+        (s1List.reduce((acc, curr) => acc + Number(curr), 0) / s1List.length).toFixed(2)
+      );
+    } else {
+      thesis.scores.student1CouncilScore = null;
+    }
+
+    const s2List = thesis.scores.councilLecturerScores
+      .map((e) => e.student2Score)
+      .filter((v) => v !== null && v !== undefined);
+    if (s2List.length >= 2) {
+      thesis.scores.student2CouncilScore = Number(
+        (s2List.reduce((acc, curr) => acc + Number(curr), 0) / s2List.length).toFixed(2)
+      );
+    } else {
+      thesis.scores.student2CouncilScore = null;
+    }
   } else {
     throw new AppError("Vai trò đánh giá không hợp lệ", 400);
   }
 
-  // Auto-calculate final score if all 3 scores are present: GVHD (50%) + PB Kín (20%) + Hội Đồng (30%)
-  if (
-    thesis.scores.supervisorScore !== null &&
-    thesis.scores.supervisorScore !== undefined &&
-    thesis.scores.reviewer1Score !== null &&
-    thesis.scores.reviewer1Score !== undefined &&
-    thesis.scores.councilScore !== null &&
-    thesis.scores.councilScore !== undefined
-  ) {
+  // Auto-calculate combined reviewer score (Trung bình cộng của GVPB 1 và GVPB 2)
+  const hasPB1 = thesis.scores.reviewer1Score !== null && thesis.scores.reviewer1Score !== undefined;
+  const hasPB2 = thesis.scores.reviewer2Score !== null && thesis.scores.reviewer2Score !== undefined;
+  if (hasPB1 && hasPB2) {
+    thesis.scores.reviewerScore = Number(((thesis.scores.reviewer1Score + thesis.scores.reviewer2Score) / 2).toFixed(2));
+  } else if (hasPB1) {
+    thesis.scores.reviewerScore = thesis.scores.reviewer1Score;
+  } else if (hasPB2) {
+    thesis.scores.reviewerScore = thesis.scores.reviewer2Score;
+  }
+
+  // Student 1 combined reviewer score
+  const s1_pb1 = thesis.scores.student1Reviewer1Score;
+  const s1_pb2 = thesis.scores.student1Reviewer2Score;
+  let s1_rev = null;
+  if (s1_pb1 != null && s1_pb2 != null) {
+    s1_rev = Number(((s1_pb1 + s1_pb2) / 2).toFixed(2));
+  } else if (s1_pb1 != null) {
+    s1_rev = s1_pb1;
+  } else if (s1_pb2 != null) {
+    s1_rev = s1_pb2;
+  }
+  thesis.scores.student1ReviewerScore = s1_rev;
+
+  // Student 2 combined reviewer score
+  const s2_pb1 = thesis.scores.student2Reviewer1Score;
+  const s2_pb2 = thesis.scores.student2Reviewer2Score;
+  let s2_rev = null;
+  if (s2_pb1 != null && s2_pb2 != null) {
+    s2_rev = Number(((s2_pb1 + s2_pb2) / 2).toFixed(2));
+  } else if (s2_pb1 != null) {
+    s2_rev = s2_pb1;
+  } else if (s2_pb2 != null) {
+    s2_rev = s2_pb2;
+  }
+  thesis.scores.student2ReviewerScore = s2_rev;
+
+  // Auto-calculate final score: GVHD (50%) + PB Kín (20%) + Hội đồng (30%)
+  const hasSup = thesis.scores.supervisorScore !== null && thesis.scores.supervisorScore !== undefined;
+  const hasRev = thesis.scores.reviewerScore !== null && thesis.scores.reviewerScore !== undefined;
+  const hasCoun = thesis.scores.councilScore !== null && thesis.scores.councilScore !== undefined;
+
+  if (hasSup && hasRev && hasCoun) {
     const final =
       thesis.scores.supervisorScore * 0.5 +
-      thesis.scores.reviewer1Score * 0.2 +
+      thesis.scores.reviewerScore * 0.2 +
       thesis.scores.councilScore * 0.3;
 
     thesis.scores.finalScore = Number(final.toFixed(2));
@@ -1793,33 +1889,31 @@ const gradeThesisByLecturer = async (
   }
 
   // Calculate individual final scores if available
-  if (
-    thesis.scores.student1SupervisorScore != null &&
-    thesis.scores.student1Reviewer1Score != null &&
-    thesis.scores.student1Reviewer2Score != null
-  ) {
+  const s1_sup = thesis.scores.student1SupervisorScore;
+  const s2_sup = thesis.scores.student2SupervisorScore;
+  const s1_coun = thesis.scores.student1CouncilScore ?? (hasCoun ? thesis.scores.councilScore : null);
+  const s2_coun = thesis.scores.student2CouncilScore ?? (hasCoun ? thesis.scores.councilScore : null);
+
+  if (s1_sup != null && s1_rev != null && s1_coun != null) {
     thesis.scores.student1FinalScore = Number(
       (
-        thesis.scores.student1SupervisorScore * 0.5 +
-        thesis.scores.student1Reviewer1Score * 0.2 +
-        thesis.scores.student1Reviewer2Score * 0.3
+        s1_sup * 0.5 +
+        s1_rev * 0.2 +
+        s1_coun * 0.3
       ).toFixed(2),
     );
   }
-  if (
-    thesis.scores.student2SupervisorScore != null &&
-    thesis.scores.student2Reviewer1Score != null &&
-    thesis.scores.student2Reviewer2Score != null
-  ) {
+  if (s2_sup != null && s2_rev != null && s2_coun != null) {
     thesis.scores.student2FinalScore = Number(
       (
-        thesis.scores.student2SupervisorScore * 0.5 +
-        thesis.scores.student2Reviewer1Score * 0.2 +
-        thesis.scores.student2Reviewer2Score * 0.3
+        s2_sup * 0.5 +
+        s2_rev * 0.2 +
+        s2_coun * 0.3
       ).toFixed(2),
     );
   }
 
+  thesis.markModified("scores");
   await thesis.save();
 
   return await Thesis.findById(thesis._id)
@@ -3242,6 +3336,35 @@ const processExpiredGradingPeriods = async (academicTermId) => {
   };
 };
 
+// ====================
+// Publish Scores (TBM)
+// ====================
+const publishScores = async ({ academicTermId, selectedScores }) => {
+  const query = {};
+  if (academicTermId && academicTermId !== "ALL") {
+    query.academicTermId = academicTermId;
+  }
+
+  const update = {
+    $set: {
+      "publishedScores.supervisorScore": Boolean(selectedScores?.supervisorScore),
+      "publishedScores.reviewer1Score": Boolean(selectedScores?.reviewer1Score),
+      "publishedScores.reviewerScore": Boolean(selectedScores?.reviewer1Score || selectedScores?.reviewerScore),
+      "publishedScores.reviewer2Score": Boolean(selectedScores?.reviewer2Score),
+      "publishedScores.councilScore": Boolean(selectedScores?.councilScore),
+      "publishedScores.finalScore": Boolean(selectedScores?.finalScore),
+    },
+  };
+
+  const result = await Thesis.updateMany(query, update);
+  return {
+    success: true,
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount,
+    selectedScores,
+  };
+};
+
 export default {
   createThesis,
   lookupStudentByCode,
@@ -3264,6 +3387,7 @@ export default {
   toggleAllThesisScoresLock,
   getThesesForEvaluation,
   completeThesisEvaluation,
+  publishScores,
   // Criteria & Grading Period Management
   getThesisEvaluationCriteria,
   createThesisEvaluationCriteria,
