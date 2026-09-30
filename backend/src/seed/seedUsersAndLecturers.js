@@ -7,6 +7,9 @@ import User from "../models/User.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import Permission from "../models/Permission.js";
+import ThesisTopic from "../models/ThesisTopic.js";
+import AcademicTerm from "../models/AcademicTerm.js";
+import { kltnTopicsData } from "./kltnTopicsData.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,6 +21,8 @@ const seedUsersAndLecturers = async () => {
   let createdLecturersCount = 0;
   let skippedStudentsCount = 0;
   let skippedLecturersCount = 0;
+  let createdTopicsCount = 0;
+  let skippedTopicsCount = 0;
   let errorsCount = 0;
 
   try {
@@ -221,8 +226,8 @@ const seedUsersAndLecturers = async () => {
         userCode: "20240004",
         lecturerCode: "GV0004",
         academicTitle: "TS.",
-        fullName: "Lê Thị Thủy",
-        displayTitle: "TS. Lê Thị Thủy",
+        fullName: "Lê Thị Thúy",
+        displayTitle: "TS. Lê Thị Thúy",
         email: "gv0004@iuh.edu.vn",
         phone: "0908000004",
         specialization: "Học máy & Khai phá Dữ liệu",
@@ -397,7 +402,85 @@ const seedUsersAndLecturers = async () => {
     }
 
     // ==========================================
-    // III. TỔNG KẾT
+    // III. SEED ĐỀ TÀI KLTN MẪU (46 ĐỀ TÀI)
+    // ==========================================
+    console.log("\n=== SEED ĐỀ TÀI KHÓA LUẬN TỐT NGHIỆP (KLTN) ===");
+
+    // Lấy Học kỳ đang ACTIVE (nếu có)
+    let activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" });
+    if (!activeTerm) {
+      activeTerm = await AcademicTerm.findOne().sort({ createdAt: -1 });
+    }
+
+    // Nhóm và đếm số lượng kỳ vọng của từng (lecturerCode + title) trong kltnTopicsData
+    // để hỗ trợ chính xác các trường hợp đề tài cố ý trùng lặp (ví dụ: 3 đề tài của ThS. Phạm Thái Khanh)
+    // và đảm bảo tính idempotent khi chạy lại script nhiều lần.
+    const topicTargetCounts = new Map();
+    for (const item of kltnTopicsData) {
+      const key = `${item.lecturerCode}___${item.title}`;
+      topicTargetCounts.set(key, (topicTargetCounts.get(key) || 0) + 1);
+    }
+
+    const processedKeys = new Set();
+
+    for (const item of kltnTopicsData) {
+      const key = `${item.lecturerCode}___${item.title}`;
+      if (processedKeys.has(key)) {
+        continue;
+      }
+      processedKeys.add(key);
+
+      const targetCount = topicTargetCounts.get(key);
+
+      try {
+        // Tìm giảng viên theo lecturerCode
+        const lecturer = await Lecturer.findOne({ lecturerCode: item.lecturerCode }).populate("userId");
+        if (!lecturer) {
+          console.error(`✗ Không tìm thấy giảng viên ${item.supervisorName} (${item.lecturerCode})`);
+          errorsCount++;
+          continue;
+        }
+
+        // Đếm số lượng bản ghi đã tồn tại trong DB với cùng supervisorId và title
+        const existingCount = await ThesisTopic.countDocuments({
+          supervisorId: lecturer._id,
+          title: item.title,
+        });
+
+        const needToCreate = Math.max(0, targetCount - existingCount);
+
+        if (needToCreate > 0) {
+          for (let i = 0; i < needToCreate; i++) {
+            await ThesisTopic.create({
+              title: item.title,
+              supervisorId: lecturer._id,
+              academicTermId: activeTerm?._id || null,
+              maxGroups: 1,
+              currentGroups: 0,
+              description: null,
+              status: "APPROVED",
+              approvedAt: new Date(),
+            });
+            createdTopicsCount++;
+            console.log(`✓ [KLTN] [${item.lecturerCode} - ${item.supervisorName}] ${item.title}`);
+          }
+        }
+
+        const alreadyExistCount = Math.min(existingCount, targetCount);
+        if (alreadyExistCount > 0) {
+          for (let i = 0; i < alreadyExistCount; i++) {
+            skippedTopicsCount++;
+          }
+          console.log(`- [KLTN] Đã có ${alreadyExistCount}/${targetCount} bản ghi: [${item.lecturerCode} - ${item.supervisorName}] ${item.title} (Bỏ qua duplicate)`);
+        }
+      } catch (err) {
+        console.error(`✗ Lỗi khi tạo đề tài "${item.title}":`, err.message);
+        errorsCount++;
+      }
+    }
+
+    // ==========================================
+    // IV. TỔNG KẾT
     // ==========================================
     console.log("\n==========================================");
     console.log("📊 KẾT QUẢ SEED DỮ LIỆU:");
@@ -406,6 +489,8 @@ const seedUsersAndLecturers = async () => {
     console.log(`- Giảng viên đã tạo mới: ${createdLecturersCount}`);
     console.log(`- Tài khoản sinh viên đã bỏ qua (đã có): ${skippedStudentsCount}`);
     console.log(`- Tài khoản giảng viên đã bỏ qua (đã có): ${skippedLecturersCount}`);
+    console.log(`- Đề tài KLTN đã tạo mới: ${createdTopicsCount}`);
+    console.log(`- Đề tài KLTN đã bỏ qua (đã có): ${skippedTopicsCount}`);
     console.log(`- Tổng số lỗi: ${errorsCount}`);
     console.log("------------------------------------------");
     console.log("🔑 MẬT KHẨU ĐĂNG NHẬP MẶC ĐỊNH: 11111111");
