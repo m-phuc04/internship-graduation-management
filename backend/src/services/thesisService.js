@@ -378,6 +378,14 @@ const getMyThesis = async (userId, academicTermId = null) => {
       path: "reviewer2Id",
       populate: { path: "userId", select: "fullName email phone" },
     })
+    .populate({
+      path: "reviewers.lecturerId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "scores.councilLecturerScores.lecturerId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
     .populate("academicTermId");
 
   const canRegisterNew =

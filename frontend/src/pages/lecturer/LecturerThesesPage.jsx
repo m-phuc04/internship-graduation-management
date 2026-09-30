@@ -1302,7 +1302,7 @@ const LecturerThesesPage = () => {
 
                           const scoreGVHD1 = scoreEntry1 ? (scoreEntry1.score ?? scoreEntry1.student1Score) : null;
                           const scoreGVHD2 = scoreEntry2 && scoreEntry2 !== scoreEntry1 ? (scoreEntry2.score ?? scoreEntry2.student1Score) : (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1].score : null);
-
+                          const hasTwoLecturers = Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2;
                           let scoreCouncil = null;
                           // STRICT: Chỉ tính điểm hội đồng khi CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 và GVHĐ 2) ĐÃ CHẤM!
                           if (
@@ -1412,7 +1412,7 @@ const LecturerThesesPage = () => {
                                   <span className="font-bold text-[#123891] bg-blue-100/90 px-2.5 py-1 rounded-lg border border-blue-300 shadow-2xs">
                                     {scoreCouncil}
                                   </span>
-                                ) : hasTwoLecturers && (scoreGVHD1 !== null || scoreGVHD2 !== null) ? (
+                                ) : (Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2 && (scoreGVHD1 !== null || scoreGVHD2 !== null)) ? (
                                   <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính trung bình">
                                     Chờ GV còn lại
                                   </span>

@@ -77,8 +77,6 @@ const TbmThesisEvaluationManagement = () => {
 
   // Publish Scores Modal
   const [publishModalOpen, setPublishModalOpen] = useState(false);
-  const [thesisToPublish, setThesisToPublish] = useState(null);
-  const [thesisToPublishScoreInfo, setThesisToPublishScoreInfo] = useState(null);
 
   // ==========================================
   // TAB 2: CRITERIA STATE
@@ -406,19 +404,72 @@ const TbmThesisEvaluationManagement = () => {
     setDetailModalOpen(true);
   };
 
-  const handleOpenPublishModal = (item, scoreInfo) => {
-    setThesisToPublish(item);
-    setThesisToPublishScoreInfo(scoreInfo);
+  // ==========================================
+  // BATCH SCORE AVAILABILITY (Kiểm tra 100% đề tài có điểm mới cho phép công bố)
+  // ==========================================
+  const batchScoreAvailability = useMemo(() => {
+    const list = theses;
+    const total = list.length;
+    if (total === 0) {
+      return {
+        totalTheses: 0,
+        supervisorScore: { hasAll: false, count: 0, total: 0 },
+        reviewer1Score: { hasAll: false, count: 0, total: 0 },
+        councilScore: { hasAll: false, count: 0, total: 0 },
+        finalScore: { hasAll: false, count: 0, total: 0 },
+      };
+    }
+
+    let hdCount = 0;
+    let pb1Count = 0;
+    let councilCount = 0;
+    let finalCount = 0;
+
+    list.forEach((item) => {
+      const info = getThesisScoreInfo(item);
+      if (info.hasHD) hdCount++;
+      if (info.hasPB1) pb1Count++;
+      if (info.hasCouncil) councilCount++;
+      if (info.finalScore !== null && info.finalScore !== undefined) finalCount++;
+    });
+
+    return {
+      totalTheses: total,
+      supervisorScore: {
+        hasAll: hdCount === total,
+        count: hdCount,
+        total,
+      },
+      reviewer1Score: {
+        hasAll: pb1Count === total,
+        count: pb1Count,
+        total,
+      },
+      councilScore: {
+        hasAll: councilCount === total,
+        count: councilCount,
+        total,
+      },
+      finalScore: {
+        hasAll: finalCount === total,
+        count: finalCount,
+        total,
+      },
+    };
+  }, [theses, getThesisScoreInfo]);
+
+  const handleOpenPublishAllModal = () => {
     setPublishModalOpen(true);
   };
 
-  const handleSavePublishedScores = async (thesisId, selectedScores) => {
+  const handleSavePublishedScores = async (selectedScores) => {
     const termId = currentTerm?._id || 'default';
     const key = `tbm_published_scores_${termId}`;
-    const updated = {
-      ...publishedScores,
-      [thesisId]: selectedScores,
-    };
+    const updated = { ...publishedScores };
+    theses.forEach((t) => {
+      updated[t._id] = { ...selectedScores };
+    });
+    updated['GLOBAL_ALL'] = { ...selectedScores };
     setPublishedScores(updated);
     localStorage.setItem(key, JSON.stringify(updated));
   };
@@ -762,21 +813,34 @@ const TbmThesisEvaluationManagement = () => {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
-              {STATUS_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setStatusFilter(opt.value)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                    statusFilter === opt.value
-                      ? 'bg-white text-[#102d7d] shadow-2xs font-bold'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                  }`}
-                >
-                  {opt.label}
-                </button>
-              ))}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
+                {STATUS_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setStatusFilter(opt.value)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                      statusFilter === opt.value
+                        ? 'bg-white text-[#102d7d] shadow-2xs font-bold'
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Nút Công bố điểm tất cả đề tài */}
+              <button
+                type="button"
+                onClick={handleOpenPublishAllModal}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer shrink-0"
+                title="Công bố điểm cho tất cả các đề tài khóa luận"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Công bố điểm tất cả đề tài</span>
+              </button>
             </div>
           </div>
 
@@ -996,25 +1060,7 @@ const TbmThesisEvaluationManagement = () => {
                                 <Eye className="w-4 h-4" />
                               </button>
 
-                              {/* Công bố điểm button */}
-                              <button
-                                type="button"
-                                onClick={() => handleOpenPublishModal(item, scoreInfo)}
-                                className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
-                                  hasAnyPublished
-                                    ? 'bg-blue-50 text-[#123891] border-blue-200 hover:bg-blue-100'
-                                    : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                                }`}
-                                title="Công bố điểm cho sinh viên"
-                              >
-                                <Send className="w-3.5 h-3.5 text-[#123891]" />
-                                <span>Công bố điểm</span>
-                                {hasAnyPublished && (
-                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                                )}
-                              </button>
-
-                              {/* Nghiệm thu button */}
+{/* Nghiệm thu button */}
                               {!isCompleted && isFullyGraded && (
                                 <button
                                   type="button"
@@ -1335,13 +1381,10 @@ const TbmThesisEvaluationManagement = () => {
       {/* ========================================== */}
       <PublishScoresModal
         isOpen={publishModalOpen}
-        onClose={() => {
-          setPublishModalOpen(false);
-          setThesisToPublish(null);
-          setThesisToPublishScoreInfo(null);
-        }}
-        thesis={thesisToPublish}
-        scoreInfo={thesisToPublishScoreInfo}
+        onClose={() => setPublishModalOpen(false)}
+        isAll={true}
+        thesesCount={theses.length}
+        batchScoreAvailability={batchScoreAvailability}
         publishedScores={publishedScores}
         onPublishScores={handleSavePublishedScores}
       />
