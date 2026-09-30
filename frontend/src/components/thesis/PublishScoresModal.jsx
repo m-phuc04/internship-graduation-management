@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { useToast } from '../../context/ToastContext';
-import { Send, Check, AlertCircle, BookOpen, CheckSquare, Square, Radio, Sparkles } from 'lucide-react';
+import { Send, Check, BookOpen } from 'lucide-react';
 
 const PublishScoresModal = ({
   isOpen,
   onClose,
-  thesis,
-  scoreInfo,
+  isAll = false,
+  thesesCount = 0,
+  thesis = null,
+  scoreInfo = null,
   publishedScores = {},
   onPublishScores,
 }) => {
@@ -25,50 +27,92 @@ const PublishScoresModal = ({
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isOpen && thesis) {
-      const prev = publishedScores[thesis._id] || {};
-      setSelectedScores({
-        supervisorScore: !!prev.supervisorScore,
-        reviewer1Score: !!(prev.reviewer1Score || prev.reviewerScore || prev.reviewer2Score),
-        councilScore: !!prev.councilScore,
-        finalScore: !!prev.finalScore,
-      });
+    if (isOpen) {
+      if (isAll) {
+        const globalSetting = publishedScores['GLOBAL_ALL'] || {};
+        setSelectedScores({
+          supervisorScore: !!globalSetting.supervisorScore,
+          reviewer1Score: !!(globalSetting.reviewer1Score || globalSetting.reviewerScore || globalSetting.reviewer2Score),
+          councilScore: !!globalSetting.councilScore,
+          finalScore: !!globalSetting.finalScore,
+        });
+      } else if (thesis) {
+        const prev = publishedScores[thesis._id] || {};
+        setSelectedScores({
+          supervisorScore: !!prev.supervisorScore,
+          reviewer1Score: !!(prev.reviewer1Score || prev.reviewerScore || prev.reviewer2Score),
+          councilScore: !!prev.councilScore,
+          finalScore: !!prev.finalScore,
+        });
+      }
       setConfirmOpen(false);
     }
-  }, [isOpen, thesis, publishedScores]);
+  }, [isOpen, isAll, thesis, publishedScores]);
 
-  if (!thesis || !scoreInfo) return null;
+  if (!isOpen) return null;
+  if (!isAll && (!thesis || !scoreInfo)) return null;
 
-  const scoreItems = [
-    {
-      key: 'supervisorScore',
-      label: 'Điểm Giảng viên Hướng dẫn (GVHD)',
-      score: scoreInfo.scoreHD,
-      hasScore: scoreInfo.hasHD,
-      weight: '50%',
-    },
-    {
-      key: 'reviewer1Score',
-      label: 'Điểm Phản biện kín',
-      score: scoreInfo.scorePB1,
-      hasScore: scoreInfo.hasPB1,
-      weight: '20%',
-    },
-    {
-      key: 'councilScore',
-      label: 'Điểm Hội đồng bảo vệ',
-      score: scoreInfo.scoreCouncil,
-      hasScore: scoreInfo.hasCouncil,
-      weight: '30%',
-    },
-    {
-      key: 'finalScore',
-      label: 'Điểm Tổng kết Khóa Luận',
-      score: scoreInfo.finalScore,
-      hasScore: scoreInfo.finalScore !== null && scoreInfo.finalScore !== undefined,
-      weight: '100%',
-    },
-  ];
+  const scoreItems = isAll
+    ? [
+        {
+          key: 'supervisorScore',
+          label: 'Điểm Giảng viên Hướng dẫn (GVHD)',
+          score: null,
+          hasScore: true,
+          weight: '50%',
+        },
+        {
+          key: 'reviewer1Score',
+          label: 'Điểm Phản biện kín',
+          score: null,
+          hasScore: true,
+          weight: '20%',
+        },
+        {
+          key: 'councilScore',
+          label: 'Điểm Hội đồng bảo vệ',
+          score: null,
+          hasScore: true,
+          weight: '30%',
+        },
+        {
+          key: 'finalScore',
+          label: 'Điểm Tổng kết Khóa Luận',
+          score: null,
+          hasScore: true,
+          weight: '100%',
+        },
+      ]
+    : [
+        {
+          key: 'supervisorScore',
+          label: 'Điểm Giảng viên Hướng dẫn (GVHD)',
+          score: scoreInfo?.scoreHD,
+          hasScore: !!scoreInfo?.hasHD,
+          weight: '50%',
+        },
+        {
+          key: 'reviewer1Score',
+          label: 'Điểm Phản biện kín',
+          score: scoreInfo?.scorePB1,
+          hasScore: !!scoreInfo?.hasPB1,
+          weight: '20%',
+        },
+        {
+          key: 'councilScore',
+          label: 'Điểm Hội đồng bảo vệ',
+          score: scoreInfo?.scoreCouncil,
+          hasScore: !!scoreInfo?.hasCouncil,
+          weight: '30%',
+        },
+        {
+          key: 'finalScore',
+          label: 'Điểm Tổng kết Khóa Luận',
+          score: scoreInfo?.finalScore,
+          hasScore: scoreInfo?.finalScore !== null && scoreInfo?.finalScore !== undefined,
+          weight: '100%',
+        },
+      ];
 
   const handleToggle = (key, hasScore) => {
     if (!hasScore) return;
@@ -97,12 +141,15 @@ const PublishScoresModal = ({
     });
   };
 
-  // Get human-readable list of selected scores for confirmation message
   const getSelectedLabelsList = () => {
     const list = [];
     scoreItems.forEach((item) => {
       if (selectedScores[item.key] && item.hasScore) {
-        list.push(`${item.label}: ${item.score}`);
+        if (isAll) {
+          list.push(`${item.label} (${item.weight})`);
+        } else {
+          list.push(`${item.label}: ${item.score} đ`);
+        }
       }
     });
     return list;
@@ -117,16 +164,31 @@ const PublishScoresModal = ({
     setSubmitting(true);
     try {
       if (onPublishScores) {
-        await onPublishScores(thesis._id, selectedScores);
+        if (isAll) {
+          await onPublishScores(selectedScores);
+        } else {
+          await onPublishScores(thesis._id, selectedScores);
+        }
       }
       const selectedLabels = getSelectedLabelsList();
-      if (selectedLabels.length > 0) {
-        showToast(
-          `Đã công bố ${selectedLabels.length} đầu điểm cho sinh viên đề tài "${thesis.thesisTitle}" thành công!`,
-          'success'
-        );
+      if (isAll) {
+        if (selectedLabels.length > 0) {
+          showToast(
+            `Đã công bố ${selectedLabels.length} đầu điểm cho tất cả ${thesesCount} đề tài khóa luận thành công!`,
+            'success'
+          );
+        } else {
+          showToast('Đã lưu cài đặt không công bố điểm cho tất cả đề tài!', 'info');
+        }
       } else {
-        showToast(`Đã lưu cài đặt không công bố điểm cho đề tài "${thesis.thesisTitle}"!`, 'info');
+        if (selectedLabels.length > 0) {
+          showToast(
+            `Đã công bố ${selectedLabels.length} đầu điểm cho sinh viên đề tài "${thesis.thesisTitle}" thành công!`,
+            'success'
+          );
+        } else {
+          showToast(`Đã lưu cài đặt không công bố điểm cho đề tài "${thesis.thesisTitle}"!`, 'info');
+        }
       }
       setConfirmOpen(false);
       onClose();
@@ -144,41 +206,59 @@ const PublishScoresModal = ({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title="Công Bố Điểm Khóa Luận Tốt Nghiệp"
+        title={isAll ? 'Công Bố Điểm Tất Cả Đề Tài Khóa Luận' : 'Công Bố Điểm Khóa Luận Tốt Nghiệp'}
         maxWidth="max-w-lg"
       >
         <form onSubmit={handleOpenConfirm} className="space-y-4 text-xs">
-          {/* Thesis Info */}
-          <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2 shadow-2xs">
-            <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs font-bold">
-                <BookOpen className="w-4 h-4" />
+          {/* Header Description Box */}
+          {isAll ? (
+            <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1.5 shadow-2xs">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs font-bold">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-slate-900 text-sm leading-snug">
+                    Công bố điểm cho tất cả đề tài ({thesesCount} đề tài)
+                  </h4>
+                  <p className="text-[11px] text-slate-600 mt-0.5">
+                    Chọn các đầu điểm thành phần muốn công bố cho sinh viên của tất cả các đề tài khóa luận trong danh sách.
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <h4 className="font-bold text-slate-900 text-sm leading-snug">
-                  {thesis.thesisTitle}
-                </h4>
-                <div className="text-[11px] text-slate-600 mt-1 space-y-0.5">
-                  <div>
-                    <strong>SV thực hiện:</strong> {thesis.studentId?.userId?.fullName} (
-                    {thesis.studentId?.studentCode})
-                    {thesis.secondStudentId && (
-                      <>
-                        {' '}
-                        • {thesis.secondStudentId?.userId?.fullName} (
-                        {thesis.secondStudentId?.studentCode})
-                      </>
-                    )}
-                  </div>
-                  <div>
-                    <strong>GVHD:</strong>{' '}
-                    {thesis.supervisorId?.academicTitle ? `${thesis.supervisorId.academicTitle} ` : ''}
-                    {thesis.supervisorId?.userId?.fullName || '—'}
+            </div>
+          ) : (
+            <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-2 shadow-2xs">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs font-bold">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-slate-900 text-sm leading-snug">
+                    {thesis?.thesisTitle}
+                  </h4>
+                  <div className="text-[11px] text-slate-600 mt-1 space-y-0.5">
+                    <div>
+                      <strong>SV thực hiện:</strong> {thesis?.studentId?.userId?.fullName} (
+                      {thesis?.studentId?.studentCode})
+                      {thesis?.secondStudentId && (
+                        <>
+                          {' '}
+                          • {thesis.secondStudentId?.userId?.fullName} (
+                          {thesis.secondStudentId?.studentCode})
+                        </>
+                      )}
+                    </div>
+                    <div>
+                      <strong>GVHD:</strong>{' '}
+                      {thesis?.supervisorId?.academicTitle ? `${thesis.supervisorId.academicTitle} ` : ''}
+                      {thesis?.supervisorId?.userId?.fullName || '—'}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Quick toggle actions */}
           <div className="flex items-center justify-between pt-1">
@@ -246,7 +326,11 @@ const PublishScoresModal = ({
                   </div>
 
                   <div className="text-right shrink-0">
-                    {item.hasScore ? (
+                    {isAll ? (
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                        {item.weight}
+                      </span>
+                    ) : item.hasScore ? (
                       <span className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-white border border-slate-200 text-slate-900 shadow-2xs">
                         {item.score} đ
                       </span>
@@ -284,12 +368,30 @@ const PublishScoresModal = ({
         isOpen={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleFinalConfirm}
-        title="Xác nhận Công Bố Điểm Cho Sinh Viên"
+        title={isAll ? 'Xác nhận Công Bố Điểm Cho Tất Cả Đề Tài' : 'Xác nhận Công Bố Điểm Cho Sinh Viên'}
         message={
-          selectedLabels.length > 0 ? (
+          isAll ? (
+            selectedLabels.length > 0 ? (
+              <div className="space-y-2 text-xs text-left">
+                <p className="text-slate-700">
+                  Bạn có chắc chắn muốn công bố <strong>{selectedLabels.length} đầu điểm</strong> sau cho <strong>TẤT CẢ ({thesesCount}) đề tài khóa luận</strong> trong danh sách không?
+                </p>
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 font-mono text-slate-800">
+                  {selectedLabels.map((lbl, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                      <span>{lbl}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              `Bạn có chắc chắn muốn bỏ công bố tất cả các đầu điểm cho toàn bộ ${thesesCount} đề tài? Sinh viên sẽ không thấy điểm nữa.`
+            )
+          ) : selectedLabels.length > 0 ? (
             <div className="space-y-2 text-xs text-left">
               <p className="text-slate-700">
-                Bạn có chắc chắn muốn công bố <strong>{selectedLabels.length} đầu điểm</strong> sau cho sinh viên thực hiện đề tài <strong>"{thesis.thesisTitle}"</strong> không?
+                Bạn có chắc chắn muốn công bố <strong>{selectedLabels.length} đầu điểm</strong> sau cho sinh viên thực hiện đề tài <strong>"${thesis?.thesisTitle}"</strong> không?
               </p>
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 font-mono text-slate-800">
                 {selectedLabels.map((lbl, idx) => (
@@ -301,7 +403,7 @@ const PublishScoresModal = ({
               </div>
             </div>
           ) : (
-            `Bạn có chắc chắn muốn bỏ công bố tất cả các đầu điểm cho đề tài "${thesis.thesisTitle}"? Sinh viên sẽ không thấy điểm nữa.`
+            `Bạn có chắc chắn muốn bỏ công bố tất cả các đầu điểm cho đề tài "${thesis?.thesisTitle}"? Sinh viên sẽ không thấy điểm nữa.`
           )
         }
         confirmText="Đồng ý công bố"
