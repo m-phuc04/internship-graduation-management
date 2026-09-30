@@ -94,6 +94,7 @@ const CouncilManagementSection = ({ theses = [] }) => {
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(councils));
+      localStorage.setItem('tbm_councils_default', JSON.stringify(councils));
     } catch {
       // ignore
     }

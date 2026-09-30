@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import lecturerApi from '../../api/lecturerApi';
+import notificationApi from '../../api/notificationApi';
 import { useToast } from '../../context/ToastContext';
 import { AlertCircle, Users, Award, Clock } from 'lucide-react';
 
@@ -111,7 +112,7 @@ const AssignCouncilModal = ({
     setAssignedLecturerIds(nextIds);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -167,6 +168,30 @@ const AssignCouncilModal = ({
         name: cleanCouncilName || council.name,
         lecturers: updatedLecturers,
       });
+
+      // Send notifications (bell icon) to all assigned lecturers
+      try {
+        filledIds.forEach(async (lId) => {
+          const lecObj = lecturers.find((l) => String(l._id) === String(lId));
+          const targetUserId = lecObj?.userId?._id || lecObj?.userId || lId;
+          const roomText = council.room ? ` (Phòng: ${council.room})` : '';
+          const timeText = council.reportTime ? ` - Lịch: ${council.reportTime}` : '';
+          try {
+            await notificationApi.create({
+              recipientId: targetUserId,
+              type: 'THESIS',
+              title: 'Phân công Hội đồng đánh giá Khóa luận tốt nghiệp',
+              message: `Bạn được phân công tham gia ${cleanCouncilName}${roomText}${timeText}. Vui lòng kiểm tra danh sách đề tài và chuẩn bị tham gia đánh giá.`,
+              link: '/lecturer/theses?tab=reviewer2',
+              priority: 'HIGH',
+            });
+          } catch (err) {
+            console.warn('Failed to send notification to lecturer:', lId, err);
+          }
+        });
+      } catch (notifErr) {
+        console.warn('Error creating council assignment notifications:', notifErr);
+      }
 
       showToast(`Đã phân công giảng viên cho ${cleanCouncilName} thành công!`, 'success');
       onClose();

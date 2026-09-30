@@ -74,9 +74,47 @@ const getUnreadCount = async (req, res, next) => {
   }
 };
 
+// Create notification
+const createNotification = async (req, res, next) => {
+  try {
+    const {
+      recipientId,
+      userId,
+      title,
+      message,
+      type = "SYSTEM",
+      link,
+      priority = "NORMAL",
+      referenceId,
+      referenceModel,
+    } = req.body;
+
+    const notification = await notificationService.createNotification({
+      recipientId: recipientId || userId,
+      senderId: req.user?.userId || null,
+      type,
+      title,
+      message,
+      link,
+      priority,
+      referenceId,
+      referenceModel,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo thông báo thành công",
+      data: notification,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getMyNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  createNotification,
 };

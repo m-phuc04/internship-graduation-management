@@ -292,6 +292,7 @@ const TbmThesisManagement = () => {
       }
       try {
         localStorage.setItem(thesisCouncilStorageKey, JSON.stringify(next));
+        localStorage.setItem('tbm_thesis_councils_default', JSON.stringify(next));
       } catch {}
       return next;
     });

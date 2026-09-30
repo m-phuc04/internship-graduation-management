@@ -19,4 +19,7 @@ router.patch("/read-all", notificationController.markAllAsRead);
 // Mark single notification as read
 router.patch("/:id/read", notificationController.markAsRead);
 
+// Create notification
+router.post("/", notificationController.createNotification);
+
 export default router;

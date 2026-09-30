@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { useToast } from '../../context/ToastContext';
+import notificationApi from '../../api/notificationApi';
 import { BookOpen, Users, Clock, Check, AlertCircle, Sparkles } from 'lucide-react';
 
 const AssignCouncilToThesisModal = ({
@@ -126,7 +127,7 @@ const AssignCouncilToThesisModal = ({
     setSelectedCouncilId(councilId);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -162,6 +163,44 @@ const AssignCouncilToThesisModal = ({
       if (selectedCouncil) {
         const cleanName = (selectedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
         showToast(`Đã phân công đề tài "${thesis.thesisTitle}" vào ${cleanName} (Phòng ${selectedCouncil.room}) thành công!`, 'success');
+
+        // Send notifications to council lecturers
+        try {
+          if (Array.isArray(selectedCouncil.lecturers)) {
+            selectedCouncil.lecturers.forEach(async (l) => {
+              const targetUserId = l.userId?._id || l.userId || l.lecturerId?._id || l.lecturerId || l.id || l._id;
+              if (targetUserId) {
+                try {
+                  await notificationApi.create({
+                    recipientId: targetUserId,
+                    type: 'THESIS',
+                    title: 'Đề tài mới được phân công vào Hội đồng',
+                    message: `Đề tài "${thesis.thesisTitle}" đã được phân công vào ${cleanName} (Phòng ${selectedCouncil.room || 'P.HĐ'}). Vui lòng xem danh sách đề tài.`,
+                    link: '/lecturer/theses?tab=reviewer2',
+                    priority: 'NORMAL',
+                  });
+                } catch (e) {}
+              }
+            });
+          }
+
+          // Also notify supervisor
+          const supUserId = thesis.supervisorId?.userId?._id || thesis.supervisorId?.userId || thesis.supervisorId?._id || thesis.supervisorId;
+          if (supUserId) {
+            try {
+              await notificationApi.create({
+                recipientId: supUserId,
+                type: 'THESIS',
+                title: 'Đề tài hướng dẫn đã được phân công Hội đồng',
+                message: `Đề tài "${thesis.thesisTitle}" của bạn đã được phân công vào ${cleanName} (Phòng ${selectedCouncil.room || 'P.HĐ'}).`,
+                link: '/lecturer/theses?tab=supervisor',
+                priority: 'NORMAL',
+              });
+            } catch (e) {}
+          }
+        } catch (notifErr) {
+          console.warn('Notification error on council thesis assign:', notifErr);
+        }
       } else {
         showToast(`Đã bỏ phân công phòng hội đồng cho đề tài "${thesis.thesisTitle}"!`, 'info');
       }

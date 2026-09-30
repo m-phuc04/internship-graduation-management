@@ -874,6 +874,10 @@ const assignReviewers = async (
 
   const supervisorIdStr = thesis.supervisorId.toString();
 
+  let effectiveReviewer1Id = null;
+  let effectiveReviewer2Id = null;
+  let effectiveReviewersList = [];
+
   // If reviewers array is provided from the UI, extract private and council reviewers
   if (reviewer1Id !== undefined || reviewer2Id !== undefined) {
     effectiveReviewer1Id = reviewer1Id || null;

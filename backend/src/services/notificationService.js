@@ -18,12 +18,28 @@ const createNotification = async ({
   link = null,
   priority = "NORMAL",
 }) => {
-  const targetRecipientId = recipientId || userId;
+  let targetRecipientId = recipientId || userId;
   if (!targetRecipientId || !title || !message) {
     return null;
   }
 
   try {
+    // Resolve Lecturer ID or Student ID to User ID if needed
+    const isUser = await User.exists({ _id: targetRecipientId });
+    if (!isUser) {
+      const Lecturer = (await import("../models/Lecturer.js")).default;
+      const Student = (await import("../models/Student.js")).default;
+      const lec = await Lecturer.findById(targetRecipientId).select("userId").lean();
+      if (lec?.userId) {
+        targetRecipientId = lec.userId;
+      } else {
+        const stu = await Student.findById(targetRecipientId).select("userId").lean();
+        if (stu?.userId) {
+          targetRecipientId = stu.userId;
+        }
+      }
+    }
+
     // Avoid duplicate unread notification for the same reference
     if (referenceId && referenceModel && targetRecipientId) {
       const existing = await Notification.findOne({
