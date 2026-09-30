@@ -1302,6 +1302,7 @@ const LecturerThesesPage = () => {
 
                           const scoreGVHD1 = scoreEntry1 ? (scoreEntry1.score ?? scoreEntry1.student1Score) : null;
                           const scoreGVHD2 = scoreEntry2 && scoreEntry2 !== scoreEntry1 ? (scoreEntry2.score ?? scoreEntry2.student1Score) : (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1].score : null);
+                          const hasTwoLecturers = Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2;
 
                           let scoreCouncil = null;
                           // STRICT: Chỉ tính điểm hội đồng khi CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 và GVHĐ 2) ĐÃ CHẤM!
