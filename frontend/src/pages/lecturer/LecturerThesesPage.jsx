@@ -363,25 +363,10 @@ const LecturerThesesPage = () => {
     return list;
   }, [activeCouncil, data, thesisCouncilMap, search]);
 
-  const stats = {
-    supervisedCount: data?.stats?.supervisedCount ?? supervisedTheses.length,
-    reviewer1Count: data?.stats?.reviewer1Count ?? reviewer1Theses.length,
-    reviewer2Count: data?.stats?.reviewer2Count ?? reviewer2Theses.length,
-    totalAssigned: data?.stats?.totalAssigned ?? (data?.theses?.length || 0),
-  };
-
-  let currentList = [];
-  if (activeTab === 'SUPERVISOR') {
-    currentList = supervisedTheses;
-  } else if (activeTab === 'REVIEWER_1') {
-    currentList = reviewer1Theses;
-  } else if (activeTab === 'REVIEWER_2') {
-    currentList = reviewer2Theses;
-  }
-
-  if (search && search.trim()) {
+  const filterBySearch = (list) => {
+    if (!search || !search.trim()) return list || [];
     const q = search.trim().toLowerCase();
-    currentList = currentList.filter(
+    return (list || []).filter(
       (t) =>
         t.thesisTitle?.toLowerCase().includes(q) ||
         t.studentId?.userId?.fullName?.toLowerCase().includes(q) ||
@@ -392,21 +377,43 @@ const LecturerThesesPage = () => {
         t.reviewer1Id?.userId?.fullName?.toLowerCase().includes(q) ||
         t.reviewer2Id?.userId?.fullName?.toLowerCase().includes(q)
     );
+  };
+
+  const filteredSupervisedTheses = filterBySearch(supervisedTheses);
+  const filteredReviewer1Theses = filterBySearch(reviewer1Theses);
+  const filteredReviewer2Theses = filterBySearch(reviewer2Theses);
+
+  const stats = {
+    supervisedCount: data?.stats?.supervisedCount ?? supervisedTheses.length,
+    reviewer1Count: data?.stats?.reviewer1Count ?? reviewer1Theses.length,
+    reviewer2Count: councilTheses.length || data?.stats?.reviewer2Count || reviewer2Theses.length,
+    totalAssigned: data?.stats?.totalAssigned ?? (data?.theses?.length || 0),
+  };
+
+  let currentList = [];
+  if (activeTab === 'SUPERVISOR') {
+    currentList = filteredSupervisedTheses;
+  } else if (activeTab === 'REVIEWER_1') {
+    currentList = [...filteredReviewer1Theses, ...filteredReviewer2Theses];
+  } else if (activeTab === 'REVIEWER_2') {
+    currentList = councilTheses;
   }
 
   // Open Grade Box Modal
-  const handleOpenGradeBox = (thesis) => {
-    if (activeTab === 'SUPERVISOR') {
+  const handleOpenGradeBox = (thesis, forcedRole = null) => {
+    const role =
+      forcedRole ||
+      (activeTab === 'SUPERVISOR'
+        ? 'SUPERVISOR'
+        : activeTab === 'REVIEWER_1'
+          ? (thesis.isReviewer1 ? 'REVIEWER1' : 'REVIEWER2')
+          : 'REVIEWER2');
+
+    if (role === 'SUPERVISOR') {
       navigate(`/lecturer/theses/${thesis._id}/evaluate`);
       return;
     }
     setGradeBoxThesis(thesis);
-    const role =
-      activeTab === 'REVIEWER_1'
-        ? 'REVIEWER1'
-        : activeTab === 'REVIEWER_2'
-          ? 'REVIEWER2'
-          : 'SUPERVISOR';
     setGradeBoxRole(role);
 
     const isTwo = thesis.studentCount === 2 && thesis.secondStudentId;
@@ -443,7 +450,7 @@ const LecturerThesesPage = () => {
           )
         : null;
 
-      if (myScoreEntry) {
+      if (myScoreEntry && (myScoreEntry.student1Score !== null || myScoreEntry.score !== null)) {
         s1 = myScoreEntry.student1Score !== null && myScoreEntry.student1Score !== undefined
           ? myScoreEntry.student1Score
           : myScoreEntry.score !== null && myScoreEntry.score !== undefined
@@ -965,6 +972,259 @@ const LecturerThesesPage = () => {
     return matchSearch && matchMine;
   });
 
+  const renderThesesTable = (thesesList, roleForGrading, emptyTitle, emptyDesc) => {
+    if (loading) {
+      return (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden p-6">
+          <LoadingSkeleton rows={5} cols={12} />
+        </div>
+      );
+    }
+
+    if (!thesesList || thesesList.length === 0) {
+      return (
+        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden p-8">
+          <EmptyState
+            title={emptyTitle || 'Không có đề tài nào trong danh mục này'}
+            description={emptyDesc || 'Bạn chưa được phân công đề tài tương ứng với vai trò này hoặc chưa có kết quả tìm kiếm.'}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                {/* 1. STT */}
+                <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                {/* 2. Tên đề tài KLTN */}
+                <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
+                {/* 3. Sinh viên */}
+                <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
+                {/* 4. GV Hướng Dẫn */}
+                <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
+                {/* 5. GVPB 1 */}
+                <th className="py-3.5 px-4 min-w-[150px]">GVPB 1</th>
+                {/* 6. GVPB 2 */}
+                <th className="py-3.5 px-4 min-w-[150px]">GVPB 2</th>
+                {/* 7. Hội đồng */}
+                <th className="py-3.5 px-4 min-w-[150px]">Hội đồng</th>
+                {/* 8. Điểm GVHD */}
+                <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px]">Điểm GVHD</th>
+                {/* 9. Điểm phản biện kín */}
+                <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[120px]">Điểm phản biện kín</th>
+                {/* 10. Điểm phản biện hội đồng */}
+                <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[130px]">Điểm phản biện hội đồng</th>
+                {/* 11. Tổng điểm */}
+                <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px]">Tổng điểm</th>
+                {/* 12. Thao tác */}
+                <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[120px]">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {thesesList.map((item, index) => {
+                const isSupervisor = roleForGrading === 'SUPERVISOR';
+                const isPendingApproval = isSupervisor && item.status === 'PENDING_SUPERVISOR_APPROVAL';
+                const assignedCouncil = getAssignedCouncil(item);
+
+                return (
+                  <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                    {/* 1. STT */}
+                    <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                      {index + 1}
+                    </td>
+
+                    {/* 2. Tên đề tài KLTN */}
+                    <td className="py-3.5 px-4 max-w-sm">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetail(item)}
+                        className="text-left block group cursor-pointer"
+                        title="Bấm để xem toàn bộ thông tin đề tài & phân công phản biện"
+                      >
+                        <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                          {item.thesisTitle}
+                        </strong>
+                      </button>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
+                          {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                        </span>
+                      </div>
+                    </td>
+
+                    {/* 3. Sinh viên */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="flex flex-col gap-1.5 min-w-[170px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                            SV1
+                          </span>
+                          <UserNameClickable
+                            user={item.studentId}
+                            name={item.studentId?.userId?.fullName}
+                            subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                            avatarSize="w-6 h-6"
+                          />
+                        </div>
+                        {item.studentCount === 2 && item.secondStudentId && (
+                          <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                            <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                              SV2
+                            </span>
+                            <UserNameClickable
+                              user={item.secondStudentId}
+                              name={item.secondStudentId?.userId?.fullName}
+                              subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                              avatarSize="w-6 h-6"
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* 4. GV Hướng Dẫn */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      <div className="font-semibold text-slate-800">
+                        {formatLecturerDisplay(item.supervisorId)}
+                      </div>
+                      {item.supervisorId?.lecturerCode && (
+                        <span className="text-slate-400 font-mono text-[10px]">
+                          Mã GV: {item.supervisorId.lecturerCode}
+                        </span>
+                      )}
+                    </td>
+
+                    {/* 5. GVPB 1 */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {getReviewer1Display(item) !== 'Chưa phân công' ? (
+                        <span className="font-semibold text-slate-800">
+                          {getReviewer1Display(item)}
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                      )}
+                    </td>
+
+                    {/* 6. GVPB 2 */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {getReviewer2Display(item) !== 'Chưa phân công' ? (
+                        <span className="font-semibold text-slate-800">
+                          {getReviewer2Display(item)}
+                        </span>
+                      ) : (
+                        <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                      )}
+                    </td>
+
+                    {/* 7. Hội đồng */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
+                      {assignedCouncil ? (
+                        <div>
+                          <div className="font-semibold text-[#123891]">
+                            {assignedCouncil.name}
+                          </div>
+                          {assignedCouncil.room && (
+                            <span className="text-slate-500 font-mono text-[10px]">
+                              Phòng: {assignedCouncil.room}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400 italic text-[11px]">Chưa phân hội đồng</span>
+                      )}
+                    </td>
+
+                    {/* 8. Điểm GVHD */}
+                    <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                      {renderSupervisorScore(item)}
+                    </td>
+
+                    {/* 9. Điểm phản biện kín */}
+                    <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                      {renderReviewer1Score(item)}
+                    </td>
+
+                    {/* 10. Điểm phản biện hội đồng */}
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      {renderCouncilScore(item)}
+                    </td>
+
+                    {/* 11. Tổng điểm */}
+                    <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                      {renderFinalScore(item)}
+                    </td>
+
+                    {/* 12. Thao tác */}
+                    <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-1.5">
+                        {/* Chi tiết button */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenDetail(item)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                          title="Xem chi tiết đề tài"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Chi tiết</span>
+                        </button>
+
+                        {/* Duyệt & Từ chối khi có yêu cầu sinh viên gửi */}
+                        {isPendingApproval && (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenAccept(item)}
+                              disabled={actionLoading}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Duyệt</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenReject(item)}
+                              disabled={actionLoading}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl transition cursor-pointer text-xs"
+                            >
+                              <span>Từ chối</span>
+                            </button>
+                          </>
+                        )}
+
+                        {/* Chấm điểm button */}
+                        {item.status !== 'REJECTED' && !isPendingApproval && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (roleForGrading === 'SUPERVISOR') {
+                                navigate(`/lecturer/theses/${item._id}/evaluate`);
+                              } else {
+                                handleOpenGradeBox(item, roleForGrading);
+                              }
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
+                            title="Bấm để nhập điểm và đánh giá đề tài"
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Chấm điểm</span>
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
@@ -1024,7 +1284,7 @@ const LecturerThesesPage = () => {
               {!isTopicsView && (isReviewView || isEvaluationView) && (
                 <p className="text-xs text-slate-500 mt-1">
                   {isReviewView
-                    ? 'Chấm điểm độc lập theo phân công GVPB 1 (20%) và GVPB 2 (30%).'
+                    ? 'Chấm điểm độc lập theo phân công Phản biện kín (20%) và Phản biện hội đồng (30%).'
                     : 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (50%) cho sinh viên khóa luận.'}
                 </p>
               )}
@@ -1060,7 +1320,7 @@ const LecturerThesesPage = () => {
         {/* Dynamic Context Tabs for Review View */}
         {isReviewView && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-100">
-            {/* Tab 1: Đề tài GVPB 1 */}
+            {/* Tab 1: Reviewer 1 (PB Kín - 20%) */}
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_1')}
@@ -1073,15 +1333,15 @@ const LecturerThesesPage = () => {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
                   <Shield className="w-4 h-4 text-[#123891]" />
-                  Đề tài GVPB 1
+                  Phản biện kín (20%)
                 </span>
                 <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
-                  {stats.reviewer1Count}
+                  {reviewer1Theses.length + reviewer2Theses.length}
                 </span>
               </div>
             </button>
 
-            {/* Tab 2: Đề tài GVPB 2 */}
+            {/* Tab 2: Reviewer 2 (PB Hội đồng - 30%) */}
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_2')}
@@ -1094,7 +1354,7 @@ const LecturerThesesPage = () => {
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
                   <Award className="w-4 h-4 text-[#123891]" />
-                  Đề tài GVPB 2
+                  Phản biện hội đồng (30%)
                 </span>
                 <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
                   {stats.reviewer2Count}
@@ -1247,248 +1507,493 @@ const LecturerThesesPage = () => {
             </div>
           )}
         </div>
-      ) : (
-        /* ================= BẢNG 12 CỘT THEO YÊU CẦU ================= */
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-          {loading ? (
-            <div className="p-6">
-              <LoadingSkeleton rows={5} cols={12} />
+      ) : activeTab === 'REVIEWER_1' ? (
+        /* ================= GIAO DIỆN PHẢN BIỆN KÍN: GVPB 1 VÀ GVPB 2 TUẦN TỰ ================= */
+        <div className="space-y-8">
+          {/* 1. BẢNG PHẢN BIỆN KÍN - GVPB 1 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold">
+                  <Shield className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <span>Phản biện kín - GVPB1</span>
+                    <span className="text-[10px] font-extrabold text-[#102d7d] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-mono">
+                      (20%)
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Danh sách các đề tài bạn được phân công làm Giảng viên phản biện 1
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-extrabold text-[#123891] bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
+                {filteredReviewer1Theses.length} đề tài
+              </span>
             </div>
-          ) : currentList.length === 0 ? (
-            <div className="p-8">
+            {renderThesesTable(
+              filteredReviewer1Theses,
+              'REVIEWER1',
+              'Không có đề tài phân công GVPB 1',
+              'Bạn chưa được phân công làm GVPB 1 cho đề tài nào trong học kỳ này hoặc không có kết quả tìm kiếm phù hợp.'
+            )}
+          </div>
+
+          {/* 2. BẢNG PHẢN BIỆN KÍN - GVPB 2 */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-4 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <span>Phản biện kín - GVPB2</span>
+                    <span className="text-[10px] font-extrabold text-[#102d7d] bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full font-mono">
+                      (30%)
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Danh sách các đề tài bạn được phân công làm Giảng viên phản biện 2
+                  </p>
+                </div>
+              </div>
+              <span className="text-xs font-mono font-extrabold text-[#123891] bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200">
+                {filteredReviewer2Theses.length} đề tài
+              </span>
+            </div>
+            {renderThesesTable(
+              filteredReviewer2Theses,
+              'REVIEWER2',
+              'Không có đề tài phân công GVPB 2',
+              'Bạn chưa được phân công làm GVPB 2 cho đề tài nào trong học kỳ này hoặc không có kết quả tìm kiếm phù hợp.'
+            )}
+          </div>
+        </div>
+      ) : activeTab === 'REVIEWER_2' ? (
+        /* ================= GIAO DIỆN PHẢN BIỆN HỘI ĐỒNG: TÊN PHÒNG + THÔNG TIN + BẢNG ĐỀ TÀI ================= */
+        <div className="space-y-4">
+          {!activeCouncil ? (
+            <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
               <EmptyState
-                title="Không có đề tài nào trong danh mục này"
-                description="Bạn chưa được phân công đề tài tương ứng với vai trò này hoặc chưa có kết quả tìm kiếm."
+                title="Chưa có thông tin phòng hội đồng"
+                description="Trưởng Bộ Môn chưa thiết lập phòng hội đồng bảo vệ hoặc bạn chưa được phân công vào hội đồng nào trong học kỳ này."
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                    {/* 1. STT */}
-                    <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                    {/* 2. Tên đề tài KLTN */}
-                    <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
-                    {/* 3. Sinh viên */}
-                    <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
-                    {/* 4. GV Hướng Dẫn */}
-                    <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
-                    {/* 5. GVPB 1 */}
-                    <th className="py-3.5 px-4 min-w-[150px]">GVPB 1</th>
-                    {/* 6. GVPB 2 */}
-                    <th className="py-3.5 px-4 min-w-[150px]">GVPB 2</th>
-                    {/* 7. Hội đồng */}
-                    <th className="py-3.5 px-4 min-w-[150px]">Hội đồng</th>
-                    {/* 8. Điểm GVHD */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px]">Điểm GVHD</th>
-                    {/* 9. Điểm phản biện kín */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[120px]">Điểm phản biện kín</th>
-                    {/* 10. Điểm phản biện hội đồng */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[130px]">Điểm phản biện hội đồng</th>
-                    {/* 11. Tổng điểm */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px]">Tổng điểm</th>
-                    {/* 12. Thao tác */}
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[120px]">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {currentList.map((item, index) => {
-                    const isSupervisorTab = activeTab === 'SUPERVISOR';
-                    const isPendingApproval = isSupervisorTab && item.status === 'PENDING_SUPERVISOR_APPROVAL';
-                    const assignedCouncil = getAssignedCouncil(item);
+            <>
+              {/* 1. DÒNG TÊN PHÒNG HỘI ĐỒNG */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-3xl bg-gradient-to-r from-[#0a2368] via-[#0d2a75] to-[#123891] text-white shadow-md border border-blue-900/40">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md flex items-center justify-center text-white shrink-0 shadow-xs">
+                    <Building className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-blue-200 font-semibold uppercase tracking-wider">
+                      Phòng Hội Đồng Bảo Vệ Khóa Luận
+                    </div>
+                    <h3 className="text-base font-extrabold text-white flex items-center gap-2">
+                      <span>{activeCouncil.name}</span>
+                      {activeCouncil.room && (
+                        <span className="text-blue-200 font-mono text-xs font-normal">
+                          (Phòng {activeCouncil.room})
+                        </span>
+                      )}
+                    </h3>
+                  </div>
+                </div>
 
-                    return (
-                      <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                        {/* 1. STT */}
-                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                          {index + 1}
-                        </td>
+                {/* Switch council tabs if lecturer participates in multiple councils */}
+                {myCouncils.length > 1 && (
+                  <div className="flex items-center gap-1.5 bg-black/20 p-1 rounded-2xl">
+                    {myCouncils.map((c) => {
+                      const cId = c.id || c._id;
+                      const isCur = (activeCouncil.id || activeCouncil._id) === cId;
+                      return (
+                        <button
+                          key={cId}
+                          type="button"
+                          onClick={() => setSelectedCouncilId(cId)}
+                          className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer ${
+                            isCur
+                              ? 'bg-white text-[#123891] shadow-sm'
+                              : 'text-blue-100 hover:text-white hover:bg-white/10'
+                          }`}
+                        >
+                          {c.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
 
-                        {/* 2. Tên đề tài KLTN */}
-                        <td className="py-3.5 px-4 max-w-sm">
-                          <button
-                            type="button"
-                            onClick={() => handleOpenDetail(item)}
-                            className="text-left block group cursor-pointer"
-                            title="Bấm để xem toàn bộ thông tin đề tài & phân công phản biện"
+              {/* 2. KHUNG THÔNG TIN PHÒNG HỘI ĐỒNG */}
+              <div className="p-5 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+                  {/* 1. Tên hội đồng & Phòng */}
+                  <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80">
+                    <div className="text-[11px] font-semibold text-[#102d7d] flex items-center gap-1.5">
+                      <Building className="w-3.5 h-3.5 text-[#123891]" />
+                      <span>Hội đồng & Phòng bảo vệ</span>
+                    </div>
+                    <div className="text-sm font-bold text-[#102d7d] mt-1">
+                      {activeCouncil.name}
+                    </div>
+                    <div className="text-xs text-blue-800 font-medium mt-0.5">
+                      Địa điểm: <strong>{activeCouncil.room || 'Chưa cập nhật phòng'}</strong>
+                    </div>
+                  </div>
+
+                  {/* 2. Thời gian bảo vệ */}
+                  <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/70">
+                    <div className="text-[11px] font-semibold text-[#102d7d] flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5 text-[#123891]" />
+                      <span>Thời gian báo cáo</span>
+                    </div>
+                    <div className="text-sm font-bold text-slate-900 mt-1 font-mono">
+                      {activeCouncil.reportTime ||
+                        (activeCouncil.reportStartTime && activeCouncil.reportEndTime
+                          ? `${activeCouncil.reportStartTime} - ${activeCouncil.reportEndTime}${activeCouncil.reportDate ? `, ${new Date(activeCouncil.reportDate).toLocaleDateString('vi-VN')}` : ''}`
+                          : 'Chưa xếp thời gian')}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      Ngày: {activeCouncil.reportDate ? new Date(activeCouncil.reportDate).toLocaleDateString('vi-VN') : 'Theo lịch học kỳ'}
+                    </div>
+                  </div>
+
+                  {/* 3. Hình thức bảo vệ */}
+                  <div className="p-3.5 rounded-2xl bg-amber-50/60 border border-amber-200/70">
+                    <div className="text-[11px] font-semibold text-amber-800 flex items-center gap-1.5">
+                      <Award className="w-3.5 h-3.5 text-amber-600" />
+                      <span>Hình thức bảo vệ</span>
+                    </div>
+                    <div className="text-sm font-bold text-amber-950 mt-1">
+                      {activeCouncil.type === 'POSTER' || activeCouncil.format === 'POSTER'
+                        ? 'Báo cáo Poster (POSTER)'
+                        : 'Báo cáo Trực tiếp (ORAL)'}
+                    </div>
+                    <div className="text-xs text-amber-700 mt-0.5">
+                      {activeCouncil.description || 'Chấm điểm hội đồng theo quy chế KLTN'}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Thành viên hội đồng */}
+                <div className="pt-3 border-t border-slate-100">
+                  <div className="text-xs font-bold text-slate-800 mb-2.5 flex items-center gap-1.5">
+                    <Users className="w-4 h-4 text-[#123891]" />
+                    <span>Thành viên Hội đồng chấm bảo vệ:</span>
+                  </div>
+                  {Array.isArray(activeCouncil.lecturers) && activeCouncil.lecturers.length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+                      {activeCouncil.lecturers.map((lec, idx) => {
+                        const isMe =
+                          lec.lecturerId === user?._id ||
+                          lec.lecturerId === user?.userId ||
+                          lec.userId === user?._id ||
+                          (user?.fullName && (lec.name?.trim().toLowerCase() === user.fullName.trim().toLowerCase() || lec.fullName?.trim().toLowerCase() === user.fullName.trim().toLowerCase()));
+
+                        const gradedCount = councilTheses.filter((t) =>
+                          Array.isArray(t.scores?.councilLecturerScores) &&
+                          t.scores.councilLecturerScores.some(
+                            (cls) =>
+                              (cls.lecturerId?._id || cls.lecturerId?.toString() || cls.lecturerId) === (lec.lecturerId || lec.userId) ||
+                              (lec.name && cls.lecturerName && cls.lecturerName.trim().toLowerCase() === lec.name.trim().toLowerCase())
+                          )
+                        ).length;
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
+                              isMe
+                                ? 'bg-blue-50/90 border-blue-300 ring-1 ring-blue-400/30'
+                                : 'bg-slate-50 border-slate-200'
+                            }`}
                           >
-                            <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
-                              {item.thesisTitle}
-                            </strong>
-                          </button>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono">
-                              {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
-                            </span>
-                          </div>
-                        </td>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                                isMe ? 'bg-[#123891] text-white' : 'bg-slate-200 text-slate-700'
+                              }`}>
+                                {idx + 1}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-slate-900 truncate">
+                                  {lec.name || lec.fullName || 'Giảng viên'}
+                                  {isMe && (
+                                    <span className="ml-1.5 text-[10px] font-extrabold text-[#123891] bg-blue-100 px-1.5 py-0.2 rounded font-sans">
+                                      (Bạn)
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-[10px] text-slate-500 truncate">
+                                  {lec.role || 'Thành viên hội đồng'}
+                                </div>
+                              </div>
+                            </div>
 
-                        {/* 3. Sinh viên */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1.5 min-w-[170px]">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                SV1
+                            {councilTheses.length > 0 && (
+                              <div className="shrink-0 text-right">
+                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  gradedCount === councilTheses.length
+                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    : gradedCount > 0
+                                    ? 'bg-blue-50 text-[#123891] border border-blue-200'
+                                    : 'bg-slate-100 text-slate-500'
+                                }`}>
+                                  Đã chấm {gradedCount}/{councilTheses.length}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-slate-400 italic">
+                      Chưa có danh sách giảng viên thành viên trong hội đồng này.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 3. BẢNG ĐỀ TÀI SẼ BÁO CÁO TRONG HỘI ĐỒNG NÀY */}
+              <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/60">
+                  <div className="flex items-center gap-2">
+                    <Award className="w-4 h-4 text-[#123891]" />
+                    <h4 className="text-xs font-bold text-slate-900">
+                      Danh sách Đề tài Báo cáo tại {activeCouncil.name}
+                    </h4>
+                  </div>
+                  <div className="text-xs font-semibold text-slate-500">
+                    Tổng số: <strong>{councilTheses.length}</strong> đề tài
+                  </div>
+                </div>
+
+                {councilTheses.length === 0 ? (
+                  <div className="p-8">
+                    <EmptyState
+                      title="Chưa có đề tài nào được xếp vào hội đồng này"
+                      description="Hội đồng này hiện chưa có đề tài KLTN nào được phân công báo cáo hoặc chưa có kết quả tìm kiếm phù hợp."
+                    />
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                          <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                          <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
+                          <th className="py-3.5 px-4 min-w-[180px]">Sinh viên thực hiện</th>
+                          <th className="py-3.5 px-4 min-w-[150px]">GV Hướng dẫn</th>
+                          <th className="py-3.5 px-4 min-w-[150px]">GVPB 1 (PB Kín)</th>
+                          <th className="py-3.5 px-4 text-center whitespace-nowrap">Điểm GVHD (50%)</th>
+                          <th className="py-3.5 px-4 text-center whitespace-nowrap">Điểm PB Kín (20%)</th>
+                          <th className="py-3.5 px-4 text-center whitespace-nowrap">
+                            Điểm GVHĐ 1
+                            {activeCouncil?.lecturers?.[0]?.name && (
+                              <span className="block text-[9px] font-normal text-slate-400 truncate max-w-[90px] mx-auto">
+                                ({activeCouncil.lecturers[0].name.split(' ').slice(-1)[0]})
                               </span>
-                              <UserNameClickable
-                                user={item.studentId}
-                                name={item.studentId?.userId?.fullName}
-                                subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                avatarSize="w-6 h-6"
-                              />
-                            </div>
-                            {item.studentCount === 2 && item.secondStudentId && (
-                              <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-                                <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                  SV2
-                                </span>
-                                <UserNameClickable
-                                  user={item.secondStudentId}
-                                  name={item.secondStudentId?.userId?.fullName}
-                                  subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                  avatarSize="w-6 h-6"
-                                />
-                              </div>
                             )}
-                          </div>
-                        </td>
-
-                        {/* 4. GV Hướng Dẫn */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-800">
-                            {formatLecturerDisplay(item.supervisorId)}
-                          </div>
-                          {item.supervisorId?.lecturerCode && (
-                            <span className="text-slate-400 font-mono text-[10px]">
-                              Mã GV: {item.supervisorId.lecturerCode}
-                            </span>
-                          )}
-                        </td>
-
-                        {/* 5. GVPB 1 */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {getReviewer1Display(item) !== 'Chưa phân công' ? (
-                            <span className="font-semibold text-slate-800">
-                              {getReviewer1Display(item)}
-                            </span>
-                          ) : (
-                            <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
-                          )}
-                        </td>
-
-                        {/* 6. GVPB 2 */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {getReviewer2Display(item) !== 'Chưa phân công' ? (
-                            <span className="font-semibold text-slate-800">
-                              {getReviewer2Display(item)}
-                            </span>
-                          ) : (
-                            <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
-                          )}
-                        </td>
-
-                        {/* 7. Hội đồng */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {assignedCouncil ? (
-                            <div>
-                              <div className="font-semibold text-[#123891]">
-                                {assignedCouncil.name}
-                              </div>
-                              {assignedCouncil.room && (
-                                <span className="text-slate-500 font-mono text-[10px]">
-                                  Phòng: {assignedCouncil.room}
-                                </span>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="text-slate-400 italic text-[11px]">Chưa phân hội đồng</span>
-                          )}
-                        </td>
-
-                        {/* 8. Điểm GVHD */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                          {renderSupervisorScore(item)}
-                        </td>
-
-                        {/* 9. Điểm phản biện kín */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                          {renderReviewer1Score(item)}
-                        </td>
-
-                        {/* 10. Điểm phản biện hội đồng */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                          {renderCouncilScore(item)}
-                        </td>
-
-                        {/* 11. Tổng điểm */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                          {renderFinalScore(item)}
-                        </td>
-
-                        {/* 12. Thao tác */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* Chi tiết button */}
-                            <button
-                              type="button"
-                              onClick={() => handleOpenDetail(item)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
-                              title="Xem chi tiết đề tài"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              <span>Chi tiết</span>
-                            </button>
-
-                            {/* Chấm điểm button (Mở trang đánh giá đầy đủ cho GVHD) */}
-                            {item.status !== 'REJECTED' && !isPendingApproval && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (activeTab === 'SUPERVISOR') {
-                                    navigate(`/lecturer/theses/${item._id}/evaluate`);
-                                  } else {
-                                    handleOpenGradeBox(item);
-                                  }
-                                }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
-                                title="Bấm để nhập điểm và đánh giá đề tài"
-                              >
-                                <Award className="w-3.5 h-3.5" />
-                                <span>Chấm điểm</span>
-                              </button>
+                          </th>
+                          <th className="py-3.5 px-4 text-center whitespace-nowrap">
+                            Điểm GVHĐ 2
+                            {activeCouncil?.lecturers?.[1]?.name && (
+                              <span className="block text-[9px] font-normal text-slate-400 truncate max-w-[90px] mx-auto">
+                                ({activeCouncil.lecturers[1].name.split(' ').slice(-1)[0]})
+                              </span>
                             )}
+                          </th>
+                          <th className="py-3.5 px-4 text-center whitespace-nowrap">Điểm Hội Đồng (30%)</th>
+                          <th className="py-3.5 px-4 text-right whitespace-nowrap">Thao tác</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {councilTheses.map((item, idx) => {
+                          const s = item.scores || {};
+                          const scoreHD = s.supervisorScore ?? s.student1SupervisorScore;
+                          const scorePB1 = s.reviewer1Score ?? s.student1Reviewer1Score;
+                          const scorePB2 = s.reviewer2Score ?? s.student1Reviewer2Score;
 
-                            {/* Duyệt & Từ chối khi có yêu cầu sinh viên gửi */}
-                            {isPendingApproval && (
-                              <>
+                          // Retrieve individual scores of GVHĐ 1 & GVHĐ 2
+                          const lec1 = activeCouncil?.lecturers?.[0];
+                          const lec2 = activeCouncil?.lecturers?.[1];
+
+                          const scoreEntry1 = (s.councilLecturerScores || []).find(
+                            (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec1?.lecturerId || lec1?.userId) ||
+                                   (lec1?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec1.name.trim().toLowerCase())
+                          ) || (s.councilLecturerScores || [])[0];
+
+                          const scoreEntry2 = (s.councilLecturerScores || []).find(
+                            (e) => (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (lec2?.lecturerId || lec2?.userId) ||
+                                   (lec2?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec2.name.trim().toLowerCase())
+                          ) || (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1] : null);
+
+                          const scoreGVHD1 = scoreEntry1 ? (scoreEntry1.score ?? scoreEntry1.student1Score) : null;
+                          const scoreGVHD2 = scoreEntry2 && scoreEntry2 !== scoreEntry1 ? (scoreEntry2.score ?? scoreEntry2.student1Score) : (s.councilLecturerScores && s.councilLecturerScores.length > 1 ? s.councilLecturerScores[1].score : null);
+                          const hasTwoLecturers = Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2;
+                          let scoreCouncil = null;
+                          // STRICT: Chỉ tính điểm hội đồng khi CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 và GVHĐ 2) ĐÃ CHẤM!
+                          if (
+                            scoreGVHD1 !== null &&
+                            scoreGVHD1 !== undefined &&
+                            !isNaN(scoreGVHD1) &&
+                            scoreGVHD2 !== null &&
+                            scoreGVHD2 !== undefined &&
+                            !isNaN(scoreGVHD2)
+                          ) {
+                            scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
+                          } else {
+                            scoreCouncil = null;
+                          }
+
+                          return (
+                            <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                              <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                                {idx + 1}
+                              </td>
+                              <td className="py-3.5 px-4 max-w-sm">
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenAccept(item)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
+                                  onClick={() => handleOpenDetail(item)}
+                                  className="text-left block group cursor-pointer"
+                                  title="Xem chi tiết đề tài"
                                 >
-                                  <CheckCircle2 className="w-3.5 h-3.5" />
-                                  <span>Duyệt</span>
+                                  <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                                    {item.thesisTitle}
+                                  </strong>
                                 </button>
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenReject(item)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl transition cursor-pointer text-xs"
-                                >
-                                  <span>Từ chối</span>
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                                <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                  {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                                </span>
+                              </td>
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="space-y-1">
+                                  <div className="font-semibold text-slate-900">
+                                    {item.studentId?.userId?.fullName}
+                                    <span className="text-slate-400 font-mono text-[11px] ml-1">
+                                      ({item.studentId?.studentCode})
+                                    </span>
+                                  </div>
+                                  {item.studentCount === 2 && item.secondStudentId && (
+                                    <div className="font-semibold text-slate-900">
+                                      {item.secondStudentId?.userId?.fullName}
+                                      <span className="text-slate-400 font-mono text-[11px] ml-1">
+                                        ({item.secondStudentId?.studentCode})
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-medium text-slate-800">
+                                  {item.supervisorId?.userId?.fullName || '—'}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 whitespace-nowrap">
+                                <div className="font-medium text-slate-800">
+                                  {item.reviewer1Id?.userId?.fullName || '—'}
+                                </div>
+                              </td>
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
+                                {scoreHD !== null && scoreHD !== undefined ? (
+                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded">
+                                    {scoreHD}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
+                                {scorePB1 !== null && scorePB1 !== undefined ? (
+                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded">
+                                    {scorePB1}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </td>
+                              {/* Điểm GVHĐ 1 */}
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
+                                {scoreGVHD1 !== null && scoreGVHD1 !== undefined ? (
+                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                    {scoreGVHD1}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </td>
+
+                              {/* Điểm GVHĐ 2 */}
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
+                                {scoreGVHD2 !== null && scoreGVHD2 !== undefined ? (
+                                  <span className="font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                    {scoreGVHD2}
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400">—</span>
+                                )}
+                              </td>
+
+                              {/* Điểm Hội Đồng (30%) - Trung bình cộng của GVHĐ 1 và GVHĐ 2 (chỉ tính khi đủ cả 2 điểm) */}
+                              <td className="py-3.5 px-4 text-center whitespace-nowrap font-mono">
+                                {scoreCouncil !== null && scoreCouncil !== undefined ? (
+                                  <span className="font-bold text-[#123891] bg-blue-100/90 px-2.5 py-1 rounded-lg border border-blue-300 shadow-2xs">
+                                    {scoreCouncil}
+                                  </span>
+                                ) : (Array.isArray(activeCouncil?.lecturers) && activeCouncil.lecturers.length >= 2 && (scoreGVHD1 !== null || scoreGVHD2 !== null)) ? (
+                                  <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính trung bình">
+                                    Chờ GV còn lại
+                                  </span>
+                                ) : (
+                                  <span className="text-slate-400 italic">Chưa chấm</span>
+                                )}
+                              </td>
+                              <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDetail(item)}
+                                    className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-slate-900 rounded-lg transition cursor-pointer"
+                                    title="Xem chi tiết"
+                                  >
+                                    <Eye className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenGradeBox(item)}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                    title="Chấm điểm Hội đồng bảo vệ"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Chấm điểm</span>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
+      ) : (
+        /* ================= BẢNG ĐỀ TÀI HƯỚNG DẪN (GVHD) ================= */
+        renderThesesTable(
+          filteredSupervisedTheses,
+          'SUPERVISOR',
+          'Không có đề tài hướng dẫn',
+          'Bạn chưa có đề tài hướng dẫn nào trong học kỳ này hoặc không có kết quả tìm kiếm phù hợp.'
+        )
       )}
 
       {/* ========================================================================= */}
