@@ -162,6 +162,7 @@ function App() {
                 <Route path="evaluations" element={<TbmEvaluationManagement />} />
                 <Route path="theses" element={<TbmThesisManagement />} />
                 <Route path="thesis-evaluations" element={<TbmThesisEvaluationManagement />} />
+                <Route path="news" element={<LecturerNewsManagement />} />
                 <Route path="profile" element={<ProfilePage />} />
               </Route>
 
@@ -237,6 +238,7 @@ function App() {
               <Route path="students" element={<StudentManagement />} />
               <Route path="lecturers" element={<LecturerManagement />} />
               <Route path="companies" element={<CompanyManagement />} />
+              <Route path="news" element={<LecturerNewsManagement />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

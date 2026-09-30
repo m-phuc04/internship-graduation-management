@@ -9,89 +9,82 @@ const getAllSchedules = async ({ type, status } = {}) => {
   if (type) query.type = type;
   if (status) query.status = status;
 
-  let schedules = await Schedule.find(query)
+  return await Schedule.find(query)
     .sort({ startTime: 1 })
     .populate("createdBy", "fullName email role")
     .lean();
+};
 
-  // If empty, auto-seed default semester milestones
-  if (schedules.length === 0 && !type && !status) {
-    const currentYear = new Date().getFullYear();
-    const defaultMilestones = [
-      {
-        title: "Đăng ký & Phê duyệt nguyện vọng Thực tập Doanh nghiệp (TTDN)",
-        description: "Sinh viên hoàn thành nộp hồ sơ đăng ký doanh nghiệp tiếp nhận. TBM tiến hành xét duyệt và phân công Giảng viên hướng dẫn.",
-        type: "INTERNSHIP",
-        startTime: new Date(`${currentYear}-09-01T08:00:00.000Z`),
-        endTime: new Date(`${currentYear}-09-15T17:00:00.000Z`),
-        location: "Cổng trực tuyến TTDN",
-        status: "SCHEDULED",
-      },
-      {
-        title: "Bắt đầu quá trình Thực tập & Nộp báo cáo định kỳ",
-        description: "Sinh viên làm việc tại doanh nghiệp và thực hiện nộp báo cáo tiến độ tuần/tháng theo hướng dẫn của GVHD.",
-        type: "INTERNSHIP",
-        startTime: new Date(`${currentYear}-09-16T08:00:00.000Z`),
-        endTime: new Date(`${currentYear}-11-30T17:00:00.000Z`),
-        location: "Doanh nghiệp tiếp nhận",
-        status: "SCHEDULED",
-      },
-      {
-        title: "Đăng ký & Xét duyệt Đề tài Khóa luận Tốt nghiệp (KLTN)",
-        description: "Sinh viên nộp tên đề tài và phân công GVHD. TBM xét duyệt đề tài đủ điều kiện thực hiện.",
-        type: "THESIS",
-        startTime: new Date(`${currentYear}-09-05T08:00:00.000Z`),
-        endTime: new Date(`${currentYear}-09-25T17:00:00.000Z`),
-        location: "Cổng trực tuyến KLTN",
-        status: "SCHEDULED",
-      },
-      {
-        title: "Nộp báo cáo tiến độ KLTN định kỳ cho GVHD",
-        description: "Sinh viên nộp báo cáo tiến độ theo tuần/tháng, GVHD phản hồi và đánh giá mức độ hoàn thành.",
-        type: "THESIS",
-        startTime: new Date(`${currentYear}-09-26T08:00:00.000Z`),
-        endTime: new Date(`${currentYear}-12-10T17:00:00.000Z`),
-        location: "Cổng trực tuyến KLTN",
-        status: "SCHEDULED",
-      },
-      {
-        title: "Phản biện Kín & Phản biện Hội đồng KLTN",
-        description: "Các giảng viên phản biện (GVPB1 và GVPB2) tiến hành chấm điểm phản biện và đánh giá điều kiện bảo vệ.",
-        type: "DEADLINE",
-        startTime: new Date(`${currentYear}-12-15T08:00:00.000Z`),
-        endTime: new Date(`${currentYear}-12-22T17:00:00.000Z`),
-        location: "Văn phòng Bộ môn CNTT",
-        status: "SCHEDULED",
-      },
-      {
-        title: "Lễ Bảo vệ Khóa luận Tốt nghiệp trước Hội đồng",
-        description: "Sinh viên thuyết trình và bảo vệ sản phẩm khóa luận trước Hội đồng chấm điểm.",
-        type: "DEFENSE",
-        startTime: new Date(`${currentYear}-12-25T08:00:00.000Z`),
-        endTime: new Date(`${currentYear}-12-28T17:00:00.000Z`),
-        location: "Hội trường A4 / Phòng bảo vệ KLTN",
-        status: "SCHEDULED",
-      },
-    ];
+// ====================
+// Reset/Seed Default Schedules (Chỉ khi TBM / ADMIN chủ động yêu cầu)
+// ====================
+const seedDefaultSchedules = async (userId) => {
+  const currentYear = new Date().getFullYear();
+  const defaultMilestones = [
+    {
+      title: "Đăng ký & Phê duyệt nguyện vọng Thực tập Doanh nghiệp (TTDN)",
+      description: "Sinh viên hoàn thành nộp hồ sơ đăng ký doanh nghiệp tiếp nhận. TBM tiến hành xét duyệt và phân công Giảng viên hướng dẫn.",
+      type: "INTERNSHIP",
+      startTime: new Date(`${currentYear}-09-01T08:00:00.000Z`),
+      endTime: new Date(`${currentYear}-09-15T17:00:00.000Z`),
+      location: "Cổng trực tuyến TTDN",
+      status: "SCHEDULED",
+      createdBy: userId,
+    },
+    {
+      title: "Bắt đầu quá trình Thực tập & Nộp báo cáo định kỳ",
+      description: "Sinh viên làm việc tại doanh nghiệp và thực hiện nộp báo cáo tiến độ tuần/tháng theo hướng dẫn của GVHD.",
+      type: "INTERNSHIP",
+      startTime: new Date(`${currentYear}-09-16T08:00:00.000Z`),
+      endTime: new Date(`${currentYear}-11-30T17:00:00.000Z`),
+      location: "Doanh nghiệp tiếp nhận",
+      status: "SCHEDULED",
+      createdBy: userId,
+    },
+    {
+      title: "Đăng ký & Xét duyệt Đề tài Khóa luận Tốt nghiệp (KLTN)",
+      description: "Sinh viên nộp tên đề tài và phân công GVHD. TBM xét duyệt đề tài đủ điều kiện thực hiện.",
+      type: "THESIS",
+      startTime: new Date(`${currentYear}-09-05T08:00:00.000Z`),
+      endTime: new Date(`${currentYear}-09-25T17:00:00.000Z`),
+      location: "Cổng trực tuyến KLTN",
+      status: "SCHEDULED",
+      createdBy: userId,
+    },
+    {
+      title: "Nộp báo cáo tiến độ KLTN định kỳ cho GVHD",
+      description: "Sinh viên nộp báo cáo tiến độ theo tuần/tháng, GVHD phản hồi và đánh giá mức độ hoàn thành.",
+      type: "THESIS",
+      startTime: new Date(`${currentYear}-09-26T08:00:00.000Z`),
+      endTime: new Date(`${currentYear}-12-10T17:00:00.000Z`),
+      location: "Cổng trực tuyến KLTN",
+      status: "SCHEDULED",
+      createdBy: userId,
+    },
+    {
+      title: "Phản biện Kín & Phản biện Hội đồng KLTN",
+      description: "Các giảng viên phản biện (GVPB1 và GVPB2) tiến hành chấm điểm phản biện và đánh giá điều kiện bảo vệ.",
+      type: "DEADLINE",
+      startTime: new Date(`${currentYear}-12-15T08:00:00.000Z`),
+      endTime: new Date(`${currentYear}-12-22T17:00:00.000Z`),
+      location: "Văn phòng Bộ môn CNTT",
+      status: "SCHEDULED",
+      createdBy: userId,
+    },
+    {
+      title: "Lễ Bảo vệ Khóa luận Tốt nghiệp trước Hội đồng",
+      description: "Sinh viên thuyết trình và bảo vệ sản phẩm khóa luận trước Hội đồng chấm điểm.",
+      type: "DEFENSE",
+      startTime: new Date(`${currentYear}-12-25T08:00:00.000Z`),
+      endTime: new Date(`${currentYear}-12-28T17:00:00.000Z`),
+      location: "Hội trường A4 / Phòng bảo vệ KLTN",
+      status: "SCHEDULED",
+      createdBy: userId,
+    },
+  ];
 
-    // Find any admin or TBM to assign createdBy
-    const ScheduleModel = (await import("../models/Schedule.js")).default;
-    const UserModel = (await import("../models/User.js")).default;
-    const author = await UserModel.findOne({ role: { $in: ["ADMIN", "TBM"] } });
-    if (author) {
-      const createdItems = await Promise.all(
-        defaultMilestones.map((m) =>
-          ScheduleModel.create({
-            ...m,
-            createdBy: author._id,
-          }),
-        ),
-      );
-      schedules = createdItems.map((item) => item.toObject());
-    }
-  }
-
-  return schedules;
+  await Schedule.insertMany(defaultMilestones);
+  return await getAllSchedules();
 };
 
 // ====================
@@ -168,4 +161,5 @@ export default {
   createSchedule,
   updateSchedule,
   deleteSchedule,
+  seedDefaultSchedules,
 };

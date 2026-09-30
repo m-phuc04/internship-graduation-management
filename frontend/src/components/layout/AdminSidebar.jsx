@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -9,6 +9,7 @@ import {
   X,
   BookOpen,
   Building2,
+  Newspaper,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
@@ -57,6 +58,12 @@ const AdminSidebar = ({ onCloseMobile }) => {
       to: '/admin/companies',
       label: 'Quản lý Doanh nghiệp',
       icon: Building2,
+      badge: 'MASTER',
+    },
+    {
+      to: '/admin/news',
+      label: 'Quản lý Bản tin',
+      icon: Newspaper,
       badge: 'MASTER',
     },
   ];

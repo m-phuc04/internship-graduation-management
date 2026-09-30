@@ -21,4 +21,7 @@ router.patch("/:id", roleMiddleware("TBM", "ADMIN"), scheduleController.updateSc
 // 4. DELETE /api/schedules/:id - ONLY TBM and ADMIN
 router.delete("/:id", roleMiddleware("TBM", "ADMIN"), scheduleController.deleteSchedule);
 
+// 5. POST /api/schedules/seed-defaults - ONLY TBM and ADMIN
+router.post("/seed-defaults", roleMiddleware("TBM", "ADMIN"), scheduleController.seedDefaultSchedules);
+
 export default router;

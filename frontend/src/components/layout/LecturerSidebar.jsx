@@ -11,6 +11,7 @@ import {
   ChevronDown,
   Shield,
   Sliders,
+  Newspaper,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
@@ -266,6 +267,22 @@ const LecturerSidebar = ({ onCloseMobile }) => {
               </Link>
             </div>
           )}
+        </div>
+
+        {/* 4. Bản tin & Thông báo */}
+        <div className="space-y-1">
+          <Link
+            to="/lecturer/news"
+            onClick={onCloseMobile}
+            className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all cursor-pointer ${
+              location.pathname === '/lecturer/news'
+                ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
+                : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
+            }`}
+          >
+            <Newspaper className="w-4 h-4 text-[#ECA124]" />
+            <span>Bản tin & Thông báo</span>
+          </Link>
         </div>
       </div>
     </aside>

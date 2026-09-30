@@ -1,6 +1,7 @@
 import News from "../models/News.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
+import notificationService from "./notificationService.js";
 
 // ====================
 // 1. Get Public News (Homepage)
@@ -98,6 +99,24 @@ const createNews = async (
     isPublished: isPublished !== undefined ? Boolean(isPublished) : true,
     publishedAt: publishedAt ? new Date(publishedAt) : new Date(),
   });
+
+  // Nếu xuất bản ngay -> Gửi thông báo cho Sinh viên & Giảng viên
+  if (news.isPublished) {
+    try {
+      await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
+        senderId: user._id,
+        type: "SYSTEM",
+        title: `Thông báo mới: ${news.title}`,
+        message: news.summary || `Khoa CNTT vừa đăng thông báo mới: "${news.title}". Vui lòng xem chi tiết trên trang chủ.`,
+        referenceId: news._id,
+        referenceModel: null,
+        link: "/",
+        priority: "NORMAL",
+      });
+    } catch (notifErr) {
+      console.warn("[NewsService] Could not broadcast news notification:", notifErr.message);
+    }
+  }
 
   return news;
 };

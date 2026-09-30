@@ -70,9 +70,26 @@ const deleteSchedule = async (req, res, next) => {
   }
 };
 
+// ====================
+// Seed Default Schedules (TBM & ADMIN only)
+// ====================
+const seedDefaultSchedules = async (req, res, next) => {
+  try {
+    const schedules = await scheduleService.seedDefaultSchedules(req.user.userId);
+    res.status(201).json({
+      success: true,
+      message: "Khôi phục lịch trình mẫu mặc định thành công",
+      data: schedules,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getAllSchedules,
   createSchedule,
   updateSchedule,
   deleteSchedule,
+  seedDefaultSchedules,
 };

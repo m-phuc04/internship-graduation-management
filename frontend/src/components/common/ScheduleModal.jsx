@@ -110,6 +110,23 @@ const ScheduleModal = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleResetDefaults = async () => {
+    if (!window.confirm('Bạn có muốn nạp lại danh sách 6 mốc lịch trình đào tạo chuẩn mặc định không?')) {
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await scheduleApi.seedDefaults();
+      showToast(res.message || 'Khôi phục lịch trình mẫu mặc định thành công!', 'success');
+      if (res.data) setSchedules(res.data);
+      else fetchSchedules();
+    } catch (err) {
+      showToast(err.message || 'Không thể nạp lịch trình mặc định', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) {
@@ -318,8 +335,34 @@ const ScheduleModal = ({ isOpen, onClose }) => {
           {loading ? (
             <div className="p-8 text-center text-slate-400">Đang tải lịch trình...</div>
           ) : schedules.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-100">
-              Chưa có mốc lịch trình nào trong học kỳ này.
+            <div className="p-8 text-center bg-slate-50/80 rounded-2xl border border-dashed border-slate-200 space-y-3">
+              <Calendar className="w-8 h-8 text-slate-300 mx-auto" />
+              <div>
+                <h4 className="font-bold text-slate-700 text-sm">Chưa có mốc lịch trình nào</h4>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Hiện chưa có mốc thời gian nào được thiết lập cho học kỳ này.
+                </p>
+              </div>
+              {canManage && (
+                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleOpenAdd}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Thêm lịch trình mới</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleResetDefaults}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-100 text-[#123891] border border-blue-200 font-bold rounded-xl transition cursor-pointer text-xs shadow-2xs"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>Nạp lịch trình mẫu (6 mốc chuẩn)</span>
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             schedules.map((item) => {

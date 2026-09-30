@@ -145,16 +145,77 @@ const NotificationDropdown = () => {
     // Determine target URL based on notification type and title/message
     let targetLink = item.link;
     const role = user?.role;
-    const isEvalNotification =
-      item.type === 'EVALUATION' ||
-      item.title?.toLowerCase().includes('đánh giá') ||
-      item.message?.toLowerCase().includes('đánh giá thực tập');
+    const titleLower = item.title?.toLowerCase() || '';
+    const messageLower = item.message?.toLowerCase() || '';
 
-    if (isEvalNotification) {
+    const isInternshipEvalNotification =
+      item.type === 'EVALUATION' ||
+      titleLower.includes('đánh giá thực tập') ||
+      messageLower.includes('đánh giá thực tập');
+
+    if (isInternshipEvalNotification) {
       if (role === 'TBM') targetLink = '/tbm/evaluations';
       else if (role === 'LECTURER') targetLink = '/lecturer/internships';
       else if (role === 'STUDENT') targetLink = '/student/internship';
       else if (role === 'COMPANY') targetLink = '/company/evaluations';
+    }
+
+    if (role === 'LECTURER') {
+      // 1. Phân công phản biện khóa luận (Reviewer assignment) -> Nhảy xuống mục Phản biện khóa luận
+      if (
+        titleLower.includes('phản biện') ||
+        messageLower.includes('phản biện') ||
+        item.type === 'THESIS_REVIEW' ||
+        targetLink?.includes('tab=review') ||
+        targetLink?.includes('tab=reviewer')
+      ) {
+        if (
+          titleLower.includes('hội đồng') ||
+          messageLower.includes('hội đồng') ||
+          titleLower.includes('phản biện 2') ||
+          messageLower.includes('phản biện 2') ||
+          targetLink?.includes('tab=reviewer2')
+        ) {
+          targetLink = '/lecturer/theses?tab=reviewer2';
+        } else {
+          targetLink = '/lecturer/theses?tab=review';
+        }
+      }
+      // 2. Tiến độ / Nhật ký khóa luận
+      else if (
+        item.type === 'THESIS_PROGRESS' ||
+        titleLower.includes('tiến độ khóa luận') ||
+        titleLower.includes('nhật ký khóa luận') ||
+        messageLower.includes('tiến độ khóa luận') ||
+        messageLower.includes('báo cáo tuần')
+      ) {
+        targetLink = '/lecturer/theses/progress';
+      }
+      // 3. Đánh giá / Mở đợt nhập điểm KLTN
+      else if (
+        titleLower.includes('mở đợt nhập điểm kltn') ||
+        messageLower.includes('mở đợt nhập điểm kltn') ||
+        titleLower.includes('đánh giá khóa luận')
+      ) {
+        targetLink = '/lecturer/theses?view=evaluation';
+      }
+      // 4. Quản lý / Đề xuất đề tài KLTN
+      else if (
+        titleLower.includes('đề xuất đề tài') ||
+        messageLower.includes('đề xuất đề tài') ||
+        targetLink?.includes('tab=topics')
+      ) {
+        targetLink = '/lecturer/theses?tab=topics';
+      }
+      // 5. Sinh viên nộp đề tài / Sinh viên hướng dẫn KLTN
+      else if (
+        item.type === 'THESIS' &&
+        (titleLower.includes('đề tài khóa luận mới cần duyệt') ||
+         messageLower.includes('vui lòng xem và duyệt đề tài') ||
+         targetLink === '/lecturer/theses')
+      ) {
+        targetLink = '/lecturer/theses?tab=supervisor';
+      }
     }
 
     if (role === 'STUDENT' && targetLink) {

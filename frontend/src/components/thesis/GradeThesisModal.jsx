@@ -741,7 +741,6 @@ const GradeThesisModal = ({
                     return (
                       <label
                         key={crit._id}
-                        onClick={() => handleToggleCriteria(crit._id)}
                         className={`flex items-start gap-3 p-3 rounded-xl border transition cursor-pointer select-none ${
                           isChecked
                             ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950'
@@ -751,9 +750,9 @@ const GradeThesisModal = ({
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={() => {}}
+                          onChange={() => handleToggleCriteria(crit._id)}
                           disabled={isCompleted || isRejected || isPeriodClosedForSupervisor}
-                          className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 mt-0.5 pointer-events-none"
+                          className="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 mt-0.5 cursor-pointer"
                         />
                         <div className="flex-1">
                           <div className="flex items-center gap-2">

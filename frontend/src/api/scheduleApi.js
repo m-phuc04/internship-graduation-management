@@ -12,6 +12,9 @@ export const scheduleApi = {
 
   // TBM & ADMIN only: Delete schedule milestone
   delete: (id) => axiosClient.delete(`/schedules/${id}`),
+
+  // TBM & ADMIN only: Seed default milestones
+  seedDefaults: () => axiosClient.post('/schedules/seed-defaults'),
 };
 
 export default scheduleApi;

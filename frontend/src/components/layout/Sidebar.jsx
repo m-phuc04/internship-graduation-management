@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -15,6 +15,7 @@ import {
   ArrowLeft,
   Calendar,
   X,
+  Newspaper,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
@@ -68,6 +69,12 @@ const Sidebar = ({ onCloseMobile }) => {
       icon: Award,
       badge: 'ĐIỂM',
     },
+    {
+      to: '/tbm/news',
+      label: 'Quản lý Bản tin',
+      icon: Newspaper,
+      badge: 'TIN',
+    },
   ];
 
   // 3. Dành cho ADMIN: Quản trị phân quyền & tài khoản
@@ -110,6 +117,12 @@ const Sidebar = ({ onCloseMobile }) => {
       to: '/admin/companies',
       label: 'Quản lý Doanh nghiệp',
       icon: Building2,
+      badge: 'MASTER',
+    },
+    {
+      to: '/admin/news',
+      label: 'Quản lý Bản tin',
+      icon: Newspaper,
       badge: 'MASTER',
     },
   ];

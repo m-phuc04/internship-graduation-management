@@ -975,7 +975,7 @@ const assignReviewers = async (
         message: `Bạn được phân công làm Giảng viên phản biện kín cho đề tài: "${thesis.thesisTitle}"`,
         referenceId: thesis._id,
         referenceModel: "Thesis",
-        link: "/lecturer/theses",
+        link: "/lecturer/theses?tab=review",
       });
     }
   } else {
@@ -1016,7 +1016,7 @@ const assignReviewers = async (
         message: `Bạn được phân công làm Giảng viên phản biện hội đồng cho đề tài: "${thesis.thesisTitle}"`,
         referenceId: thesis._id,
         referenceModel: "Thesis",
-        link: "/lecturer/theses",
+        link: "/lecturer/theses?tab=reviewer2",
       });
     }
   } else {
@@ -2378,7 +2378,52 @@ const getTopicsForTbm = async ({ status = null, academicTermId = null, search = 
   if (supervisorId) query.supervisorId = supervisorId;
 
   if (search && search.trim()) {
-    query.title = { $regex: search.trim(), $options: "i" };
+    const rawSearch = search.trim();
+    const escapedSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = { $regex: escapedSearch, $options: "i" };
+
+    // 1. Tìm Users (fullName, email, username)
+    const matchingUsers = await User.find({
+      $or: [
+        { fullName: searchRegex },
+        { email: searchRegex },
+        { username: searchRegex },
+      ],
+    }).select("_id");
+    const userIds = matchingUsers.map((u) => u._id);
+
+    // 2. Tìm Giảng viên (lecturerCode, academicTitle, specialization, hoặc userId match)
+    const matchingLecturers = await Lecturer.find({
+      $or: [
+        { lecturerCode: searchRegex },
+        { academicTitle: searchRegex },
+        { department: searchRegex },
+        { specialization: searchRegex },
+        { userId: { $in: userIds } },
+      ],
+    }).select("_id");
+    const lecturerIds = matchingLecturers.map((l) => l._id);
+
+    // 3. Tìm Sinh viên (studentCode, className hoặc userId match)
+    const matchingStudents = await Student.find({
+      $or: [
+        { studentCode: searchRegex },
+        { className: searchRegex },
+        { userId: { $in: userIds } },
+      ],
+    }).select("_id");
+    const studentIds = matchingStudents.map((s) => s._id);
+
+    // Kết hợp tìm kiếm đa trường
+    query.$or = [
+      { title: searchRegex },
+      { description: searchRegex },
+      { supervisorId: { $in: lecturerIds } },
+      { "registeredGroups.studentCode": searchRegex },
+      { "registeredGroups.secondStudentCode": searchRegex },
+      { "registeredGroups.studentId": { $in: studentIds } },
+      { "registeredGroups.secondStudentId": { $in: studentIds } },
+    ];
   }
 
   return await ThesisTopic.find(query)

@@ -92,6 +92,16 @@ const TbmThesisManagement = () => {
     }
   }, [activeMainTab, fetchProposedTopics]);
 
+  // Tự động mở rộng tất cả danh sách giảng viên khi người dùng đang nhập tìm kiếm
+  useEffect(() => {
+    if (topicSearch.trim() && proposedTopics.length > 0) {
+      const allLecIds = new Set(
+        proposedTopics.map((t) => t.supervisorId?._id || 'unknown').filter(Boolean)
+      );
+      setExpandedLecturers(allLecIds);
+    }
+  }, [topicSearch, proposedTopics]);
+
   // Group topics by Lecturer
   const groupedByLecturer = React.useMemo(() => {
     const map = new Map();

@@ -364,6 +364,10 @@ const LecturerThesesPage = () => {
 
   // Open Grade Box Modal
   const handleOpenGradeBox = (thesis) => {
+    if (activeTab === 'SUPERVISOR') {
+      navigate(`/lecturer/theses/${thesis._id}/evaluate`);
+      return;
+    }
     setGradeBoxThesis(thesis);
     const role =
       activeTab === 'REVIEWER_1'
@@ -1615,11 +1619,17 @@ const LecturerThesesPage = () => {
                               <span>Chi tiết</span>
                             </button>
 
-                            {/* Chấm điểm button (Mở popup box) */}
+                            {/* Chấm điểm button (Mở trang đánh giá đầy đủ cho GVHD) */}
                             {item.status !== 'REJECTED' && !isPendingApproval && (
                               <button
                                 type="button"
-                                onClick={() => handleOpenGradeBox(item)}
+                                onClick={() => {
+                                  if (activeTab === 'SUPERVISOR') {
+                                    navigate(`/lecturer/theses/${item._id}/evaluate`);
+                                  } else {
+                                    handleOpenGradeBox(item);
+                                  }
+                                }}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
                                 title="Bấm để nhập điểm và đánh giá đề tài"
                               >
@@ -2372,7 +2382,11 @@ const LecturerThesesPage = () => {
                       type="button"
                       onClick={() => {
                         setDetailModalOpen(false);
-                        handleOpenGradeBox(targetThesis);
+                        if (activeTab === 'SUPERVISOR') {
+                          navigate(`/lecturer/theses/${targetThesis._id}/evaluate`);
+                        } else {
+                          handleOpenGradeBox(targetThesis);
+                        }
                       }}
                       className="px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
                     >

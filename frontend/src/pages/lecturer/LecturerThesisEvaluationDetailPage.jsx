@@ -787,7 +787,6 @@ const LecturerThesisEvaluationDetailPage = () => {
                   return (
                     <label
                       key={crit._id}
-                      onClick={() => handleToggleCriteria(crit._id)}
                       className={`flex items-start gap-3.5 p-4 rounded-2xl border-2 transition cursor-pointer select-none ${isChecked
                           ? 'bg-emerald-50/70 border-emerald-300 text-emerald-950 shadow-2xs'
                           : 'bg-slate-50/50 border-slate-200 text-slate-700 hover:bg-slate-100'
@@ -796,9 +795,9 @@ const LecturerThesisEvaluationDetailPage = () => {
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={() => { }}
+                        onChange={() => handleToggleCriteria(crit._id)}
                         disabled={isCompleted || isRejected || isPeriodClosedForSupervisor}
-                        className="w-5 h-5 text-emerald-600 rounded-lg border-slate-300 focus:ring-emerald-500 mt-0.5 pointer-events-none"
+                        className="w-5 h-5 text-emerald-600 rounded-lg border-slate-300 focus:ring-emerald-500 mt-0.5 cursor-pointer"
                       />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
