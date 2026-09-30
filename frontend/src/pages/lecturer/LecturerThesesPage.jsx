@@ -773,7 +773,7 @@ const LecturerThesesPage = () => {
                       ? 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
                       : isEvaluationView
                         ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 50%)'
-                        : 'Quản Lý Sinh Viên Hướng Dẫn Khóa Luận'}
+                        : 'Đề tài hướng dẫn'}
                 </h2>
                 {!isTopicsView && (
                   <span
@@ -831,31 +831,10 @@ const LecturerThesesPage = () => {
           </div>
         </div>
 
-        {/* Dynamic Context Tabs */}
-        {!isTopicsView && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6 pt-6 border-t border-slate-100">
-            {/* Tab 1: Supervised (GVHD - 50%) */}
-            <button
-              type="button"
-              onClick={() => setActiveTab('SUPERVISOR')}
-              className={`p-3.5 rounded-2xl border text-left transition cursor-pointer ${
-                activeTab === 'SUPERVISOR'
-                  ? 'bg-blue-50/80 border-[#123891]/60 ring-2 ring-indigo-500/20'
-                  : 'bg-slate-50 border-slate-200/80 hover:bg-slate-100'
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-[#123891] flex items-center gap-1.5">
-                  <Users className="w-4 h-4 text-[#123891]" />
-                  Đề tài hướng dẫn (50%)
-                </span>
-                <span className="text-xs font-mono font-extrabold text-[#102d7d] bg-white px-2 py-0.5 rounded-lg border border-blue-200">
-                  {stats.supervisedCount}
-                </span>
-              </div>
-            </button>
-
-            {/* Tab 2: Reviewer 1 (PB Kín - 20%) */}
+        {/* Dynamic Context Tabs for Review View */}
+        {isReviewView && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-6 border-t border-slate-100">
+            {/* Tab 1: Reviewer 1 (PB Kín - 20%) */}
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_1')}
@@ -876,7 +855,7 @@ const LecturerThesesPage = () => {
               </div>
             </button>
 
-            {/* Tab 3: Reviewer 2 (PB Hội đồng - 30%) */}
+            {/* Tab 2: Reviewer 2 (PB Hội đồng - 30%) */}
             <button
               type="button"
               onClick={() => setActiveTab('REVIEWER_2')}

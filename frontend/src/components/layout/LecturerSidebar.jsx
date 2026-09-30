@@ -226,14 +226,14 @@ const LecturerSidebar = ({ onCloseMobile }) => {
                 <span>Đề xuất đề tài KLTN</span>
               </Link>
 
-              {/* Item 2: Sinh viên hướng dẫn */}
+              {/* Item 2: Đề tài hướng dẫn */}
               <Link
                 to="/lecturer/theses?tab=supervisor"
                 onClick={onCloseMobile}
                 className={getSubLinkClass(isItemActive('/lecturer/theses', '?tab=supervisor'))}
               >
                 <Users className="w-3.5 h-3.5 shrink-0" />
-                <span>Sinh viên hướng dẫn</span>
+                <span>Đề tài hướng dẫn</span>
               </Link>
 
               {/* Item 3: Nhật ký khóa luận */}
