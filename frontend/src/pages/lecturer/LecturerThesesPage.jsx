@@ -793,13 +793,11 @@ const LecturerThesesPage = () => {
                   </span>
                 )}
               </div>
-              {!isTopicsView && (
+              {!isTopicsView && (isReviewView || isEvaluationView) && (
                 <p className="text-xs text-slate-500 mt-1">
                   {isReviewView
                     ? 'Chấm điểm độc lập theo phân công Phản biện kín (20%) và Phản biện hội đồng (30%).'
-                    : isEvaluationView
-                      ? 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (50%) cho sinh viên khóa luận.'
-                      : 'Theo dõi danh sách các nhóm sinh viên và đề tài bạn phụ trách hướng dẫn chính trong học kỳ.'}
+                    : 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (50%) cho sinh viên khóa luận.'}
                 </p>
               )}
             </div>
