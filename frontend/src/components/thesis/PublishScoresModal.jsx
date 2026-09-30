@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import ConfirmDialog from '../common/ConfirmDialog';
 import { useToast } from '../../context/ToastContext';
-import { Send, Check, BookOpen, AlertCircle } from 'lucide-react';
+import { Send, Check, BookOpen } from 'lucide-react';
 
 const PublishScoresModal = ({
   isOpen,
@@ -242,7 +242,7 @@ const PublishScoresModal = ({
                     Công bố điểm cho tất cả đề tài ({thesesCount} đề tài)
                   </h4>
                   <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
-                    Chỉ những đầu điểm đã được <strong>100% tất cả các đề tài</strong> hoàn tất chấm điểm mới được phép chọn để công bố đồng loạt cho sinh viên.
+                    Chọn các đầu điểm thành phần muốn công bố cho sinh viên của tất cả các đề tài khóa luận trong danh sách.
                   </p>
                 </div>
               </div>
@@ -292,7 +292,7 @@ const PublishScoresModal = ({
                 onClick={handleSelectAllAvailable}
                 className="text-[#123891] font-bold hover:underline cursor-pointer"
               >
-                Chọn tất cả (đã đủ điểm)
+                Chọn tất cả
               </button>
               <span className="text-slate-300">•</span>
               <button
@@ -339,40 +339,17 @@ const PublishScoresModal = ({
                       >
                         {item.label}
                       </span>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-slate-400 font-mono">
-                          {item.weight}
-                        </span>
-                        {isAll && (
-                          <>
-                            <span className="text-slate-300">•</span>
-                            {item.hasScore ? (
-                              <span className="text-[10.5px] text-emerald-600 font-medium">
-                                Đã đủ điểm ({item.count}/{item.total} đề tài)
-                              </span>
-                            ) : (
-                              <span className="text-[10.5px] text-amber-600 font-medium">
-                                Chưa đủ ({item.count}/{item.total} đề tài có điểm)
-                              </span>
-                            )}
-                          </>
-                        )}
-                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono block mt-0.5">
+                        {item.weight}
+                      </span>
                     </div>
                   </div>
 
                   <div className="text-right shrink-0">
                     {isAll ? (
-                      item.hasScore ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold font-mono bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <Check className="w-3 h-3" />
-                          <span>Đủ điểm</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">
-                          <span>Chưa đủ</span>
-                        </span>
-                      )
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                        {item.weight}
+                      </span>
                     ) : item.hasScore ? (
                       <span className="px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-white border border-slate-200 text-slate-900 shadow-2xs">
                         {item.score} đ
@@ -397,8 +374,7 @@ const PublishScoresModal = ({
             </button>
             <button
               type="submit"
-              disabled={selectedLabels.length === 0 && !Object.values(publishedScores['GLOBAL_ALL'] || {}).some(Boolean)}
-              className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition cursor-pointer flex items-center gap-1.5"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Xác nhận</span>
