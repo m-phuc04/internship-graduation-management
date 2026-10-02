@@ -188,7 +188,7 @@ const TbmThesisDetailModal = ({
             {/* PB KÍN */}
             <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100 text-[11px] space-y-0.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[#0d2a75]">PB KÍN (30%):</span>
+                <span className="font-bold text-[#0d2a75]">PB KÍN (20%):</span>
                 <span className="px-1.5 py-0.2 rounded bg-blue-100 text-[#102d7d] font-bold text-[9px]">
                   GVPB KÍN
                 </span>

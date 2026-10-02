@@ -333,15 +333,15 @@ const GradeThesisModal = ({
   };
 
   let roleTitle = 'Giảng viên đánh giá';
-  let roleWeight = '30%';
+  let roleWeight = '20%';
 
   if (activeRoleTab === 'SUPERVISOR') {
     roleTitle = 'Đánh giá của Giảng viên Hướng dẫn (GVHD)';
-    roleWeight = '40%';
+    roleWeight = '50%';
   } else if (activeRoleTab === 'REVIEWER1') {
     roleTitle = 'Đánh giá của Giảng viên Phản biện Kín';
-    roleWeight = '30%';
-  } else if (activeRoleTab === 'REVIEWER2') {
+    roleWeight = '20%';
+  } else if (activeRoleTab === 'REVIEWER2' || activeRoleTab === 'COUNCIL') {
     roleTitle = 'Đánh giá của Giảng viên Phản biện Hội đồng';
     roleWeight = '30%';
   }
@@ -846,7 +846,7 @@ const GradeThesisModal = ({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  1. Phản biện kín (30%)
+                  Phản biện kín (20%)
                 </button>
                 <button
                   type="button"
@@ -857,7 +857,7 @@ const GradeThesisModal = ({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  2. Phản biện Hội đồng (30%)
+                  Phản biện Hội đồng (30%)
                 </button>
               </div>
             )}

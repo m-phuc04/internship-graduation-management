@@ -358,9 +358,6 @@ const LecturerThesesPage = () => {
 
     if (!councilId || councilId === 'default_council' || councilId === '[object Object]') return null;
 
-    if (councilsMap && councilsMap[councilId]) {
-      return councilsMap[councilId];
-    }
     if (Array.isArray(councils)) {
       const found = councils.find((c) => (c.id && String(c.id) === councilId) || (c._id && String(c._id) === councilId));
       if (found) return found;
@@ -369,7 +366,14 @@ const LecturerThesesPage = () => {
       return item.councilId;
     }
     return null;
-  }, [councils, councilsMap, thesisCouncilMap]);
+  }, [councils, thesisCouncilMap]);
+
+  const cleanTitle = (str) =>
+    (str || '')
+      .toLowerCase()
+      .replace(/(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ|giáo sư|pgs\.|gs\.)/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
 
   // Helper to normalize strings for robust comparison (handles accents, titles, whitespace, punctuation)
   const normalizeLecturerStr = (s) =>
@@ -522,9 +526,9 @@ const LecturerThesesPage = () => {
 
   // Computations for Council Rooms - Councils containing this lecturer
   const myCouncils = useMemo(() => {
-    if (!councils || councils.length === 0) return [];
-    return councils.filter((c) => isLecturerInCouncil(c));
-  }, [councils, isLecturerInCouncil]);
+    if (!allAvailableCouncils || allAvailableCouncils.length === 0) return [];
+    return allAvailableCouncils.filter((c) => isLecturerInCouncil(c));
+  }, [allAvailableCouncils, isLecturerInCouncil]);
 
   const activeCouncil = useMemo(() => {
     if (selectedCouncilId) {
@@ -1072,7 +1076,7 @@ const LecturerThesesPage = () => {
     );
   };
 
-  // 2c. Điểm phản biện kín tổng hợp (Trung bình cộng của GVPB 1 và GVPB 2)
+  // 2c. Điểm phản biện kín tổng hợp (Trung bình cộng của GVPB 1 và GVPB 2 nếu có 2 người chấm, hoặc lấy trực tiếp điểm 1 người không cần chia)
   const renderCombinedReviewerScore = (item) => {
     const isTwo = item.studentCount === 2 && item.secondStudentId;
     const s1_pb1 = item.scores?.student1Reviewer1Score ?? item.scores?.reviewer1Score;
@@ -1081,18 +1085,17 @@ const LecturerThesesPage = () => {
     const s2_pb2 = item.scores?.student2Reviewer2Score;
 
     const calcCombined = (pb1, pb2) => {
-      if (
-        pb1 !== null &&
-        pb1 !== undefined &&
-        pb1 !== '' &&
-        pb2 !== null &&
-        pb2 !== undefined &&
-        pb2 !== ''
-      ) {
-        const val1 = Number(pb1);
-        const val2 = Number(pb2);
-        // Điểm phản biện kín là trung bình cộng của 2 điểm GVPB 1 và GVPB 2
-        return Number(((val1 + val2) / 2).toFixed(2));
+      const has1 = pb1 !== null && pb1 !== undefined && pb1 !== '' && !isNaN(Number(pb1));
+      const has2 = pb2 !== null && pb2 !== undefined && pb2 !== '' && !isNaN(Number(pb2));
+
+      if (has1 && has2) {
+        return Number(((Number(pb1) + Number(pb2)) / 2).toFixed(2));
+      }
+      if (has1) {
+        return Number(Number(pb1).toFixed(2));
+      }
+      if (has2) {
+        return Number(Number(pb2).toFixed(2));
       }
       return null;
     };
@@ -1116,17 +1119,6 @@ const LecturerThesesPage = () => {
       return (
         <span className="font-extrabold text-[#123891] font-mono text-xs bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
           {c1}
-        </span>
-      );
-    }
-
-    if (
-      (s1_pb1 !== null && s1_pb1 !== undefined && s1_pb1 !== '') ||
-      (s1_pb2 !== null && s1_pb2 !== undefined && s1_pb2 !== '')
-    ) {
-      return (
-        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded text-[10px] font-medium border border-amber-200" title="Chờ giảng viên phản biện còn lại chấm điểm">
-          Chờ GV còn lại
         </span>
       );
     }
@@ -1418,7 +1410,7 @@ const LecturerThesesPage = () => {
               }`}
             >
               <Shield className="w-4 h-4" />
-              <span>1. Phản biện kín (GVPB 1 & GVPB 2)</span>
+              <span>Phản biện kín (GVPB 1 & GVPB 2)</span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
                 !isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
               }`}>
@@ -1436,7 +1428,7 @@ const LecturerThesesPage = () => {
               }`}
             >
               <Award className="w-4 h-4" />
-              <span>2. Phản biện hội đồng</span>
+              <span>Phản biện Hội đồng</span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
                 isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
               }`}>
@@ -2419,18 +2411,26 @@ const LecturerThesesPage = () => {
                         {/* 7. Hội đồng */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {assignedCouncil ? (
-                            <div>
-                              <div className="font-semibold text-[#123891]">
-                                {assignedCouncil.name}
-                              </div>
+                            <div className="space-y-0.5">
+                              <strong className="text-slate-900 block font-bold text-xs">
+                                {(assignedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}
+                              </strong>
                               {assignedCouncil.room && (
-                                <span className="text-slate-500 font-mono text-[10px]">
+                                <div className="text-[10px] text-slate-500 font-mono">
                                   Phòng: {assignedCouncil.room}
-                                </span>
+                                </div>
+                              )}
+                              {assignedCouncil.reportTime && (
+                                <div className="text-[10px] text-slate-600 font-mono flex items-center gap-1 mt-0.5">
+                                  <Clock className="w-3 h-3 text-[#123891]" />
+                                  <span>{assignedCouncil.reportTime}</span>
+                                </div>
                               )}
                             </div>
                           ) : (
-                            <span className="text-slate-400 italic text-[11px]">Chưa phân hội đồng</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200">
+                              Chưa phân hội đồng
+                            </span>
                           )}
                         </td>
 
@@ -2441,7 +2441,7 @@ const LecturerThesesPage = () => {
 
                         {/* 9. Điểm phản biện kín */}
                         <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                          {renderReviewer1Score(item)}
+                          {renderCombinedReviewerScore(item)}
                         </td>
 
                         {/* 10. Điểm phản biện hội đồng */}
@@ -3073,129 +3073,7 @@ const LecturerThesesPage = () => {
               )}
             </div>
 
-            {/* Lecturers & Evaluation Breakdown */}
-            <div>
-              <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider block mb-2">
-                Hội Đồng & Kết Quả Đánh Giá
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Supervisor (50%) */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#123891] flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5 text-[#123891]" />
-                      GVHD (50%)
-                    </span>
-                    {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
-                      <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
-                          SV1: {targetThesis.scores?.student1SupervisorScore ?? '—'}
-                        </span>
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
-                          SV2: {targetThesis.scores?.student2SupervisorScore ?? '—'}
-                        </span>
-                      </div>
-                    ) : targetThesis.scores?.supervisorScore !== null && targetThesis.scores?.supervisorScore !== undefined ? (
-                      <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        {targetThesis.scores.supervisorScore}/10
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 italic">Chưa chấm</span>
-                    )}
-                  </div>
-                  <div className="font-semibold text-slate-800">
-                    {formatLecturerDisplay(targetThesis.supervisorId)}
-                  </div>
-                  {targetThesis.supervisorId?.lecturerCode && (
-                    <div className="text-[10.5px] text-slate-400 font-mono">
-                      Mã GV: {targetThesis.supervisorId.lecturerCode}
-                    </div>
-                  )}
-                </div>
 
-                {/* Reviewer 1 (20%) */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#123891] flex items-center gap-1">
-                      <Shield className="w-3.5 h-3.5 text-[#123891]" />
-                      GVPB 1 (20%)
-                    </span>
-                    {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
-                      <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
-                          SV1: {targetThesis.scores?.student1Reviewer1Score ?? '—'}
-                        </span>
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
-                          SV2: {targetThesis.scores?.student2Reviewer1Score ?? '—'}
-                        </span>
-                      </div>
-                    ) : targetThesis.scores?.reviewer1Score !== null && targetThesis.scores?.reviewer1Score !== undefined ? (
-                      <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        {targetThesis.scores.reviewer1Score}/10
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 italic">Chưa chấm</span>
-                    )}
-                  </div>
-                  <div className="font-semibold text-slate-800">
-                    {getReviewer1Display(targetThesis)}
-                  </div>
-                </div>
-
-                {/* Reviewer 2 (30%) */}
-                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#123891] flex items-center gap-1">
-                      <Award className="w-3.5 h-3.5 text-[#123891]" />
-                      GVPB 2 (30%)
-                    </span>
-                    {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
-                      <div className="flex items-center gap-1 font-mono text-[11px] font-bold">
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV1">
-                          SV1: {targetThesis.scores?.student1Reviewer2Score ?? '—'}
-                        </span>
-                        <span className="text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded" title="Điểm SV2">
-                          SV2: {targetThesis.scores?.student2Reviewer2Score ?? '—'}
-                        </span>
-                      </div>
-                    ) : targetThesis.scores?.reviewer2Score !== null && targetThesis.scores?.reviewer2Score !== undefined ? (
-                      <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        {targetThesis.scores.reviewer2Score}/10
-                      </span>
-                    ) : (
-                      <span className="text-[10px] text-slate-400 italic">Chưa chấm</span>
-                    )}
-                  </div>
-                  <div className="font-semibold text-slate-800">
-                    {getReviewer2Display(targetThesis)}
-                  </div>
-                </div>
-              </div>
-
-              {/* Final Score Banner */}
-              {targetThesis.scores?.finalScore !== null && targetThesis.scores?.finalScore !== undefined && (
-                <div className="mt-3 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 flex flex-wrap items-center justify-between text-xs gap-2">
-                  <span className="font-bold text-emerald-900">Điểm tổng kết khóa luận (Thang 10):</span>
-                  {targetThesis.studentCount === 2 && targetThesis.secondStudentId ? (
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#0d2a75] font-bold font-mono">
-                        SV1: {targetThesis.scores?.student1FinalScore ?? targetThesis.scores.finalScore}/10
-                      </span>
-                      <span className="text-[#0d2a75] font-bold font-mono">
-                        SV2: {targetThesis.scores?.student2FinalScore ?? targetThesis.scores.finalScore}/10
-                      </span>
-                      <span className="font-mono font-extrabold text-sm text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-lg border border-emerald-300">
-                        TB: {targetThesis.scores.finalScore}/10
-                      </span>
-                    </div>
-                  ) : (
-                    <span className="font-mono font-extrabold text-sm text-emerald-700">
-                      {targetThesis.scores.finalScore} / 10
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
 
             {/* Actions inside Detail Modal */}
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
