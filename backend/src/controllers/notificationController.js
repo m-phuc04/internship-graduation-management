@@ -74,37 +74,33 @@ const getUnreadCount = async (req, res, next) => {
   }
 };
 
-// Create notification
-const createNotification = async (req, res, next) => {
+// Send notification when assigned to council
+const notifyCouncilAssignment = async (req, res, next) => {
   try {
-    const {
-      recipientId,
-      userId,
-      title,
-      message,
-      type = "SYSTEM",
-      link,
-      priority = "NORMAL",
-      referenceId,
-      referenceModel,
-    } = req.body;
+    const { lecturerUserIds = [], councilName = "Hội đồng", councilRoom = "" } = req.body;
+    const cleanCouncilName = (councilName || "Hội đồng").replace(/\s*\([^)]*\)/g, "").trim();
+    const cleanRoom = councilRoom ? ` (Phòng ${councilRoom})` : "";
 
-    const notification = await notificationService.createNotification({
-      recipientId: recipientId || userId,
-      senderId: req.user?.userId || null,
-      type,
-      title,
-      message,
-      link,
-      priority,
-      referenceId,
-      referenceModel,
-    });
+    const notifications = [];
+    for (const uId of lecturerUserIds) {
+      if (uId) {
+        const notif = await notificationService.createNotification({
+          recipientId: uId,
+          senderId: req.user?.userId || null,
+          type: "THESIS",
+          title: "Phân công Hội đồng đánh giá Khóa luận",
+          message: `Bạn đã được phân công vào ${cleanCouncilName}${cleanRoom}.`,
+          link: "/lecturer/theses?tab=council",
+          priority: "HIGH",
+        });
+        if (notif) notifications.push(notif);
+      }
+    }
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: "Tạo thông báo thành công",
-      data: notification,
+      message: "Đã gửi thông báo phân công hội đồng cho giảng viên",
+      data: notifications,
     });
   } catch (error) {
     next(error);
@@ -116,5 +112,5 @@ export default {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
-  createNotification,
+  notifyCouncilAssignment,
 };

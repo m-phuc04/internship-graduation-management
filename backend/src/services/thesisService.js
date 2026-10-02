@@ -7,6 +7,7 @@ import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
 import Permission from "../models/Permission.js";
 import AcademicTerm from "../models/AcademicTerm.js";
+import Council from "../models/Council.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -453,7 +454,8 @@ const getThesisById = async (id) => {
       path: "reviewers.lecturerId",
       populate: { path: "userId", select: "fullName email phone avatar" },
     })
-    .populate("academicTermId");
+    .populate("academicTermId")
+    .populate("councilId");
 
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
@@ -577,6 +579,7 @@ const getAllThesesForTbm = async ({
       })
       .populate("assignedBy", "fullName email")
       .populate("academicTermId")
+      .populate("councilId")
       .lean(),
 
     Thesis.countDocuments(query),
@@ -921,6 +924,15 @@ const assignReviewers = async (
       isPrivateReviewer: Boolean(r.isPrivateReviewer),
       isCouncilReviewer: Boolean(r.isCouncilReviewer),
     }));
+  }
+
+  // Validate Reviewer 1 != Reviewer 2
+  if (
+    effectiveReviewer1Id &&
+    effectiveReviewer2Id &&
+    effectiveReviewer1Id.toString() === effectiveReviewer2Id.toString()
+  ) {
+    throw new AppError("Giảng viên phản biện 1 và Giảng viên phản biện 2 không được trùng nhau", 400);
   }
 
   // Validate Supervisor != Reviewers (GVHD cannot review their own supervised thesis)
@@ -1398,6 +1410,7 @@ const getThesesForLecturerRole = async (
       populate: { path: "userId", select: "fullName email phone" },
     })
     .populate("academicTermId")
+    .populate("councilId")
     .lean();
 
   const idStr = lecturer._id.toString();
@@ -1416,11 +1429,11 @@ const getThesesForLecturerRole = async (
 
     const isReviewer1 =
       (t.reviewer1Id?._id?.toString() || t.reviewer1Id?.toString()) === idStr ||
-      (!t.reviewer1Id && isPrivateRevInArray);
+      isPrivateRevInArray;
 
     const isReviewer2 =
       (t.reviewer2Id?._id?.toString() || t.reviewer2Id?.toString()) === idStr ||
-      (!t.reviewer2Id && isCouncilRevInArray);
+      isCouncilRevInArray;
 
     const roles = [];
     if (isSupervisor) roles.push("GVHD");
@@ -1439,13 +1452,8 @@ const getThesesForLecturerRole = async (
     };
   });
 
-  // Also fetch all active theses in the term so council/room assignments can locate any thesis
-  const termQuery = {};
-  if (academicTermId && academicTermId !== "ALL") {
-    termQuery.academicTermId = academicTermId;
-  }
+  // Also fetch all active theses so council/room assignments can locate any thesis
   const allTermTheses = await Thesis.find({
-    ...termQuery,
     status: { $nin: ["CANCELLED"] },
   })
     .sort({ createdAt: -1 })
@@ -1474,6 +1482,7 @@ const getThesesForLecturerRole = async (
       populate: { path: "userId", select: "fullName email phone" },
     })
     .populate("academicTermId")
+    .populate("councilId")
     .lean();
 
   const allThesesAnnotated = allTermTheses.map((t) => {
@@ -1489,11 +1498,11 @@ const getThesesForLecturerRole = async (
 
     const isReviewer1 =
       (t.reviewer1Id?._id?.toString() || t.reviewer1Id?.toString()) === idStr ||
-      (!t.reviewer1Id && isPrivateRevInArray);
+      isPrivateRevInArray;
 
     const isReviewer2 =
       (t.reviewer2Id?._id?.toString() || t.reviewer2Id?.toString()) === idStr ||
-      (!t.reviewer2Id && isCouncilRevInArray);
+      isCouncilRevInArray;
 
     const roles = [];
     if (isSupervisor) roles.push("GVHD");
@@ -1559,9 +1568,12 @@ const gradeThesisByLecturer = async (
   const { role, roleType, score, student1Score, student2Score, comment } = payload;
   const activeRole = role || roleType || "SUPERVISOR";
 
-  const lecturer = await Lecturer.findOne({ userId: requestingUserId }).populate(
+  let lecturer = await Lecturer.findOne({ userId: requestingUserId }).populate(
     "userId",
   );
+  if (!lecturer) {
+    lecturer = await Lecturer.findById(requestingUserId).populate("userId");
+  }
   if (!lecturer) {
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }

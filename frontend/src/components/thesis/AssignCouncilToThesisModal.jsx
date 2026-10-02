@@ -43,7 +43,7 @@ const AssignCouncilToThesisModal = ({
       setError('');
       const initialId = currentCouncilId || '';
       if (initialId) {
-        const found = councils.find((c) => c.id === initialId);
+        const found = councils.find((c) => (c.id || c._id) === initialId || String(c.id || c._id) === String(initialId));
         if (found) {
           const hasLecturers = hasLecturersAssigned(found);
           const hasSupConflict = isSupervisorInCouncil(found);
@@ -78,7 +78,7 @@ const AssignCouncilToThesisModal = ({
 
   if (!thesis) return null;
 
-  const selectedCouncil = councils.find((c) => c.id === selectedCouncilId);
+  const selectedCouncil = councils.find((c) => (c.id || c._id) === selectedCouncilId || String(c.id || c._id) === String(selectedCouncilId));
 
   const handleSelectCouncil = (councilId) => {
     setError('');
@@ -87,7 +87,7 @@ const AssignCouncilToThesisModal = ({
       return;
     }
 
-    const found = councils.find((c) => c.id === councilId);
+    const found = councils.find((c) => (c.id || c._id) === councilId || String(c.id || c._id) === String(councilId));
     if (!found) {
       setSelectedCouncilId('');
       return;
@@ -132,7 +132,7 @@ const AssignCouncilToThesisModal = ({
     setError('');
 
     if (selectedCouncilId) {
-      const found = councils.find((c) => c.id === selectedCouncilId);
+      const found = councils.find((c) => (c.id || c._id) === selectedCouncilId || String(c.id || c._id) === String(selectedCouncilId));
       if (found) {
         const cleanName = (found.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
         if (!hasLecturersAssigned(found)) {
@@ -285,7 +285,8 @@ const AssignCouncilToThesisModal = ({
             className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
           >
             <option value="">Chưa phân công</option>
-            {councils.map((c) => {
+            {councils.map((c, idx) => {
+              const cid = c.id || c._id || `council-${idx}`;
               const cleanName = (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
               const typeText = c.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral';
               const timeText = c.reportTime ? ` • ${c.reportTime}` : '';
@@ -297,12 +298,12 @@ const AssignCouncilToThesisModal = ({
 
               return (
                 <option
-                  key={c.id}
-                  value={c.id}
+                  key={cid}
+                  value={cid}
                   disabled={isDisabled}
                   className={isDisabled ? 'text-slate-400 bg-slate-100 font-normal' : 'text-slate-900 font-semibold'}
                 >
-                  {cleanName} (Phòng {c.room}) - {typeText}{timeText}
+                  {cleanName} (Phòng {c.room || '—'}) - {typeText}{timeText}
                 </option>
               );
             })}

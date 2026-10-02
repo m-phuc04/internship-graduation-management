@@ -19,7 +19,7 @@ router.patch("/read-all", notificationController.markAllAsRead);
 // Mark single notification as read
 router.patch("/:id/read", notificationController.markAsRead);
 
-// Create notification
-router.post("/", notificationController.createNotification);
+// Notify lecturers when assigned to council
+router.post("/notify-council", notificationController.notifyCouncilAssignment);
 
 export default router;

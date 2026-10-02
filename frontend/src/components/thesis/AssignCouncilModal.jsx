@@ -146,16 +146,24 @@ const AssignCouncilModal = ({
     setSubmitting(true);
     try {
       const updatedLecturers = [];
+      const recipientUserIds = [];
       for (let i = 0; i < lecturerColumnCount; i++) {
         const lId = assignedLecturerIds[i];
         if (lId) {
           const foundLec = lecturers.find((l) => String(l._id) === String(lId));
-          const oldLecData = Array.isArray(council.lecturers) ? council.lecturers.find((l) => (l.lecturerId?._id || l.lecturerId) === lId) : null;
+          const uId = foundLec?.userId?._id || foundLec?.userId;
+          if (uId) recipientUserIds.push(String(uId));
+
+          const oldLecData = Array.isArray(council.lecturers) ? council.lecturers.find((l) => (l.lecturerId?._id || l.lecturerId || l.id) === lId) : null;
           updatedLecturers.push({
             lecturerId: lId,
-            fullName: foundLec?.userId?.fullName || 'Giảng viên',
+            id: lId,
+            _id: lId,
+            userId: uId || null,
+            fullName: foundLec?.userId?.fullName || foundLec?.fullName || 'Giảng viên',
             academicTitle: foundLec?.academicTitle || 'ThS.',
             lecturerCode: foundLec?.lecturerCode || '',
+            email: foundLec?.userId?.email || foundLec?.email || '',
             score: oldLecData?.score ?? null,
           });
         }
@@ -169,28 +177,15 @@ const AssignCouncilModal = ({
         lecturers: updatedLecturers,
       });
 
-      // Send notifications (bell icon) to all assigned lecturers
-      try {
-        filledIds.forEach(async (lId) => {
-          const lecObj = lecturers.find((l) => String(l._id) === String(lId));
-          const targetUserId = lecObj?.userId?._id || lecObj?.userId || lId;
-          const roomText = council.room ? ` (Phòng: ${council.room})` : '';
-          const timeText = council.reportTime ? ` - Lịch: ${council.reportTime}` : '';
-          try {
-            await notificationApi.create({
-              recipientId: targetUserId,
-              type: 'THESIS',
-              title: 'Phân công Hội đồng đánh giá Khóa luận tốt nghiệp',
-              message: `Bạn được phân công tham gia ${cleanCouncilName}${roomText}${timeText}. Vui lòng kiểm tra danh sách đề tài và chuẩn bị tham gia đánh giá.`,
-              link: '/lecturer/theses?tab=reviewer2',
-              priority: 'HIGH',
-            });
-          } catch (err) {
-            console.warn('Failed to send notification to lecturer:', lId, err);
-          }
+      // Send notification to newly assigned lecturers
+      if (recipientUserIds.length > 0) {
+        notificationApi.notifyCouncilAssignment({
+          lecturerUserIds: recipientUserIds,
+          councilName: cleanCouncilName || council.name,
+          councilRoom: council.room || '',
+        }).catch((err) => {
+          console.warn('Failed to send council notification:', err);
         });
-      } catch (notifErr) {
-        console.warn('Error creating council assignment notifications:', notifErr);
       }
 
       showToast(`Đã phân công giảng viên cho ${cleanCouncilName} thành công!`, 'success');

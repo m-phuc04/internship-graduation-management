@@ -83,13 +83,7 @@ const MyThesisPage = () => {
 
   const formatLecturerDisplay = (title, name) => {
     if (!name) return '—';
-    const trimmedName = name.trim();
-    if (!title) return trimmedName;
-    const trimmedTitle = title.trim();
-    if (trimmedName.toLowerCase().startsWith(trimmedTitle.toLowerCase())) {
-      return trimmedName;
-    }
-    return `${trimmedTitle} ${trimmedName}`;
+    return name.trim();
   };
 
   const [publishedVersion, setPublishedVersion] = useState(0);

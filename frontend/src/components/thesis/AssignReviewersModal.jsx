@@ -81,6 +81,11 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
       return;
     }
 
+    if (reviewer1Id && reviewer2Id && reviewer1Id === reviewer2Id) {
+      setError('Giảng viên phản biện 1 và Giảng viên phản biện 2 không được trùng nhau.');
+      return;
+    }
+
     if (reviewer1Id && reviewer1Id === supervisorIdStr) {
       setError('Giảng viên hướng dẫn (GVHD) không được làm Giảng viên phản biện 1.');
       return;
@@ -94,27 +99,19 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
     setSubmitting(true);
     try {
       const reviewersPayload = [];
-      if (reviewer1Id && reviewer2Id && reviewer1Id === reviewer2Id) {
+      if (reviewer1Id) {
         reviewersPayload.push({
           lecturerId: reviewer1Id,
           isPrivateReviewer: true,
+          isCouncilReviewer: false,
+        });
+      }
+      if (reviewer2Id) {
+        reviewersPayload.push({
+          lecturerId: reviewer2Id,
+          isPrivateReviewer: false,
           isCouncilReviewer: true,
         });
-      } else {
-        if (reviewer1Id) {
-          reviewersPayload.push({
-            lecturerId: reviewer1Id,
-            isPrivateReviewer: true,
-            isCouncilReviewer: false,
-          });
-        }
-        if (reviewer2Id) {
-          reviewersPayload.push({
-            lecturerId: reviewer2Id,
-            isPrivateReviewer: false,
-            isCouncilReviewer: true,
-          });
-        }
       }
 
       const payload = {
@@ -141,6 +138,14 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
 
   const availableLecturers = lecturers.filter(
     (lec) => lec._id?.toString() !== supervisorIdStr
+  );
+
+  const availableReviewer1Lecturers = availableLecturers.filter(
+    (lec) => !reviewer2Id || lec._id?.toString() !== reviewer2Id.toString()
+  );
+
+  const availableReviewer2Lecturers = availableLecturers.filter(
+    (lec) => !reviewer1Id || lec._id?.toString() !== reviewer1Id.toString()
   );
 
   return (
@@ -206,7 +211,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="">-- Chọn Giảng viên phản biện 1 --</option>
-              {availableLecturers.map((lec) => (
+              {availableReviewer1Lecturers.map((lec) => (
                 <option key={lec._id} value={lec._id}>
                   {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
                   {lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
@@ -230,7 +235,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="">-- Chọn Giảng viên phản biện 2 --</option>
-              {availableLecturers.map((lec) => (
+              {availableReviewer2Lecturers.map((lec) => (
                 <option key={lec._id} value={lec._id}>
                   {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
                   {lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})

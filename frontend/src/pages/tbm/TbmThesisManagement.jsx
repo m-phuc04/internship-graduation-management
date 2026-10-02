@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
+import councilApi from '../../api/councilApi';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -122,16 +123,9 @@ const TbmThesisManagement = () => {
     return Array.from(map.values());
   }, [proposedTopics]);
 
-  // Helper to format lecturer display title nicely (prevent duplicate "TS. TS.")
   const formatLecturerDisplay = (title, name) => {
     if (!name) return '—';
-    const trimmedName = name.trim();
-    if (!title) return trimmedName;
-    const trimmedTitle = title.trim();
-    if (trimmedName.toLowerCase().startsWith(trimmedTitle.toLowerCase())) {
-      return trimmedName;
-    }
-    return `${trimmedTitle} ${trimmedName}`;
+    return name.trim();
   };
 
   const toggleLecturerExpand = (lecId) => {
@@ -272,17 +266,28 @@ const TbmThesisManagement = () => {
 
   const getCouncilsList = useCallback(() => {
     try {
-      const key = `tbm_councils_${currentTerm?._id || 'default'}`;
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+      const storageKey = `tbm_councils_${currentTerm?._id || 'default'}`;
+      const raw = localStorage.getItem(storageKey) || localStorage.getItem('tbm_councils_default');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          return parsed.map((c) => ({
+            ...c,
+            name: (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim(),
+            lecturers: Array.isArray(c.lecturers) ? c.lecturers : [],
+          }));
+        }
       }
     } catch {}
     return [];
   }, [currentTerm?._id]);
 
   const handleAssignCouncilToThesis = (thesisId, councilId) => {
+    // Persist to MongoDB
+    councilApi.assignThesis({ thesisId, councilId }).catch((err) => {
+      console.warn('Error assigning council to thesis in MongoDB:', err.message);
+    });
+
     setThesisCouncilMap((prev) => {
       const next = { ...prev };
       if (councilId) {
@@ -293,6 +298,18 @@ const TbmThesisManagement = () => {
       try {
         localStorage.setItem(thesisCouncilStorageKey, JSON.stringify(next));
         localStorage.setItem('tbm_thesis_councils_default', JSON.stringify(next));
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && k.startsWith('tbm_thesis_councils_')) {
+            try {
+              const cur = JSON.parse(localStorage.getItem(k) || '{}');
+              if (councilId) cur[thesisId] = councilId;
+              else delete cur[thesisId];
+              localStorage.setItem(k, JSON.stringify(cur));
+            } catch {}
+          }
+        }
+        window.dispatchEvent(new Event('storage'));
       } catch {}
       return next;
     });
@@ -1305,8 +1322,9 @@ const TbmThesisManagement = () => {
                     {displayedTheses.map((item, idx) => {
                       const isPending = item.status === 'PENDING_TBM_APPROVAL';
                       const councilsList = getCouncilsList();
-                      const assignedCouncilId = thesisCouncilMap[item._id];
-                      const assignedCouncil = councilsList.find((c) => c.id === assignedCouncilId);
+                      const rawAssignedId = thesisCouncilMap[item._id] || (item.councilId?._id ? item.councilId._id : item.councilId);
+                      const assignedCouncilId = typeof rawAssignedId === 'object' && rawAssignedId !== null ? String(rawAssignedId._id || rawAssignedId.id || '') : String(rawAssignedId || '');
+                      const assignedCouncil = councilsList.find((c) => (c.id && String(c.id) === assignedCouncilId) || (c._id && String(c._id) === assignedCouncilId));
 
                       if (activeMainTab === 'COUNCIL_REVIEWER') {
                         const scoreHDPB = calculateScoreHDPB(item);
@@ -1941,7 +1959,13 @@ const TbmThesisManagement = () => {
         }}
         thesis={selectedThesisForCouncil}
         councils={getCouncilsList()}
-        currentCouncilId={selectedThesisForCouncil ? thesisCouncilMap[selectedThesisForCouncil._id] : ''}
+        currentCouncilId={
+          selectedThesisForCouncil
+            ? typeof (thesisCouncilMap[selectedThesisForCouncil._id] || (selectedThesisForCouncil.councilId?._id ? selectedThesisForCouncil.councilId._id : selectedThesisForCouncil.councilId)) === 'object'
+              ? String((selectedThesisForCouncil.councilId?._id || selectedThesisForCouncil.councilId?.id || ''))
+              : String(thesisCouncilMap[selectedThesisForCouncil._id] || selectedThesisForCouncil.councilId || '')
+            : ''
+        }
         reportFormat={selectedThesisForCouncil ? (thesisReportFormatMap[selectedThesisForCouncil._id] || 'POSTER') : 'POSTER'}
         onAssignCouncil={handleAssignCouncilToThesis}
       />
