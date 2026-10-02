@@ -169,10 +169,17 @@ const RegisterThesisPage = () => {
 
       const res = await thesisApi.registerTopic(selectedTopicForRegistration._id, payload);
       if (res.success) {
-        showToast(
-          `Đăng ký đề tài "${selectedTopicForRegistration.title}" thành công! Đang chờ Giảng viên hướng dẫn xác nhận.`,
-          'success',
-        );
+        if (topicStudentCount === 2) {
+          showToast(
+            `Đăng ký đề tài "${selectedTopicForRegistration.title}" thành công! Hệ thống đã gửi lời mời đến Sinh viên 2 (${topicStudent2?.fullName}). Vui lòng chờ SV2 xác nhận.`,
+            'success',
+          );
+        } else {
+          showToast(
+            `Đăng ký đề tài "${selectedTopicForRegistration.title}" thành công! Đang chờ Giảng viên hướng dẫn xác nhận.`,
+            'success',
+          );
+        }
         setRegisterTopicModalOpen(false);
         setSelectedTopicForRegistration(null);
         navigate('/student/thesis');
@@ -606,6 +613,10 @@ const RegisterThesisPage = () => {
                     </div>
                   </div>
                 )}
+
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11px] text-amber-950 leading-relaxed">
+                  <strong>Quy trình đăng ký nhóm 2 người:</strong> Sau khi đăng ký, hệ thống sẽ gửi lời mời đến Sinh viên 2. Đề tài sẽ ở trạng thái <em>"Chờ SV2 xác nhận"</em> (chưa gửi đến GVHD). Sau khi Sinh viên 2 xác nhận tham gia, bạn mới có thể gửi yêu cầu chính thức đến Giảng viên hướng dẫn.
+                </div>
               </div>
             )}
 

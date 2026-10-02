@@ -84,6 +84,38 @@ router.get(
   thesisController.getMyThesis,
 );
 
+// Student 2: Respond to group invitation (ACCEPT / REJECT)
+router.patch(
+  "/:id/respond-invitation",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.respondStudent2Invitation,
+);
+
+// Student 1: Send registration request to Supervisor
+router.patch(
+  "/:id/send-supervisor-request",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.sendSupervisorRequest,
+);
+
+// Student 1: Invite student 2
+router.patch(
+  "/:id/invite-student2",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.inviteStudent2,
+);
+
+// Student 1: Cancel student 2 invitation
+router.patch(
+  "/:id/cancel-student2-invite",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.cancelStudent2Invite,
+);
+
 // ==========================================
 // 2. Shared Utilities (Supervisors & Lookup)
 // ==========================================

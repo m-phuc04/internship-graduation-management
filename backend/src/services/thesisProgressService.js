@@ -527,28 +527,25 @@ const getMyThesisProgress = async (userId) => {
 
   // Ensure startDate and endDate are computed:
   // - If GVHD updated explicitly -> Use thesis.startDate and thesis.endDate
-  // - Otherwise default:
-  //   + Start Date: Date when GVHD approved/accepted the thesis
-  //   + End Date: Date configured by TBM for thesis reporting/defense in AcademicTerm
+  // - Otherwise default to Academic Term start and end dates:
+  //   + Start Date: term.startDate
+  //   + End Date: term.endDate
   const term = thesis.academicTermId;
   const computedStartDate =
     thesis.startDate ||
+    (term?.startDate ? term.startDate : null) ||
     thesis.approvedAt ||
     thesis.acceptedAt ||
     thesis.assignedAt ||
-    (term?.thesis?.assignmentStart ? term.thesis.assignmentStart : null) ||
-    (term?.startDate ? term.startDate : null) ||
     thesis.createdAt ||
     new Date();
 
   const computedEndDate =
     thesis.endDate ||
-    (term?.thesis?.defenseEnd ? term.thesis.defenseEnd : null) ||
-    (term?.thesis?.defenseStart ? term.thesis.defenseStart : null) ||
     (term?.endDate ? term.endDate : null) ||
     (() => {
       const d = new Date(computedStartDate);
-      d.setDate(d.getDate() + 70); // 10 weeks fallback
+      d.setDate(d.getDate() + 70); // 10 weeks fallback only if term has no endDate
       return d;
     })();
 
@@ -567,8 +564,9 @@ const getMyThesisProgress = async (userId) => {
       populate: { path: "userId", select: "fullName email" },
     });
 
-  // Calculate weeks dynamically: Unlock strictly 1 week at a time (previous completed weeks + 1 next active week)
+  // Calculate weeks dynamically based on current thesis start and end date
   const rawWeeks = calculateWeeks(thesisObj.startDate, thesisObj.endDate);
+  const now = new Date();
   
   let highestReportedWeek = 0;
   progressList.forEach((p) => {
@@ -577,14 +575,19 @@ const getMyThesisProgress = async (userId) => {
     }
   });
 
-  // Only unlock up to the single next week to be completed
   const maxUnlockedWeek = Math.max(1, highestReportedWeek + 1);
 
   const allWeeks = rawWeeks.map((w) => {
     const foundProgress = progressList.find(
       (p) => p.progressType === "WEEKLY" && p.weekNumber === w.weekNumber,
     );
-    const isUnlocked = w.weekNumber <= maxUnlockedWeek;
+    // Automatically unlock week when:
+    // 1. It is Week 1
+    // 2. Or real time reaches/passes the week's startDate
+    // 3. Or a report exists for this week
+    // 4. Or the week is within maxUnlockedWeek (next actionable sequential week)
+    const isTimeUnlocked = now >= new Date(w.startDate);
+    const isUnlocked = w.weekNumber === 1 || isTimeUnlocked || !!foundProgress || w.weekNumber <= maxUnlockedWeek;
     return {
       ...w,
       isUnlocked,
@@ -592,7 +595,7 @@ const getMyThesisProgress = async (userId) => {
     };
   });
 
-  // Only display unlocked weeks (at most 1 unsubmitted week)
+  // Display all currently unlocked weeks to the student
   const weeks = allWeeks.filter((w) => w.isUnlocked);
 
   const total = progressList.length;
@@ -748,23 +751,20 @@ const getSupervisedThesesProgress = async (userId) => {
         .lean();
 
       // Ensure start & end dates automatically derived:
-      // Start: GVHD approval date / accepted date
-      // End: TBM academic term defense / reporting date
+      // Start: GVHD explicit date -> Academic Term startDate -> fallback
+      // End: GVHD explicit date -> Academic Term endDate -> fallback
       const term = t.academicTermId;
       const startDate =
         t.startDate ||
+        (term?.startDate ? term.startDate : null) ||
         t.approvedAt ||
         t.acceptedAt ||
         t.assignedAt ||
-        (term?.thesis?.assignmentStart ? term.thesis.assignmentStart : null) ||
-        (term?.startDate ? term.startDate : null) ||
         t.createdAt ||
         new Date();
 
       const endDate =
         t.endDate ||
-        (term?.thesis?.defenseEnd ? term.thesis.defenseEnd : null) ||
-        (term?.thesis?.defenseStart ? term.thesis.defenseStart : null) ||
         (term?.endDate ? term.endDate : null) ||
         (() => {
           const d = new Date(startDate);
@@ -864,9 +864,9 @@ const reviewProgress = async (
         type: "THESIS_PROGRESS",
         title: status === "APPROVED" ? "Nhật ký khóa luận đã được phê duyệt" : status === "REJECTED" ? "Nhật ký khóa luận cần chỉnh sửa" : "Nhật ký khóa luận đang được đánh giá",
         message: status === "APPROVED"
-          ? `Nhật ký Tuần ${progress.weekNumber} ("${progress.title}") đã được GVHD phê duyệt: ${progress.lecturerScore !== null ? `${progress.lecturerScore}/10` : "Đạt"}.`
+          ? `Nhật ký Tuần ${progress.weekNumber} ("${progress.title}") đã được GVHD phê duyệt${progress.lecturerComment ? `: "${progress.lecturerComment}"` : "."}`
           : status === "REJECTED"
-          ? `Nhật ký Tuần ${progress.weekNumber} ("${progress.title}") bị GVHD từ chối: ${progress.lecturerComment || "Chưa đạt yêu cầu"}.`
+          ? `Nhật ký Tuần ${progress.weekNumber} ("${progress.title}") cần chỉnh sửa theo nhận xét của GVHD: ${progress.lecturerComment || "Chưa đạt yêu cầu"}.`
           : `Nhật ký Tuần ${progress.weekNumber} ("${progress.title}") đang được GVHD xem xét.`,
         referenceId: progress._id,
         referenceModel: "ThesisProgress",

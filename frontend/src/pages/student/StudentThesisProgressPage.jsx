@@ -94,6 +94,7 @@ const StudentThesisProgressPage = () => {
       return { generatedWeeks: [], allGeneratedWeeks: [] };
     }
 
+    const now = new Date();
     // Calculate highest reported week
     let highestReportedWeek = 0;
     pList.forEach((p) => {
@@ -110,14 +111,16 @@ const StudentThesisProgressPage = () => {
     while (currentStart < end) {
       const currentEnd = new Date(currentStart);
       currentEnd.setDate(currentEnd.getDate() + 6);
+      currentEnd.setHours(23, 59, 59, 999);
       const actualEnd = currentEnd > end ? new Date(end) : currentEnd;
 
       const foundP = pList.find(
         (p) => p.progressType === 'WEEKLY' && p.weekNumber === weekNum,
       );
 
-      // Only unlock up to the single next week to be completed
-      const isUnlocked = weekNum <= maxUnlockedWeek;
+      // Automatically unlock when real time arrives, or week 1, or has progress, or next actionable week
+      const isTimeUnlocked = now >= new Date(currentStart);
+      const isUnlocked = weekNum === 1 || isTimeUnlocked || !!foundP || weekNum <= maxUnlockedWeek;
 
       all.push({
         weekNumber: weekNum,
@@ -130,11 +133,12 @@ const StudentThesisProgressPage = () => {
 
       const nextStart = new Date(currentStart);
       nextStart.setDate(nextStart.getDate() + 7);
+      nextStart.setHours(0, 0, 0, 0);
       currentStart = nextStart;
       weekNum++;
     }
 
-    // Only show unlocked weeks (previous completed weeks + 1 next active week)
+    // Only show unlocked weeks (unlocked weeks based on duration)
     const unlocked = all.filter((w) => w.isUnlocked);
     return { generatedWeeks: unlocked, allGeneratedWeeks: all };
   };
@@ -152,11 +156,9 @@ const StudentThesisProgressPage = () => {
 
         const sDate =
           fetchedThesis?.startDate ||
-          fetchedThesis?.academicTermId?.thesis?.assignmentStart ||
           fetchedThesis?.academicTermId?.startDate;
         const eDate =
           fetchedThesis?.endDate ||
-          fetchedThesis?.academicTermId?.thesis?.defenseEnd ||
           fetchedThesis?.academicTermId?.endDate;
 
         let finalAllWeeks = res.allWeeks && res.allWeeks.length > 0 ? res.allWeeks : [];
@@ -374,23 +376,24 @@ const StudentThesisProgressPage = () => {
     window.print();
   };
 
-  // Dynamic sorting: When sortByPendingFirst is true, submitted weeks move to the bottom
+  // Dynamic sorting: When sortByPendingFirst is true, unsubmitted and actionable weeks move to the top
   const displayedWeeks = useMemo(() => {
     if (!sortByPendingFirst) return weeks;
     return [...weeks].sort((a, b) => {
-      const isDoneA =
-        a.progress &&
-        ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(a.progress.status);
-      const isDoneB =
-        b.progress &&
-        ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(b.progress.status);
+      const getPriority = (item) => {
+        if (!item.progress) return 3; // Chưa nộp -> ưu tiên hiển thị ở đầu
+        if (item.progress.status === 'NEEDS_REVISION') return 1;
+        if (item.progress.status === 'WAITING_STUDENT_2') return 2;
+        if (item.progress.status === 'DRAFT') return 3;
+        if (['SUBMITTED', 'REVIEWING'].includes(item.progress.status)) return 4;
+        if (item.progress.status === 'APPROVED') return 5;
+        return 3;
+      };
 
-      // If A is submitted and B is NOT submitted -> A moves down
-      if (isDoneA && !isDoneB) return 1;
-      // If B is submitted and A is NOT submitted -> B moves down
-      if (!isDoneA && isDoneB) return -1;
+      const pA = getPriority(a);
+      const pB = getPriority(b);
 
-      // Same status: keep weekNumber order
+      if (pA !== pB) return pA - pB;
       return a.weekNumber - b.weekNumber;
     });
   }, [weeks, sortByPendingFirst]);
@@ -403,20 +406,17 @@ const StudentThesisProgressPage = () => {
     );
   }
 
-  // Thesis time calculations (Explicit GVHD date has highest priority):
+  // Thesis time calculations (Explicit GVHD date has highest priority, then Academic Term start/end):
   const thesisStartDate =
     thesis?.startDate ||
+    thesis?.academicTermId?.startDate ||
     thesis?.approvedAt ||
     thesis?.acceptedAt ||
     thesis?.assignedAt ||
-    thesis?.academicTermId?.thesis?.assignmentStart ||
-    thesis?.academicTermId?.startDate ||
     thesis?.createdAt;
 
   const thesisEndDate =
     thesis?.endDate ||
-    thesis?.academicTermId?.thesis?.defenseEnd ||
-    thesis?.academicTermId?.thesis?.defenseStart ||
     thesis?.academicTermId?.endDate;
 
   const totalWeeksCount = allWeeks.length || stats.totalWeeks || weeks.length || 1;
@@ -786,8 +786,8 @@ const StudentThesisProgressPage = () => {
                           </div>
                         )}
 
-                        {/* Lecturer Comment & Score */}
-                        {(p.lecturerComment || p.lecturerScore !== null) && (
+                        {/* Lecturer Comment & Next Week Tasks */}
+                        {p.lecturerComment && (
                           <div
                             className={`p-3.5 rounded-2xl border text-xs space-y-1 ${
                               isApproved
@@ -798,18 +798,11 @@ const StudentThesisProgressPage = () => {
                             }`}
                           >
                             <div className="flex items-center justify-between font-bold text-[11px] uppercase tracking-wider">
-                              <span>Đánh giá từ GVHD ({formatDate(p.reviewedAt)})</span>
-                              {p.lecturerScore !== null && (
-                                <span className="font-mono text-xs text-emerald-700 font-extrabold bg-white px-2 py-0.5 rounded-md border border-emerald-200">
-                                  Điểm: {p.lecturerScore}/10
-                                </span>
-                              )}
+                              <span>Nhận xét / Nhiệm vụ tuần tiếp theo ({formatDate(p.reviewedAt)})</span>
                             </div>
-                            {p.lecturerComment && (
-                              <p className="leading-relaxed mt-1 text-[11px]">
-                                Nhận xét: {p.lecturerComment}
-                              </p>
-                            )}
+                            <p className="leading-relaxed mt-1 text-[11px]">
+                              {p.lecturerComment}
+                            </p>
                           </div>
                         )}
                       </>
@@ -1032,10 +1025,10 @@ const StudentThesisProgressPage = () => {
             </div>
 
             {/* Lecturer Review details */}
-            {(selectedProgress.lecturerComment || selectedProgress.lecturerScore !== null) && (
+            {selectedProgress.lecturerComment && (
               <div>
                 <div className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
-                  Đánh giá từ Giảng viên hướng dẫn
+                  Nhận xét & Nhiệm vụ tuần tiếp theo từ GVHD
                 </div>
                 <div
                   className={`p-4 rounded-2xl border text-xs space-y-2 ${
@@ -1050,17 +1043,15 @@ const StudentThesisProgressPage = () => {
                     <span className="text-slate-800">
                       GVHD: {thesis?.supervisorId?.academicTitle} {thesis?.supervisorId?.userId?.fullName}
                     </span>
-                    {selectedProgress.lecturerScore !== null && (
-                      <span className="font-mono text-sm text-emerald-700 font-extrabold bg-white px-2.5 py-1 rounded-xl border border-emerald-200 shadow-2xs">
-                        Điểm: {selectedProgress.lecturerScore} / 10
+                    {selectedProgress.reviewedAt && (
+                      <span className="text-[11px] text-slate-500 font-normal">
+                        ({formatDate(selectedProgress.reviewedAt)})
                       </span>
                     )}
                   </div>
-                  {selectedProgress.lecturerComment && (
-                    <div className="text-slate-800 leading-relaxed text-xs">
-                      <strong>Nhận xét:</strong> {selectedProgress.lecturerComment}
-                    </div>
-                  )}
+                  <div className="text-slate-800 leading-relaxed text-xs">
+                    <strong>Nội dung:</strong> {selectedProgress.lecturerComment}
+                  </div>
                 </div>
               </div>
             )}

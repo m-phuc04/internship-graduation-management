@@ -27,6 +27,13 @@ import {
   Sparkles,
   ShieldCheck,
   FileCheck,
+  UserCheck,
+  UserPlus,
+  UserMinus,
+  Send,
+  Check,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 
 const MyThesisPage = () => {
@@ -39,6 +46,20 @@ const MyThesisPage = () => {
   const [student, setStudent] = useState(null);
   const [canRegisterNew, setCanRegisterNew] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Invitation & Action states
+  const [respondingInvitation, setRespondingInvitation] = useState(false);
+  const [sendingToSupervisor, setSendingToSupervisor] = useState(false);
+  const [cancelingInvite, setCancelingInvite] = useState(false);
+
+  // Invite Partner Modal states
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [inviteSv2Code, setInviteSv2Code] = useState('');
+  const [inviteStudent2, setInviteStudent2] = useState(null);
+  const [inviteSv2Error, setInviteSv2Error] = useState('');
+  const [inviteSearchResults, setInviteSearchResults] = useState([]);
+  const [searchingInviteStudents, setSearchingInviteStudents] = useState(false);
+  const [submittingInvite, setSubmittingInvite] = useState(false);
 
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -64,6 +85,135 @@ const MyThesisPage = () => {
   useEffect(() => {
     fetchMyThesis();
   }, [fetchMyThesis]);
+
+  // Handle SV2 Respond Invitation (ACCEPT / REJECT)
+  const handleRespondInvitation = async (action) => {
+    if (!thesis?._id) return;
+    setRespondingInvitation(true);
+    try {
+      const res = await thesisApi.respondStudent2Invitation(thesis._id, { action });
+      if (res.success) {
+        showToast(
+          action === 'ACCEPT'
+            ? 'Đã xác nhận tham gia nhóm làm đề tài!'
+            : 'Đã từ chối lời mời tham gia nhóm.',
+          'success'
+        );
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Thao tác thất bại', 'error');
+    } finally {
+      setRespondingInvitation(false);
+    }
+  };
+
+  // Handle SV1 Send Request to Supervisor
+  const handleSendSupervisorRequest = async () => {
+    if (!thesis?._id) return;
+    setSendingToSupervisor(true);
+    try {
+      const res = await thesisApi.sendSupervisorRequest(thesis._id);
+      if (res.success) {
+        showToast('Đã gửi yêu cầu đăng ký đề tài đến Giảng viên hướng dẫn!', 'success');
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Gửi yêu cầu thất bại', 'error');
+    } finally {
+      setSendingToSupervisor(false);
+    }
+  };
+
+  // Handle SV1 Cancel SV2 Invite
+  const handleCancelStudent2Invite = async () => {
+    if (!thesis?._id) return;
+    if (!window.confirm('Bạn có chắc chắn muốn hủy lời mời Sinh viên 2 này không?')) return;
+    setCancelingInvite(true);
+    try {
+      const res = await thesisApi.cancelStudent2Invite(thesis._id);
+      if (res.success) {
+        showToast('Đã hủy lời mời Sinh viên 2 thành công', 'success');
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Hủy lời mời thất bại', 'error');
+    } finally {
+      setCancelingInvite(false);
+    }
+  };
+
+  // Search partner for modal
+  const handleSearchInviteStudents = async (keyword) => {
+    setInviteSv2Code(keyword);
+    setInviteSv2Error('');
+    if (!keyword || !keyword.trim()) {
+      setInviteSearchResults([]);
+      return;
+    }
+
+    setSearchingInviteStudents(true);
+    try {
+      const res = await thesisApi.searchStudents({ query: keyword.trim() });
+      if (res.success) {
+        setInviteSearchResults(res.data || []);
+      }
+    } catch (err) {
+      console.warn('Student search error:', err.message);
+    } finally {
+      setSearchingInviteStudents(false);
+    }
+  };
+
+  const handleSelectInvitePartner = (s) => {
+    if (s.isInActiveThesis) {
+      setInviteSv2Error(`Sinh viên ${s.fullName} (${s.studentCode}) đã tham gia đề tài khác!`);
+      return;
+    }
+    setInviteStudent2(s);
+    setInviteSv2Code(s.studentCode);
+    setInviteSearchResults([]);
+    setInviteSv2Error('');
+  };
+
+  // Handle SV1 Submit Invite SV2
+  const handleConfirmInviteStudent2 = async () => {
+    if (!inviteStudent2) {
+      setInviteSv2Error('Vui lòng tìm và chọn Sinh viên 2');
+      return;
+    }
+    setSubmittingInvite(true);
+    try {
+      const res = await thesisApi.inviteStudent2(thesis._id, {
+        secondStudentId: inviteStudent2._id,
+        secondStudentCode: inviteStudent2.studentCode,
+      });
+      if (res.success) {
+        showToast(`Đã gửi lời mời tham gia nhóm đến ${inviteStudent2.fullName}!`, 'success');
+        setInviteModalOpen(false);
+        setInviteStudent2(null);
+        setInviteSv2Code('');
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Gửi lời mời thất bại', 'error');
+    } finally {
+      setSubmittingInvite(false);
+    }
+  };
+
+  // Determine current student role in thesis
+  const isStudent1 =
+    student?._id &&
+    thesis?.studentId &&
+    (thesis.studentId?._id?.toString() === student._id.toString() ||
+      thesis.studentId?.toString() === student._id.toString());
+
+  const isStudent2 =
+    student?._id &&
+    thesis?.secondStudentId &&
+    (thesis.secondStudentId?._id?.toString() === student._id.toString() ||
+      thesis.secondStudentId?.toString() === student._id.toString());
 
   // Scroll to evaluation section if URL has ?view=evaluation
   useEffect(() => {
@@ -103,13 +253,6 @@ const MyThesisPage = () => {
   const isPendingApproval = ['PENDING_SUPERVISOR_APPROVAL', 'PENDING_TBM_APPROVAL', 'PENDING_SUPERVISOR_ACCEPTANCE'].includes(thesis?.status);
 
   // Calculations for Thesis Evaluation
-  const isStudent2 =
-    thesis?.studentCount === 2 &&
-    student?._id &&
-    thesis?.secondStudentId &&
-    (thesis.secondStudentId?._id?.toString() === student._id.toString() ||
-      thesis.secondStudentId?.toString() === student._id.toString());
-
   const supervisorScore = (() => {
     if (isStudent2 && thesis?.scores?.student2SupervisorScore !== null && thesis?.scores?.student2SupervisorScore !== undefined) {
       return Number(thesis.scores.student2SupervisorScore);
@@ -256,22 +399,33 @@ const MyThesisPage = () => {
     };
   }
 
-  // Load Council info from local storage
-  let assignedCouncil = null;
-  try {
-    const savedThesisCouncils = localStorage.getItem(`tbm_thesis_councils_${termId}`);
-    const tcMap = savedThesisCouncils ? JSON.parse(savedThesisCouncils) : {};
-    const councilId = thesis?._id ? tcMap[thesis._id] : null;
-    if (councilId) {
-      const savedCouncils = localStorage.getItem(`tbm_councils_${termId}`);
-      if (savedCouncils) {
-        const parsed = JSON.parse(savedCouncils);
-        assignedCouncil = parsed.find((c) => (c.id || c._id) === councilId);
-      }
-    }
-  } catch (e) {
-    // ignore
-  }
+  // Load Council info directly from populated thesis.councilId (MongoDB)
+  const assignedCouncil =
+    thesis?.councilId && typeof thesis.councilId === 'object'
+      ? thesis.councilId
+      : null;
+
+  // Extract Reviewers (GVPB)
+  const reviewer1 =
+    thesis?.reviewer1Id ||
+    (Array.isArray(thesis?.reviewers)
+      ? thesis.reviewers.find((r) => r.isPrivateReviewer)?.lecturerId
+      : null);
+
+  const reviewer2 =
+    thesis?.reviewer2Id ||
+    (Array.isArray(thesis?.reviewers)
+      ? thesis.reviewers.find(
+          (r) =>
+            r.isCouncilReviewer ||
+            (r.isPrivateReviewer &&
+              reviewer1 &&
+              (r.lecturerId?._id?.toString() || r.lecturerId?.toString()) !==
+                (reviewer1._id?.toString() || reviewer1.toString()))
+        )?.lecturerId
+      : null);
+
+  const hasReviewers = Boolean(reviewer1 || reviewer2);
 
   const councilFormat = assignedCouncil?.type === 'ORAL' ? 'Oral' : 'Poster';
   const councilLecturers = assignedCouncil?.lecturers || [];
@@ -411,6 +565,14 @@ const MyThesisPage = () => {
                     <span className="font-bold text-[#102d7d]">
                       {thesis.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
                     </span>
+                    {(thesis.startDate || thesis.academicTermId?.startDate) && (
+                      <>
+                        <span>•</span>
+                        <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                          Thời gian KLTN: {formatDate(thesis.startDate || thesis.academicTermId?.startDate)} — {formatDate(thesis.endDate || thesis.academicTermId?.endDate)}
+                        </span>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -440,7 +602,142 @@ const MyThesisPage = () => {
         </div>
       </div>
 
-      {/* Pending Approval Notice Banner */}
+      {/* 1. SV2 Pending Invitation Banner */}
+      {thesis && isStudent2 && thesis.status === 'WAITING_FOR_STUDENT2_CONFIRMATION' && thesis.student2Status === 'PENDING' && (
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border-2 border-amber-400 text-slate-900 shadow-sm space-y-4">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                <Users className="w-6 h-6 text-amber-700 animate-bounce" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 uppercase tracking-wider">
+                    Lời mời tham gia nhóm KLTN
+                  </span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 mt-1">
+                  Sinh viên {thesis.studentId?.userId?.fullName || thesis.studentId?.studentCode} ({thesis.studentId?.studentCode}) đã mời bạn tham gia nhóm đề tài
+                </h3>
+                <p className="text-xs text-slate-600 mt-1">
+                  Đề tài: <strong>"{thesis.thesisTitle}"</strong> • GVHD: <strong>{formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName)}</strong>
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2.5 self-start md:self-center shrink-0">
+              <button
+                onClick={() => handleRespondInvitation('ACCEPT')}
+                disabled={respondingInvitation}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>{respondingInvitation ? 'Đang xử lý...' : 'Xác nhận tham gia'}</span>
+              </button>
+              <button
+                onClick={() => handleRespondInvitation('REJECT')}
+                disabled={respondingInvitation}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 hover:border-rose-400 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+                <span>Từ chối</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 2. SV1 Waiting for SV2 Confirmation Banner */}
+      {thesis && isStudent1 && thesis.status === 'WAITING_FOR_STUDENT2_CONFIRMATION' && (
+        <div className="p-5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+            <div>
+              <div className="font-bold text-sm text-amber-900">
+                Đang chờ Sinh viên 2 xác nhận tham gia nhóm
+              </div>
+              <div className="mt-0.5 leading-relaxed text-slate-700">
+                Hệ thống đã gửi lời mời đến Sinh viên{' '}
+                <strong>
+                  {thesis.secondStudentId?.userId?.fullName || thesis.secondStudentId?.studentCode} ({thesis.secondStudentId?.studentCode})
+                </strong>. 
+                Đề tài chưa được gửi đến Giảng viên hướng dẫn. Sau khi Sinh viên 2 xác nhận, bạn sẽ có thể gửi yêu cầu đăng ký chính thức đến GVHD.
+              </div>
+            </div>
+          </div>
+
+          <div className="shrink-0">
+            <button
+              onClick={handleCancelStudent2Invite}
+              disabled={cancelingInvite}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-amber-100 text-amber-800 border border-amber-300 rounded-xl font-semibold transition cursor-pointer text-xs"
+            >
+              <UserMinus className="w-3.5 h-3.5" />
+              <span>{cancelingInvite ? 'Đang hủy...' : 'Hủy lời mời SV2'}</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Ready for Supervisor Request Banner */}
+      {thesis && thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST' && (
+        <div className="p-5 rounded-2xl bg-indigo-50/90 border border-indigo-200 text-indigo-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <CheckCircle2 className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div>
+              <div className="font-bold text-sm text-[#102d7d]">
+                {isStudent1
+                  ? thesis.student2Status === 'ACCEPTED'
+                    ? 'Sinh viên 2 đã đồng ý tham gia! Nhóm đã đủ điều kiện gửi GVHD'
+                    : 'Đề tài sẵn sàng gửi yêu cầu xét duyệt đến Giảng viên hướng dẫn'
+                  : 'Bạn đã tham gia nhóm thành công!'}
+              </div>
+              <div className="mt-0.5 leading-relaxed text-slate-700">
+                {isStudent1 ? (
+                  thesis.student2Status === 'ACCEPTED' ? (
+                    <>
+                      Nhóm 2 sinh viên (<strong>{thesis.studentId?.userId?.fullName}</strong> & <strong>{thesis.secondStudentId?.userId?.fullName}</strong>) đã hoàn tất xác nhận. Hãy nhấn nút <strong>"Gửi yêu cầu GVHD"</strong> để chuyển đề tài đến GVHD xem xét.
+                    </>
+                  ) : (
+                    <>
+                      Đề tài đang thực hiện với tư cách cá nhân (1 thành viên). Bạn có thể gửi yêu cầu trực tiếp đến GVHD hoặc mời thêm thành viên thứ hai trước khi gửi.
+                    </>
+                  )
+                ) : (
+                  <>
+                    Đang chờ Trưởng nhóm (<strong>{thesis.studentId?.userId?.fullName || thesis.studentId?.studentCode}</strong>) gửi yêu cầu đăng ký chính thức đến Giảng viên hướng dẫn.
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {isStudent1 && (
+            <div className="flex items-center gap-2 shrink-0">
+              {(!thesis.secondStudentId || thesis.student2Status === 'REJECTED') && (
+                <button
+                  onClick={() => setInviteModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-xl font-bold transition cursor-pointer text-xs"
+                >
+                  <UserPlus className="w-4 h-4 text-[#123891]" />
+                  <span>Mời Sinh viên 2</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleSendSupervisorRequest}
+                disabled={sendingToSupervisor}
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition cursor-pointer text-xs"
+              >
+                <Send className="w-4 h-4" />
+                <span>{sendingToSupervisor ? 'Đang gửi...' : 'Gửi yêu cầu GVHD'}</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 4. Pending Approval Notice Banner */}
       {thesis && isPendingApproval && (
         <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-3 shadow-2xs">
           <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
@@ -457,6 +754,22 @@ const MyThesisPage = () => {
                 )}
               </strong>{' '}
               xác nhận tiếp nhận hướng dẫn. Các chức năng nộp báo cáo tiến độ và chấm điểm sẽ mở sau khi Giảng viên duyệt.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Supervisor Rejected Banner */}
+      {thesis && thesis.status === 'REJECTED' && (
+        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 text-xs flex items-start gap-3 shadow-2xs">
+          <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+          <div>
+            <div className="font-bold text-sm text-rose-900">
+              Đề tài khóa luận đã bị Giảng viên từ chối
+            </div>
+            <div className="mt-0.5 leading-relaxed text-slate-700">
+              Lý do: <span className="font-medium text-rose-800">{thesis.rejectionReason || 'Không có lý do chi tiết.'}</span>. 
+              Bạn có thể nhấn nút <strong>"Đăng ký đề tài mới"</strong> để chọn đề tài khác.
             </div>
           </div>
         </div>
@@ -761,8 +1074,42 @@ const MyThesisPage = () => {
             </div>
           </div>
 
-          {/* Right Col: Supervisor & Members */}
+          {/* Right Col: Timeline, Supervisor & Members */}
           <div className="space-y-6">
+            {/* Thời gian thực hiện KLTN Card */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-[#123891]" />
+                  <span>Thời gian thực hiện KLTN</span>
+                </div>
+                {thesis.startDate ? (
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-[#102d7d] rounded-md">
+                    GVHD đã tùy chỉnh
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">
+                    Theo học kỳ
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5 text-xs">
+                <div className="p-3 rounded-2xl bg-blue-50/50 border border-blue-100">
+                  <span className="text-slate-400 block text-[10.5px] font-bold uppercase">Bắt đầu</span>
+                  <div className="font-bold text-slate-900 font-mono text-sm mt-0.5">
+                    {formatDate(thesis.startDate || thesis.academicTermId?.startDate)}
+                  </div>
+                </div>
+                <div className="p-3 rounded-2xl bg-blue-50/50 border border-blue-100">
+                  <span className="text-slate-400 block text-[10.5px] font-bold uppercase">Kết thúc</span>
+                  <div className="font-bold text-slate-900 font-mono text-sm mt-0.5">
+                    {formatDate(thesis.endDate || thesis.academicTermId?.endDate)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Supervisor Lecturer Card */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
@@ -805,8 +1152,17 @@ const MyThesisPage = () => {
 
             {/* Members Card */}
             <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5">
-                Thành viên thực hiện ({thesis.studentCount || 1} Sinh viên)
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                <span>Thành viên thực hiện ({thesis.studentCount || 1} Sinh viên)</span>
+                {isStudent1 && (!thesis.secondStudentId || thesis.student2Status === 'REJECTED') && thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST' && (
+                  <button
+                    onClick={() => setInviteModalOpen(true)}
+                    className="text-[11px] font-bold text-[#123891] hover:underline flex items-center gap-1 cursor-pointer"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Mời SV2</span>
+                  </button>
+                )}
               </div>
 
               <div className="space-y-2.5 text-xs">
@@ -828,8 +1184,8 @@ const MyThesisPage = () => {
                 </div>
 
                 {/* Member 2 if any */}
-                {thesis.studentCount === 2 && thesis.secondStudentId && (
-                  <div className="p-3 rounded-2xl bg-blue-50/60 border border-blue-100">
+                {thesis.secondStudentId ? (
+                  <div className="p-3 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1">
                     <div className="flex justify-between items-center mb-1">
                       <UserNameClickable
                         user={thesis.secondStudentId}
@@ -837,17 +1193,394 @@ const MyThesisPage = () => {
                         showAvatar={false}
                         className="text-[#123891] font-bold hover:underline"
                       />
-                      <span className="text-[10px] font-bold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
-                        Thành viên
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {thesis.student2Status === 'PENDING' && (
+                          <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">
+                            Chờ xác nhận
+                          </span>
+                        )}
+                        {thesis.student2Status === 'ACCEPTED' && (
+                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-200">
+                            Đã xác nhận
+                          </span>
+                        )}
+                        {thesis.student2Status === 'REJECTED' && (
+                          <span className="text-[10px] font-bold text-rose-800 bg-rose-100 px-1.5 py-0.5 rounded border border-rose-200">
+                            Đã từ chối
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
+                          Thành viên
+                        </span>
+                      </div>
                     </div>
                     <div className="text-[11px] text-slate-600 font-mono">
                       MSSV: {thesis.secondStudentId?.studentCode} • {thesis.secondStudentId?.className || ''}
                     </div>
                     <div className="text-[11px] text-slate-500">{thesis.secondStudentId?.userId?.email}</div>
+
+                    {isStudent1 && thesis.status === 'WAITING_FOR_STUDENT2_CONFIRMATION' && (
+                      <div className="pt-1.5 flex justify-end">
+                        <button
+                          onClick={handleCancelStudent2Invite}
+                          disabled={cancelingInvite}
+                          className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
+                        >
+                          {cancelingInvite ? 'Đang hủy...' : 'Hủy lời mời'}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="p-3 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-slate-500 text-center text-xs">
+                    Chưa có Sinh viên 2 (Đề tài cá nhân 1 sinh viên)
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Reviewers Lecturer Card */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-[#123891]" />
+                  <span>Giảng viên Phản biện (GVPB)</span>
+                </div>
+              </div>
+
+              {hasReviewers ? (
+                <div className="space-y-3 text-xs">
+                  {/* GVPB 1 */}
+                  {reviewer1 && (
+                    <div className="p-3 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1.5">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
+                          GVPB 1 (Phản biện kín)
+                        </span>
+                        {reviewer1._id && (
+                          <UserNameClickable
+                            user={reviewer1}
+                            name="Xem hồ sơ ↗"
+                            showAvatar={false}
+                            className="text-[11px] font-bold text-[#123891] hover:underline"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Họ và tên:</span>
+                        <strong className="text-slate-900 text-sm">
+                          {formatLecturerDisplay(reviewer1.academicTitle, reviewer1.userId?.fullName)}
+                        </strong>
+                      </div>
+                      {reviewer1.lecturerCode && (
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Mã giảng viên:</span>
+                          <span className="font-mono text-[#102d7d] font-bold">{reviewer1.lecturerCode}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
+                        <span className="text-slate-700">{reviewer1.userId?.email || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Số điện thoại:</span>
+                        <span className="text-slate-700">{reviewer1.userId?.phone || '—'}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* GVPB 2 */}
+                  {reviewer2 && (
+                    <div className="p-3 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1.5">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
+                          GVPB 2 (Phản biện hội đồng)
+                        </span>
+                        {reviewer2._id && (
+                          <UserNameClickable
+                            user={reviewer2}
+                            name="Xem hồ sơ ↗"
+                            showAvatar={false}
+                            className="text-[11px] font-bold text-[#123891] hover:underline"
+                          />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Họ và tên:</span>
+                        <strong className="text-slate-900 text-sm">
+                          {formatLecturerDisplay(reviewer2.academicTitle, reviewer2.userId?.fullName)}
+                        </strong>
+                      </div>
+                      {reviewer2.lecturerCode && (
+                        <div>
+                          <span className="text-slate-400 block text-[11px]">Mã giảng viên:</span>
+                          <span className="font-mono text-[#102d7d] font-bold">{reviewer2.lecturerCode}</span>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
+                        <span className="text-slate-700">{reviewer2.userId?.email || '—'}</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-400 block text-[11px]">Số điện thoại:</span>
+                        <span className="text-slate-700">{reviewer2.userId?.phone || '—'}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-xs text-amber-600">Chưa được phân công</div>
+              )}
+            </div>
+
+            {/* Council Card */}
+            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Users className="w-4 h-4 text-[#123891]" />
+                  <span>Hội đồng Khóa luận Tốt nghiệp</span>
+                </div>
+                {assignedCouncil?.type && (
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                      assignedCouncil.type === 'POSTER'
+                        ? 'bg-purple-50 text-purple-700 border-purple-200'
+                        : 'bg-blue-50 text-[#102d7d] border-blue-200'
+                    }`}
+                  >
+                    {assignedCouncil.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral'}
+                  </span>
+                )}
+              </div>
+
+              {assignedCouncil ? (
+                <div className="space-y-2.5 text-xs">
+                  <div>
+                    <span className="text-slate-400 block text-[11px]">Tên Hội đồng:</span>
+                    <strong className="text-slate-900 text-sm">
+                      {assignedCouncil.name}
+                    </strong>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Phòng / Địa điểm:</span>
+                      <span className="font-semibold text-slate-800">{assignedCouncil.room || '—'}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Hình thức:</span>
+                      <span className="font-semibold text-slate-800">
+                        {assignedCouncil.type === 'POSTER' ? 'Poster' : 'Oral'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Ngày báo cáo:</span>
+                      <span className="font-semibold text-slate-800">
+                        {formatDate(assignedCouncil.reportDate)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 block text-[11px]">Thời gian:</span>
+                      <span className="font-semibold text-slate-800">
+                        {assignedCouncil.reportTime ||
+                          (assignedCouncil.reportStartTime && assignedCouncil.reportEndTime
+                            ? `${assignedCouncil.reportStartTime} - ${assignedCouncil.reportEndTime}`
+                            : '—')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Danh sách thành viên Hội đồng */}
+                  <div className="pt-2 border-t border-slate-100">
+                    <span className="text-slate-500 block text-[11px] font-bold uppercase mb-2">
+                      Thành viên Hội đồng ({assignedCouncil.lecturers?.length || 0} Giảng viên)
+                    </span>
+                    <div className="space-y-2">
+                      {assignedCouncil.lecturers && assignedCouncil.lecturers.length > 0 ? (
+                        assignedCouncil.lecturers.map((l, idx) => {
+                          const lec = l.lecturerId || l;
+                          const name = formatLecturerDisplay(
+                            lec.academicTitle || l.academicTitle,
+                            lec.userId?.fullName || lec.fullName || l.fullName,
+                          );
+                          const code = lec.lecturerCode || l.lecturerCode;
+                          const email = lec.userId?.email || lec.email || l.email;
+                          const phone = lec.userId?.phone || lec.phone || l.phone;
+                          const role = l.role || (idx === 0 ? 'Chủ tịch HĐ / GV 1' : `Thành viên HĐ ${idx + 1}`);
+
+                          return (
+                            <div key={idx} className="p-2.5 rounded-2xl bg-blue-50/60 border border-blue-100 text-xs space-y-0.5">
+                              <div className="flex justify-between items-center mb-1">
+                                <strong className="text-slate-900 font-bold">{name}</strong>
+                                <span className="text-[10px] font-semibold text-[#102d7d] bg-blue-100 px-1.5 py-0.5 rounded">
+                                  {role}
+                                </span>
+                              </div>
+                              {code && (
+                                <div className="text-[11px] text-slate-600 font-mono">Mã GV: {code}</div>
+                              )}
+                              {email && (
+                                <div className="text-[11px] text-slate-500">{email}</div>
+                              )}
+                              {phone && (
+                                <div className="text-[11px] text-slate-500">SĐT: {phone}</div>
+                              )}
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-slate-400 italic text-[11px]">Chưa có danh sách thành viên</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-xs text-amber-600">
+                  Chưa được phân công Hội đồng
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Invite Partner Modal */}
+      {inviteModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold">
+                  <UserPlus className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Mời Sinh viên thứ hai</h3>
+                  <p className="text-xs text-slate-500">Tìm kiếm và mời thành viên cùng làm đề tài</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setInviteModalOpen(false);
+                  setInviteStudent2(null);
+                  setInviteSv2Code('');
+                  setInviteSv2Error('');
+                }}
+                className="text-slate-400 hover:text-slate-700 p-1.5 rounded-xl transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="space-y-1.5">
+                <label className="font-bold text-slate-700 block">
+                  Tìm kiếm Sinh viên 2 (MSSV hoặc Họ tên):
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={inviteSv2Code}
+                    onChange={(e) => handleSearchInviteStudents(e.target.value)}
+                    placeholder="Nhập MSSV (VD: 20012345) hoặc tên SV..."
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] outline-hidden"
+                  />
+                  {searchingInviteStudents && (
+                    <div className="absolute right-3 top-2.5">
+                      <RefreshCw className="w-4 h-4 text-slate-400 animate-spin" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Dropdown Suggestions */}
+                {inviteSearchResults.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-lg p-1.5 space-y-1 mt-1">
+                    {inviteSearchResults.map((s) => (
+                      <button
+                        key={s._id}
+                        type="button"
+                        onClick={() => handleSelectInvitePartner(s)}
+                        className={`w-full text-left p-2 rounded-lg flex items-center justify-between transition cursor-pointer ${
+                          s.isInActiveThesis
+                            ? 'bg-slate-50 text-slate-400 cursor-not-allowed'
+                            : 'hover:bg-blue-50 text-slate-800'
+                        }`}
+                      >
+                        <div>
+                          <span className="font-bold">{s.fullName}</span>{' '}
+                          <span className="font-mono text-[11px] text-slate-500">({s.studentCode})</span>
+                          <div className="text-[10px] text-slate-400">{s.className || '—'}</div>
+                        </div>
+                        {s.isInActiveThesis ? (
+                          <span className="text-[10px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded font-medium">
+                            Đã có đề tài
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-bold">
+                            Hợp lệ
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {inviteSv2Error && (
+                  <div className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>{inviteSv2Error}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Selected Partner Card */}
+              {inviteStudent2 && (
+                <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-200/80 space-y-1 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-[#102d7d] uppercase">
+                      Sinh viên được chọn:
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setInviteStudent2(null)}
+                      className="text-slate-400 hover:text-rose-600 text-[11px] font-semibold"
+                    >
+                      Bỏ chọn
+                    </button>
+                  </div>
+                  <div className="font-bold text-slate-900 text-sm">{inviteStudent2.fullName}</div>
+                  <div className="text-slate-600 font-mono text-xs">MSSV: {inviteStudent2.studentCode} • Lớp: {inviteStudent2.className}</div>
+                  <div className="text-slate-500 text-[11px]">{inviteStudent2.email}</div>
+                </div>
+              )}
+
+              <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/70 text-amber-950 text-[11px] leading-relaxed">
+                <strong>Lưu ý:</strong> Sau khi gửi lời mời, đề tài sẽ chuyển sang trạng thái <strong>"Chờ SV2 xác nhận"</strong>. Sinh viên 2 cần đăng nhập để đồng ý tham gia trước khi bạn có thể gửi yêu cầu chính thức đến Giảng viên hướng dẫn.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setInviteModalOpen(false);
+                  setInviteStudent2(null);
+                  setInviteSv2Code('');
+                  setInviteSv2Error('');
+                }}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmInviteStudent2}
+                disabled={submittingInvite || !inviteStudent2}
+                className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>{submittingInvite ? 'Đang gửi...' : 'Gửi lời mời'}</span>
+              </button>
             </div>
           </div>
         </div>

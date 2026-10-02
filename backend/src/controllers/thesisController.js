@@ -811,6 +811,90 @@ const publishScores = async (req, res, next) => {
   }
 };
 
+// ====================
+// Student 2: Respond to Group Invitation (ACCEPT / REJECT)
+// ====================
+const respondStudent2Invitation = async (req, res, next) => {
+  try {
+    const { action } = req.body;
+    const result = await thesisService.respondStudent2Invitation(
+      req.params.id,
+      req.user.userId,
+      action,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: action === "ACCEPT" ? "Đã xác nhận tham gia nhóm đề tài" : "Đã từ chối tham gia nhóm đề tài",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 1: Send Request to Supervisor (GVHD)
+// ====================
+const sendSupervisorRequest = async (req, res, next) => {
+  try {
+    const result = await thesisService.sendSupervisorRequest(
+      req.params.id,
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã gửi yêu cầu đăng ký đề tài đến Giảng viên hướng dẫn",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 1: Invite Student 2
+// ====================
+const inviteStudent2 = async (req, res, next) => {
+  try {
+    const { secondStudentId, secondStudentCode } = req.body;
+    const result = await thesisService.inviteStudent2(
+      req.params.id,
+      req.user.userId,
+      { secondStudentId, secondStudentCode },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã gửi lời mời tham gia nhóm đến sinh viên thứ hai",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 1: Cancel Student 2 Invite
+// ====================
+const cancelStudent2Invite = async (req, res, next) => {
+  try {
+    const result = await thesisService.cancelStudent2Invite(
+      req.params.id,
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã hủy lời mời tham gia nhóm",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createThesis,
   lookupStudent,
@@ -835,6 +919,11 @@ export default {
   completeThesisEvaluation,
   publishScores,
   exportTheses,
+  // Invitation & Request Flow
+  respondStudent2Invitation,
+  sendSupervisorRequest,
+  inviteStudent2,
+  cancelStudent2Invite,
   // Criteria & Grading Period Management
   getThesisEvaluationCriteria,
   createThesisEvaluationCriteria,

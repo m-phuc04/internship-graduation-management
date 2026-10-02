@@ -92,9 +92,17 @@ const thesisSchema = new mongoose.Schema(
       },
     ],
 
+    student2Status: {
+      type: String,
+      enum: ["PENDING", "ACCEPTED", "REJECTED", null],
+      default: null,
+    },
+
     status: {
       type: String,
       enum: [
+        "WAITING_FOR_STUDENT2_CONFIRMATION",
+        "WAITING_FOR_SUPERVISOR_REQUEST",
         "PENDING_SUPERVISOR_APPROVAL",
         "PENDING_TBM_APPROVAL",
         "PENDING_SUPERVISOR_ACCEPTANCE",

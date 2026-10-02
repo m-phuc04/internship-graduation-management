@@ -108,8 +108,8 @@ const LecturerThesisEvaluationDetailPage = () => {
           if (periods.length === 0) {
             setGradingPeriodInfo({
               hasPeriods: false,
-              isActive: true,
-              statusText: '',
+              isActive: false,
+              statusText: 'Chưa tạo thời gian nhập điểm KLTN. Chưa thể chấm điểm.',
               period: null,
             });
           } else {
@@ -135,8 +135,15 @@ const LecturerThesisEvaluationDetailPage = () => {
               setGradingPeriodInfo({
                 hasPeriods: true,
                 isActive: false,
-                statusText: 'Đã hết thời gian nhập điểm.',
+                statusText: 'Đã hết thời gian nhập điểm KLTN. Không thể chấm điểm.',
                 period: expired[0],
+              });
+            } else {
+              setGradingPeriodInfo({
+                hasPeriods: false,
+                isActive: false,
+                statusText: 'Chưa tạo thời gian nhập điểm KLTN. Chưa thể chấm điểm.',
+                period: null,
               });
             }
           }
@@ -242,10 +249,7 @@ const LecturerThesisEvaluationDetailPage = () => {
     requiredCriteria.length === 0 ||
     requiredCriteria.every((rc) => checkedCriteriaIds.includes(rc._id.toString()));
 
-  const isPeriodClosedForSupervisor =
-    activeRoleTab === 'SUPERVISOR' &&
-    gradingPeriodInfo.hasPeriods &&
-    !gradingPeriodInfo.isActive;
+  const isPeriodClosed = !gradingPeriodInfo.isActive;
 
   const isCriteriaIncompleteForSupervisor =
     activeRoleTab === 'SUPERVISOR' && !allRequiredChecked;
@@ -254,7 +258,8 @@ const LecturerThesisEvaluationDetailPage = () => {
     isCompleted ||
     isRejected ||
     isRoleScoreLocked ||
-    (activeRoleTab === 'SUPERVISOR' && (isPeriodClosedForSupervisor || isCriteriaIncompleteForSupervisor));
+    isPeriodClosed ||
+    isCriteriaIncompleteForSupervisor;
 
   // Toggle criteria checkbox
   const handleToggleCriteria = (criteriaId) => {
@@ -309,18 +314,24 @@ const LecturerThesisEvaluationDetailPage = () => {
     setError('');
 
     if (activeRoleTab === 'SUPERVISOR') {
-      if (isPeriodClosedForSupervisor) {
-        setError(gradingPeriodInfo.statusText || 'Đã hết thời gian nhập điểm.');
+      if (isPeriodClosed) {
+        const msg = gradingPeriodInfo.statusText || 'Đã hết thời gian nhập điểm.';
+        setError(msg);
+        showToast(msg, 'warning');
         return;
       }
       if (!allRequiredChecked) {
-        setError('Chưa đủ điều kiện nhập điểm. Vui lòng hoàn thành tất cả tiêu chí đánh giá.');
+        const msg = 'Chưa đạt đủ tiêu chí điều kiện KLTN. Vui lòng kiểm tra và hoàn thành tiêu chí ở tab "2. Điều Kiện KLTN".';
+        setError(msg);
+        showToast(msg, 'warning');
         return;
       }
     }
 
     if (student1Score === '' && (!isTwoStudents || student2Score === '')) {
-      setError('Vui lòng nhập điểm số đánh giá');
+      const msg = 'Vui lòng nhập điểm số đánh giá';
+      setError(msg);
+      showToast(msg, 'warning');
       return;
     }
 
@@ -328,11 +339,15 @@ const LecturerThesisEvaluationDetailPage = () => {
     const num2 = isTwoStudents && student2Score !== '' ? Number(student2Score) : null;
 
     if (num1 !== null && (isNaN(num1) || num1 < 0 || num1 > 10)) {
-      setError('Điểm số Sinh viên 1 phải từ 0 đến 10');
+      const msg = 'Điểm số Sinh viên 1 phải từ 0 đến 10';
+      setError(msg);
+      showToast(msg, 'warning');
       return;
     }
     if (num2 !== null && (isNaN(num2) || num2 < 0 || num2 > 10)) {
-      setError('Điểm số Sinh viên 2 phải từ 0 đến 10');
+      const msg = 'Điểm số Sinh viên 2 phải từ 0 đến 10';
+      setError(msg);
+      showToast(msg, 'warning');
       return;
     }
 
@@ -354,7 +369,9 @@ const LecturerThesisEvaluationDetailPage = () => {
         fetchThesisData();
       }
     } catch (err) {
-      setError(err.message || 'Lưu điểm đánh giá thất bại');
+      const msg = err.message || 'Lưu điểm đánh giá thất bại';
+      setError(msg);
+      showToast(msg, 'error');
     } finally {
       setSubmitting(false);
     }
@@ -918,8 +935,8 @@ const LecturerThesisEvaluationDetailPage = () => {
                 </span>
               </div>
 
-              {/* Grading Period Banner for Supervisor */}
-              {activeRoleTab === 'SUPERVISOR' && gradingPeriodInfo.hasPeriods && (
+              {/* Grading Period Banner */}
+              {gradingPeriodInfo.statusText && (
                 <div
                   className={`p-4 rounded-2xl text-xs flex items-center gap-3 border ${gradingPeriodInfo.isActive
                       ? 'bg-blue-50 border-blue-200 text-blue-900'
@@ -1024,8 +1041,8 @@ const LecturerThesisEvaluationDetailPage = () => {
                         {isFormLocked
                           ? isCriteriaIncompleteForSupervisor
                             ? 'Khóa: Chưa đạt đủ tiêu chí'
-                            : isPeriodClosedForSupervisor
-                              ? 'Khóa: Hết thời gian nhập điểm'
+                            : isPeriodClosed
+                              ? (gradingPeriodInfo.statusText || 'Khóa: Ngoài thời gian nhập điểm')
                               : 'Không thể chỉnh sửa'
                           : isTwoStudents
                             ? 'Nhập điểm SV1 rồi ấn Enter qua SV2'
@@ -1086,8 +1103,8 @@ const LecturerThesisEvaluationDetailPage = () => {
                           {isFormLocked
                             ? isCriteriaIncompleteForSupervisor
                               ? 'Khóa: Chưa đạt đủ tiêu chí'
-                              : isPeriodClosedForSupervisor
-                                ? 'Khóa: Hết thời gian nhập điểm'
+                              : isPeriodClosed
+                                ? (gradingPeriodInfo.statusText || 'Khóa: Ngoài thời gian nhập điểm')
                                 : 'Không thể chỉnh sửa'
                             : 'Nhập điểm SV2 rồi ấn Enter để lưu'}
                         </span>

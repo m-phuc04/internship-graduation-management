@@ -13,6 +13,8 @@ const StatusBadge = ({
   const STATUS_LABELS = {
     PENDING: 'Chờ duyệt',
     PENDING_TBM_APPROVAL: 'Chờ TBM duyệt',
+    WAITING_FOR_STUDENT2_CONFIRMATION: 'Chờ SV2 xác nhận',
+    WAITING_FOR_SUPERVISOR_REQUEST: 'Chờ gửi yêu cầu GVHD',
     PENDING_SUPERVISOR_APPROVAL: 'Chờ GVHD duyệt',
     PENDING_SUPERVISOR_ACCEPTANCE: 'Đã phân công GVHD',
     APPROVED: 'Đã phê duyệt',
@@ -33,6 +35,12 @@ const StatusBadge = ({
   } else if (variant === 'danger' || status === 'INACTIVE' || status === 'REJECTED' || status === false) {
     badgeStyles = 'bg-rose-50 text-rose-700 border-rose-200/80';
     dotColor = 'bg-rose-500';
+  } else if (status === 'WAITING_FOR_STUDENT2_CONFIRMATION') {
+    badgeStyles = 'bg-amber-50 text-amber-800 border-amber-200/80';
+    dotColor = 'bg-amber-500';
+  } else if (status === 'WAITING_FOR_SUPERVISOR_REQUEST') {
+    badgeStyles = 'bg-indigo-50 text-indigo-700 border-indigo-200/80';
+    dotColor = 'bg-indigo-600';
   } else if (status === 'PENDING_SUPERVISOR_APPROVAL') {
     badgeStyles = 'bg-blue-50 text-[#102d7d] border-blue-200/80';
     dotColor = 'bg-[#123891]';

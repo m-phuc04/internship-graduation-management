@@ -42,7 +42,6 @@ const LecturerThesisProgressPage = () => {
   // Review Modal
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
   const [selectedProgress, setSelectedProgress] = useState(null);
-  const [lecturerScore, setLecturerScore] = useState('');
   const [lecturerComment, setLecturerComment] = useState('');
   const [reviewStatus, setReviewStatus] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
@@ -156,7 +155,6 @@ const LecturerThesisProgressPage = () => {
   // Open Review Modal
   const handleOpenReview = (report) => {
     setSelectedProgress(report);
-    setLecturerScore(report.lecturerScore !== null ? report.lecturerScore : '');
     setLecturerComment(report.lecturerComment || '');
     setReviewStatus(
       ['APPROVED', 'REJECTED', 'REVIEWING'].includes(report.status)
@@ -172,23 +170,14 @@ const LecturerThesisProgressPage = () => {
     setFormError('');
 
     if (reviewStatus === 'REJECTED' && !lecturerComment.trim()) {
-      setFormError('Vui lòng nhập nhận xét / lý do khi từ chối nhật ký của sinh viên');
+      setFormError('Vui lòng nhập nhận xét / lý do khi yêu cầu sinh viên chỉnh sửa nhật ký');
       return;
-    }
-
-    if (lecturerScore !== '') {
-      const num = Number(lecturerScore);
-      if (isNaN(num) || num < 0 || num > 10) {
-        setFormError('Điểm đánh giá phải là số từ 0 đến 10');
-        return;
-      }
     }
 
     setSubmitting(true);
     try {
       const payload = {
         status: reviewStatus,
-        lecturerScore: lecturerScore !== '' ? Number(lecturerScore) : null,
         lecturerComment: lecturerComment.trim() || null,
       };
 
@@ -198,7 +187,7 @@ const LecturerThesisProgressPage = () => {
       );
 
       if (res.success) {
-        showToast('Đánh giá nhật ký thành công!', 'success');
+        showToast('Đã lưu nhận xét và cập nhật trạng thái nhật ký!', 'success');
         setReviewModalOpen(false);
         fetchSupervisedProgress();
       }
@@ -370,7 +359,7 @@ const LecturerThesisProgressPage = () => {
                     <th className="py-3.5 px-4">Tiến độ (%)</th>
                     <th className="py-3.5 px-4">File đính kèm</th>
                     <th className="py-3.5 px-4">Xác nhận SV2</th>
-                    <th className="py-3.5 px-4">Điểm / Nhận xét</th>
+                    <th className="py-3.5 px-4">Nhận xét / Nhiệm vụ tuần tiếp theo</th>
                     <th className="py-3.5 px-4">Trạng thái</th>
                     <th className="py-3.5 px-4 text-right">Thao tác</th>
                   </tr>
@@ -461,14 +450,14 @@ const LecturerThesisProgressPage = () => {
                           )}
                         </td>
 
-                        {/* Score & Comment */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {item.lecturerScore !== null ? (
-                            <span className="font-mono font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              {item.lecturerScore}/10
+                        {/* Nhận xét & Nhiệm vụ */}
+                        <td className="py-3.5 px-4 max-w-xs">
+                          {item.lecturerComment ? (
+                            <span className="text-slate-800 line-clamp-2 text-xs">
+                              {item.lecturerComment}
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">Chưa chấm</span>
+                            <span className="text-slate-400 italic text-[11px]">Chưa có nhận xét</span>
                           )}
                         </td>
 
@@ -699,7 +688,7 @@ const LecturerThesisProgressPage = () => {
             </div>
 
             {/* Existing Review if evaluated */}
-            {(selectedDetail.lecturerComment || selectedDetail.lecturerScore !== null) && (
+            {selectedDetail.lecturerComment && (
               <div
                 className={`p-3.5 rounded-2xl border text-xs space-y-1.5 ${
                   selectedDetail.status === 'APPROVED'
@@ -711,19 +700,12 @@ const LecturerThesisProgressPage = () => {
               >
                 <div className="flex items-center justify-between font-bold">
                   <span className="text-slate-800">
-                    Đánh giá của GVHD ({formatDate(selectedDetail.reviewedAt)})
+                    Nhận xét & Nhiệm vụ của GVHD ({formatDate(selectedDetail.reviewedAt)})
                   </span>
-                  {selectedDetail.lecturerScore !== null && (
-                    <span className="font-mono text-xs text-emerald-700 font-extrabold bg-white px-2 py-0.5 rounded border border-emerald-200">
-                      Điểm: {selectedDetail.lecturerScore}/10
-                    </span>
-                  )}
                 </div>
-                {selectedDetail.lecturerComment && (
-                  <p className="text-slate-800 leading-relaxed text-xs">
-                    <strong>Nhận xét:</strong> {selectedDetail.lecturerComment}
-                  </p>
-                )}
+                <p className="text-slate-800 leading-relaxed text-xs">
+                  {selectedDetail.lecturerComment}
+                </p>
               </div>
             )}
 
@@ -746,7 +728,7 @@ const LecturerThesisProgressPage = () => {
                 className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Mở form đánh giá</span>
+                <span>Mở form đánh giá & giao việc</span>
               </button>
             </div>
           </div>
@@ -758,7 +740,7 @@ const LecturerThesisProgressPage = () => {
         <Modal
           isOpen={reviewModalOpen}
           onClose={() => setReviewModalOpen(false)}
-          title="Đánh Giá & Phê Duyệt Nhật Ký Khóa Luận"
+          title="Đánh Giá & Giao Nhiệm Vụ Tuần Tiếp Theo"
           maxWidth="max-w-xl"
         >
           <div className="space-y-4 text-xs">
@@ -806,50 +788,32 @@ const LecturerThesisProgressPage = () => {
               </div>
             )}
 
-            {/* Score & Status Inputs */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Điểm đánh giá tuần (0 - 10)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="10"
-                  step="0.5"
-                  value={lecturerScore}
-                  onChange={(e) => setLecturerScore(e.target.value)}
-                  placeholder="VD: 9.0"
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Trạng thái đánh giá <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={reviewStatus}
-                  onChange={(e) => setReviewStatus(e.target.value)}
-                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                >
-                  <option value="APPROVED">Phê duyệt (APPROVED)</option>
-                  <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
-                  <option value="REJECTED">Yêu cầu sửa / Từ chối (REJECTED)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Comments */}
+            {/* Status Input */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Nhận xét & Hướng dẫn của GVHD {reviewStatus === 'REJECTED' && <span className="text-rose-500">*</span>}
+                Trạng thái đánh giá <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={reviewStatus}
+                onChange={(e) => setReviewStatus(e.target.value)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              >
+                <option value="APPROVED">Phê duyệt (APPROVED)</option>
+                <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
+                <option value="REJECTED">Yêu cầu sửa / Từ chối (REJECTED)</option>
+              </select>
+            </div>
+
+            {/* Comments / Tasks for next week */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Nhận xét & Định hướng / Nhiệm vụ cho tuần tiếp theo {reviewStatus === 'REJECTED' && <span className="text-rose-500">*</span>}
               </label>
               <textarea
                 rows={4}
                 value={lecturerComment}
                 onChange={(e) => setLecturerComment(e.target.value)}
-                placeholder="Nhập nhận xét chi tiết, nhắc nhở các mục cần hoàn thiện trong tuần tiếp theo..."
+                placeholder="Nhập nhận xét chi tiết, nhắc nhở và định hướng nhiệm vụ cho nhóm sinh viên trong tuần tiếp theo..."
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none"
               />
             </div>

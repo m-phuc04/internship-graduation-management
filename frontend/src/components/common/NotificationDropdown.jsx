@@ -161,17 +161,26 @@ const NotificationDropdown = () => {
     }
 
     if (role === 'LECTURER') {
-      // 1. Phân công phản biện khóa luận (Reviewer assignment) -> Nhảy xuống mục Phản biện khóa luận
+      // 1. Phân công phản biện / Phân công Hội đồng đánh giá Khóa luận -> Nhảy vào Phản biện khóa luận
       if (
+        titleLower.includes('phân công hội đồng') ||
+        titleLower.includes('phân công phản biện') ||
         titleLower.includes('phản biện') ||
         messageLower.includes('phản biện') ||
+        titleLower.includes('hội đồng') ||
+        messageLower.includes('hội đồng') ||
         item.type === 'THESIS_REVIEW' ||
         targetLink?.includes('tab=review') ||
-        targetLink?.includes('tab=reviewer')
+        targetLink?.includes('tab=reviewer') ||
+        targetLink?.includes('tab=council')
       ) {
         if (
           titleLower.includes('hội đồng') ||
           messageLower.includes('hội đồng') ||
+          targetLink?.includes('tab=council')
+        ) {
+          targetLink = '/lecturer/theses?tab=council';
+        } else if (
           titleLower.includes('phản biện 2') ||
           messageLower.includes('phản biện 2') ||
           targetLink?.includes('tab=reviewer2')
@@ -191,11 +200,13 @@ const NotificationDropdown = () => {
       ) {
         targetLink = '/lecturer/theses/progress';
       }
-      // 3. Đánh giá / Mở đợt nhập điểm KLTN
+      // 3. Đánh giá / Mở đợt nhập điểm KLTN (Dành riêng cho GVHD đánh giá)
       else if (
         titleLower.includes('mở đợt nhập điểm kltn') ||
         messageLower.includes('mở đợt nhập điểm kltn') ||
-        titleLower.includes('đánh giá khóa luận')
+        (titleLower.includes('đánh giá khóa luận') &&
+          !titleLower.includes('phân công') &&
+          !titleLower.includes('hội đồng'))
       ) {
         targetLink = '/lecturer/theses?view=evaluation';
       }
@@ -211,8 +222,8 @@ const NotificationDropdown = () => {
       else if (
         item.type === 'THESIS' &&
         (titleLower.includes('đề tài khóa luận mới cần duyệt') ||
-         messageLower.includes('vui lòng xem và duyệt đề tài') ||
-         targetLink === '/lecturer/theses')
+          messageLower.includes('vui lòng xem và duyệt đề tài') ||
+          targetLink === '/lecturer/theses')
       ) {
         targetLink = '/lecturer/theses?tab=supervisor';
       }

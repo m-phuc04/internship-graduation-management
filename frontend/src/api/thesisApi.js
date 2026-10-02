@@ -7,6 +7,22 @@ export const thesisApi = {
   // Student gets own thesis profile
   getMyThesis: (params) => axiosClient.get('/theses/my', { params }),
 
+  // Student 2 responds to invitation (ACCEPT / REJECT)
+  respondStudent2Invitation: (id, data) =>
+    axiosClient.patch(`/theses/${id}/respond-invitation`, data),
+
+  // Student 1 sends request to supervisor (GVHD)
+  sendSupervisorRequest: (id) =>
+    axiosClient.patch(`/theses/${id}/send-supervisor-request`),
+
+  // Student 1 invites student 2
+  inviteStudent2: (id, data) =>
+    axiosClient.patch(`/theses/${id}/invite-student2`, data),
+
+  // Student 1 cancels student 2 invitation
+  cancelStudent2Invite: (id) =>
+    axiosClient.patch(`/theses/${id}/cancel-student2-invite`),
+
   // Get available supervisor lecturers with capacity stats
   getAvailableSupervisors: () => axiosClient.get('/theses/available-supervisors'),
 

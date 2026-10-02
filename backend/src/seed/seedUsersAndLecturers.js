@@ -227,7 +227,7 @@ const seedUsersAndLecturers = async () => {
         lecturerCode: "GV0004",
         academicTitle: "TS.",
         fullName: "Lê Thị Thúy",
-        displayTitle: "TS. Lê Thị Thúy",
+        displayTitle: "TS. Lê Thị Thủy",
         email: "gv0004@iuh.edu.vn",
         phone: "0908000004",
         specialization: "Học máy & Khai phá Dữ liệu",

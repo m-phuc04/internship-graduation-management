@@ -34,6 +34,7 @@ import {
   X,
   Edit3,
   FileText,
+  ExternalLink,
 } from 'lucide-react';
 
 const LecturerThesesPage = () => {
@@ -112,12 +113,37 @@ const LecturerThesesPage = () => {
   const [gradeComment, setGradeComment] = useState('');
   const [gradeSaving, setGradeSaving] = useState(false);
 
+  // Grading Period State
+  const [gradingPeriodStatus, setGradingPeriodStatus] = useState({
+    canGrade: false,
+    statusText: 'Chưa tạo thời gian nhập điểm KLTN. Không thể chấm điểm.',
+  });
+
   // Council Room Data for Reviewer 2 (Phản biện hội đồng)
   const [councils, setCouncils] = useState([]);
   const [councilsMap, setCouncilsMap] = useState({});
   const [thesisCouncilMap, setThesisCouncilMap] = useState({});
   const [publishedScores, setPublishedScores] = useState({});
   const [selectedCouncilId, setSelectedCouncilId] = useState(null);
+
+  // Council Detail Modal State (For clicking on Council in any thesis row)
+  const [councilDetailModalOpen, setCouncilDetailModalOpen] = useState(false);
+  const [selectedCouncilDetail, setSelectedCouncilDetail] = useState(null);
+
+  const handleOpenCouncilDetail = (council) => {
+    if (!council) return;
+    const cId = council.id || council._id;
+    const fullCouncil =
+      (Array.isArray(councils) &&
+        councils.find(
+          (c) =>
+            (c.id && String(c.id) === String(cId)) ||
+            (c._id && String(c._id) === String(cId)),
+        )) ||
+      council;
+    setSelectedCouncilDetail(fullCouncil);
+    setCouncilDetailModalOpen(true);
+  };
 
   const loadCouncilData = useCallback(async () => {
     try {
@@ -251,14 +277,55 @@ const LecturerThesesPage = () => {
   const fetchAssignedTheses = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
-      const thesesRes = await thesisApi.getAssignedThesesForLecturer({
-        roleType: 'ALL',
-        search,
-        academicTermId: currentTerm?._id || '',
-      });
+      const [thesesRes, periodRes] = await Promise.all([
+        thesisApi.getAssignedThesesForLecturer({
+          roleType: 'ALL',
+          search,
+          academicTermId: currentTerm?._id || '',
+        }),
+        thesisApi.getGradingPeriods({
+          academicTermId: currentTerm?._id || '',
+        }).catch(() => ({ success: false, data: [] })),
+      ]);
 
       if (thesesRes.success) {
         setData(thesesRes.data);
+      }
+
+      if (periodRes.success) {
+        const periods = periodRes.data || [];
+        if (periods.length === 0) {
+          setGradingPeriodStatus({
+            canGrade: false,
+            statusText: 'Chưa tạo thời gian nhập điểm KLTN. Không thể chấm điểm.',
+          });
+        } else {
+          const active = periods.find((p) => p.computedStatus === 'ACTIVE');
+          const upcoming = periods.find((p) => p.computedStatus === 'UPCOMING');
+          const expired = periods.filter((p) => p.computedStatus === 'EXPIRED');
+
+          if (active) {
+            setGradingPeriodStatus({
+              canGrade: true,
+              statusText: `Đang trong đợt nhập điểm "${active.name}" (đến ${new Date(active.endDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })})`,
+            });
+          } else if (upcoming) {
+            setGradingPeriodStatus({
+              canGrade: false,
+              statusText: `Đợt nhập điểm "${upcoming.name}" chưa bắt đầu (bắt đầu lúc ${new Date(upcoming.startDate).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })})`,
+            });
+          } else if (expired.length > 0) {
+            setGradingPeriodStatus({
+              canGrade: false,
+              statusText: 'Đã hết thời gian nhập điểm KLTN. Không thể chấm điểm.',
+            });
+          } else {
+            setGradingPeriodStatus({
+              canGrade: false,
+              statusText: 'Chưa tạo thời gian nhập điểm KLTN. Không thể chấm điểm.',
+            });
+          }
+        }
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải danh sách đề tài khóa luận', 'error');
@@ -526,9 +593,9 @@ const LecturerThesesPage = () => {
 
   // Computations for Council Rooms - Councils containing this lecturer
   const myCouncils = useMemo(() => {
-    if (!allAvailableCouncils || allAvailableCouncils.length === 0) return [];
-    return allAvailableCouncils.filter((c) => isLecturerInCouncil(c));
-  }, [allAvailableCouncils, isLecturerInCouncil]);
+    if (!councils || councils.length === 0) return [];
+    return councils.filter((c) => isLecturerInCouncil(c));
+  }, [councils, isLecturerInCouncil]);
 
   const activeCouncil = useMemo(() => {
     if (selectedCouncilId) {
@@ -658,6 +725,10 @@ const LecturerThesesPage = () => {
 
   // Open Grade Box Modal
   const handleOpenGradeBox = (thesis, targetRole = null) => {
+    if (!gradingPeriodStatus.canGrade) {
+      showToast(gradingPeriodStatus.statusText || 'Hiện không nằm trong thời gian nhập điểm', 'warning');
+      return;
+    }
     if (activeTab === 'SUPERVISOR' && !targetRole) {
       navigate(`/lecturer/theses/${thesis._id}/evaluate`);
       return;
@@ -733,6 +804,10 @@ const LecturerThesesPage = () => {
   const handleConfirmGradeBox = async (e) => {
     if (e) e.preventDefault();
     if (!gradeBoxThesis) return;
+    if (!gradingPeriodStatus.canGrade) {
+      showToast(gradingPeriodStatus.statusText || 'Hiện không nằm trong thời gian nhập điểm', 'error');
+      return;
+    }
 
     const isTwo = gradeBoxThesis.studentCount === 2 && gradeBoxThesis.secondStudentId;
 
@@ -844,8 +919,10 @@ const LecturerThesesPage = () => {
 
   const handleOpenDetail = (thesis) => {
     setTargetThesis(thesis);
-    setDetailStartDate(thesis.startDate ? thesis.startDate.split('T')[0] : '');
-    setDetailEndDate(thesis.endDate ? thesis.endDate.split('T')[0] : '');
+    const startVal = thesis.startDate || thesis.academicTermId?.startDate || '';
+    const endVal = thesis.endDate || thesis.academicTermId?.endDate || '';
+    setDetailStartDate(startVal ? (typeof startVal === 'string' ? startVal.split('T')[0] : new Date(startVal).toISOString().split('T')[0]) : '');
+    setDetailEndDate(endVal ? (typeof endVal === 'string' ? endVal.split('T')[0] : new Date(endVal).toISOString().split('T')[0]) : '');
     setEditingTimeline(false);
     setDetailModalOpen(true);
   };
@@ -1828,11 +1905,6 @@ const LecturerThesesPage = () => {
                                   <div className="font-semibold text-slate-800">
                                     {formatLecturerDisplay(item.supervisorId)}
                                   </div>
-                                  {item.supervisorId?.lecturerCode && (
-                                    <span className="text-slate-400 font-mono text-[10px]">
-                                      Mã GV: {item.supervisorId.lecturerCode}
-                                    </span>
-                                  )}
                                 </td>
                                 <td className="py-3.5 px-4 whitespace-nowrap">
                                   {getReviewer1Display(item) !== 'Chưa phân công' ? (
@@ -1885,9 +1957,17 @@ const LecturerThesesPage = () => {
                                     {item.status !== 'REJECTED' && (
                                       <button
                                         type="button"
-                                        onClick={() => handleOpenGradeBox(item, 'COUNCIL')}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
-                                        title="Chấm điểm Hội đồng"
+                                        disabled={!gradingPeriodStatus.canGrade}
+                                        onClick={() => {
+                                          if (!gradingPeriodStatus.canGrade) return;
+                                          handleOpenGradeBox(item, 'COUNCIL');
+                                        }}
+                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                          gradingPeriodStatus.canGrade
+                                            ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                            : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                        }`}
+                                        title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm Hội đồng'}
                                       >
                                         <Award className="w-3.5 h-3.5" />
                                         <span>Chấm điểm</span>
@@ -2041,11 +2121,6 @@ const LecturerThesesPage = () => {
                               <div className="font-semibold text-slate-800">
                                 {formatLecturerDisplay(item.supervisorId)}
                               </div>
-                              {item.supervisorId?.lecturerCode && (
-                                <span className="text-slate-400 font-mono text-[10px]">
-                                  Mã GV: {item.supervisorId.lecturerCode}
-                                </span>
-                              )}
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
                               {getReviewer1Display(item)}
@@ -2082,9 +2157,17 @@ const LecturerThesesPage = () => {
                                 {item.status !== 'REJECTED' && (
                                   <button
                                     type="button"
-                                    onClick={() => handleOpenGradeBox(item, 'REVIEWER1')}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
-                                    title="Chấm điểm Giảng viên phản biện 1"
+                                    disabled={!gradingPeriodStatus.canGrade}
+                                    onClick={() => {
+                                      if (!gradingPeriodStatus.canGrade) return;
+                                      handleOpenGradeBox(item, 'REVIEWER1');
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                      gradingPeriodStatus.canGrade
+                                        ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                    }`}
+                                    title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm Giảng viên phản biện 1'}
                                   >
                                     <Award className="w-3.5 h-3.5" />
                                     <span>Chấm điểm</span>
@@ -2206,11 +2289,6 @@ const LecturerThesesPage = () => {
                               <div className="font-semibold text-slate-800">
                                 {formatLecturerDisplay(item.supervisorId)}
                               </div>
-                              {item.supervisorId?.lecturerCode && (
-                                <span className="text-slate-400 font-mono text-[10px]">
-                                  Mã GV: {item.supervisorId.lecturerCode}
-                                </span>
-                              )}
                             </td>
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               {getReviewer1Display(item) !== 'Chưa phân công' ? (
@@ -2247,9 +2325,17 @@ const LecturerThesesPage = () => {
                                 {item.status !== 'REJECTED' && (
                                   <button
                                     type="button"
-                                    onClick={() => handleOpenGradeBox(item, 'REVIEWER2')}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
-                                    title="Chấm điểm Giảng viên phản biện 2"
+                                    disabled={!gradingPeriodStatus.canGrade}
+                                    onClick={() => {
+                                      if (!gradingPeriodStatus.canGrade) return;
+                                      handleOpenGradeBox(item, 'REVIEWER2');
+                                    }}
+                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                      gradingPeriodStatus.canGrade
+                                        ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                    }`}
+                                    title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm Giảng viên phản biện 2'}
                                   >
                                     <Award className="w-3.5 h-3.5" />
                                     <span>Chấm điểm</span>
@@ -2379,11 +2465,6 @@ const LecturerThesesPage = () => {
                           <div className="font-semibold text-slate-800">
                             {formatLecturerDisplay(item.supervisorId)}
                           </div>
-                          {item.supervisorId?.lecturerCode && (
-                            <span className="text-slate-400 font-mono text-[10px]">
-                              Mã GV: {item.supervisorId.lecturerCode}
-                            </span>
-                          )}
                         </td>
 
                         {/* 5. GVPB 1 */}
@@ -2411,22 +2492,30 @@ const LecturerThesesPage = () => {
                         {/* 7. Hội đồng */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {assignedCouncil ? (
-                            <div className="space-y-0.5">
-                              <strong className="text-slate-900 block font-bold text-xs">
-                                {(assignedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}
-                              </strong>
-                              {assignedCouncil.room && (
-                                <div className="text-[10px] text-slate-500 font-mono">
-                                  Phòng: {assignedCouncil.room}
-                                </div>
-                              )}
-                              {assignedCouncil.reportTime && (
-                                <div className="text-[10px] text-slate-600 font-mono flex items-center gap-1 mt-0.5">
-                                  <Clock className="w-3 h-3 text-[#123891]" />
-                                  <span>{assignedCouncil.reportTime}</span>
-                                </div>
-                              )}
-                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCouncilDetail(assignedCouncil)}
+                              className="text-left group cursor-pointer p-2 -m-2 rounded-xl hover:bg-blue-50/80 transition block"
+                              title="Bấm để xem chi tiết Hội đồng đánh giá"
+                            >
+                              <div className="space-y-0.5">
+                                <strong className="text-[#123891] group-hover:text-[#0d2a75] group-hover:underline font-bold text-xs flex items-center gap-1">
+                                  <span>{(assignedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}</span>
+                                  <ExternalLink className="w-3 h-3 text-[#123891] opacity-70 group-hover:opacity-100 shrink-0" />
+                                </strong>
+                                {assignedCouncil.room && (
+                                  <div className="text-[10px] text-slate-500 font-mono">
+                                    Phòng: {assignedCouncil.room}
+                                  </div>
+                                )}
+                                {assignedCouncil.reportTime && (
+                                  <div className="text-[10px] text-slate-600 font-mono flex items-center gap-1 mt-0.5">
+                                    <Clock className="w-3 h-3 text-[#123891]" />
+                                    <span>{assignedCouncil.reportTime}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
                           ) : (
                             <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200">
                               Chưa phân hội đồng
@@ -2472,15 +2561,21 @@ const LecturerThesesPage = () => {
                             {item.status !== 'REJECTED' && !isPendingApproval && (
                               <button
                                 type="button"
+                                disabled={!gradingPeriodStatus.canGrade}
                                 onClick={() => {
+                                  if (!gradingPeriodStatus.canGrade) return;
                                   if (activeTab === 'SUPERVISOR') {
                                     navigate(`/lecturer/theses/${item._id}/evaluate`);
                                   } else {
                                     handleOpenGradeBox(item);
                                   }
                                 }}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-xs shadow-xs transition cursor-pointer"
-                                title="Bấm để nhập điểm và đánh giá đề tài"
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                  gradingPeriodStatus.canGrade
+                                    ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                    : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                }`}
+                                title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Bấm để nhập điểm và đánh giá đề tài'}
                               >
                                 <Award className="w-3.5 h-3.5" />
                                 <span>Chấm điểm</span>
@@ -2999,7 +3094,7 @@ const LecturerThesesPage = () => {
                       {detailStartDate ? new Date(detailStartDate).toLocaleDateString('vi-VN') : '—'}
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      {targetThesis.startDate ? '• Thời gian GVHD tùy chỉnh' : '• Mặc định: Ngày GVHD duyệt đề tài'}
+                      {targetThesis.startDate ? '• Thời gian GVHD đã tùy chỉnh' : '• Mặc định: Ngày bắt đầu học kỳ'}
                     </div>
                   </div>
 
@@ -3009,7 +3104,7 @@ const LecturerThesesPage = () => {
                       {detailEndDate ? new Date(detailEndDate).toLocaleDateString('vi-VN') : '—'}
                     </div>
                     <div className="text-[10px] text-slate-500 mt-0.5">
-                      {targetThesis.endDate ? '• Thời gian GVHD tùy chỉnh' : '• Mặc định: Mốc báo cáo KLTN của học kỳ'}
+                      {targetThesis.endDate ? '• Thời gian GVHD đã tùy chỉnh' : '• Mặc định: Ngày kết thúc học kỳ'}
                     </div>
                   </div>
                 </div>
@@ -3109,7 +3204,9 @@ const LecturerThesesPage = () => {
                   targetThesis.status !== 'PENDING_TBM_APPROVAL' && (
                     <button
                       type="button"
+                      disabled={!gradingPeriodStatus.canGrade}
                       onClick={() => {
+                        if (!gradingPeriodStatus.canGrade) return;
                         setDetailModalOpen(false);
                         if (activeTab === 'SUPERVISOR') {
                           navigate(`/lecturer/theses/${targetThesis._id}/evaluate`);
@@ -3117,7 +3214,12 @@ const LecturerThesesPage = () => {
                           handleOpenGradeBox(targetThesis);
                         }
                       }}
-                      className="px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+                      className={`px-4 py-2 text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 ${
+                        gradingPeriodStatus.canGrade
+                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                      }`}
+                      title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm'}
                     >
                       <Award className="w-3.5 h-3.5" />
                       <span>Chấm điểm</span>
@@ -3382,6 +3484,173 @@ const LecturerThesesPage = () => {
                 type="button"
                 onClick={() => setSelectedTopicDetail(null)}
                 className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Xem chi tiết Phòng Hội đồng */}
+      {councilDetailModalOpen && selectedCouncilDetail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-sm shrink-0">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    {(selectedCouncilDetail.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-500">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-blue-50 text-[#102d7d] border border-blue-200">
+                      {selectedCouncilDetail.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Hội đồng (Oral)'}
+                    </span>
+                    {selectedCouncilDetail.room && (
+                      <span className="font-semibold text-slate-700">
+                        • Phòng: {selectedCouncilDetail.room}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setCouncilDetailModalOpen(false);
+                  setSelectedCouncilDetail(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* General Info Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                <div className="text-[10.5px] font-bold text-slate-400 uppercase">Phòng bảo vệ</div>
+                <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <MapPin className="w-4 h-4 text-[#123891]" />
+                  <span>{selectedCouncilDetail.room || 'Chưa thiết lập phòng'}</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
+                <div className="text-[10.5px] font-bold text-slate-400 uppercase">Thời gian bảo vệ</div>
+                <div className="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#123891]" />
+                  <span>
+                    {selectedCouncilDetail.reportTime ||
+                      (selectedCouncilDetail.reportDate
+                        ? new Date(selectedCouncilDetail.reportDate).toLocaleDateString('vi-VN')
+                        : 'Theo lịch thông báo của khoa')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {selectedCouncilDetail.description && (
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs">
+                <div className="text-[10.5px] font-bold text-slate-400 uppercase mb-1">Ghi chú & Hướng dẫn</div>
+                <p className="text-slate-700 leading-relaxed whitespace-pre-line">{selectedCouncilDetail.description}</p>
+              </div>
+            )}
+
+            {/* Council Lecturers List */}
+            <div className="space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-[#123891]" />
+                  <span>Danh sách Thành viên Hội đồng</span>
+                </label>
+                <span className="text-[11px] font-mono text-slate-500">
+                  {Array.isArray(selectedCouncilDetail.lecturers) ? selectedCouncilDetail.lecturers.length : 0} thành viên
+                </span>
+              </div>
+
+              {Array.isArray(selectedCouncilDetail.lecturers) && selectedCouncilDetail.lecturers.length > 0 ? (
+                <div className="space-y-2">
+                  {selectedCouncilDetail.lecturers.map((lec, idx) => {
+                    const isMe = isSameLecturer(lec, user, data?.lecturer);
+                    const roleName =
+                      lec.role ||
+                      (idx === 0 ? 'Chủ tịch Hội đồng' : idx === 1 ? 'Thư ký Hội đồng' : 'Ủy viên');
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`p-3.5 rounded-2xl border flex items-center justify-between flex-wrap gap-2 text-xs transition ${
+                          isMe
+                            ? 'bg-blue-50/80 border-blue-200 text-[#102d7d]'
+                            : 'bg-white border-slate-200/80 text-slate-800 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-9 h-9 rounded-xl flex items-center justify-center font-bold text-xs ${
+                              isMe ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-700'
+                            }`}
+                          >
+                            {idx + 1}
+                          </div>
+                          <div>
+                            <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                              <span>
+                                {lec.academicTitle ? `${lec.academicTitle} ` : ''}
+                                {lec.fullName || lec.name || 'Giảng viên'}
+                              </span>
+                              {isMe && (
+                                <span className="px-2 py-0.2 rounded bg-[#123891] text-white text-[10px] font-bold">
+                                  Bạn
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 flex items-center gap-3 mt-0.5">
+                              {lec.lecturerCode && <span>Mã GV: {lec.lecturerCode}</span>}
+                              {lec.email && <span>Email: {lec.email}</span>}
+                              {lec.phone && <span>SĐT: {lec.phone}</span>}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <span
+                            className={`px-3 py-1 rounded-xl text-xs font-bold ${
+                              roleName.toLowerCase().includes('chủ tịch')
+                                ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                                : roleName.toLowerCase().includes('thư ký')
+                                  ? 'bg-blue-100 text-[#0d2a75] border border-blue-200'
+                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
+                            }`}
+                          >
+                            {roleName}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-200 text-center text-xs text-slate-400 italic">
+                  Chưa có danh sách giảng viên trong hội đồng này
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setCouncilDetailModalOpen(false);
+                  setSelectedCouncilDetail(null);
+                }}
+                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
               >
                 Đóng
               </button>
