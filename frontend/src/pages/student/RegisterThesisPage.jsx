@@ -65,13 +65,7 @@ const RegisterThesisPage = () => {
   // Helper to format Lecturer Title nicely (prevents "TS. TS.")
   const formatLecturerDisplay = (title, name) => {
     if (!name) return 'Chưa cập nhật';
-    const trimmedName = name.trim();
-    if (!title) return trimmedName;
-    const trimmedTitle = title.trim();
-    if (trimmedName.toLowerCase().startsWith(trimmedTitle.toLowerCase())) {
-      return trimmedName;
-    }
-    return `${trimmedTitle} ${trimmedName}`;
+    return name.trim();
   };
 
   // 1. Fetch Current Student Info & Check for existing Thesis

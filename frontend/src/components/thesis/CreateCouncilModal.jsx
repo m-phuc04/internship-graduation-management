@@ -187,10 +187,8 @@ const CreateCouncilModal = ({
         description: description.trim(),
       };
       if (saveHandler) saveHandler(updatedCouncil);
-      showToast(`Đã cập nhật "${updatedCouncil.name}" thành công!`, 'success');
     } else {
       const newCouncil = {
-        id: `council-${Date.now()}`,
         name: cleanName || councilName.trim(),
         room: room.trim() || `P${existingCouncilCount + 1}`,
         type,
@@ -206,10 +204,8 @@ const CreateCouncilModal = ({
         reportTime: formattedReportTime,
         description: description.trim(),
         lecturers: [],
-        createdAt: new Date().toISOString(),
       };
       if (saveHandler) saveHandler(newCouncil);
-      showToast(`Đã tạo "${newCouncil.name}" thành công!`, 'success');
     }
 
     onClose();

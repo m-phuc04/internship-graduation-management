@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import lecturerApi from '../../api/lecturerApi';
+import notificationApi from '../../api/notificationApi';
 import { useToast } from '../../context/ToastContext';
 import { AlertCircle, Users, Award, Clock } from 'lucide-react';
 
@@ -145,16 +146,24 @@ const AssignCouncilModal = ({
     setSubmitting(true);
     try {
       const updatedLecturers = [];
+      const recipientUserIds = [];
       for (let i = 0; i < lecturerColumnCount; i++) {
         const lId = assignedLecturerIds[i];
         if (lId) {
           const foundLec = lecturers.find((l) => String(l._id) === String(lId));
-          const oldLecData = Array.isArray(council.lecturers) ? council.lecturers.find((l) => (l.lecturerId?._id || l.lecturerId) === lId) : null;
+          const uId = foundLec?.userId?._id || foundLec?.userId;
+          if (uId) recipientUserIds.push(String(uId));
+
+          const oldLecData = Array.isArray(council.lecturers) ? council.lecturers.find((l) => (l.lecturerId?._id || l.lecturerId || l.id) === lId) : null;
           updatedLecturers.push({
             lecturerId: lId,
-            fullName: foundLec?.userId?.fullName || 'Giảng viên',
+            id: lId,
+            _id: lId,
+            userId: uId || null,
+            fullName: foundLec?.userId?.fullName || foundLec?.fullName || 'Giảng viên',
             academicTitle: foundLec?.academicTitle || 'ThS.',
             lecturerCode: foundLec?.lecturerCode || '',
+            email: foundLec?.userId?.email || foundLec?.email || '',
             score: oldLecData?.score ?? null,
           });
         }
@@ -167,6 +176,17 @@ const AssignCouncilModal = ({
         name: cleanCouncilName || council.name,
         lecturers: updatedLecturers,
       });
+
+      // Send notification to newly assigned lecturers
+      if (recipientUserIds.length > 0) {
+        notificationApi.notifyCouncilAssignment({
+          lecturerUserIds: recipientUserIds,
+          councilName: cleanCouncilName || council.name,
+          councilRoom: council.room || '',
+        }).catch((err) => {
+          console.warn('Failed to send council notification:', err);
+        });
+      }
 
       showToast(`Đã phân công giảng viên cho ${cleanCouncilName} thành công!`, 'success');
       onClose();

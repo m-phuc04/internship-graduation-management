@@ -69,6 +69,12 @@ const thesisSchema = new mongoose.Schema(
       default: null,
     },
 
+    councilId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Council",
+      default: null,
+    },
+
     reviewers: [
       {
         lecturerId: {

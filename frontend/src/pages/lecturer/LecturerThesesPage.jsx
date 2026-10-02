@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
 import thesisProgressApi from '../../api/thesisProgressApi';
+import councilApi from '../../api/councilApi';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
@@ -118,100 +119,106 @@ const LecturerThesesPage = () => {
   const [publishedScores, setPublishedScores] = useState({});
   const [selectedCouncilId, setSelectedCouncilId] = useState(null);
 
-  const loadCouncilData = useCallback(() => {
+  const loadCouncilData = useCallback(async () => {
     try {
       const termId = currentTerm?._id || 'default';
+      const storageKey = `tbm_councils_${termId}`;
 
-      // 1. Load councils with multi-key merge fallback
-      let mergedCouncils = [];
-      const map = {};
+      let loadedCouncils = [];
+      let apiSuccess = false;
 
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('tbm_councils_')) {
+      // 1. Fetch directly from MongoDB councils collection
+      try {
+        const res = await councilApi.getAll({ academicTermId: currentTerm?._id || '' });
+        if (res.success && Array.isArray(res.data)) {
+          apiSuccess = true;
+          loadedCouncils = res.data.map((c) => ({
+            ...c,
+            id: c._id || c.id,
+            name: (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim(),
+            lecturers: Array.isArray(c.lecturers)
+              ? c.lecturers.map((l) => ({
+                  ...l,
+                  lecturerId: l.lecturerId?._id || l.lecturerId?.id || l.lecturerId,
+                  id: l.lecturerId?._id || l.lecturerId?.id || l.lecturerId || l.id,
+                  _id: l.lecturerId?._id || l.lecturerId?.id || l.lecturerId || l._id,
+                  userId: l.lecturerId?.userId?._id || l.lecturerId?.userId || l.userId,
+                  fullName: l.lecturerId?.userId?.fullName || l.fullName || 'Giảng viên',
+                  academicTitle: l.lecturerId?.academicTitle || l.academicTitle || 'ThS.',
+                  lecturerCode: l.lecturerId?.lecturerCode || l.lecturerCode || '',
+                  email: l.lecturerId?.userId?.email || l.email || '',
+                }))
+              : [],
+          }));
+
+          // Always synchronize local cache with authoritative MongoDB councils data
           try {
-            const parsed = JSON.parse(localStorage.getItem(k) || '[]');
-            if (Array.isArray(parsed)) {
-              parsed.forEach((c) => {
-                const cid = c.id || c._id;
-                if (cid && !map[cid]) {
-                  map[cid] = c;
-                  mergedCouncils.push(c);
-                }
-              });
-            }
-          } catch (e) {}
+            localStorage.setItem(storageKey, JSON.stringify(loadedCouncils));
+            localStorage.setItem('tbm_councils_default', JSON.stringify(loadedCouncils));
+          } catch {}
         }
+      } catch (apiErr) {
+        console.warn('API council fetch failed, checking offline storage:', apiErr.message);
       }
 
-      // Also ensure exact term key is prioritized
-      const cKey = `tbm_councils_${termId}`;
-      const savedCouncils = localStorage.getItem(cKey);
-      if (savedCouncils) {
-        try {
-          const parsed = JSON.parse(savedCouncils);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((c) => {
-              const cid = c.id || c._id;
-              if (cid) {
-                map[cid] = c;
-                const existingIdx = mergedCouncils.findIndex((mc) => (mc.id || mc._id) === cid);
-                if (existingIdx >= 0) {
-                  mergedCouncils[existingIdx] = c;
-                } else {
-                  mergedCouncils.push(c);
-                }
-              }
-            });
-          }
-        } catch (e) {}
+      // 2. Only use storage fallback if API call failed completely (e.g. offline)
+      if (!apiSuccess) {
+        const tryParseCouncils = (raw) => {
+          if (!raw) return null;
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              return parsed.map((c) => ({
+                ...c,
+                name: (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim(),
+                lecturers: Array.isArray(c.lecturers) ? c.lecturers : [],
+              }));
+            }
+          } catch {}
+          return null;
+        };
+
+        loadedCouncils =
+          tryParseCouncils(localStorage.getItem(storageKey)) ||
+          tryParseCouncils(localStorage.getItem('tbm_councils_default')) ||
+          [];
       }
 
-      setCouncils(mergedCouncils);
+      const finalCouncils = loadedCouncils;
+
+      const map = {};
+      finalCouncils.forEach((c) => {
+        const cid = c.id || c._id;
+        if (cid) map[cid] = c;
+      });
+
+      setCouncils(finalCouncils);
       setCouncilsMap(map);
 
-      // 2. Load thesis-council mappings with multi-key merge fallback
+      // 3. Load thesis-council mappings
       let mergedThesisCouncils = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('tbm_thesis_councils_')) {
-          try {
-            const parsed = JSON.parse(localStorage.getItem(k) || '{}');
-            if (parsed && typeof parsed === 'object') {
-              mergedThesisCouncils = { ...mergedThesisCouncils, ...parsed };
-            }
-          } catch (e) {}
+      try {
+        const defaultTc = JSON.parse(localStorage.getItem('tbm_thesis_councils_default') || '{}');
+        if (defaultTc && typeof defaultTc === 'object') {
+          mergedThesisCouncils = { ...defaultTc };
         }
-      }
-      const tcKey = `tbm_thesis_councils_${termId}`;
-      const savedThesisCouncils = localStorage.getItem(tcKey);
-      if (savedThesisCouncils) {
-        try {
-          mergedThesisCouncils = { ...mergedThesisCouncils, ...JSON.parse(savedThesisCouncils) };
-        } catch (e) {}
-      }
+      } catch (e) {}
+      try {
+        const exactTc = JSON.parse(localStorage.getItem(`tbm_thesis_councils_${termId}`) || '{}');
+        if (exactTc && typeof exactTc === 'object') {
+          mergedThesisCouncils = { ...mergedThesisCouncils, ...exactTc };
+        }
+      } catch (e) {}
       setThesisCouncilMap(mergedThesisCouncils);
 
-      // 3. Load published scores
+      // 4. Load published scores
       let mergedPub = {};
-      for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i);
-        if (k && k.startsWith('tbm_published_scores_')) {
-          try {
-            const parsed = JSON.parse(localStorage.getItem(k) || '{}');
-            if (parsed && typeof parsed === 'object') {
-              mergedPub = { ...mergedPub, ...parsed };
-            }
-          } catch (e) {}
+      try {
+        const savedPub = JSON.parse(localStorage.getItem(`tbm_published_scores_${termId}`) || '{}');
+        if (savedPub && typeof savedPub === 'object') {
+          mergedPub = { ...savedPub };
         }
-      }
-      const psKey = `tbm_published_scores_${termId}`;
-      const savedPub = localStorage.getItem(psKey);
-      if (savedPub) {
-        try {
-          mergedPub = { ...mergedPub, ...JSON.parse(savedPub) };
-        } catch (e) {}
-      }
+      } catch (e) {}
       setPublishedScores(mergedPub);
     } catch (e) {
       console.warn('Error loading council data in Lecturer page', e);
@@ -230,6 +237,10 @@ const LecturerThesesPage = () => {
       window.removeEventListener('focus', handleStorage);
     };
   }, [loadCouncilData]);
+
+  useEffect(() => {
+    loadCouncilData();
+  }, [location.search, activeTab, loadCouncilData]);
 
   // Timeline edit in detail modal
   const [editingTimeline, setEditingTimeline] = useState(false);
@@ -329,95 +340,246 @@ const LecturerThesesPage = () => {
   // Current list based on active tab with resilient fallback
   const supervisedTheses = data?.supervisedTheses || (data?.theses || []).filter((t) => t.isSupervisor) || [];
   const reviewer1Theses = data?.reviewer1Theses || (data?.theses || []).filter((t) => t.isReviewer1) || [];
-  const reviewer2Theses = data?.reviewer2Theses || (data?.theses || []).filter((t) => t.isReviewer2) || [];
 
-  // Helper to find assigned council (STRICT: only return council if thesis is explicitly assigned)
+  // Helper to find assigned council
   const getAssignedCouncil = useCallback((item) => {
     if (!item?._id) return null;
-    const councilId = thesisCouncilMap?.[item._id] || item.councilId || (item.council?._id || item.council?.id);
-    if (!councilId || councilId === 'default_council') return null;
+    const rawCouncilId =
+      thesisCouncilMap?.[item._id] ||
+      thesisCouncilMap?.[String(item._id)] ||
+      (item.councilId?._id ? item.councilId._id : item.councilId) ||
+      (item.council?._id || item.council?.id);
+
+    if (!rawCouncilId) return null;
+
+    const councilId = typeof rawCouncilId === 'object' && rawCouncilId !== null
+      ? String(rawCouncilId._id || rawCouncilId.id || '')
+      : String(rawCouncilId || '');
+
+    if (!councilId || councilId === 'default_council' || councilId === '[object Object]') return null;
 
     if (councilsMap && councilsMap[councilId]) {
       return councilsMap[councilId];
     }
     if (Array.isArray(councils)) {
-      const found = councils.find((c) => (c.id && c.id === councilId) || (c._id && c._id === councilId));
+      const found = councils.find((c) => (c.id && String(c.id) === councilId) || (c._id && String(c._id) === councilId));
       if (found) return found;
+    }
+    if (item.councilId && typeof item.councilId === 'object' && item.councilId.name) {
+      return item.councilId;
     }
     return null;
   }, [councils, councilsMap, thesisCouncilMap]);
+
+  // Helper to normalize strings for robust comparison (handles accents, titles, whitespace, punctuation)
+  const normalizeLecturerStr = (s) =>
+    (s || '')
+      .toString()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/^(ths\b\.?|ts\b\.?|pgs\b\.?\s*ts\b\.?|gs\b\.?\s*ts\b\.?|thac si|tien si|giao su|pho giao su|ncs\b\.?)\s*/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .trim();
+
+  // Helper to check if a council lecturer entry matches a user / lecturer
+  const isSameLecturer = useCallback((lecObj, u, lecturerData) => {
+    if (!lecObj) return false;
+    const myIds = [
+      u?._id,
+      u?.userId,
+      u?.lecturerId,
+      u?.id,
+      lecturerData?._id,
+      lecturerData?.userId?._id,
+      lecturerData?.userId,
+      lecturerData?.id,
+    ]
+      .filter(Boolean)
+      .map((id) => String(id).trim());
+
+    const myCodes = [
+      u?.lecturerCode,
+      u?.code,
+      u?.userCode,
+      u?.username,
+      lecturerData?.lecturerCode,
+      lecturerData?.code,
+    ]
+      .filter(Boolean)
+      .map((c) => String(c).trim().toLowerCase());
+
+    const myNames = [
+      u?.fullName,
+      u?.name,
+      u?.username,
+      lecturerData?.fullName,
+      lecturerData?.name,
+      lecturerData?.userId?.fullName,
+      lecturerData?.userId?.name,
+    ]
+      .filter(Boolean)
+      .map(normalizeLecturerStr);
+
+    const myEmails = [
+      u?.email,
+      lecturerData?.email,
+      lecturerData?.userId?.email,
+    ]
+      .filter(Boolean)
+      .map((e) => String(e).trim().toLowerCase());
+
+    if (typeof lecObj === 'string') {
+      const trimmed = lecObj.trim();
+      if (!trimmed) return false;
+      const normTrimmed = normalizeLecturerStr(trimmed);
+      return (
+        myIds.includes(trimmed) ||
+        myCodes.includes(trimmed.toLowerCase()) ||
+        (normTrimmed && normTrimmed !== 'giangvien' && myNames.some((mn) => mn && mn === normTrimmed))
+      );
+    }
+
+    const lecIds = [
+      lecObj.lecturerId?._id,
+      lecObj.lecturerId?.id,
+      lecObj.lecturerId,
+      lecObj.userId?._id,
+      lecObj.userId?.id,
+      lecObj.userId,
+      lecObj.id,
+      lecObj._id,
+    ]
+      .filter(Boolean)
+      .map((id) => String(id).trim());
+
+    if (lecIds.length > 0 && lecIds.some((id) => myIds.includes(id))) return true;
+
+    const lecCode = (lecObj.lecturerCode || lecObj.code || lecObj.userCode || '').trim().toLowerCase();
+    if (lecCode && myCodes.includes(lecCode)) return true;
+
+    const lecEmail = (lecObj.email || '').trim().toLowerCase();
+    if (lecEmail && myEmails.includes(lecEmail)) return true;
+
+    const rawLecName = lecObj.fullName || lecObj.name || lecObj.lecturerName || lecObj.userId?.fullName;
+    const lecName = normalizeLecturerStr(rawLecName);
+    if (lecName && lecName !== 'giangvien' && lecName !== 'chuaphancong') {
+      for (const mn of myNames) {
+        if (mn && mn !== 'giangvien' && mn === lecName) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }, []);
+
+  const matchTwoLecturers = useCallback((lecA, lecB) => {
+    if (!lecA || !lecB) return false;
+    const aIds = [
+      lecA.lecturerId?._id,
+      lecA.lecturerId?.id,
+      lecA.lecturerId,
+      lecA.userId?._id,
+      lecA.userId?.id,
+      lecA.userId,
+      lecA.id,
+      lecA._id,
+    ].filter(Boolean).map((id) => String(id).trim());
+
+    const bIds = [
+      lecB.lecturerId?._id,
+      lecB.lecturerId?.id,
+      lecB.lecturerId,
+      lecB.userId?._id,
+      lecB.userId?.id,
+      lecB.userId,
+      lecB.id,
+      lecB._id,
+    ].filter(Boolean).map((id) => String(id).trim());
+
+    if (aIds.length > 0 && bIds.length > 0 && aIds.some((id) => bIds.includes(id))) return true;
+
+    const aCode = (lecA.lecturerCode || lecA.code || lecA.userCode || '').trim().toLowerCase();
+    const bCode = (lecB.lecturerCode || lecB.code || lecB.userCode || '').trim().toLowerCase();
+    if (aCode && bCode && aCode === bCode) return true;
+
+    const aName = normalizeLecturerStr(lecA.fullName || lecA.name || lecA.lecturerName || lecA.userId?.fullName);
+    const bName = normalizeLecturerStr(lecB.fullName || lecB.name || lecB.lecturerName || lecB.userId?.fullName);
+    if (aName && bName && aName !== 'giangvien' && bName !== 'giangvien' && aName === bName) return true;
+
+    return false;
+  }, []);
 
   // Helper to check if logged-in lecturer is in a council
   const isLecturerInCouncil = useCallback(
     (council) => {
       if (!council || !Array.isArray(council.lecturers) || council.lecturers.length === 0) return false;
-      const myIds = [user?._id, user?.userId, user?.lecturerId, data?.lecturer?._id]
-        .filter(Boolean)
-        .map((id) => String(id).trim());
-      const myName = (user?.fullName || user?.name || data?.lecturer?.fullName || '').trim().toLowerCase();
-      const myEmail = (user?.email || data?.lecturer?.email || '').trim().toLowerCase();
-      const myCode = (user?.lecturerCode || user?.code || data?.lecturer?.lecturerCode || '').trim().toLowerCase();
-
-      return council.lecturers.some((l) => {
-        if (!l) return false;
-        if (typeof l === 'string') {
-          return myIds.includes(l.trim());
-        }
-        const lIds = [
-          l.lecturerId?._id || l.lecturerId?.id || l.lecturerId,
-          l.userId?._id || l.userId?.id || l.userId,
-          l.id,
-          l._id,
-        ]
-          .filter(Boolean)
-          .map((id) => String(id).trim());
-
-        const matchesId = lIds.some((id) => myIds.includes(id));
-        if (matchesId) return true;
-
-        const lName = (l.fullName || l.name || '').trim().toLowerCase();
-        if (myName && lName && (myName === lName || lName.includes(myName) || myName.includes(lName))) return true;
-
-        const lEmail = (l.email || '').trim().toLowerCase();
-        if (myEmail && lEmail && myEmail === lEmail) return true;
-
-        const lCode = (l.lecturerCode || l.code || '').trim().toLowerCase();
-        if (myCode && lCode && myCode === lCode) return true;
-
-        return false;
-      });
+      return council.lecturers.some((l) => isSameLecturer(l, user, data?.lecturer));
     },
-    [user, data?.lecturer]
+    [user, data?.lecturer, isSameLecturer]
   );
 
-  // Computations for Council Rooms - STRICT: Only councils containing this lecturer
+  // Computations for Council Rooms - Councils containing this lecturer
   const myCouncils = useMemo(() => {
     if (!councils || councils.length === 0) return [];
     return councils.filter((c) => isLecturerInCouncil(c));
   }, [councils, isLecturerInCouncil]);
 
   const activeCouncil = useMemo(() => {
-    if (myCouncils.length === 0) return null;
     if (selectedCouncilId) {
       const found = myCouncils.find((c) => (c.id || c._id) === selectedCouncilId || String(c.id || c._id) === String(selectedCouncilId));
       if (found) return found;
     }
-    return myCouncils[0];
+    return myCouncils[0] || null;
   }, [myCouncils, selectedCouncilId]);
 
+  // Reviewer 2 Theses (DB reviewer 2 assignments)
+  const reviewer2Theses = useMemo(() => {
+    const rawRev2 = data?.reviewer2Theses || (data?.theses || []).filter((t) => t.isReviewer2) || [];
+    return rawRev2;
+  }, [data]);
+
+  const effectiveActiveCouncil = activeCouncil;
+
   const councilTheses = useMemo(() => {
-    const allThesesPool = data?.allTheses || data?.theses || [];
-    const targetCouncil = activeCouncil || (myCouncils.length > 0 ? myCouncils[0] : null);
+    const allThesesPool = (data?.allTheses && data.allTheses.length > 0) ? data.allTheses : (data?.theses || []);
+    if (!allThesesPool || allThesesPool.length === 0) return [];
 
-    if (!targetCouncil) return [];
+    const targetCouncil = effectiveActiveCouncil;
+    if (!targetCouncil) {
+      return [];
+    }
 
-    const cId = targetCouncil.id || targetCouncil._id;
-    const cIdStr = String(cId);
+    const targetCouncilIds = [
+      targetCouncil.id,
+      targetCouncil._id,
+      targetCouncil.councilId,
+    ].filter(Boolean).map((id) => String(id).trim().toLowerCase());
 
-    // STRICT: Only include theses explicitly assigned to this council in thesisCouncilMap or t.councilId
     let list = allThesesPool.filter((t) => {
-      const mappedCouncilId = thesisCouncilMap[t._id] || thesisCouncilMap[t.id] || t.councilId || (t.council?._id || t.council?.id);
-      return mappedCouncilId && String(mappedCouncilId) === cIdStr;
+      const tid = String(t._id || t.id || '');
+      const rawCouncilId =
+        thesisCouncilMap[tid] ||
+        thesisCouncilMap[t._id] ||
+        thesisCouncilMap[t.id] ||
+        thesisCouncilMap[String(t._id)] ||
+        thesisCouncilMap[String(t.id)] ||
+        (t.councilId?._id ? t.councilId._id : t.councilId) ||
+        t.council?._id ||
+        t.council?.id;
+
+      if (!rawCouncilId) return false;
+
+      const normMappedId = String(
+        typeof rawCouncilId === 'object' && rawCouncilId !== null
+          ? (rawCouncilId._id || rawCouncilId.id || '')
+          : rawCouncilId
+      ).trim().toLowerCase();
+
+      if (!normMappedId || normMappedId === '[object object]') return false;
+
+      return targetCouncilIds.some((tcId) => normMappedId === tcId || tcId === `council-${normMappedId}` || normMappedId === `council-${tcId}`);
     });
 
     if (search && search.trim()) {
@@ -430,18 +592,13 @@ const LecturerThesesPage = () => {
           t.secondStudentId?.userId?.fullName?.toLowerCase().includes(q) ||
           t.secondStudentId?.studentCode?.toLowerCase().includes(q) ||
           t.supervisorId?.userId?.fullName?.toLowerCase().includes(q) ||
-          t.reviewer1Id?.userId?.fullName?.toLowerCase().includes(q)
+          t.reviewer1Id?.userId?.fullName?.toLowerCase().includes(q) ||
+          t.reviewer2Id?.userId?.fullName?.toLowerCase().includes(q)
       );
     }
 
     return list;
-  }, [activeCouncil, myCouncils, data, thesisCouncilMap, search]);
-
-  const effectiveActiveCouncil = useMemo(() => {
-    if (activeCouncil) return activeCouncil;
-    if (myCouncils.length > 0) return myCouncils[0];
-    return null;
-  }, [activeCouncil, myCouncils]);
+  }, [effectiveActiveCouncil, data, thesisCouncilMap, search]);
 
   const stats = {
     supervisedCount: data?.stats?.supervisedCount ?? supervisedTheses.length,
@@ -489,6 +646,10 @@ const LecturerThesesPage = () => {
     currentList = filteredReviewer1Theses;
   } else if (activeTab === 'REVIEWER_2') {
     currentList = filteredReviewer2Theses;
+  } else if (activeTab === 'COUNCIL' || location.search.includes('tab=council')) {
+    currentList = councilTheses;
+  } else if (activeTab === 'REVIEW_BLIND' || location.search.includes('tab=review')) {
+    currentList = [...filteredReviewer1Theses, ...filteredReviewer2Theses];
   }
 
   // Open Grade Box Modal
@@ -546,11 +707,7 @@ const LecturerThesesPage = () => {
       c = thesis.scores?.reviewer2Comment || '';
     } else if (role === 'COUNCIL' || role === 'COUNCIL_MEMBER') {
       const myEntry = Array.isArray(thesis.scores?.councilLecturerScores)
-        ? thesis.scores.councilLecturerScores.find(
-            (e) =>
-              (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (user?._id || user?.userId) ||
-              (e.lecturerName && user?.fullName && e.lecturerName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
-          )
+        ? thesis.scores.councilLecturerScores.find((e) => isSameLecturer(e, user, data?.lecturer))
         : null;
       s1 = myEntry?.student1Score !== null && myEntry?.student1Score !== undefined
         ? myEntry.student1Score
@@ -725,12 +882,7 @@ const LecturerThesesPage = () => {
 
   const formatLecturerDisplay = (lecturer) => {
     if (!lecturer) return 'Chưa phân công';
-    const name = lecturer.userId?.fullName || lecturer.fullName || lecturer.name || 'Giảng viên';
-    const title = lecturer.academicTitle || '';
-    if (title && !name.toLowerCase().startsWith(title.toLowerCase())) {
-      return `${title} ${name}`;
-    }
-    return name;
+    return lecturer.userId?.fullName || lecturer.fullName || lecturer.name || 'Giảng viên';
   };
 
   const formatDate = (d) => {
@@ -746,15 +898,13 @@ const LecturerThesesPage = () => {
   const getReviewer1Display = (item) => {
     if (!item) return 'Chưa phân công';
     if (item.reviewer1Id) {
-      const title = item.reviewer1Id.academicTitle ? `${item.reviewer1Id.academicTitle} ` : '';
-      return `${title}${item.reviewer1Id.userId?.fullName || item.reviewer1Id.fullName || 'Giảng viên'}`;
+      return item.reviewer1Id.userId?.fullName || item.reviewer1Id.fullName || 'Giảng viên';
     }
     if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
       const priv = item.reviewers.find((r) => r.isPrivateReviewer && r.lecturerId);
       if (priv) {
         const lec = priv.lecturerId;
-        const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
-        return `${title}${lec.userId?.fullName || lec.fullName || 'Giảng viên'}`;
+        return lec.userId?.fullName || lec.fullName || 'Giảng viên';
       }
     }
     return 'Chưa phân công';
@@ -764,15 +914,13 @@ const LecturerThesesPage = () => {
   const getReviewer2Display = (item) => {
     if (!item) return 'Chưa phân công';
     if (item.reviewer2Id) {
-      const title = item.reviewer2Id.academicTitle ? `${item.reviewer2Id.academicTitle} ` : '';
-      return `${title}${item.reviewer2Id.userId?.fullName || item.reviewer2Id.fullName || 'Giảng viên'}`;
+      return item.reviewer2Id.userId?.fullName || item.reviewer2Id.fullName || 'Giảng viên';
     }
     if (Array.isArray(item.reviewers) && item.reviewers.length > 0) {
       const coun = item.reviewers.find((r) => r.isCouncilReviewer && r.lecturerId);
       if (coun) {
         const lec = coun.lecturerId;
-        const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
-        return `${title}${lec.userId?.fullName || lec.fullName || 'Giảng viên'}`;
+        return lec.userId?.fullName || lec.fullName || 'Giảng viên';
       }
     }
     return 'Chưa phân công';
@@ -990,7 +1138,6 @@ const LecturerThesesPage = () => {
   const getCouncilLecturerScoreInfo = (item, lecIndex) => {
     const council = activeCouncil || effectiveActiveCouncil || getAssignedCouncil(item);
     const targetLec = Array.isArray(council?.lecturers) ? council.lecturers[lecIndex] : null;
-    const otherLec = Array.isArray(council?.lecturers) ? council.lecturers[lecIndex === 0 ? 1 : 0] : null;
 
     const councilScores = Array.isArray(item.scores?.councilLecturerScores)
       ? item.scores.councilLecturerScores.filter((e) => e && (e.score !== null || e.student1Score !== null || e.student2Score !== null))
@@ -999,49 +1146,8 @@ const LecturerThesesPage = () => {
     let entry = null;
 
     if (targetLec) {
-      const targetLecId = (
-        targetLec.lecturerId?._id ||
-        targetLec.lecturerId ||
-        targetLec.userId?._id ||
-        targetLec.userId ||
-        targetLec._id
-      )?.toString();
-      const rawName = (targetLec.name || targetLec.fullName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
-
       // Tìm bài chấm khớp chính xác targetLec
-      entry = councilScores.find((e) => {
-        const eId = (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId)?.toString();
-        if (targetLecId && eId && eId === targetLecId) return true;
-        const eName = (e.lecturerName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
-        if (rawName && eName && (rawName === eName || rawName.includes(eName) || eName.includes(rawName))) return true;
-        return false;
-      });
-    }
-
-    // Fallback: nếu không tìm thấy bằng ID/tên, lấy theo vị trí mảng nhưng đảm bảo không lấy nhầm bài chấm của GV còn lại
-    if (!entry && councilScores.length > lecIndex) {
-      const candidate = councilScores[lecIndex];
-      if (otherLec) {
-        const otherLecId = (
-          otherLec.lecturerId?._id ||
-          otherLec.lecturerId ||
-          otherLec.userId?._id ||
-          otherLec.userId ||
-          otherLec._id
-        )?.toString();
-        const otherRawName = (otherLec.name || otherLec.fullName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
-        const candId = (candidate.lecturerId?._id || candidate.lecturerId?.toString() || candidate.lecturerId)?.toString();
-        const candName = (candidate.lecturerName || '').toLowerCase().replace(/^(ths\.|ts\.|pgs\.ts\.|gs\.ts\.|thạc sĩ|tiến sĩ)\s+/i, '').trim();
-
-        const belongsToOther = (otherLecId && candId && otherLecId === candId) ||
-          (otherRawName && candName && (otherRawName === candName || otherRawName.includes(candName) || candName.includes(otherRawName)));
-
-        if (!belongsToOther) {
-          entry = candidate;
-        }
-      } else {
-        entry = candidate;
-      }
+      entry = councilScores.find((e) => matchTwoLecturers(targetLec, e));
     }
 
     let s1 = null;
@@ -1054,12 +1160,6 @@ const LecturerThesesPage = () => {
       s2 = entry.student2Score !== null && entry.student2Score !== undefined && entry.student2Score !== ''
         ? Number(entry.student2Score)
         : null;
-    } else {
-      // Fallback: Nếu GVHĐ 2 đã chấm qua role GVPB 2
-      if (lecIndex === 1 && (item.scores?.student1Reviewer2Score !== null && item.scores?.student1Reviewer2Score !== undefined || item.scores?.reviewer2Score !== null && item.scores?.reviewer2Score !== undefined)) {
-        s1 = item.scores.student1Reviewer2Score !== null && item.scores.student1Reviewer2Score !== undefined ? Number(item.scores.student1Reviewer2Score) : Number(item.scores.reviewer2Score);
-        s2 = item.scores.student2Reviewer2Score !== null && item.scores.student2Reviewer2Score !== undefined ? Number(item.scores.student2Reviewer2Score) : null;
-      }
     }
 
     const hasScore = s1 !== null && !isNaN(s1);
@@ -1145,11 +1245,7 @@ const LecturerThesesPage = () => {
   const renderMyCouncilScore = (item) => {
     const isTwo = item.studentCount === 2 && item.secondStudentId;
     const myEntry = Array.isArray(item.scores?.councilLecturerScores)
-      ? item.scores.councilLecturerScores.find(
-          (e) =>
-            (e.lecturerId?._id || e.lecturerId?.toString() || e.lecturerId) === (user?._id || user?.userId) ||
-            (e.lecturerName && user?.fullName && e.lecturerName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
-        )
+      ? item.scores.councilLecturerScores.find((e) => isSameLecturer(e, user, data?.lecturer))
       : null;
 
     if (myEntry) {
@@ -1495,14 +1591,18 @@ const LecturerThesesPage = () => {
         </div>
       ) : isReviewView ? (
         isCouncilTab ? (
-          myCouncils.length === 0 ? (
+          !effectiveActiveCouncil ? (
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-12 text-center space-y-3">
               <Award className="w-12 h-12 mx-auto text-slate-300" />
               <div className="text-sm font-bold text-slate-700">
-                Bạn chưa được phân công vào hội đồng nào
+                {councils.length === 0
+                  ? 'Chưa có phòng hội đồng nào trong học kỳ này'
+                  : 'Bạn chưa được phân công vào phòng hội đồng nào trong học kỳ này'}
               </div>
               <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Hiện tại bạn chưa có lịch tham gia hội đồng chấm phản biện khóa luận tốt nghiệp trong học kỳ này.
+                {councils.length === 0
+                  ? 'Hiện tại chưa có phòng hội đồng đánh giá khóa luận nào được thiết lập.'
+                  : 'Khi Trưởng Bộ Môn phân công bạn vào hội đồng và gán các đề tài bảo vệ, danh sách đề tài sẽ xuất hiện tại đây để bạn chấm điểm.'}
               </p>
             </div>
           ) : (
@@ -1587,12 +1687,7 @@ const LecturerThesesPage = () => {
                       Thành viên hội đồng:
                     </span>
                     {effectiveActiveCouncil.lecturers.map((lec, lIdx) => {
-                      const isMe =
-                        (lec.userId && (lec.userId === user?._id || lec.userId === user?.userId)) ||
-                        (lec.lecturerId && (lec.lecturerId === user?._id || lec.lecturerId === user?.userId || lec.lecturerId === data?.lecturer?._id)) ||
-                        (lec._id && (lec._id === user?._id || lec._id === data?.lecturer?._id)) ||
-                        (lec.name && user?.fullName && lec.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
-                        (lec.fullName && user?.fullName && lec.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase());
+                      const isMe = isSameLecturer(lec, user, data?.lecturer);
                       return (
                         <span
                           key={lIdx}
@@ -1650,21 +1745,8 @@ const LecturerThesesPage = () => {
                   const lec1 = Array.isArray(effectiveActiveCouncil?.lecturers) ? effectiveActiveCouncil.lecturers[0] : null;
                   const lec2 = Array.isArray(effectiveActiveCouncil?.lecturers) ? effectiveActiveCouncil.lecturers[1] : null;
 
-                  const isLec1Me = lec1 && (
-                    (lec1.userId && (lec1.userId === user?._id || lec1.userId === user?.userId)) ||
-                    (lec1.lecturerId && (lec1.lecturerId === user?._id || lec1.lecturerId === user?.userId || lec1.lecturerId === data?.lecturer?._id)) ||
-                    (lec1._id && (lec1._id === user?._id || lec1._id === data?.lecturer?._id)) ||
-                    (lec1.name && user?.fullName && lec1.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
-                    (lec1.fullName && user?.fullName && lec1.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
-                  );
-
-                  const isLec2Me = lec2 && (
-                    (lec2.userId && (lec2.userId === user?._id || lec2.userId === user?.userId)) ||
-                    (lec2.lecturerId && (lec2.lecturerId === user?._id || lec2.lecturerId === user?.userId || lec2.lecturerId === data?.lecturer?._id)) ||
-                    (lec2._id && (lec2._id === user?._id || lec2._id === data?.lecturer?._id)) ||
-                    (lec2.name && user?.fullName && lec2.name.trim().toLowerCase() === user.fullName.trim().toLowerCase()) ||
-                    (lec2.fullName && user?.fullName && lec2.fullName.trim().toLowerCase() === user.fullName.trim().toLowerCase())
-                  );
+                  const isLec1Me = isSameLecturer(lec1, user, data?.lecturer);
+                  const isLec2Me = isSameLecturer(lec2, user, data?.lecturer);
 
                   return (
                     <div className="overflow-x-auto">
@@ -1835,6 +1917,33 @@ const LecturerThesesPage = () => {
           )
         ) : (
           <div className="space-y-8">
+            {/* Banner gợi ý chuyển sang Phản biện hội đồng nếu có đề tài hội đồng */}
+            {councilTheses.length > 0 && (
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-white border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0">
+                    <Award className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900">
+                      Bạn có <span className="text-[#123891] font-extrabold">{councilTheses.length} đề tài</span> được phân công tại <span className="text-[#123891]">Phản biện hội đồng</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Vui lòng chuyển sang tab Phản biện hội đồng để xem danh sách phòng và thực hiện chấm điểm.
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/lecturer/theses?tab=council')}
+                  className="px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer shrink-0 inline-flex items-center gap-1.5"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  <span>Xem đề tài Hội đồng ({councilTheses.length})</span>
+                </button>
+              </div>
+            )}
+
             {/* ========================================================================= */}
             {/* BẢNG 1: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 1 (GVPB 1) */}
             {/* ========================================================================= */}

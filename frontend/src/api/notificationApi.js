@@ -9,6 +9,8 @@ export const notificationApi = {
     axiosClient.patch(`/notifications/${id}/read`),
   markAllAsRead: () =>
     axiosClient.patch('/notifications/read-all'),
+  notifyCouncilAssignment: (data) =>
+    axiosClient.post('/notifications/notify-council', data),
 };
 
 export default notificationApi;

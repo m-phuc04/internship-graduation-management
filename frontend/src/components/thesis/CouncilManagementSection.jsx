@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { useToast } from '../../context/ToastContext';
+import councilApi from '../../api/councilApi';
 import AssignCouncilModal from './AssignCouncilModal';
 import CreateCouncilModal from './CreateCouncilModal';
 
@@ -26,61 +27,52 @@ const CouncilManagementSection = ({ theses = [] }) => {
   const storageKey = `tbm_councils_${currentTerm?._id || 'default'}`;
   const colsStorageKey = `tbm_council_cols_${currentTerm?._id || 'default'}`;
 
-  const getDefaultCouncils = () => [
-    {
-      id: 'council-1',
-      name: 'Hội đồng 1',
-      room: 'P1',
-      type: 'ORAL',
-      reportDate: '2026-06-20',
-      reportStartTime: '08:00',
-      reportEndTime: '11:30',
-      reportTime: '08:00 - 11:30, 20/06/2026',
-      description: 'Phòng bảo vệ trực tiếp P1',
-      lecturers: [],
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: 'council-2',
-      name: 'Hội đồng 2',
-      room: 'P2',
-      type: 'POSTER',
-      reportDate: '2026-06-20',
-      reportStartTime: '13:30',
-      reportEndTime: '17:00',
-      reportTime: '13:30 - 17:00, 20/06/2026',
-      description: 'Khu vực bảo vệ Poster P2',
-      lecturers: [],
-      createdAt: new Date().toISOString(),
-    },
-  ];
+  const [councils, setCouncils] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [councils, setCouncils] = useState(() => {
+  const fetchCouncils = useCallback(async () => {
+    setLoading(true);
     try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          // Clean any parentheses from names
-          return parsed.map((c) => ({
-            ...c,
-            name: (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim(),
-            reportTime: c.reportTime || '',
-            reportDate: c.reportDate || '',
-            reportStartTime: c.reportStartTime || '',
-            reportEndTime: c.reportEndTime || '',
-          }));
-        }
+      const res = await councilApi.getAll({ academicTermId: currentTerm?._id || '' });
+      if (res.success) {
+        const list = (res.data || []).map((c) => ({
+          ...c,
+          id: c._id || c.id,
+          name: (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim(),
+          lecturers: Array.isArray(c.lecturers)
+            ? c.lecturers.map((l) => ({
+                ...l,
+                lecturerId: l.lecturerId?._id || l.lecturerId?.id || l.lecturerId,
+                id: l.lecturerId?._id || l.lecturerId?.id || l.lecturerId || l.id,
+                _id: l.lecturerId?._id || l.lecturerId?.id || l.lecturerId || l._id,
+                userId: l.lecturerId?.userId?._id || l.lecturerId?.userId || l.userId,
+                fullName: l.lecturerId?.userId?.fullName || l.fullName || 'Giảng viên',
+                academicTitle: l.lecturerId?.academicTitle || l.academicTitle || 'ThS.',
+                lecturerCode: l.lecturerId?.lecturerCode || l.lecturerCode || '',
+                email: l.lecturerId?.userId?.email || l.email || '',
+              }))
+            : [],
+        }));
+        setCouncils(list);
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(list));
+          localStorage.setItem('tbm_councils_default', JSON.stringify(list));
+        } catch {}
       }
-    } catch {
-      // fallback
+    } catch (err) {
+      console.warn('Error fetching councils from MongoDB:', err.message);
+    } finally {
+      setLoading(false);
     }
-    return getDefaultCouncils();
-  });
+  }, [currentTerm?._id, storageKey]);
+
+  useEffect(() => {
+    fetchCouncils();
+  }, [fetchCouncils]);
 
   const [lecturerColumnCount, setLecturerColumnCount] = useState(() => {
     try {
-      const savedCols = localStorage.getItem(colsStorageKey);
+      const savedCols = localStorage.getItem(colsStorageKey) || localStorage.getItem('tbm_council_cols_default');
       if (savedCols) {
         const num = parseInt(savedCols, 10);
         if (!isNaN(num) && num >= 2) return num;
@@ -91,31 +83,44 @@ const CouncilManagementSection = ({ theses = [] }) => {
     return 2;
   });
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(councils));
-    } catch {
-      // ignore
-    }
-  }, [councils, storageKey]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(colsStorageKey, String(lecturerColumnCount));
-    } catch {
-      // ignore
-    }
-  }, [lecturerColumnCount, colsStorageKey]);
-
   const [createCouncilModalOpen, setCreateCouncilModalOpen] = useState(false);
   const [assignCouncilModalOpen, setAssignCouncilModalOpen] = useState(false);
   const [targetCouncil, setTargetCouncil] = useState(null);
   const [editingCouncil, setEditingCouncil] = useState(null);
 
+  const handleClearAllCouncils = async () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa TOÀN BỘ danh sách phòng hội đồng và các phân công liên quan để nhập lại từ đầu không?')) {
+      try {
+        await councilApi.clearAll({ academicTermId: currentTerm?._id || '' });
+        localStorage.removeItem(storageKey);
+        localStorage.removeItem('tbm_councils_default');
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (k && (k.startsWith('tbm_councils_') || k.startsWith('tbm_thesis_councils_') || k.startsWith('tbm_published_scores_') || k.startsWith('tbm_council_cols_'))) {
+            localStorage.removeItem(k);
+          }
+        }
+        localStorage.setItem(storageKey, JSON.stringify([]));
+        localStorage.setItem('tbm_councils_default', JSON.stringify([]));
+        localStorage.setItem(`tbm_thesis_councils_${currentTerm?._id || 'default'}`, JSON.stringify({}));
+        localStorage.setItem('tbm_thesis_councils_default', JSON.stringify({}));
+        setCouncils([]);
+        window.dispatchEvent(new Event('storage'));
+        showToast('Đã xóa toàn bộ dữ liệu phòng hội đồng và phân công đề tài!', 'success');
+      } catch (err) {
+        showToast(err.message || 'Lỗi khi xóa toàn bộ phòng hội đồng', 'error');
+      }
+    }
+  };
+
   const handleAddLecturerColumn = () => {
     setLecturerColumnCount((prev) => {
       const next = prev + 1;
-      showToast(`Đã thêm cột Giảng viên ${next} và Điểm GV ${next}`, 'info');
+      try {
+        localStorage.setItem(colsStorageKey, String(next));
+        localStorage.setItem('tbm_council_cols_default', String(next));
+      } catch {}
+      showToast(`Đã thêm cột Giảng viên ${next}`, 'info');
       return next;
     });
   };
@@ -127,33 +132,87 @@ const CouncilManagementSection = ({ theses = [] }) => {
     }
     setLecturerColumnCount((prev) => {
       const next = prev - 1;
+      try {
+        localStorage.setItem(colsStorageKey, String(next));
+        localStorage.setItem('tbm_council_cols_default', String(next));
+      } catch {}
       showToast(`Đã xóa cột giảng viên (còn ${next} GV)`, 'info');
       return next;
     });
   };
 
-  const handleCouncilSaved = (savedCouncil) => {
-    if (editingCouncil) {
-      setCouncils((prev) =>
-        prev.map((c) => (c.id === savedCouncil.id ? savedCouncil : c))
-      );
+  const handleCouncilSaved = async (savedCouncil) => {
+    const sId = editingCouncil?._id || editingCouncil?.id || savedCouncil.id || savedCouncil._id;
+    try {
+      if (editingCouncil && sId) {
+        await councilApi.update(sId, {
+          ...savedCouncil,
+          academicTermId: currentTerm?._id || null,
+        });
+        showToast(`Đã cập nhật ${savedCouncil.name || 'hội đồng'} thành công!`, 'success');
+      } else {
+        await councilApi.create({
+          ...savedCouncil,
+          academicTermId: currentTerm?._id || null,
+        });
+        showToast(`Đã tạo ${savedCouncil.name || 'hội đồng'} mới thành công!`, 'success');
+      }
       setEditingCouncil(null);
-    } else {
-      setCouncils((prev) => [...prev, savedCouncil]);
+      await fetchCouncils();
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      showToast(err.message || 'Lỗi khi lưu phòng hội đồng', 'error');
     }
   };
 
-  const handleSaveCouncilFromAssign = (councilId, updatedCouncil) => {
-    setCouncils((prev) =>
-      prev.map((c) => (c.id === councilId ? updatedCouncil : c))
-    );
+  const handleSaveCouncilFromAssign = async (councilId, updatedCouncil) => {
+    try {
+      const cId = updatedCouncil._id || updatedCouncil.id || councilId;
+      await councilApi.update(cId, {
+        ...updatedCouncil,
+        academicTermId: currentTerm?._id || null,
+      });
+      await fetchCouncils();
+      window.dispatchEvent(new Event('storage'));
+    } catch (err) {
+      showToast(err.message || 'Lỗi khi lưu phân công giảng viên', 'error');
+    }
   };
 
-  const handleDeleteCouncil = (councilId, councilName) => {
+  const handleDeleteCouncil = async (councilId, councilName) => {
     const cleanName = (councilName || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
     if (window.confirm(`Bạn có chắc chắn muốn xóa "${cleanName}" không?`)) {
-      setCouncils((prev) => prev.filter((c) => c.id !== councilId));
-      showToast(`Đã xóa ${cleanName}`, 'info');
+      try {
+        await councilApi.delete(councilId);
+
+        // Clean up any local thesis assignments
+        try {
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && (k.startsWith('tbm_thesis_councils') || k.includes('thesis_council'))) {
+              try {
+                const cur = JSON.parse(localStorage.getItem(k) || '{}');
+                let changed = false;
+                Object.keys(cur).forEach((tid) => {
+                  if (String(cur[tid]) === String(councilId)) {
+                    delete cur[tid];
+                    changed = true;
+                  }
+                });
+                if (changed) {
+                  localStorage.setItem(k, JSON.stringify(cur));
+                }
+              } catch {}
+            }
+          }
+        } catch {}
+
+        showToast(`Đã xóa ${cleanName}`, 'info');
+        await fetchCouncils();
+        window.dispatchEvent(new Event('storage'));
+      } catch (err) {
+        showToast(err.message || 'Lỗi khi xóa phòng hội đồng', 'error');
+      }
     }
   };
 
@@ -199,6 +258,18 @@ const CouncilManagementSection = ({ theses = [] }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {councils.length > 0 && (
+            <button
+              type="button"
+              onClick={handleClearAllCouncils}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-[#c5221f] text-xs font-bold rounded-xl border border-rose-200 transition cursor-pointer"
+              title="Xóa toàn bộ các phòng hội đồng để nhập lại từ đầu"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-[#c5221f]" />
+              <span>Xóa tất cả phòng</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={handleOpenCreateModal}
@@ -208,28 +279,6 @@ const CouncilManagementSection = ({ theses = [] }) => {
             <Plus className="w-3.5 h-3.5" />
             <span>Thêm hội đồng</span>
           </button>
-
-          <button
-            type="button"
-            onClick={handleAddLecturerColumn}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-            title={`Tăng thêm 1 giảng viên (hiện tại: ${lecturerColumnCount} GV)`}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thêm giảng viên</span>
-          </button>
-
-          {lecturerColumnCount > 2 && (
-            <button
-              type="button"
-              onClick={handleRemoveLecturerColumn}
-              className="inline-flex items-center gap-1.5 px-2.5 py-2 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-rose-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer"
-              title="Xóa 1 cột giảng viên"
-            >
-              <Minus className="w-3.5 h-3.5" />
-              <span>Xóa GV</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -252,21 +301,8 @@ const CouncilManagementSection = ({ theses = [] }) => {
                   <th className="py-3.5 px-4 min-w-[150px]">Phòng hội đồng</th>
                   <th className="py-3.5 px-4 min-w-[140px] text-center">Hình thức</th>
                   <th className="py-3.5 px-4 min-w-[170px] text-center">Thời gian báo cáo</th>
-
-                  {Array.from({ length: lecturerColumnCount }).map((_, idx) => (
-                    <React.Fragment key={idx}>
-                      <th className="py-3.5 px-4 min-w-[150px]">
-                        Giảng viên {idx + 1}
-                      </th>
-                      <th className="py-3.5 px-4 text-center min-w-[90px] whitespace-nowrap">
-                        Điểm GV {idx + 1}
-                      </th>
-                    </React.Fragment>
-                  ))}
-
-                  <th className="py-3.5 px-4 text-center min-w-[110px] whitespace-nowrap">
-                    Điểm Hội đồng
-                  </th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Giảng viên 1</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Giảng viên 2</th>
                   <th className="py-3.5 px-4 text-right whitespace-nowrap">
                     Thao tác
                   </th>
@@ -274,8 +310,9 @@ const CouncilManagementSection = ({ theses = [] }) => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {councils.map((c, idx) => {
-                  const avgScore = calculateCouncilAverageScore(c);
                   const cleanName = (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+                  const lec1 = c.lecturers?.[0];
+                  const lec2 = c.lecturers?.[1];
 
                   return (
                     <tr key={c.id} className="hover:bg-slate-50/80 transition">
@@ -315,51 +352,43 @@ const CouncilManagementSection = ({ theses = [] }) => {
                         )}
                       </td>
 
-                      {Array.from({ length: lecturerColumnCount }).map((_, lIdx) => {
-                        const lecData = c.lecturers?.[lIdx];
-
-                        return (
-                          <React.Fragment key={lIdx}>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              {lecData ? (
-                                <div>
-                                  <div className="font-semibold text-slate-900">
-                                    {lecData.academicTitle ? `${lecData.academicTitle} ` : ''}
-                                    {lecData.fullName}
-                                  </div>
-                                  {lecData.lecturerCode && (
-                                    <div className="text-[10px] text-slate-400 font-mono">
-                                      Mã GV: {lecData.lecturerCode}
-                                    </div>
-                                  )}
-                                </div>
-                              ) : (
-                                <span className="text-slate-400 italic text-[11px]">
-                                  Chưa phân công
-                                </span>
-                              )}
-                            </td>
-
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                              {lecData && lecData.score !== null && lecData.score !== undefined ? (
-                                <span className="font-bold text-[#123891] font-mono text-xs bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 shadow-2xs">
-                                  {lecData.score}
-                                </span>
-                              ) : (
-                                <span className="text-slate-400 italic text-[11px]">—</span>
-                              )}
-                            </td>
-                          </React.Fragment>
-                        );
-                      })}
-
-                      <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                        {avgScore !== null ? (
-                          <span className="font-extrabold text-emerald-800 font-mono text-xs bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
-                            {avgScore} / 10
-                          </span>
+                      {/* Giảng viên 1 */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {lec1 ? (
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {lec1.fullName}
+                            </div>
+                            {lec1.lecturerCode && (
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Mã GV: {lec1.lecturerCode}
+                              </div>
+                            )}
+                          </div>
                         ) : (
-                          <span className="text-slate-400 italic text-[11px]">Chưa có điểm</span>
+                          <span className="text-slate-400 italic text-[11px]">
+                            Chưa phân công
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Giảng viên 2 */}
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {lec2 ? (
+                          <div>
+                            <div className="font-semibold text-slate-900">
+                              {lec2.fullName}
+                            </div>
+                            {lec2.lecturerCode && (
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Mã GV: {lec2.lecturerCode}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">
+                            Chưa phân công
+                          </span>
                         )}
                       </td>
 

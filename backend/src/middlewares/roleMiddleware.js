@@ -1,4 +1,5 @@
 const authorizeRoles = (...allowedRoles) => {
+  const roles = allowedRoles.flat(Infinity);
   return (req, res, next) => {
     if (!req.user) {
       const error = new Error("Bạn chưa đăng nhập");
@@ -6,7 +7,7 @@ const authorizeRoles = (...allowedRoles) => {
       return next(error);
     }
 
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!roles.includes(req.user.role)) {
       const error = new Error("Bạn không có quyền thực hiện thao tác này");
       error.statusCode = 403;
       return next(error);
