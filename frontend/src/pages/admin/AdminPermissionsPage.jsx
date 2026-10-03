@@ -28,12 +28,12 @@ const PERMISSION_OPTIONS = [
   {
     id: 'GVPB_KIN',
     label: 'GVPB KÍN (Phản biện 1)',
-    desc: 'Được phân công phản biện kín và nhập điểm phản biện 1 (Trọng số 20%).',
+    desc: 'Được phân công phản biện kín và nhập điểm phản biện 1 (Trọng số 30%).',
   },
   {
     id: 'GVPB_HOIDONG',
     label: 'GVPB HỘI ĐỒNG (Phản biện 2)',
-    desc: 'Được phân công phản biện hội đồng và nhập điểm phản biện 2 (Trọng số 30%).',
+    desc: 'Được phân công phản biện hội đồng và nhập điểm phản biện 2 (Trọng số 20%).',
   },
 ];
 
@@ -148,7 +148,7 @@ const AdminPermissionsPage = () => {
           <SearchInput
             value={search}
             onChange={setSearch}
-            placeholder="Tìm theo tên GV, Mã GV, Chuyên môn..."
+            placeholder="Tìm theo tên GV, Mã GV..."
           />
         </div>
         <div className="text-xs text-slate-500 font-medium">
@@ -203,7 +203,7 @@ const AdminPermissionsPage = () => {
                           {item.user?.fullName || '—'}
                         </div>
                         <div className="text-[10px] text-slate-400 mt-0.5">
-                          {item.specialization || 'Chưa cập nhật chuyên môn'}
+                          {item.department || 'Khoa Công nghệ Thông tin'}
                         </div>
                       </td>
 
@@ -241,7 +241,7 @@ const AdminPermissionsPage = () => {
                             </span>
                           )}
                           {perms.includes('GVPB_HOIDONG') && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
                               GVPB HỘI ĐỒNG
                             </span>
                           )}

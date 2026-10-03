@@ -417,7 +417,7 @@ const MyInternshipPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
               <Briefcase className="w-7 h-7" />
             </div>
             <div>
@@ -1130,7 +1130,7 @@ const MyInternshipPage = () => {
                 value={recreateReason}
                 onChange={(e) => setRecreateReason(e.target.value)}
                 placeholder="Vui lòng nhập lý do cụ thể (Ví dụ: Doanh nghiệp gửi nhầm thông tin, thay đổi người đánh giá trực tiếp, v.v.)..."
-                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#123891] focus:ring-1 focus:ring-indigo-600 outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
+                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#123891] focus:ring-1 focus:ring-[#123891] outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
               />
             </div>
 

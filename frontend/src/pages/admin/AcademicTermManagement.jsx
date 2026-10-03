@@ -371,7 +371,7 @@ const AcademicTermManagement = () => {
                             <Briefcase className="w-3 h-3" /> {term.internshipCount || 0} TTDN
                           </span>
                           <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 font-medium text-[11px] border border-purple-100"
+                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] font-medium text-[11px] border border-blue-100"
                             title="Số đề tài khóa luận"
                           >
                             <Layers className="w-3 h-3" /> {term.thesisCount || 0} KLTN
@@ -708,9 +708,9 @@ const AcademicTermManagement = () => {
                   <div className="text-[10px] uppercase font-bold text-blue-600">Hồ sơ TTDN</div>
                   <div className="font-bold text-blue-900 text-sm mt-0.5">{viewingTerm.internshipCount || 0}</div>
                 </div>
-                <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 text-center">
-                  <div className="text-[10px] uppercase font-bold text-purple-600">Đề tài KLTN</div>
-                  <div className="font-bold text-purple-900 text-sm mt-0.5">{viewingTerm.thesisCount || 0}</div>
+                <div className="p-3 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                  <div className="text-[10px] uppercase font-bold text-[#123891]">Đề tài KLTN</div>
+                  <div className="font-bold text-[#0d2a75] text-sm mt-0.5">{viewingTerm.thesisCount || 0}</div>
                 </div>
               </div>
 
@@ -737,9 +737,9 @@ const AcademicTermManagement = () => {
               </div>
 
               {/* KLTN Milestones */}
-              <div className="p-4 rounded-2xl bg-purple-50/60 border border-purple-100 space-y-2">
-                <div className="font-bold text-purple-900 flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-purple-600" />
+              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
+                <div className="font-bold text-[#0d2a75] flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-[#123891]" />
                   <span>Kế hoạch Khóa luận Tốt nghiệp (KLTN)</span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-slate-700">

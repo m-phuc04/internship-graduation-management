@@ -247,7 +247,7 @@ const CouncilManagementSection = ({ theses = [] }) => {
       {/* Table Header Section */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#123891] to-indigo-600 text-white flex items-center justify-center font-bold shadow-sm shadow-blue-200 shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white flex items-center justify-center font-bold shadow-sm shadow-blue-200 shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <div>
@@ -333,7 +333,7 @@ const CouncilManagementSection = ({ theses = [] }) => {
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
                             c.type === 'POSTER'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                               : 'bg-blue-50 text-[#102d7d] border-blue-200'
                           }`}
                         >

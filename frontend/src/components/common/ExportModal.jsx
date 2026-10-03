@@ -118,7 +118,7 @@ const ExportModal = ({
             <select
               value={selectedTermId}
               onChange={(e) => setSelectedTermId(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] font-semibold text-slate-800"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] font-semibold text-slate-800"
             >
               {terms.map((t) => (
                 <option key={t._id} value={t._id}>
@@ -137,7 +137,7 @@ const ExportModal = ({
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] text-slate-700"
+              className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] text-slate-700"
             >
               <option value="">Tất cả trạng thái</option>
               {type === 'INTERNSHIP' ? (
@@ -172,7 +172,7 @@ const ExportModal = ({
               <select
                 value={selectedCompanyId}
                 onChange={(e) => setSelectedCompanyId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] text-slate-700"
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] text-slate-700"
               >
                 <option value="">Tất cả doanh nghiệp</option>
                 {companies.map((c) => (
@@ -193,7 +193,7 @@ const ExportModal = ({
               <select
                 value={selectedLecturerId}
                 onChange={(e) => setSelectedLecturerId(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-[#123891] text-slate-700"
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] text-slate-700"
               >
                 <option value="">Tất cả giảng viên</option>
                 {lecturers.map((l) => (

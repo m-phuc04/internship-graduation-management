@@ -244,9 +244,6 @@ const LecturerThesisProgressPage = () => {
                   Nhật Ký Khóa Luận - Theo Dõi & Đánh Giá
                 </h2>
               </div>
-              <p className="text-xs text-slate-500 mt-1">
-                Giảng viên hướng dẫn (GVHD) theo dõi nhật ký từng tuần, thiết lập thời gian KLTN, xem tài liệu đính kèm, nhận xét và đánh giá tiến độ của nhóm sinh viên.
-              </p>
             </div>
           </div>
 

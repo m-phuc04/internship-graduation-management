@@ -208,7 +208,7 @@ const NotificationDropdown = () => {
           !titleLower.includes('phân công') &&
           !titleLower.includes('hội đồng'))
       ) {
-        targetLink = '/lecturer/theses?view=evaluation';
+        targetLink = '/lecturer/theses';
       }
       // 4. Quản lý / Đề xuất đề tài KLTN
       else if (
@@ -332,7 +332,7 @@ const NotificationDropdown = () => {
         return <GraduationCap className="w-4 h-4 text-[#123891]" />;
       case 'SYSTEM':
       default:
-        return <BookOpen className="w-4 h-4 text-purple-600" />;
+        return <BookOpen className="w-4 h-4 text-[#123891]" />;
     }
   };
 

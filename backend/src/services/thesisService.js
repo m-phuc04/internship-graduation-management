@@ -1922,7 +1922,7 @@ const gradeThesisByLecturer = async (
   }
   thesis.scores.student2ReviewerScore = s2_rev;
 
-  // Auto-calculate final score: GVHD (50%) + PB Kín (20%) + Hội đồng (30%)
+  // Auto-calculate final score: GVHD (50%) + PB Kín (30%) + Hội đồng (20%)
   const hasSup = thesis.scores.supervisorScore !== null && thesis.scores.supervisorScore !== undefined;
   const hasRev = thesis.scores.reviewerScore !== null && thesis.scores.reviewerScore !== undefined;
   const hasCoun = thesis.scores.councilScore !== null && thesis.scores.councilScore !== undefined;
@@ -1930,8 +1930,8 @@ const gradeThesisByLecturer = async (
   if (hasSup && hasRev && hasCoun) {
     const final =
       thesis.scores.supervisorScore * 0.5 +
-      thesis.scores.reviewerScore * 0.2 +
-      thesis.scores.councilScore * 0.3;
+      thesis.scores.reviewerScore * 0.3 +
+      thesis.scores.councilScore * 0.2;
 
     thesis.scores.finalScore = Number(final.toFixed(2));
     thesis.status = "GRADED";
@@ -1951,8 +1951,8 @@ const gradeThesisByLecturer = async (
     thesis.scores.student1FinalScore = Number(
       (
         s1_sup * 0.5 +
-        s1_rev * 0.2 +
-        s1_coun * 0.3
+        s1_rev * 0.3 +
+        s1_coun * 0.2
       ).toFixed(2),
     );
   }
@@ -1960,8 +1960,8 @@ const gradeThesisByLecturer = async (
     thesis.scores.student2FinalScore = Number(
       (
         s2_sup * 0.5 +
-        s2_rev * 0.2 +
-        s2_coun * 0.3
+        s2_rev * 0.3 +
+        s2_coun * 0.2
       ).toFixed(2),
     );
   }

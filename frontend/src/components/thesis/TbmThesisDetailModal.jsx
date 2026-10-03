@@ -165,7 +165,7 @@ const TbmThesisDetailModal = ({
               {thesis.supervisorId?.userId?.fullName}
             </div>
             <div className="text-slate-500 text-[11px] font-mono">
-              Mã GV: {thesis.supervisorId?.lecturerCode} • {thesis.supervisorId?.specialization || 'CNTT'}
+              Mã GV: {thesis.supervisorId?.lecturerCode}
             </div>
             <div className="text-slate-500 text-[11px]">{thesis.supervisorId?.userId?.email}</div>
           </div>
@@ -188,7 +188,7 @@ const TbmThesisDetailModal = ({
             {/* PB KÍN */}
             <div className="p-2 rounded-xl bg-blue-50/50 border border-blue-100 text-[11px] space-y-0.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[#0d2a75]">PB KÍN (20%):</span>
+                <span className="font-bold text-[#0d2a75]">PB KÍN (30%):</span>
                 <span className="px-1.5 py-0.2 rounded bg-blue-100 text-[#102d7d] font-bold text-[9px]">
                   GVPB KÍN
                 </span>
@@ -228,7 +228,7 @@ const TbmThesisDetailModal = ({
             {/* PB HỘI ĐỒNG */}
             <div className="p-2 rounded-xl bg-amber-50/50 border border-amber-100 text-[11px] space-y-0.5">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-amber-800">PB HỘI ĐỒNG (30%):</span>
+                <span className="font-bold text-amber-800">PB HỘI ĐỒNG (20%):</span>
                 <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-700 font-bold text-[9px]">
                   GVPB HỘI ĐỒNG
                 </span>
@@ -282,7 +282,7 @@ const TbmThesisDetailModal = ({
                 </div>
               </div>
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (20%)</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (30%)</div>
                 <div className="text-sm font-mono font-bold text-[#102d7d] mt-0.5">
                   {thesis.scores.reviewerScore !== null && thesis.scores.reviewerScore !== undefined
                     ? `${thesis.scores.reviewerScore}`
@@ -301,7 +301,7 @@ const TbmThesisDetailModal = ({
                 )}
               </div>
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
-                <div className="text-[10px] text-slate-400 font-bold uppercase">Hội đồng (30%)</div>
+                <div className="text-[10px] text-slate-400 font-bold uppercase">Hội đồng (20%)</div>
                 <div className="text-sm font-mono font-bold text-amber-700 mt-0.5">
                   {thesis.scores.councilScore !== null && thesis.scores.councilScore !== undefined ? `${thesis.scores.councilScore}` : '—'}
                 </div>

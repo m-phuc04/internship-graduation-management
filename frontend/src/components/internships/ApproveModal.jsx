@@ -95,7 +95,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
                 value={lec._id}
                 disabled={!lec.canAssign}
               >
-                {lec.academicTitle} {lec.userId?.fullName} - {lec.lecturerCode} ({lec.specialization}) [{lec.activeStudentsCount}/{lec.maxStudents} SV]
+                {lec.academicTitle} {lec.userId?.fullName} - Mã GV: {lec.lecturerCode} [{lec.activeStudentsCount}/{lec.maxStudents} SV]
                 {!lec.canAssign ? ' - ĐÃ HẾT CHỈ TIÊU' : ''}
               </option>
             ))}

@@ -1383,11 +1383,11 @@ const LecturerThesesPage = () => {
             <div
               className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${
                 isTopicsView
-                  ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-200'
+                  ? 'bg-gradient-to-tr from-[#123891] to-[#1B4DA1] shadow-blue-200'
                   : isReviewView
                     ? 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
                     : isEvaluationView
-                      ? 'bg-gradient-to-tr from-amber-500 to-indigo-600 shadow-amber-200'
+                      ? 'bg-gradient-to-tr from-amber-500 to-[#123891] shadow-amber-200'
                       : 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
               }`}
             >
@@ -1408,8 +1408,8 @@ const LecturerThesesPage = () => {
                     ? 'Danh Sách Đề Tài Khóa Luận Tốt Nghiệp'
                     : isReviewView
                       ? isCouncilTab
-                        ? 'Chấm Điểm Phản Biện Hội Đồng (30%)'
-                        : 'Chấm Điểm Phản Biện Khóa Luận (GVPB)'
+                        ? 'Chấm Điểm Phản Biện Hội Đồng (20%)'
+                        : 'Chấm Điểm Phản Biện Khóa Luận (GVPB - 30%)'
                       : isEvaluationView
                         ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 50%)'
                         : 'Đề tài hướng dẫn'}
@@ -1419,7 +1419,7 @@ const LecturerThesesPage = () => {
                     className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
                       isReviewView
                         ? isCouncilTab
-                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                          ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                           : 'bg-blue-50 text-[#102d7d] border-blue-200'
                         : isEvaluationView
                           ? 'bg-amber-50 text-amber-700 border-amber-200'
@@ -1428,23 +1428,14 @@ const LecturerThesesPage = () => {
                   >
                     {isReviewView
                       ? isCouncilTab
-                        ? 'PHẢN BIỆN HỘI ĐỒNG (30%)'
-                        : 'PHẢN BIỆN KÍN (GVPB 1 & GVPB 2)'
+                        ? 'PHẢN BIỆN HỘI ĐỒNG (20%)'
+                        : 'PHẢN BIỆN KÍN (GVPB 1 & GVPB 2 - 30%)'
                       : isEvaluationView
                         ? 'ĐÁNH GIÁ (50%)'
                         : 'HƯỚNG DẪN (50%)'}
                   </span>
                 )}
               </div>
-              {!isTopicsView && (isReviewView || isEvaluationView) && (
-                <p className="text-xs text-slate-500 mt-1">
-                  {isReviewView
-                    ? isCouncilTab
-                      ? 'Đánh giá và chấm điểm trực tiếp cho sinh viên báo cáo trước Hội đồng bảo vệ Khóa luận tốt nghiệp (trọng số 30%).'
-                      : 'Chấm điểm độc lập theo phân công Giảng viên phản biện 1 và Giảng viên phản biện 2. Điểm phản biện kín là điểm trung bình cộng của cả 2 GVPB.'
-                    : 'Theo dõi và thực hiện đánh giá điểm số hướng dẫn chính (50%) cho sinh viên khóa luận.'}
-                </p>
-              )}
             </div>
           </div>
 
@@ -1713,7 +1704,7 @@ const LecturerThesesPage = () => {
 
             {/* Active Council Information Card */}
             {effectiveActiveCouncil && (
-              <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-50/90 via-indigo-50/50 to-white border border-blue-200/80 shadow-2xs space-y-3">
+              <div className="p-5 rounded-3xl bg-gradient-to-r from-blue-50/90 via-blue-50/50 to-white border border-blue-200/80 shadow-2xs space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-2xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-sm shrink-0">
@@ -1779,7 +1770,7 @@ const LecturerThesesPage = () => {
 
             {/* Table: Đề tài Hội đồng */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-indigo-50/90 to-blue-50/40 border-b border-indigo-100/80 flex items-center justify-between">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
                     <Award className="w-4 h-4" />
@@ -1793,7 +1784,7 @@ const LecturerThesesPage = () => {
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-indigo-200 shadow-2xs">
+                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
                   {councilTheses.length} đề tài
                 </span>
               </div>
@@ -1829,7 +1820,7 @@ const LecturerThesesPage = () => {
                             <th className="py-3.5 px-4 min-w-[130px]">GVPB 1</th>
                             <th className="py-3.5 px-4 min-w-[130px]">GVPB 2</th>
                             <th className="py-3.5 px-4 min-w-[140px]">Hội đồng</th>
-                            <th className={`py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] ${isLec1Me ? 'bg-indigo-50/70 text-[#102d7d]' : ''}`}>
+                            <th className={`py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] ${isLec1Me ? 'bg-blue-50/70 text-[#102d7d]' : ''}`}>
                               <div>Điểm GVHĐ 1</div>
                               {(lec1?.name || lec1?.fullName) && (
                                 <div className="text-[9px] font-normal normal-case opacity-80 truncate max-w-[110px] mx-auto">
@@ -1837,7 +1828,7 @@ const LecturerThesesPage = () => {
                                 </div>
                               )}
                             </th>
-                            <th className={`py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] ${isLec2Me ? 'bg-indigo-50/70 text-[#102d7d]' : ''}`}>
+                            <th className={`py-3.5 px-4 text-center whitespace-nowrap min-w-[120px] ${isLec2Me ? 'bg-blue-50/70 text-[#102d7d]' : ''}`}>
                               <div>Điểm GVHĐ 2</div>
                               {(lec2?.name || lec2?.fullName) && (
                                 <div className="text-[9px] font-normal normal-case opacity-80 truncate max-w-[110px] mx-auto">
@@ -1934,10 +1925,10 @@ const LecturerThesesPage = () => {
                                     </span>
                                   )}
                                 </td>
-                                <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec1Me ? 'bg-indigo-50/30 font-bold' : ''}`}>
+                                <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec1Me ? 'bg-blue-50/30 font-bold' : ''}`}>
                                   {renderCouncilLecturerScore(item, 0)}
                                 </td>
-                                <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec2Me ? 'bg-indigo-50/30 font-bold' : ''}`}>
+                                <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec2Me ? 'bg-blue-50/30 font-bold' : ''}`}>
                                   {renderCouncilLecturerScore(item, 1)}
                                 </td>
                                 <td className="py-3.5 px-4 whitespace-nowrap text-center bg-blue-50/40 font-bold">
@@ -1991,7 +1982,7 @@ const LecturerThesesPage = () => {
           <div className="space-y-8">
             {/* Banner gợi ý chuyển sang Phản biện hội đồng nếu có đề tài hội đồng */}
             {councilTheses.length > 0 && (
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 via-indigo-50 to-white border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50 via-blue-50 to-white border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0">
                     <Award className="w-4 h-4" />
@@ -2020,7 +2011,7 @@ const LecturerThesesPage = () => {
             {/* BẢNG 1: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 1 (GVPB 1) */}
             {/* ========================================================================= */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/40 border-b border-blue-100/80 flex items-center justify-between">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
                     <Shield className="w-4 h-4" />
@@ -2029,9 +2020,6 @@ const LecturerThesesPage = () => {
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <span>Đề tài Giảng viên Phản biện 1 (GVPB 1)</span>
                     </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Danh sách các đề tài bạn được phân công làm Giảng viên phản biện 1
-                    </p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
@@ -2188,7 +2176,7 @@ const LecturerThesesPage = () => {
             {/* BẢNG 2: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 2 (GVPB 2) */}
             {/* ========================================================================= */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-indigo-50/40 border-b border-blue-100/80 flex items-center justify-between">
+              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
                     <Award className="w-4 h-4" />
@@ -2197,9 +2185,6 @@ const LecturerThesesPage = () => {
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <span>Đề tài Giảng viên Phản biện 2 (GVPB 2)</span>
                     </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Danh sách các đề tài bạn được phân công làm Giảng viên phản biện 2
-                    </p>
                   </div>
                 </div>
                 <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
@@ -2630,8 +2615,8 @@ const LecturerThesesPage = () => {
                       : gradeBoxRole === 'REVIEWER2'
                         ? 'bg-[#123891] shadow-blue-200'
                         : gradeBoxRole === 'COUNCIL'
-                          ? 'bg-indigo-600 shadow-indigo-200'
-                          : 'bg-[#123891] shadow-indigo-200'
+                          ? 'bg-[#123891] shadow-blue-200'
+                          : 'bg-[#123891] shadow-blue-200'
                   }`}
                 >
                   <Award className="w-5 h-5" />
@@ -2648,16 +2633,16 @@ const LecturerThesesPage = () => {
                           : gradeBoxRole === 'REVIEWER2'
                             ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                             : gradeBoxRole === 'COUNCIL'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
-                              : 'bg-indigo-50 text-indigo-700 border-indigo-200'
+                              ? 'bg-blue-50 text-[#102d7d] border-blue-200'
+                              : 'bg-blue-50 text-[#102d7d] border-blue-200'
                       }`}
                     >
                       {gradeBoxRole === 'REVIEWER1'
-                        ? 'GVPB 1 (20%)'
+                        ? 'GVPB 1 (30%)'
                         : gradeBoxRole === 'REVIEWER2'
-                          ? 'GVPB 2 (20%)'
+                          ? 'GVPB 2 (30%)'
                           : gradeBoxRole === 'COUNCIL'
-                            ? 'HỘI ĐỒNG (30%)'
+                            ? 'HỘI ĐỒNG (20%)'
                             : 'GVHD (50%)'}
                     </span>
                   </div>
@@ -2708,7 +2693,7 @@ const LecturerThesesPage = () => {
                   ))}
                 </div>
                 <div className="text-[10px] text-slate-500 italic pt-0.5">
-                  * Điểm Hội đồng chung (30%) sẽ tự động tính bằng trung bình cộng điểm của các giảng viên.
+                  * Điểm Hội đồng chung (20%) sẽ tự động tính bằng trung bình cộng điểm của các giảng viên.
                 </div>
               </div>
             )}
@@ -2786,7 +2771,7 @@ const LecturerThesesPage = () => {
                     value={gradeComment}
                     onChange={(e) => setGradeComment(e.target.value)}
                     placeholder="Nhập nhận xét về tiến độ thực hiện, chất lượng đề tài, điểm mạnh & hạn chế..."
-                    className="w-full text-xs p-3 rounded-2xl border border-slate-200 focus:border-[#123891] focus:ring-2 focus:ring-indigo-100 outline-none transition resize-none"
+                    className="w-full text-xs p-3 rounded-2xl border border-slate-200 focus:border-[#123891] focus:ring-2 focus:ring-blue-100 outline-none transition resize-none"
                   />
                 </div>
               </div>
@@ -2807,7 +2792,7 @@ const LecturerThesesPage = () => {
                 <button
                   type="submit"
                   disabled={gradeSaving}
-                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-100 transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                 >
                   {gradeSaving ? (
                     <>
@@ -3577,9 +3562,6 @@ const LecturerThesesPage = () => {
                 <div className="space-y-2">
                   {selectedCouncilDetail.lecturers.map((lec, idx) => {
                     const isMe = isSameLecturer(lec, user, data?.lecturer);
-                    const roleName =
-                      lec.role ||
-                      (idx === 0 ? 'Chủ tịch Hội đồng' : idx === 1 ? 'Thư ký Hội đồng' : 'Ủy viên');
 
                     return (
                       <div
@@ -3616,20 +3598,6 @@ const LecturerThesesPage = () => {
                               {lec.phone && <span>SĐT: {lec.phone}</span>}
                             </div>
                           </div>
-                        </div>
-
-                        <div>
-                          <span
-                            className={`px-3 py-1 rounded-xl text-xs font-bold ${
-                              roleName.toLowerCase().includes('chủ tịch')
-                                ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                                : roleName.toLowerCase().includes('thư ký')
-                                  ? 'bg-blue-100 text-[#0d2a75] border border-blue-200'
-                                  : 'bg-slate-100 text-slate-700 border border-slate-200'
-                            }`}
-                          >
-                            {roleName}
-                          </span>
                         </div>
                       </div>
                     );

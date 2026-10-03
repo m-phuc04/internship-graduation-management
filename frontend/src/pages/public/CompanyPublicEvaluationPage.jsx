@@ -355,7 +355,7 @@ const CompanyPublicEvaluationPage = () => {
           </div>
 
           {/* CARD: KẾT QUẢ ĐÁNH GIÁ THỰC TẬP (ĐIỂM SỐ) */}
-          <div className="p-6 rounded-3xl bg-gradient-to-br from-indigo-50/90 via-white to-emerald-50/70 border border-blue-100/90 shadow-2xs space-y-2.5">
+          <div className="p-6 rounded-3xl bg-gradient-to-br from-blue-50/90 via-white to-emerald-50/70 border border-blue-100/90 shadow-2xs space-y-2.5">
             <div className="text-xs font-bold text-slate-500 uppercase tracking-widest">
               KẾT QUẢ ĐÁNH GIÁ THỰC TẬP
             </div>
@@ -978,7 +978,7 @@ const CompanyPublicEvaluationPage = () => {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-8 py-3.5 bg-gradient-to-r from-[#0d2a75] to-[#123891] hover:from-indigo-700 hover:to-violet-700 active:scale-[0.98] text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-200 transition disabled:opacity-50 inline-flex items-center justify-center gap-2 cursor-pointer"
+                className="px-8 py-3.5 bg-gradient-to-r from-[#0d2a75] to-[#123891] hover:from-[#102d7d] hover:to-[#102d7d] active:scale-[0.98] text-white font-bold text-sm rounded-2xl shadow-lg shadow-blue-200 transition disabled:opacity-50 inline-flex items-center justify-center gap-2 cursor-pointer"
               >
                 {submitting ? (
                   <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

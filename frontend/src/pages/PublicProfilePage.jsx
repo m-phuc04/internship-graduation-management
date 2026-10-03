@@ -162,10 +162,10 @@ const PublicProfilePage = () => {
                     <img
                       src={user.avatar}
                       alt={displayName}
-                      className="w-24 h-24 rounded-full object-cover border-4 border-indigo-50 shadow-md"
+                      className="w-24 h-24 rounded-full object-cover border-4 border-blue-50 shadow-md"
                     />
                   ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#123891] flex items-center justify-center text-white text-3xl font-bold border-4 border-indigo-50 shadow-md">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#123891] flex items-center justify-center text-white text-3xl font-bold border-4 border-blue-50 shadow-md">
                       {user.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                     </div>
                   )}

@@ -244,8 +244,6 @@ const LecturerInternshipPage = () => {
                 <span>Giảng viên: <strong className="text-slate-800">{lecturerInfo?.academicTitle} {lecturerInfo?.userId?.fullName}</strong></span>
                 <span>•</span>
                 <span>Mã GV: <strong className="font-mono text-[#102d7d]">{lecturerInfo?.lecturerCode}</strong></span>
-                <span>•</span>
-                <span>Chuyên môn: <strong className="text-slate-700">{lecturerInfo?.specialization || 'CNTT'}</strong></span>
               </div>
             </div>
           </div>

@@ -73,7 +73,7 @@ const LecturerDashboard = () => {
       {/* 1. Lecturer Identity Banner */}
       <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-violet-200 shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             {lecturer?.academicTitle ? lecturer.academicTitle.charAt(0) : (user?.fullName?.charAt(0) || 'G')}
           </div>
           <div>
@@ -88,12 +88,6 @@ const LecturerDashboard = () => {
               <span>Mã GV: <strong className="font-mono text-slate-800">{lecturer?.lecturerCode || '—'}</strong></span>
               <span>•</span>
               <span>Khoa: <strong className="text-slate-800">{lecturer?.department || 'Công nghệ Thông tin'}</strong></span>
-              {lecturer?.specialization && (
-                <>
-                  <span>•</span>
-                  <span>Chuyên môn: <strong className="text-slate-800">{lecturer.specialization}</strong></span>
-                </>
-              )}
             </div>
           </div>
         </div>
@@ -116,17 +110,17 @@ const LecturerDashboard = () => {
           className="p-5 rounded-3xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 group-hover:text-blue-600 transition">
+            <span className="text-xs font-bold text-slate-600 group-hover:text-[#123891] transition">
               SV Thực Tập (TTDN)
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center group-hover:scale-110 transition">
               <Briefcase className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-black text-[#123891] font-mono">
             {stats.internshipStudentsCount || 0}
           </div>
-          <div className="text-[11px] text-blue-600 font-semibold flex items-center gap-1">
+          <div className="text-[11px] text-[#123891] font-semibold flex items-center gap-1">
             <span>Xem danh sách sinh viên</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
           </div>
@@ -138,17 +132,17 @@ const LecturerDashboard = () => {
           className="p-5 rounded-3xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 group-hover:text-[#ECA124] transition">
+            <span className="text-xs font-bold text-slate-600 group-hover:text-[#123891] transition">
               Đề Tài Hướng Dẫn (KLTN)
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1B4DA1] flex items-center justify-center group-hover:scale-110 transition">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center group-hover:scale-110 transition">
               <GraduationCap className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-slate-900 font-mono">
+          <div className="text-2xl font-black text-[#123891] font-mono">
             {stats.thesisStudentsCount || 0}
           </div>
-          <div className="text-[11px] text-[#1B4DA1] font-semibold flex items-center gap-1">
+          <div className="text-[11px] text-[#123891] font-semibold flex items-center gap-1">
             <span>Xem các đề tài khóa luận</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
           </div>
@@ -157,20 +151,20 @@ const LecturerDashboard = () => {
         {/* Báo Cáo TTDN Chờ Duyệt */}
         <Link
           to="/lecturer/reports"
-          className="p-5 rounded-3xl bg-white border border-amber-100 hover:border-amber-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
+          className="p-5 rounded-3xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 group-hover:text-amber-600 transition">
+            <span className="text-xs font-bold text-slate-600 group-hover:text-[#123891] transition">
               Báo Cáo TTDN Chờ Duyệt
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center group-hover:scale-110 transition">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center group-hover:scale-110 transition">
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <div className="text-2xl font-black text-amber-700 font-mono">
+          <div className="text-2xl font-black text-[#123891] font-mono">
             {stats.pendingInternshipReportsCount || 0}
           </div>
-          <div className="text-[11px] text-amber-700 font-semibold flex items-center gap-1">
+          <div className="text-[11px] text-[#123891] font-semibold flex items-center gap-1">
             <span>Chấm điểm & nhận xét</span>
             <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition" />
           </div>
@@ -182,10 +176,10 @@ const LecturerDashboard = () => {
           className="p-5 rounded-3xl bg-white border border-blue-100 hover:border-blue-300 hover:shadow-md transition-all group space-y-2 relative overflow-hidden"
         >
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-600 group-hover:text-[#ECA124] transition">
+            <span className="text-xs font-bold text-slate-600 group-hover:text-[#123891] transition">
               Tiến Độ KLTN Chờ Duyệt
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#1B4DA1] flex items-center justify-center group-hover:scale-110 transition">
+            <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center group-hover:scale-110 transition">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>

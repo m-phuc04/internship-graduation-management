@@ -218,7 +218,7 @@ const AssignCouncilModal = ({
             <span
               className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
                 council.type === 'POSTER'
-                  ? 'bg-purple-50 text-purple-700 border-purple-200'
+                  ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                   : 'bg-blue-50 text-[#102d7d] border-blue-200'
               }`}
             >
@@ -344,7 +344,7 @@ const AssignCouncilModal = ({
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition disabled:opacity-50 cursor-pointer"
+            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-100 transition disabled:opacity-50 cursor-pointer"
           >
             {submitting ? 'Đang lưu...' : 'Xác nhận'}
           </button>

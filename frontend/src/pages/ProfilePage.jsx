@@ -270,7 +270,7 @@ const ProfilePage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#123891] text-white font-black text-2xl flex items-center justify-center shadow-md shadow-indigo-100 shrink-0">
+            <div className="w-16 h-16 rounded-2xl bg-[#123891] text-white font-black text-2xl flex items-center justify-center shadow-md shadow-blue-100 shrink-0">
               {user?.fullName?.charAt(0).toUpperCase() || 'U'}
             </div>
             <div>
@@ -568,9 +568,9 @@ const ProfilePage = () => {
               </div>
 
               <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Lĩnh vực chuyên môn</span>
+                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Khoa / Bộ môn</span>
                 <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between truncate">
-                  <span className="truncate">{lecturer.specialization || 'Khoa học máy tính'}</span>
+                  <span className="truncate">{lecturer.department || 'Công nghệ Thông tin'}</span>
                   <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                 </div>
               </div>

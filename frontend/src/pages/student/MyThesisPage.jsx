@@ -276,7 +276,7 @@ const MyThesisPage = () => {
       ? Number(thesis.scores.reviewer2Score)
       : null;
 
-  // 2. Điểm Phản biện kín (20%) = Trung bình cộng GVPB 1 và GVPB 2
+  // 2. Điểm Phản biện kín (30%) = Trung bình cộng GVPB 1 và GVPB 2
   let privateReviewerScore = null;
   if (reviewer1Score !== null && reviewer2Score !== null) {
     privateReviewerScore = Number(((reviewer1Score + reviewer2Score) / 2).toFixed(2));
@@ -288,7 +288,7 @@ const MyThesisPage = () => {
     privateReviewerScore = reviewer2Score;
   }
 
-  // 3. Điểm Hội đồng (30%) = Trung bình cộng các GV Hội đồng
+  // 3. Điểm Hội đồng (20%) = Trung bình cộng các GV Hội đồng
   let councilScore = null;
   if (thesis?.scores?.councilScore !== null && thesis?.scores?.councilScore !== undefined) {
     councilScore = Number(thesis.scores.councilScore);
@@ -308,7 +308,7 @@ const MyThesisPage = () => {
   const isFullGraded = supervisorScore !== null && privateReviewerScore !== null && councilScore !== null;
   let finalScore = null;
   if (isFullGraded) {
-    finalScore = Number((supervisorScore * 0.5 + privateReviewerScore * 0.2 + councilScore * 0.3).toFixed(2));
+    finalScore = Number((supervisorScore * 0.5 + privateReviewerScore * 0.3 + councilScore * 0.2).toFixed(2));
   } else if (thesis?.scores?.finalScore !== null && thesis?.scores?.finalScore !== undefined) {
     finalScore = Number(thesis.scores.finalScore);
   }
@@ -545,7 +545,7 @@ const MyThesisPage = () => {
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
               <GraduationCap className="w-7 h-7" />
             </div>
             <div>
@@ -681,9 +681,9 @@ const MyThesisPage = () => {
 
       {/* 3. Ready for Supervisor Request Banner */}
       {thesis && thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST' && (
-        <div className="p-5 rounded-2xl bg-indigo-50/90 border border-indigo-200 text-indigo-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-blue-50/90 border border-blue-200 text-slate-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
           <div className="flex items-start gap-3">
-            <CheckCircle2 className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <CheckCircle2 className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
             <div>
               <div className="font-bold text-sm text-[#102d7d]">
                 {isStudent1
@@ -822,7 +822,7 @@ const MyThesisPage = () => {
               ref={evaluationSectionRef}
               className={`p-6 rounded-3xl bg-white border shadow-2xs space-y-6 transition-all duration-300 ${
                 isEvaluationView
-                  ? 'border-[#123891]/60 ring-2 ring-indigo-500/20 shadow-indigo-100/50'
+                  ? 'border-[#123891]/60 ring-2 ring-blue-500/20 shadow-blue-100/50'
                   : 'border-slate-200/80'
               }`}
             >
@@ -897,11 +897,11 @@ const MyThesisPage = () => {
                       </div>
                     </div>
 
-                    {/* 2. Điểm PB Kín (20%) */}
+                    {/* 2. Điểm PB Kín (30%) */}
                     <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1 text-center relative flex flex-col justify-between">
                       <div>
                         <div className="text-[11px] font-bold text-[#102d7d] uppercase tracking-wider">
-                          2. Điểm PB Kín (20%)
+                          2. Điểm PB Kín (30%)
                         </div>
                       </div>
 
@@ -938,11 +938,11 @@ const MyThesisPage = () => {
                       </div>
                     </div>
 
-                    {/* 3. Điểm PB Hội đồng (30%) */}
+                    {/* 3. Điểm PB Hội đồng (20%) */}
                     <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-100 space-y-1 text-center relative flex flex-col justify-between">
                       <div>
                         <div className="text-[11px] font-bold text-amber-700 uppercase tracking-wider">
-                          3. Điểm PB Hội đồng (30%)
+                          3. Điểm PB Hội đồng (20%)
                         </div>
                       </div>
 
@@ -1344,7 +1344,7 @@ const MyThesisPage = () => {
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                       assignedCouncil.type === 'POSTER'
-                        ? 'bg-purple-50 text-purple-700 border-purple-200'
+                        ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                         : 'bg-blue-50 text-[#102d7d] border-blue-200'
                     }`}
                   >
@@ -1407,7 +1407,9 @@ const MyThesisPage = () => {
                           const code = lec.lecturerCode || l.lecturerCode;
                           const email = lec.userId?.email || lec.email || l.email;
                           const phone = lec.userId?.phone || lec.phone || l.phone;
-                          const role = l.role || (idx === 0 ? 'Chủ tịch HĐ / GV 1' : `Thành viên HĐ ${idx + 1}`);
+                          const role = l.role && !l.role.toLowerCase().includes('chủ tịch') && !l.role.toLowerCase().includes('thư ký')
+                            ? l.role
+                            : `Giảng viên ${idx + 1}`;
 
                           return (
                             <div key={idx} className="p-2.5 rounded-2xl bg-blue-50/60 border border-blue-100 text-xs space-y-0.5">

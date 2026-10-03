@@ -39,8 +39,8 @@ const StatusBadge = ({
     badgeStyles = 'bg-amber-50 text-amber-800 border-amber-200/80';
     dotColor = 'bg-amber-500';
   } else if (status === 'WAITING_FOR_SUPERVISOR_REQUEST') {
-    badgeStyles = 'bg-indigo-50 text-indigo-700 border-indigo-200/80';
-    dotColor = 'bg-indigo-600';
+    badgeStyles = 'bg-blue-50 text-[#102d7d] border-blue-200/80';
+    dotColor = 'bg-[#123891]';
   } else if (status === 'PENDING_SUPERVISOR_APPROVAL') {
     badgeStyles = 'bg-blue-50 text-[#102d7d] border-blue-200/80';
     dotColor = 'bg-[#123891]';

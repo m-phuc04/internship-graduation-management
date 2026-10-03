@@ -188,26 +188,27 @@ const LecturerNewsManagement = () => {
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* 1. Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-violet-900 via-indigo-900 to-slate-900 text-white shadow-xl relative overflow-hidden">
-        <div className="relative z-10 space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-white text-xs font-bold backdrop-blur-xs border border-white/15">
-            <Newspaper className="w-3.5 h-3.5 text-blue-300" />
-            <span>Khoa Công Nghệ Thông Tin</span>
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
+            <Newspaper className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-            Quản Lý Tin Tức & Sự Kiện Trang Chủ
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl">
-            Tạo và quản lý các thông báo, sự kiện và tin tức hiển thị trực tiếp trên Cổng thông tin công khai.
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 leading-tight">
+              Quản Lý Tin Tức & Sự Kiện
+            </h1>
+            <p className="text-xs text-slate-500 mt-1">
+              Tạo và quản lý các thông báo, sự kiện và tin tức hiển thị trực tiếp trên Cổng thông tin công khai.
+            </p>
+          </div>
         </div>
 
         <button
           type="button"
           onClick={handleOpenCreateModal}
-          className="relative z-10 inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#123891] hover:bg-[#123891] text-white text-xs font-bold shadow-lg shadow-blue-900/10 transition active:scale-95 cursor-pointer shrink-0"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-sm shadow-blue-200 transition active:scale-95 cursor-pointer shrink-0"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Tin Tức Mới</span>
@@ -282,7 +283,7 @@ const LecturerNewsManagement = () => {
                 <tr>
                   <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
                     <div className="flex items-center justify-center gap-2">
-                      <span className="w-4 h-4 border-2 border-slate-300 border-t-violet-600 rounded-full animate-spin" />
+                      <span className="w-4 h-4 border-2 border-slate-300 border-t-[#123891] rounded-full animate-spin" />
                       <span>Đang tải danh sách tin tức...</span>
                     </div>
                   </td>
