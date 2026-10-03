@@ -250,7 +250,7 @@ const AssignCouncilToThesisModal = ({
           className={`p-3 rounded-2xl border flex items-center gap-2.5 ${
             reportFormat === 'ORAL'
               ? 'bg-blue-50/90 border-blue-200 text-[#102d7d]'
-              : 'bg-purple-50/90 border-purple-200 text-purple-800'
+              : 'bg-blue-50/90 border-blue-200 text-[#0d2a75]'
           }`}
         >
           <Sparkles className="w-4 h-4 shrink-0" />
@@ -259,7 +259,7 @@ const AssignCouncilToThesisModal = ({
             className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold border ${
               reportFormat === 'ORAL'
                 ? 'bg-white text-[#102d7d] border-blue-300 shadow-2xs'
-                : 'bg-white text-purple-700 border-purple-300 shadow-2xs'
+                : 'bg-white text-[#102d7d] border-blue-300 shadow-2xs'
             }`}
           >
             {reportFormat === 'ORAL' ? 'Báo cáo Oral' : 'Báo cáo Poster'}
@@ -320,7 +320,7 @@ const AssignCouncilToThesisModal = ({
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                   selectedCouncil.type === 'POSTER'
-                    ? 'bg-purple-50 text-purple-700 border-purple-200'
+                    ? 'bg-blue-50 text-[#102d7d] border-blue-200'
                     : 'bg-blue-50 text-[#102d7d] border-blue-200'
                 }`}
               >
@@ -361,7 +361,7 @@ const AssignCouncilToThesisModal = ({
           <button
             type="submit"
             disabled={submitting}
-            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-100 transition disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
           >
             <Check className="w-3.5 h-3.5" />
             <span>Xác nhận</span>

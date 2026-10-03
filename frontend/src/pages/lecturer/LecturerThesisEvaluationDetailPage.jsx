@@ -386,16 +386,16 @@ const LecturerThesisEvaluationDetailPage = () => {
   };
 
   let roleTitle = 'Giảng viên đánh giá';
-  let roleWeight = '20%';
+  let roleWeight = '30%';
   if (activeRoleTab === 'SUPERVISOR') {
     roleTitle = 'Đánh giá của Giảng viên Hướng dẫn (GVHD)';
     roleWeight = '50%';
   } else if (activeRoleTab === 'REVIEWER1') {
     roleTitle = 'Đánh giá của Giảng viên Phản biện Kín';
-    roleWeight = '20%';
+    roleWeight = '30%';
   } else if (activeRoleTab === 'REVIEWER2' || activeRoleTab === 'COUNCIL') {
     roleTitle = 'Đánh giá của Giảng viên Phản biện Hội đồng';
-    roleWeight = '30%';
+    roleWeight = '20%';
   }
 
   const progressList = progressData?.progressList || [];
@@ -416,7 +416,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <h2 className="text-lg font-bold text-slate-900">Không tìm thấy đề tài khóa luận</h2>
         <p className="text-xs text-slate-500">Đề tài không tồn tại hoặc bạn không có quyền truy cập.</p>
         <Link
-          to="/lecturer/theses?view=evaluation"
+          to="/lecturer/theses"
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] text-white text-xs font-bold rounded-xl shadow-xs hover:bg-[#102d7d] transition"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -431,13 +431,13 @@ const LecturerThesisEvaluationDetailPage = () => {
       {/* Top Breadcrumb & Navigation */}
       <div className="flex items-center justify-between gap-4">
         <Link
-          to="/lecturer/theses?view=evaluation"
+          to="/lecturer/theses"
           className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#123891] transition group"
         >
           <div className="p-2 rounded-xl bg-white border border-slate-200 group-hover:border-blue-300 group-hover:bg-blue-50/50 transition">
             <ArrowLeft className="w-4 h-4 text-slate-600 group-hover:text-[#123891]" />
           </div>
-          <span>Quay lại danh sách đánh giá KLTN</span>
+          <span>Quay lại danh sách đề tài KLTN</span>
         </Link>
 
         <div className="flex items-center gap-2">
@@ -908,7 +908,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                       : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
-                  Phản biện kín (20%)
+                  Phản biện kín (30%)
                 </button>
                 <button
                   type="button"
@@ -918,7 +918,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                       : 'text-slate-600 hover:text-slate-900'
                     }`}
                 >
-                  Phản biện Hội đồng (30%)
+                  Phản biện Hội đồng (20%)
                 </button>
               </div>
             )}
@@ -1031,7 +1031,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                       readOnly={isFormLocked}
                       className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isFormLocked
                           ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-[#123891]'
+                          : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
                         }`}
                       required
                     />
@@ -1094,7 +1094,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                         readOnly={isFormLocked}
                         className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isFormLocked
                             ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-[#123891]'
+                            : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
                           }`}
                       />
                       <div className="text-xs text-slate-500">
@@ -1144,7 +1144,7 @@ const LecturerThesisEvaluationDetailPage = () => {
             {/* Action Buttons */}
             <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
               <Link
-                to="/lecturer/theses?view=evaluation"
+                to="/lecturer/theses"
                 className="px-5 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-xs"
               >
                 Quay lại danh sách
@@ -1156,7 +1156,7 @@ const LecturerThesisEvaluationDetailPage = () => {
                   className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer text-xs"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>{submitting ? 'Đang lưu kết quả...' : 'Lưu kết quả đánh giá (Enter)'}</span>
+                  <span>{submitting ? 'Đang lưu...' : 'Lưu'}</span>
                 </button>
               )}
             </div>
@@ -1202,7 +1202,7 @@ const LecturerThesisEvaluationDetailPage = () => {
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="p-5 rounded-3xl bg-white border border-blue-100 space-y-2.5 text-xs shadow-2xs">
-                <div className="font-bold text-[#123891] flex items-center justify-between border-b border-indigo-50 pb-2">
+                <div className="font-bold text-[#123891] flex items-center justify-between border-b border-blue-50 pb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-[#123891]" />
                     <span>Sinh viên 1 (Trưởng nhóm)</span>
@@ -1224,7 +1224,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
               {thesis.secondStudentId ? (
                 <div className="p-5 rounded-3xl bg-white border border-blue-100 space-y-2.5 text-xs shadow-2xs">
-                  <div className="font-bold text-[#123891] flex items-center justify-between border-b border-violet-50 pb-2">
+                  <div className="font-bold text-[#123891] flex items-center justify-between border-b border-blue-50 pb-2">
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-[#123891]" />
                       <span>Sinh viên 2</span>

@@ -309,7 +309,7 @@ const CreateCouncilModal = ({
             <label
               className={`p-3 rounded-2xl border flex items-center gap-2.5 cursor-pointer transition select-none ${
                 type === 'POSTER'
-                  ? 'bg-purple-50/80 border-purple-500 ring-2 ring-purple-500/20 text-purple-900 font-bold'
+                  ? 'bg-blue-50/80 border-[#123891] ring-2 ring-blue-500/20 text-[#0d2a75] font-bold'
                   : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -319,7 +319,7 @@ const CreateCouncilModal = ({
                 value="POSTER"
                 checked={type === 'POSTER'}
                 onChange={() => setType('POSTER')}
-                className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                className="w-4 h-4 text-[#123891] focus:ring-[#123891]"
               />
               <div>
                 <span className="text-xs block">Báo cáo Poster</span>
@@ -422,7 +422,7 @@ const CreateCouncilModal = ({
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition cursor-pointer ${
                       startPeriod === 'PM'
-                        ? 'bg-purple-700 text-white shadow-xs'
+                        ? 'bg-[#123891] text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -435,7 +435,7 @@ const CreateCouncilModal = ({
             {/* Dòng 2: Thời gian kết thúc (Đến giờ) */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white border border-slate-200 rounded-2xl gap-2.5 shadow-2xs">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-purple-600 shrink-0" />
+                <span className="w-2 h-2 rounded-full bg-[#123891] shrink-0" />
                 <span className="text-xs font-bold text-slate-800">
                   Thời gian kết thúc (Đến giờ):
                 </span>
@@ -493,7 +493,7 @@ const CreateCouncilModal = ({
                     }}
                     className={`px-2.5 py-1 rounded-lg text-xs font-extrabold transition cursor-pointer ${
                       endPeriod === 'PM'
-                        ? 'bg-purple-700 text-white shadow-xs'
+                        ? 'bg-[#123891] text-white shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
@@ -530,7 +530,7 @@ const CreateCouncilModal = ({
           </button>
           <button
             type="submit"
-            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-100 transition cursor-pointer flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-100 transition cursor-pointer flex items-center gap-1.5"
           >
             {isEditMode ? (
               <>

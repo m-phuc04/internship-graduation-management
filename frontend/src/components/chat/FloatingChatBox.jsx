@@ -153,7 +153,7 @@ const FloatingChatBox = () => {
           <button
             type="button"
             onClick={toggleWidget}
-            className="relative group p-3.5 bg-gradient-to-tr from-[#123891] via-[#123891] to-[#1B4DA1] hover:from-indigo-800 hover:to-violet-700 text-white rounded-full shadow-2xl transition transform hover:scale-110 active:scale-95 cursor-pointer border-2 border-white/80"
+            className="relative group p-3.5 bg-gradient-to-tr from-[#123891] via-[#123891] to-[#1B4DA1] hover:from-[#102d7d] hover:to-[#0d2a75] text-white rounded-full shadow-2xl transition transform hover:scale-110 active:scale-95 cursor-pointer border-2 border-white/80"
             title="Tin nhắn & Trao đổi"
           >
             <MessageSquare className="w-6 h-6" />
@@ -346,7 +346,7 @@ const FloatingChatBox = () => {
                         className="w-8 h-8 rounded-full object-cover border border-white/80 shadow-2xs"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-indigo-900 text-white font-bold text-xs flex items-center justify-center border border-white/80 shadow-2xs">
+                      <div className="w-8 h-8 rounded-full bg-[#102d7d] text-white font-bold text-xs flex items-center justify-center border border-white/80 shadow-2xs">
                         {initial}
                       </div>
                     )}

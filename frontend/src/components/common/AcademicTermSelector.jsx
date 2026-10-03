@@ -124,7 +124,7 @@ const AcademicTermSelector = () => {
                     }}
                     className={`w-full flex items-center justify-between p-2.5 rounded-xl text-left transition-all cursor-pointer ${
                       isSelected
-                        ? 'bg-blue-50/90 text-indigo-900 border border-blue-200/80 font-semibold'
+                        ? 'bg-blue-50/90 text-[#0d2a75] border border-blue-200/80 font-semibold'
                         : 'hover:bg-slate-50 text-slate-700 border border-transparent'
                     }`}
                   >

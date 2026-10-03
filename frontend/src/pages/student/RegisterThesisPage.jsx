@@ -196,26 +196,14 @@ const RegisterThesisPage = () => {
     <div className="space-y-6">
       {/* Top Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
-              <GraduationCap className="w-7 h-7" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-slate-900 leading-tight">
-                Đăng Ký Đề Tài Khóa Luận Tốt Nghiệp (KLTN)
-              </h1>
-              <p className="text-xs text-slate-500 mt-1">
-                Lựa chọn và đăng ký danh sách đề tài KLTN do Giảng viên đề xuất theo nguyên tắc thời gian (FIFO).
-              </p>
-            </div>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
+            <GraduationCap className="w-7 h-7" />
           </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold px-3.5 py-2 rounded-xl bg-blue-50 text-[#123891] border border-blue-200/80 shadow-2xs flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-[#123891]" />
-              Nguyên tắc đăng ký: FIFO (Ưu tiên theo thời gian)
-            </span>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 leading-tight">
+              Đăng Ký Đề Tài Khóa Luận Tốt Nghiệp (KLTN)
+            </h1>
           </div>
         </div>
       </div>
@@ -227,9 +215,7 @@ const RegisterThesisPage = () => {
           <div>
             <div className="font-bold text-sm">Bạn đã có đề tài khóa luận đang hoạt động!</div>
             <div className="mt-0.5 leading-relaxed text-slate-700">
-              Đề tài: <strong>"{existingThesis.thesisTitle}"</strong> • Trạng thái:{' '}
-              <span className="font-bold text-[#123891]">{existingThesis.status}</span>.
-              Theo quy chế đào tạo, mỗi sinh viên chỉ được tham gia 1 đề tài KLTN trong học kỳ.
+              Đề tài: <strong>"{existingThesis.thesisTitle}"</strong>
             </div>
           </div>
         </div>
@@ -355,7 +341,7 @@ const RegisterThesisPage = () => {
                                 ? 'Đề tài đã đủ số lượng nhóm đăng ký'
                                 : existingThesis
                                 ? 'Bạn đã có đề tài khóa luận trong kỳ'
-                                : 'Đăng ký đề tài này theo nguyên tắc FIFO'
+                                : 'Đăng ký đề tài này'
                             }
                           >
                             {isFull ? 'Đã đủ nhóm' : 'Chọn đề tài'}

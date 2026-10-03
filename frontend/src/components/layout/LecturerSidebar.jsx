@@ -249,17 +249,7 @@ const LecturerSidebar = ({ onCloseMobile }) => {
                 <span>Nhật ký khóa luận</span>
               </Link>
 
-              {/* Item 4: Đánh giá khóa luận */}
-              <Link
-                to="/lecturer/theses?view=evaluation"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/lecturer/theses', '?view=evaluation'))}
-              >
-                <Award className="w-3.5 h-3.5 shrink-0" />
-                <span>Đánh giá khóa luận</span>
-              </Link>
-
-              {/* Item 5: Phản biện khóa luận */}
+              {/* Item 4: Phản biện khóa luận */}
               <Link
                 to="/lecturer/theses?tab=review"
                 onClick={onCloseMobile}

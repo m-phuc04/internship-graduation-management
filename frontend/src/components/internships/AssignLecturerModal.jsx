@@ -107,7 +107,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                     }}
                     className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
                       isSelected
-                        ? 'bg-blue-50 border-[#123891] ring-2 ring-indigo-500/20'
+                        ? 'bg-blue-50 border-[#123891] ring-2 ring-blue-500/20'
                         : isFull
                         ? 'bg-slate-50/60 border-slate-200 opacity-60 cursor-not-allowed'
                         : 'bg-white border-slate-200 hover:border-blue-300'
@@ -118,9 +118,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                         {lec.academicTitle} {lec.userId?.fullName}
                       </div>
                       <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-[#123891]">{lec.lecturerCode}</span>
-                        <span>•</span>
-                        <span className="truncate">{lec.specialization || 'Chưa cập nhật'}</span>
+                        <span className="font-semibold text-[#123891]">Mã GV: {lec.lecturerCode}</span>
                       </div>
                     </div>
 

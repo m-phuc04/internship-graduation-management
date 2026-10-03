@@ -632,10 +632,10 @@ const TbmThesisManagement = () => {
             <button
               type="button"
               onClick={() => setTimelineModalOpen(true)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 text-xs font-bold rounded-xl border border-purple-200 transition cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
               title="Cấu hình thời gian mở cổng đăng ký, phân công & bảo vệ KLTN"
             >
-              <Clock className="w-3.5 h-3.5 text-purple-600" />
+              <Clock className="w-3.5 h-3.5 text-[#123891]" />
               <span>Thời gian mở KLTN</span>
               <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color}`}>
                 {windowBadge.text}
@@ -836,7 +836,7 @@ const TbmThesisManagement = () => {
                       {/* Lecturer Card Header (Clickable Accordion) */}
                       <div
                         onClick={() => toggleLecturerExpand(group.id)}
-                        className="p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-gradient-to-r from-slate-50/90 to-indigo-50/30 border-b border-slate-100 hover:bg-slate-100/60 transition cursor-pointer select-none"
+                        className="p-5 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 bg-gradient-to-r from-slate-50/90 to-blue-50/30 border-b border-slate-100 hover:bg-slate-100/60 transition cursor-pointer select-none"
                       >
                         <div className="flex items-center gap-3.5 min-w-0">
                           <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#123891] text-white flex items-center justify-center font-bold text-base shadow-sm shrink-0">
@@ -1414,7 +1414,7 @@ const TbmThesisManagement = () => {
                                     </span>
                                   ) : (
                                     <span
-                                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-purple-50 text-purple-700 border-purple-200 shadow-2xs"
+                                      className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border bg-blue-50 text-[#102d7d] border-blue-200 shadow-2xs"
                                       title="Báo cáo Poster"
                                     >
                                       Báo cáo Poster

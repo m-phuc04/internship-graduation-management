@@ -144,7 +144,7 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
       ) : (
         <div className="space-y-4 select-none py-1">
           {/* Avatar & Header Card */}
-          <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-gradient-to-b from-indigo-50/70 to-slate-50 border border-slate-200/80 shadow-2xs">
+          <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-gradient-to-b from-blue-50/70 to-slate-50 border border-slate-200/80 shadow-2xs">
             {/* Avatar */}
             <div className="relative mb-3">
               {user.avatar ? (

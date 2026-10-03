@@ -244,8 +244,8 @@ const StudentReportPage = () => {
 
       {/* Internship Overview Summary Card */}
       {internship && (
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-indigo-950 to-slate-950 text-white shadow-md border border-indigo-800/40 space-y-4">
-          <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-indigo-800/60">
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#0d2a75] to-slate-950 text-white shadow-md border border-blue-800/40 space-y-4">
+          <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-blue-800/60">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-blue-300 font-bold">
                 Đợt Thực Tập Hiện Tại
@@ -261,7 +261,7 @@ const StudentReportPage = () => {
             </div>
 
             {hasStudent2 && (
-              <div className="px-3 py-1.5 rounded-xl bg-indigo-800/60 border border-indigo-700/60 text-xs flex items-center gap-1.5">
+              <div className="px-3 py-1.5 rounded-xl bg-[#123891]/60 border border-[#123891]/60 text-xs flex items-center gap-1.5">
                 <Users className="w-4 h-4 text-blue-300" />
                 <span>
                   Nhóm 2 SV: <strong>{isSV1 ? 'Bạn là SV1' : isSV2 ? 'Bạn là SV2' : 'Nhóm 2 SV'}</strong>

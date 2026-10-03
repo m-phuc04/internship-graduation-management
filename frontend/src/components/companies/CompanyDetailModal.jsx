@@ -16,7 +16,7 @@ const CompanyDetailModal = ({ isOpen, onClose, company }) => {
     >
       <div className="space-y-6">
         {/* Header Banner */}
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-indigo-50/40 border border-slate-200/80">
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200/80">
           <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             <Building2 className="w-7 h-7" />
           </div>

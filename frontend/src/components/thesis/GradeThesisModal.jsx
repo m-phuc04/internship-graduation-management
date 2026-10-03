@@ -333,17 +333,17 @@ const GradeThesisModal = ({
   };
 
   let roleTitle = 'Giảng viên đánh giá';
-  let roleWeight = '20%';
+  let roleWeight = '30%';
 
   if (activeRoleTab === 'SUPERVISOR') {
     roleTitle = 'Đánh giá của Giảng viên Hướng dẫn (GVHD)';
     roleWeight = '50%';
   } else if (activeRoleTab === 'REVIEWER1') {
     roleTitle = 'Đánh giá của Giảng viên Phản biện Kín';
-    roleWeight = '20%';
+    roleWeight = '30%';
   } else if (activeRoleTab === 'REVIEWER2' || activeRoleTab === 'COUNCIL') {
     roleTitle = 'Đánh giá của Giảng viên Phản biện Hội đồng';
-    roleWeight = '30%';
+    roleWeight = '20%';
   }
 
   const handleSubmit = async (e) => {
@@ -846,7 +846,7 @@ const GradeThesisModal = ({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Phản biện kín (20%)
+                  Phản biện kín (30%)
                 </button>
                 <button
                   type="button"
@@ -857,7 +857,7 @@ const GradeThesisModal = ({
                       : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
-                  Phản biện Hội đồng (30%)
+                  Phản biện Hội đồng (20%)
                 </button>
               </div>
             )}
@@ -972,7 +972,7 @@ const GradeThesisModal = ({
                       className={`w-20 h-12 text-center border-2 rounded-xl text-lg font-mono font-extrabold transition ${
                         isFormLocked
                           ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-indigo-100 focus:border-[#123891]'
+                          : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
                       }`}
                       required
                     />
@@ -1036,7 +1036,7 @@ const GradeThesisModal = ({
                         className={`w-20 h-12 text-center border-2 rounded-xl text-lg font-mono font-extrabold transition ${
                           isFormLocked
                             ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-violet-100 focus:border-[#123891]'
+                            : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
                         }`}
                       />
                       <div className="text-[11px] text-slate-500">
@@ -1101,7 +1101,7 @@ const GradeThesisModal = ({
                   className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{submitting ? 'Đang lưu...' : 'Lưu kết quả đánh giá (Enter)'}</span>
+                  <span>{submitting ? 'Đang lưu...' : 'Lưu'}</span>
                 </button>
               )}
             </div>

@@ -47,7 +47,7 @@ const LecturerFormModal = ({
         phone: '',
         lecturerCode: '',
         academicTitle: 'ThS.',
-        specialization: 'Kỹ nghệ phần mềm',
+        specialization: '',
         maxStudents: 5,
         isAvailable: true,
         isActive: true,

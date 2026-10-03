@@ -455,7 +455,7 @@ const exportTheses = async ({
   worksheet.mergeCells("A2:T2");
   const titleCell2 = worksheet.getCell("A2");
   titleCell2.value = "DANH SÁCH ĐỀ TÀI KHÓA LUẬN TỐT NGHIỆP (KLTN)";
-  titleCell2.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF4338CA" } };
+  titleCell2.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF123891" } };
   titleCell2.alignment = { horizontal: "center", vertical: "middle" };
 
   worksheet.mergeCells("A3:T3");
@@ -502,13 +502,13 @@ const exportTheses = async ({
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FF4338CA" }, // Indigo / Purple
+      fgColor: { argb: "FF123891" }, // Primary IUH Blue
     };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     cell.border = {
       top: { style: "thin", color: { argb: "FFCBD5E1" } },
       left: { style: "thin", color: { argb: "FFCBD5E1" } },
-      bottom: { style: "medium", color: { argb: "FF312E81" } },
+      bottom: { style: "medium", color: { argb: "FF102D7D" } },
       right: { style: "thin", color: { argb: "FFCBD5E1" } },
     };
   });

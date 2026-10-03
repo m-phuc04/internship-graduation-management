@@ -1136,7 +1136,7 @@ const StudentThesisProgressPage = () => {
               step="5"
               value={completionPercentage}
               onChange={(e) => setCompletionPercentage(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#123891]"
             />
           </div>
 

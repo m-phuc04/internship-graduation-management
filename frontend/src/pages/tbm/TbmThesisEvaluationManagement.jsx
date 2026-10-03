@@ -211,7 +211,7 @@ const TbmThesisEvaluationManagement = () => {
         scoreGVHD2 = councilScores.length > 1 ? (councilScores[1]?.score ?? councilScores[1]?.student1Score ?? null) : null;
       }
 
-      // STRICT RULE: Điểm Hội Đồng (30%) CHỈ TÍNH KHI CÓ ĐỦ CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 VÀ GVHĐ 2)!
+      // STRICT RULE: Điểm Hội Đồng (20%) CHỈ TÍNH KHI CÓ ĐỦ CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 VÀ GVHĐ 2)!
       let scoreCouncil = null;
       if (
         scoreGVHD1 !== null &&
@@ -230,12 +230,12 @@ const TbmThesisEvaluationManagement = () => {
       const hasPB1 = scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1);
       const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
 
-      // STRICT RULE: Điểm Tổng Kết (100%) CHỈ ĐƯỢC TÍNH KHI ĐỦ TẤT CẢ CÁC CỘT ĐIỂM (GVHD 50%, PB kín 20%, Hội đồng 30%)!
+      // STRICT RULE: Điểm Tổng Kết (100%) CHỈ ĐƯỢC TÍNH KHI ĐỦ TẤT CẢ CÁC CỘT ĐIỂM (GVHD 50%, PB kín 30%, Hội đồng 20%)!
       // Chưa đủ tất cả cột điểm thì tuyệt đối KHÔNG được tính, chỉ để null (để trống)!
       let finalScore = null;
       if (hasHD && hasPB1 && hasCouncil) {
         finalScore = Number(
-          (Number(scoreHD) * 0.5 + Number(scorePB1) * 0.2 + Number(scoreCouncil) * 0.3).toFixed(2)
+          (Number(scoreHD) * 0.5 + Number(scorePB1) * 0.3 + Number(scoreCouncil) * 0.2).toFixed(2)
         );
       } else {
         finalScore = null;
@@ -1014,7 +1014,7 @@ const TbmThesisEvaluationManagement = () => {
                                 </strong>
                               </div>
                               <div>
-                                <span className="text-slate-400 font-sans">PB kín (20%):</span>{' '}
+                                <span className="text-slate-400 font-sans">PB kín (30%):</span>{' '}
                                 <strong
                                   className={
                                     scoreInfo.hasPB1
@@ -1037,7 +1037,7 @@ const TbmThesisEvaluationManagement = () => {
                                 </span>
                               </div>
                               <div>
-                                <span className="text-slate-400 font-sans">Điểm hội đồng (30%):</span>{' '}
+                                <span className="text-slate-400 font-sans">Điểm hội đồng (20%):</span>{' '}
                                 {scoreInfo.hasCouncil ? (
                                   <strong className="text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                                     {scoreInfo.scoreCouncil}
@@ -1340,7 +1340,7 @@ const TbmThesisEvaluationManagement = () => {
                                 Đăng công khai
                               </span>
                             ) : (
-                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
                                 Chỉ thông báo đến GV
                               </span>
                             )}
@@ -1589,7 +1589,7 @@ const TbmThesisEvaluationManagement = () => {
               <label
                 className={`flex items-center gap-2.5 p-3 rounded-xl border transition cursor-pointer select-none ${
                   periodForm.notificationScope === 'LECTURER_ONLY'
-                    ? 'bg-purple-50 border-purple-300 text-purple-900 font-bold'
+                    ? 'bg-blue-50 border-blue-300 text-[#0d2a75] font-bold'
                     : 'bg-slate-50 border-slate-200 text-slate-700'
                 }`}
               >
@@ -1600,7 +1600,7 @@ const TbmThesisEvaluationManagement = () => {
                   onChange={() =>
                     setPeriodForm({ ...periodForm, notificationScope: 'LECTURER_ONLY' })
                   }
-                  className="w-4 h-4 text-purple-600 focus:ring-purple-500"
+                  className="w-4 h-4 text-[#123891] focus:ring-[#123891]"
                 />
                 <div>
                   <div>Chỉ thông báo đến GV</div>
@@ -1750,7 +1750,7 @@ const TbmThesisEvaluationManagement = () => {
                 </div>
 
                 <div className="p-3 rounded-2xl bg-blue-50/50 border border-blue-200 text-center">
-                  <div className="text-[10.5px] text-[#102d7d] font-bold">Điểm PB Kín (20%)</div>
+                  <div className="text-[10.5px] text-[#102d7d] font-bold">Điểm PB Kín (30%)</div>
                   <div className="text-lg font-black font-mono text-[#123891] mt-1">
                     {modalScoreInfo.hasPB1 ? modalScoreInfo.scorePB1 : '—'}
                   </div>
@@ -1772,7 +1772,7 @@ const TbmThesisEvaluationManagement = () => {
                 </div>
 
                 <div className="p-3 rounded-2xl bg-amber-50/50 border border-amber-200 text-center">
-                  <div className="text-[10.5px] text-amber-700 font-bold">Điểm Hội đồng (30%)</div>
+                  <div className="text-[10.5px] text-amber-700 font-bold">Điểm Hội đồng (20%)</div>
                   <div className="text-lg font-black font-mono text-amber-900 mt-1">
                     {modalScoreInfo.hasCouncil ? (
                       modalScoreInfo.scoreCouncil
@@ -1793,7 +1793,7 @@ const TbmThesisEvaluationManagement = () => {
                 <div>
                   <div className="font-bold text-emerald-900 text-sm">Điểm Tổng Kết Khóa Luận</div>
                   <div className="text-[11px] text-emerald-700">
-                    Công thức: (GVHD × 0.5) + (PB Kín × 0.2) + (Hội đồng × 0.3)
+                    Công thức: (GVHD × 0.5) + (PB Kín × 0.3) + (Hội đồng × 0.2)
                   </div>
                 </div>
                 <div className="text-2xl font-black font-mono text-emerald-700">
