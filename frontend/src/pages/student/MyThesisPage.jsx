@@ -1406,6 +1406,7 @@ const MyThesisPage = () => {
                           );
                           const code = lec.lecturerCode || l.lecturerCode;
                           const email = lec.userId?.email || lec.email || l.email;
+                          const phone = lec.userId?.phone || lec.phone || l.phone;
                           const role = l.role && !l.role.toLowerCase().includes('chủ tịch') && !l.role.toLowerCase().includes('thư ký')
                             ? l.role
                             : `Giảng viên ${idx + 1}`;
