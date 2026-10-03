@@ -33,8 +33,8 @@ export const thesisProgressApi = {
 
 
   // Lecturer gets all supervised theses with progress reports
-  getSupervisedTheses: () =>
-    axiosClient.get('/thesis-progress/lecturer/supervised'),
+  getSupervisedTheses: (params = {}) =>
+    axiosClient.get('/thesis-progress/lecturer/supervised', { params }),
 
   // Lecturer reviews, grades, approves or rejects a progress report
   reviewProgress: (id, data) =>

@@ -7,6 +7,8 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import getFileUrl from '../../utils/fileUrlHelper';
 
+import { useAcademicTerm } from '../../context/AcademicTermContext';
+
 import {
   BookOpen,
   CheckCircle2,
@@ -27,6 +29,9 @@ import {
 } from 'lucide-react';
 
 const LecturerThesisProgressPage = () => {
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
+  const isPastTerm = currentTerm?.status === 'CLOSED';
+
   const [theses, setTheses] = useState([]);
   const [selectedThesisId, setSelectedThesisId] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -52,7 +57,9 @@ const LecturerThesisProgressPage = () => {
   const fetchSupervisedProgress = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await thesisProgressApi.getSupervisedTheses();
+      const res = await thesisProgressApi.getSupervisedTheses({
+        academicTermId: currentTerm?._id || '',
+      });
       if (res.success) {
         setTheses(res.data || []);
       }
@@ -61,7 +68,7 @@ const LecturerThesisProgressPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [currentTerm?._id, showToast]);
 
   useEffect(() => {
     fetchSupervisedProgress();
@@ -154,6 +161,10 @@ const LecturerThesisProgressPage = () => {
 
   // Open Review Modal
   const handleOpenReview = (report) => {
+    if (isPastTerm) {
+      showToast('Học kỳ này đã kết thúc (CLOSED). Bạn đang ở chế độ xem lại lịch sử, không thể chỉnh sửa hoặc đánh giá.', 'warning');
+      return;
+    }
     setSelectedProgress(report);
     setLecturerComment(report.lecturerComment || '');
     setReviewStatus(
@@ -259,6 +270,22 @@ const LecturerThesisProgressPage = () => {
           </div>
         </div>
 
+        {/* Past Term Read-Only Notification Banner */}
+        {isPastTerm && (
+          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs mt-4">
+            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+            <div className="flex-1">
+              <span className="font-bold">Đang xem học kỳ trước (Lịch sử - {currentTerm?.name} • {currentTerm?.academicYear}):</span>
+              <span className="ml-1 text-amber-800">
+                Học kỳ này đã kết thúc. Chế độ <strong>Chỉ xem (Read-Only)</strong> đang bật — giảng viên chỉ được xem lại tiến độ và nhận xét lịch sử.
+              </span>
+            </div>
+            <span className="px-2.5 py-1 bg-amber-200/80 text-amber-900 rounded-xl font-bold text-[10px] uppercase tracking-wider shrink-0 border border-amber-300">
+              Chỉ xem (Read-Only)
+            </span>
+          </div>
+        )}
+
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-slate-100">
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
@@ -299,6 +326,27 @@ const LecturerThesisProgressPage = () => {
 
         {/* Dropdowns */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+          {/* Academic Term Selector */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
+            <select
+              value={currentTerm?._id || ''}
+              onChange={(e) => {
+                if (setCurrentTerm && e.target.value) {
+                  setCurrentTerm(e.target.value);
+                }
+              }}
+              className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+            >
+              {Array.isArray(terms) &&
+                terms.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                  </option>
+                ))}
+            </select>
+          </div>
+
           {/* Thesis filter */}
           <div className="flex items-center gap-1.5">
             <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -475,14 +523,16 @@ const LecturerThesisProgressPage = () => {
                             <span>Chi tiết</span>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => handleOpenReview(item)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition text-[11px]"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>{isPending ? 'Đánh giá' : 'Sửa đánh giá'}</span>
-                          </button>
+                          {!isPastTerm && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenReview(item)}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition text-[11px]"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>{isPending ? 'Đánh giá' : 'Sửa đánh giá'}</span>
+                            </button>
+                          )}
                         </td>
                       </tr>
                     );

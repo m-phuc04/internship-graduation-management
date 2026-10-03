@@ -431,42 +431,69 @@ const toggleThesisRegistrationLock = async (id, { isLocked, newDeadline = null, 
 // ====================
 const ensureDefaultActiveTerm = async () => {
   try {
-    let activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" });
+    // Ensure HK1-2026-2027 exists
+    let hk1 = await AcademicTerm.findOne({ code: "HK1-2026-2027" });
+    if (!hk1) {
+      hk1 = await AcademicTerm.create({
+        name: "Học kỳ 1",
+        academicYear: "2026-2027",
+        code: "HK1-2026-2027",
+        startDate: new Date("2026-08-01"),
+        endDate: new Date("2027-01-15"),
+        status: "CLOSED",
+        description: "Học kỳ 1 năm học 2026-2027 (Học kỳ trước)",
+        internship: {
+          registrationStart: new Date("2026-08-01"),
+          registrationEnd: new Date("2026-09-30"),
+          reportStart: new Date("2026-10-01"),
+          reportDeadline: new Date("2026-12-31"),
+        },
+        thesis: {
+          registrationStart: new Date("2026-08-01"),
+          registrationEnd: new Date("2026-09-30"),
+          assignmentStart: new Date("2026-10-01"),
+          assignmentEnd: new Date("2026-11-15"),
+          defenseStart: new Date("2026-12-15"),
+          defenseEnd: new Date("2027-01-10"),
+        },
+      });
+      console.log("Created default AcademicTerm: HK1-2026-2027 (CLOSED)");
+    }
 
+    // Ensure HK2-2026-2027 exists
+    let hk2 = await AcademicTerm.findOne({ code: "HK2-2026-2027" });
+    if (!hk2) {
+      hk2 = await AcademicTerm.create({
+        name: "Học kỳ 2",
+        academicYear: "2026-2027",
+        code: "HK2-2026-2027",
+        startDate: new Date("2027-01-16"),
+        endDate: new Date("2027-06-30"),
+        status: "ACTIVE",
+        description: "Học kỳ 2 năm học 2026-2027 (Đang diễn ra)",
+        internship: {
+          registrationStart: new Date("2027-01-16"),
+          registrationEnd: new Date("2027-02-28"),
+          reportStart: new Date("2027-03-01"),
+          reportDeadline: new Date("2027-05-30"),
+        },
+        thesis: {
+          registrationStart: new Date("2027-01-16"),
+          registrationEnd: new Date("2027-02-28"),
+          assignmentStart: new Date("2027-03-01"),
+          assignmentEnd: new Date("2027-04-15"),
+          defenseStart: new Date("2027-05-15"),
+          defenseEnd: new Date("2027-06-10"),
+        },
+      });
+      console.log("Created default AcademicTerm: HK2-2026-2027 (ACTIVE)");
+    }
+
+    let activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" });
     if (!activeTerm) {
-      // Check if any term exists
-      const anyTerm = await AcademicTerm.findOne().sort({ createdAt: -1 });
-      if (anyTerm) {
-        anyTerm.status = "ACTIVE";
-        await anyTerm.save();
-        activeTerm = anyTerm;
-      } else {
-        // Create initial default term HK1-2026-2027
-        activeTerm = await AcademicTerm.create({
-          name: "Học kỳ 1",
-          academicYear: "2026-2027",
-          code: "HK1-2026-2027",
-          startDate: new Date("2026-08-01"),
-          endDate: new Date("2027-01-15"),
-          status: "ACTIVE",
-          description: "Học kỳ 1 năm học 2026-2027 (Mặc định hệ thống)",
-          internship: {
-            registrationStart: new Date("2026-08-01"),
-            registrationEnd: new Date("2026-09-30"),
-            reportStart: new Date("2026-10-01"),
-            reportDeadline: new Date("2026-12-31"),
-          },
-          thesis: {
-            registrationStart: new Date("2026-08-01"),
-            registrationEnd: new Date("2026-09-30"),
-            assignmentStart: new Date("2026-10-01"),
-            assignmentEnd: new Date("2026-11-15"),
-            defenseStart: new Date("2026-12-15"),
-            defenseEnd: new Date("2027-01-10"),
-          },
-        });
-        console.log("Created initial default AcademicTerm: HK1-2026-2027 (ACTIVE)");
-      }
+      hk2.status = "ACTIVE";
+      await hk2.save();
+      activeTerm = hk2;
     }
 
     // Safe migration: Link any orphaned or unassigned internships & theses to active term

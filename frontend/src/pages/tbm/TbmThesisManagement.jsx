@@ -51,7 +51,7 @@ import {
 
 const TbmThesisManagement = () => {
   const { showToast } = useToast();
-  const { currentTerm } = useAcademicTerm();
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
 
   // Tab State: 'PROPOSED_TOPICS' | 'STUDENT_THESES'
   const [activeMainTab, setActiveMainTab] = useState('PROPOSED_TOPICS');
@@ -818,6 +818,26 @@ const TbmThesisManagement = () => {
                   <List className="w-3.5 h-3.5" />
                   <span>Dạng bảng phẳng</span>
                 </button>
+              </div>
+
+              {/* Academic Term Selector */}
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
+                <select
+                  value={currentTerm?._id || ''}
+                  onChange={(e) => {
+                    if (setCurrentTerm && e.target.value) {
+                      setCurrentTerm(e.target.value);
+                    }
+                  }}
+                  className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                >
+                  {Array.isArray(terms) && terms.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Status Filter */}

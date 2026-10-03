@@ -265,6 +265,8 @@ const LecturerThesisEvaluationDetailPage = () => {
   );
   const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
 
+  const isPastTerm = thesis?.academicTermId?.status === 'CLOSED';
+
   const isSupervisorLockedByPBK =
     activeRoleTab === 'SUPERVISOR' && isPBKAssigned;
 
@@ -276,6 +278,7 @@ const LecturerThesisEvaluationDetailPage = () => {
     activeRoleTab === 'COUNCIL' && !hasBothReviewersGraded;
 
   const isStageLocked =
+    isPastTerm ||
     isSupervisorLockedByPBK ||
     isReviewerLockedBySupervisor ||
     isCouncilLockedByReviewers;
@@ -292,6 +295,7 @@ const LecturerThesisEvaluationDetailPage = () => {
     activeRoleTab === 'SUPERVISOR' && !allRequiredChecked;
 
   const isFormLocked =
+    isPastTerm ||
     isCompleted ||
     isRejected ||
     isRoleScoreLocked ||
@@ -301,7 +305,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Toggle criteria checkbox
   const handleToggleCriteria = (criteriaId) => {
-    if (isCompleted || isRejected || isSupervisorLockedByPBK) {
+    if (isPastTerm || isCompleted || isRejected || isSupervisorLockedByPBK) {
       return;
     }
     const idStr = criteriaId.toString();
@@ -312,7 +316,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Check all criteria
   const handleCheckAllCriteria = () => {
-    if (isCompleted || isRejected || isSupervisorLockedByPBK) {
+    if (isPastTerm || isCompleted || isRejected || isSupervisorLockedByPBK) {
       return;
     }
     setCheckedCriteriaIds(criteriaList.map((c) => c._id.toString()));
@@ -320,7 +324,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Uncheck all criteria
   const handleUncheckAllCriteria = () => {
-    if (isCompleted || isRejected || isSupervisorLockedByPBK) {
+    if (isPastTerm || isCompleted || isRejected || isSupervisorLockedByPBK) {
       return;
     }
     setCheckedCriteriaIds([]);
@@ -328,6 +332,10 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Save criteria evaluations
   const handleSaveCriteriaOnly = async () => {
+    if (isPastTerm) {
+      showToast('Học kỳ đã kết thúc (CLOSED). Không thể chỉnh sửa đánh giá điều kiện.', 'warning');
+      return;
+    }
     if (!thesis?._id || isCompleted || isRejected || isSupervisorLockedByPBK) return;
     setSavingCriteriaOnly(true);
     try {
@@ -347,6 +355,10 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   const handleSubmit = async (e) => {
     if (e) e.preventDefault();
+    if (isPastTerm) {
+      showToast('Học kỳ này đã kết thúc (CLOSED). Bạn đang ở chế độ xem lại lịch sử, không thể chỉnh sửa hoặc chấm điểm.', 'warning');
+      return;
+    }
     if (isCompleted || isRejected) return;
 
     setError('');
@@ -581,8 +593,21 @@ const LecturerThesisEvaluationDetailPage = () => {
         </div>
       </div>
 
-      {/* Lock Notice if COMPLETED, REJECTED, or Locked */}
-      {isCompleted ? (
+      {/* Lock Notice if CLOSED, COMPLETED, REJECTED, or Locked */}
+      {isPastTerm ? (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-2xs">
+          <AlertCircle className="w-5 h-5 shrink-0 text-amber-600" />
+          <div className="flex-1">
+            <div className="font-bold text-sm">Học kỳ đã kết thúc (Lịch sử - {thesis.academicTermId?.name || 'CLOSED'})</div>
+            <p className="text-xs text-amber-800 mt-0.5">
+              Bạn đang ở chế độ <strong>Chỉ xem (Read-Only)</strong> để xem lại kết quả và đánh giá của học kỳ trước. Toàn bộ tính năng chỉnh sửa tiêu chí và nhập điểm đã được khóa.
+            </p>
+          </div>
+          <span className="px-2.5 py-1 bg-amber-200/80 text-amber-900 rounded-xl font-bold text-[10px] uppercase tracking-wider shrink-0 border border-amber-300">
+            Chỉ xem (Read-Only)
+          </span>
+        </div>
+      ) : isCompleted ? (
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-3 shadow-2xs">
           <Lock className="w-5 h-5 shrink-0 text-emerald-600" />
           <div>

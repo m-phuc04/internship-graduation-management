@@ -157,8 +157,10 @@ const submitDraftProgress = async (req, res, next) => {
 // ====================
 const getSupervisedThesesProgress = async (req, res, next) => {
   try {
+    const { academicTermId } = req.query;
     const result = await thesisProgressService.getSupervisedThesesProgress(
       req.user.userId,
+      academicTermId || '',
     );
 
     res.status(200).json({

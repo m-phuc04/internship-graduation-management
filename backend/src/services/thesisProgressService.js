@@ -713,13 +713,18 @@ const submitDraftProgress = async (progressId, userId) => {
 // ====================
 // 6. Lecturer: Get Supervised Theses & Progress Reports (Only Confirmed / Submitted)
 // ====================
-const getSupervisedThesesProgress = async (userId) => {
+const getSupervisedThesesProgress = async (userId, academicTermId = '') => {
   const lecturer = await Lecturer.findOne({ userId }).populate("userId");
   if (!lecturer) {
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }
 
-  const theses = await Thesis.find({ supervisorId: lecturer._id })
+  const query = { supervisorId: lecturer._id };
+  if (academicTermId && academicTermId !== 'ALL') {
+    query.academicTermId = academicTermId;
+  }
+
+  const theses = await Thesis.find(query)
     .sort({ createdAt: -1 })
     .populate({
       path: "studentId",
@@ -821,6 +826,11 @@ const reviewProgress = async (
   const thesis = progress.thesisId;
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài tương ứng với nhật ký này", 404);
+  }
+
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại nhật ký, không thể chỉnh sửa nhận xét hoặc điểm đánh giá.", 400);
   }
 
   // Check Lecturer Access (must be supervisor, TBM, or ADMIN)

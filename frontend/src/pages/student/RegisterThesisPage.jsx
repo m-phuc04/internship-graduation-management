@@ -140,6 +140,7 @@ const RegisterThesisPage = () => {
     try {
       const res = await thesisApi.getApprovedTopics({
         search: topicSearch,
+        academicTermId: currentTerm?._id || '',
       });
       if (res.success) {
         setApprovedTopics(res.data || []);
@@ -149,7 +150,7 @@ const RegisterThesisPage = () => {
     } finally {
       setLoadingApprovedTopics(false);
     }
-  }, [topicSearch]);
+  }, [topicSearch, currentTerm?._id]);
 
   useEffect(() => {
     fetchStudentProfile();

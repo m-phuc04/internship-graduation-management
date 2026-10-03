@@ -33,7 +33,12 @@ export const ACTIVE_THESIS_STATUSES = [
 // Validate KLTN Registration Window & Lock Status
 // ====================
 export const validateThesisRegistrationWindow = (activeTerm, checkDate = new Date()) => {
-  if (!activeTerm) return;
+  if (!activeTerm) {
+    throw new AppError("Hiện tại không có học kỳ nào đang mở cổng đăng ký KLTN.", 400);
+  }
+  if (activeTerm.status === "CLOSED") {
+    throw new AppError(`Học kỳ ${activeTerm.code || activeTerm.name} đã kết thúc/đóng. Không thể đăng ký đề tài mới.`, 400);
+  }
   const thesisCfg = activeTerm.thesis || {};
 
   if (thesisCfg.isRegistrationLocked) {
@@ -78,6 +83,8 @@ const createThesis = async ({
   supervisorId,
   description = null,
   objectives = null,
+  expectedResults = null,
+  academicTermId = null,
 }) => {
   // 1. Identify SV1
   let student1 = null;
@@ -91,8 +98,14 @@ const createThesis = async ({
     throw new AppError("Không tìm thấy thông tin sinh viên đăng ký", 404);
   }
 
-  // 2. Identify Current Academic Term automatically (by Date or ACTIVE status)
-  const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  // 2. Identify Academic Term (from payload or active term)
+  let activeTerm = null;
+  if (academicTermId) {
+    activeTerm = await AcademicTerm.findById(academicTermId);
+  }
+  if (!activeTerm) {
+    activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  }
 
   // Validate Registration Window & Lock Status
   validateThesisRegistrationWindow(activeTerm);
@@ -1265,6 +1278,11 @@ const supervisorAcceptThesis = async (thesisId, requestingUser) => {
     throw new AppError(`Không thể duyệt đề tài đang ở trạng thái ${thesis.status}`, 409);
   }
 
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại dữ liệu, không thể phê duyệt đề tài.", 400);
+  }
+
   thesis.status = "APPROVED";
   thesis.approvedAt = new Date();
   thesis.acceptedAt = new Date();
@@ -1341,6 +1359,11 @@ const supervisorRejectThesis = async (thesisId, requestingUser, { reason } = {})
 
   if (!["PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE"].includes(thesis.status)) {
     throw new AppError(`Không thể từ chối đề tài đang ở trạng thái ${thesis.status}`, 409);
+  }
+
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại dữ liệu, không thể từ chối đề tài.", 400);
   }
 
   thesis.status = "REJECTED";
@@ -1422,6 +1445,11 @@ const supervisorCancelThesis = async (thesisId, requestingUser, { reason = null 
 
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại dữ liệu, không thể hủy đề tài.", 400);
   }
 
   // Check supervisor ownership if role is LECTURER
@@ -1720,7 +1748,7 @@ const getThesesForLecturerRole = async (
   });
 
   // Also fetch all active theses so council/room assignments can locate any thesis
-  const allTermTheses = await Thesis.find({
+  const allThesesQuery = {
     status: {
       $nin: [
         "CANCELLED",
@@ -1729,7 +1757,11 @@ const getThesesForLecturerRole = async (
         "WAITING_FOR_SUPERVISOR_REQUEST",
       ],
     },
-  })
+  };
+  if (academicTermId && academicTermId !== "ALL") {
+    allThesesQuery.academicTermId = academicTermId;
+  }
+  const allTermTheses = await Thesis.find(allThesesQuery)
     .sort({ createdAt: -1 })
     .populate({
       path: "studentId",
@@ -1879,6 +1911,12 @@ const gradeThesisByLecturer = async (
   const thesis = await Thesis.findById(thesisId);
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  // 0. RULE: Permanent Lock if Term is CLOSED
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại điểm lịch sử, không thể chỉnh sửa điểm.", 400);
   }
 
   // 1. RULE: Permanent Lock if Thesis is COMPLETED or REJECTED
@@ -2326,6 +2364,11 @@ const evaluateCriteriaBySupervisor = async (
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
 
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại dữ liệu lịch sử, không thể chỉnh sửa đánh giá tiêu chí.", 400);
+  }
+
   if (thesis.status === "COMPLETED") {
     throw new AppError("Khóa luận đã hoàn thành và không thể chỉnh sửa đánh giá tiêu chí.", 400);
   }
@@ -2727,11 +2770,18 @@ const batchCreateTopicsByLecturer = async ({
   }
 
   // Resolve active term
-  let termId = academicTermId;
-  if (!termId) {
-    const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
-    termId = activeTerm?._id || null;
+  if (!academicTermId) {
+    throw new AppError("Vui lòng chọn học kỳ áp dụng cho danh sách đề tài", 400);
   }
+
+  const validTerm = await AcademicTerm.findById(academicTermId);
+  if (!validTerm) {
+    throw new AppError("Học kỳ được chọn không tồn tại trong hệ thống", 404);
+  }
+  if (validTerm.status === "CLOSED") {
+    throw new AppError("Học kỳ này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại dữ liệu, không thể tạo hoặc đề xuất thêm đề tài mới.", 400);
+  }
+  const termId = validTerm._id;
 
   const topicDocs = [];
 
@@ -3008,29 +3058,53 @@ const getApprovedTopicsForStudent = async ({ academicTermId = null, search = "",
     student = await Student.findOne({ userId });
   }
 
-  // Identify active academic term if not provided
-  let termId = academicTermId;
-  if (!termId) {
+  // 1. Identify active/open academic term for registration
+  let targetTerm = null;
+  if (academicTermId) {
+    targetTerm = await AcademicTerm.findById(academicTermId).lean();
+  }
+  if (!targetTerm) {
     try {
-      const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
-      termId = activeTerm?._id || null;
+      targetTerm = await academicTermService.getCurrentAcademicTerm(new Date());
     } catch (e) {
       // ignore
     }
   }
 
-  const query = { status: "APPROVED" };
-  const andConditions = [];
-
-  if (termId) {
-    andConditions.push({
-      $or: [
-        { academicTermId: termId },
-        { academicTermId: null },
-        { academicTermId: { $exists: false } },
-      ],
-    });
+  // If no term is found or term is closed
+  if (!targetTerm || targetTerm.status === "CLOSED") {
+    return [];
   }
+
+  // Check if registration is open for this term:
+  const now = new Date();
+  const isLocked = Boolean(targetTerm.thesis?.isRegistrationLocked);
+  let isExpired = false;
+  let isUpcoming = false;
+
+  if (targetTerm.thesis?.registrationStart) {
+    const start = new Date(targetTerm.thesis.registrationStart);
+    if (now < start) isUpcoming = true;
+  }
+  if (targetTerm.thesis?.registrationEnd) {
+    let end = new Date(targetTerm.thesis.registrationEnd);
+    if (end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0 && end.getMilliseconds() === 0) {
+      end = new Date(end.getTime() + 24 * 60 * 60 * 1000 - 1);
+    }
+    if (now > end) isExpired = true;
+  }
+
+  // Student can ONLY see topics when registration is actually OPEN for that term
+  if (isLocked || isExpired || isUpcoming) {
+    return [];
+  }
+
+  // Strictly filter by this specific academic term:
+  const query = {
+    status: "APPROVED",
+    academicTermId: targetTerm._id,
+  };
+  const andConditions = [];
 
   if (search && search.trim()) {
     const q = search.trim();
@@ -3076,7 +3150,7 @@ const getApprovedTopicsForStudent = async ({ academicTermId = null, search = "",
       select: "lecturerCode academicTitle department specialization userId",
       populate: { path: "userId", select: "fullName email phone" },
     })
-    .populate("academicTermId", "code name")
+    .populate("academicTermId", "code name academicYear")
     .sort({ createdAt: -1 });
 
   return topics.map((t) => {
@@ -3129,15 +3203,29 @@ const registerTopicByStudent = async ({
     throw new AppError("Không tìm thấy thông tin sinh viên đăng ký", 404);
   }
 
-  // 2. Identify Current Academic Term
-  const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  // 2. Identify Topic and its Academic Term
+  const topicToRegister = await ThesisTopic.findById(topicId);
+  if (!topicToRegister) {
+    throw new AppError("Đề tài không tồn tại trong hệ thống", 404);
+  }
+  if (topicToRegister.status !== "APPROVED") {
+    throw new AppError("Đề tài này chưa được Trưởng Bộ Môn phê duyệt để đăng ký", 400);
+  }
+  if (!topicToRegister.academicTermId) {
+    throw new AppError("Đề tài chưa được gán học kỳ áp dụng hợp lệ", 400);
+  }
 
-  // Validate Registration Window & Lock Status
-  validateThesisRegistrationWindow(activeTerm);
+  const topicTerm = await AcademicTerm.findById(topicToRegister.academicTermId);
+  if (!topicTerm) {
+    throw new AppError("Không tìm thấy học kỳ tương ứng với đề tài này", 404);
+  }
 
-  // 3. Check SV1 has NO active thesis in active term
+  // 3. Validate Registration Window & Lock Status for this specific term
+  validateThesisRegistrationWindow(topicTerm);
+
+  // 4. Check SV1 has NO active thesis in this term
   const sv1ActiveThesis = await Thesis.findOne({
-    academicTermId: activeTerm._id,
+    academicTermId: topicTerm._id,
     $or: [{ studentId: student1._id }, { secondStudentId: student1._id }],
     status: { $in: ACTIVE_THESIS_STATUSES },
   });
@@ -3151,7 +3239,7 @@ const registerTopicByStudent = async ({
 
   // Also check in ThesisTopic registeredGroups
   const sv1TopicReg = await ThesisTopic.findOne({
-    academicTermId: activeTerm._id,
+    academicTermId: topicTerm._id,
     $or: [
       { "registeredGroups.studentId": student1._id },
       { "registeredGroups.secondStudentId": student1._id },
@@ -3165,7 +3253,7 @@ const registerTopicByStudent = async ({
     );
   }
 
-  // 4. Handle 2-Student Group Registration
+  // 5. Handle 2-Student Group Registration
   let student2 = null;
   const isTwoStudents = Number(studentCount) === 2;
 
@@ -3186,9 +3274,9 @@ const registerTopicByStudent = async ({
       throw new AppError("Sinh viên thứ hai không được trùng với sinh viên thứ nhất", 400);
     }
 
-    // Check SV2 has NO active thesis
+    // Check SV2 has NO active thesis in this term
     const sv2ActiveThesis = await Thesis.findOne({
-      academicTermId: activeTerm._id,
+      academicTermId: topicTerm._id,
       $or: [{ studentId: student2._id }, { secondStudentId: student2._id }],
       status: { $in: ACTIVE_THESIS_STATUSES },
     });
@@ -3201,7 +3289,7 @@ const registerTopicByStudent = async ({
     }
 
     const sv2TopicReg = await ThesisTopic.findOne({
-      academicTermId: activeTerm._id,
+      academicTermId: topicTerm._id,
       $or: [
         { "registeredGroups.studentId": student2._id },
         { "registeredGroups.secondStudentId": student2._id },
@@ -3267,7 +3355,7 @@ const registerTopicByStudent = async ({
   const student2Status = isPendingSv2 ? "PENDING" : null;
 
   const thesis = await Thesis.create({
-    academicTermId: updatedTopic.academicTermId || activeTerm._id,
+    academicTermId: updatedTopic.academicTermId || topicTerm._id,
     studentId: student1._id,
     secondStudentId: student2 ? student2._id : null,
     studentCount: student2 ? 2 : 1,
@@ -3278,8 +3366,8 @@ const registerTopicByStudent = async ({
     status: initialStatus,
     description: updatedTopic.description,
     submittedAt: isPendingSv2 ? null : new Date(),
-    startDate: activeTerm.startDate || null,
-    endDate: activeTerm.endDate || null,
+    startDate: topicTerm.startDate || null,
+    endDate: topicTerm.endDate || null,
   });
 
   // Link thesisId & groupOrder in topic's registeredGroups entry

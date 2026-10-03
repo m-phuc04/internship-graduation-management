@@ -406,11 +406,12 @@ const seedUsersAndLecturers = async () => {
     // ==========================================
     console.log("\n=== SEED ĐỀ TÀI KHÓA LUẬN TỐT NGHIỆP (KLTN) ===");
 
-    // Lấy Học kỳ đang ACTIVE (nếu có)
-    let activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" });
-    if (!activeTerm) {
-      activeTerm = await AcademicTerm.findOne().sort({ createdAt: -1 });
+    // Lấy Học kỳ 1 (HK1-2026-2027) cho danh sách đề tài mẫu
+    let hk1Term = await AcademicTerm.findOne({ code: "HK1-2026-2027" });
+    if (!hk1Term) {
+      hk1Term = await AcademicTerm.findOne({ name: /Học kỳ 1/i });
     }
+    let targetSeedTerm = hk1Term || activeTerm;
 
     // Nhóm và đếm số lượng kỳ vọng của từng (lecturerCode + title) trong kltnTopicsData
     // để hỗ trợ chính xác các trường hợp đề tài cố ý trùng lặp (ví dụ: 3 đề tài của ThS. Phạm Thái Khanh)
@@ -454,7 +455,7 @@ const seedUsersAndLecturers = async () => {
             await ThesisTopic.create({
               title: item.title,
               supervisorId: lecturer._id,
-              academicTermId: activeTerm?._id || null,
+              academicTermId: targetSeedTerm?._id || null,
               maxGroups: 1,
               currentGroups: 0,
               description: null,
