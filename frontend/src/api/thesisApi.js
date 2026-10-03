@@ -23,6 +23,18 @@ export const thesisApi = {
   cancelStudent2Invite: (id) =>
     axiosClient.patch(`/theses/${id}/cancel-student2-invite`),
 
+  // Student 2 cancels group participation (before supervisor approval)
+  cancelParticipation: (id) =>
+    axiosClient.patch(`/theses/${id}/cancel-participation`),
+
+  // Student 1 cancels group registration / whole thesis (before supervisor approval)
+  cancelGroupRegistration: (id) =>
+    axiosClient.patch(`/theses/${id}/cancel-group`),
+
+  // Student 1 removes student 2 from group (before supervisor approval)
+  removeStudent2: (id) =>
+    axiosClient.patch(`/theses/${id}/remove-student2`),
+
   // Get available supervisor lecturers with capacity stats
   getAvailableSupervisors: () => axiosClient.get('/theses/available-supervisors'),
 
@@ -102,6 +114,10 @@ export const thesisApi = {
   supervisorReject: (id, data) =>
     axiosClient.patch(`/theses/${id}/supervisor-reject`, data),
 
+  // Lecturer / Supervisor cancels thesis
+  supervisorCancel: (id, data = {}) =>
+    axiosClient.patch(`/theses/${id}/supervisor-cancel`, data),
+
   // ==========================================
   // TBM Management Endpoints
   // ==========================================
@@ -113,8 +129,9 @@ export const thesisApi = {
   // TBM approves a thesis
   approve: (id, data = {}) => axiosClient.patch(`/theses/${id}/approve`, data),
 
-  // TBM rejects a thesis
+  // TBM rejects / cancels a thesis
   reject: (id, data = {}) => axiosClient.patch(`/theses/${id}/reject`, data),
+  cancel: (id, data = {}) => axiosClient.patch(`/theses/${id}/cancel`, data),
 
   // TBM assigns / changes supervisor
   assignSupervisor: (id, data) =>

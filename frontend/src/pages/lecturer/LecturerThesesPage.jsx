@@ -35,6 +35,7 @@ import {
   Edit3,
   FileText,
   ExternalLink,
+  Ban,
 } from 'lucide-react';
 
 const LecturerThesesPage = () => {
@@ -99,6 +100,9 @@ const LecturerThesesPage = () => {
   // Accept & Reject Modals
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [cancelThesisReason, setCancelThesisReason] = useState('');
+  const [cancelThesisTarget, setCancelThesisTarget] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [targetThesis, setTargetThesis] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -405,8 +409,8 @@ const LecturerThesesPage = () => {
   };
 
   // Current list based on active tab with resilient fallback
-  const supervisedTheses = data?.supervisedTheses || (data?.theses || []).filter((t) => t.isSupervisor) || [];
-  const reviewer1Theses = data?.reviewer1Theses || (data?.theses || []).filter((t) => t.isReviewer1) || [];
+  const supervisedTheses = (data?.supervisedTheses || (data?.theses || []).filter((t) => t.isSupervisor) || []).filter((t) => t.status !== 'REJECTED');
+  const reviewer1Theses = (data?.reviewer1Theses || (data?.theses || []).filter((t) => t.isReviewer1) || []).filter((t) => t.status !== 'REJECTED');
 
   // Helper to find assigned council
   const getAssignedCouncil = useCallback((item) => {
@@ -608,7 +612,7 @@ const LecturerThesesPage = () => {
   // Reviewer 2 Theses (DB reviewer 2 assignments)
   const reviewer2Theses = useMemo(() => {
     const rawRev2 = data?.reviewer2Theses || (data?.theses || []).filter((t) => t.isReviewer2) || [];
-    return rawRev2;
+    return rawRev2.filter((t) => t.status !== 'REJECTED');
   }, [data]);
 
   const effectiveActiveCouncil = activeCouncil;
@@ -629,6 +633,7 @@ const LecturerThesesPage = () => {
     ].filter(Boolean).map((id) => String(id).trim().toLowerCase());
 
     let list = allThesesPool.filter((t) => {
+      if (t.status === 'REJECTED') return false;
       const tid = String(t._id || t.id || '');
       const rawCouncilId =
         thesisCouncilMap[tid] ||
@@ -723,17 +728,112 @@ const LecturerThesesPage = () => {
     currentList = [...filteredReviewer1Theses, ...filteredReviewer2Theses];
   }
 
+  // Helper to determine if a thesis can be graded for a specific role
+  const getGradingStatusForThesis = (item, role = 'SUPERVISOR') => {
+    if (!item) return { canGrade: false, reason: '' };
+
+    if (!gradingPeriodStatus.canGrade) {
+      return {
+        canGrade: false,
+        reason: gradingPeriodStatus.statusText || 'Hiện không nằm trong thời gian nhập điểm',
+      };
+    }
+
+    if (item.status === 'COMPLETED') {
+      return {
+        canGrade: false,
+        reason: 'Đề tài đã hoàn thành nghiệm thu. Không thể chỉnh sửa điểm.',
+      };
+    }
+
+    if (item.status === 'REJECTED') {
+      return {
+        canGrade: false,
+        reason: 'Đề tài đã bị từ chối / không đạt. Không thể nhập điểm.',
+      };
+    }
+
+    const isPBKAssigned = Boolean(
+      item.reviewer1Id ||
+      item.reviewer2Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.length > 0) ||
+      item.status === 'ASSIGNED_REVIEWERS' ||
+      item.status === 'DEFENSE' ||
+      item.status === 'COMPLETED'
+    );
+
+    const hasSupervisorGraded = Boolean(
+      item.scores?.supervisorScore != null || item.scores?.student1SupervisorScore != null
+    );
+
+    const hasReviewer1Graded = Boolean(
+      item.scores?.reviewer1Score != null || item.scores?.student1Reviewer1Score != null
+    );
+    const hasReviewer2Graded = Boolean(
+      item.scores?.reviewer2Score != null || item.scores?.student1Reviewer2Score != null
+    );
+    const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+
+    if (role === 'SUPERVISOR' || role === 'GVHD') {
+      if (isPBKAssigned) {
+        return {
+          canGrade: false,
+          reason: 'Đề tài đã được phân công phản biện khóa luận (PBK). Giảng viên hướng dẫn không thể chỉnh sửa điểm.',
+        };
+      }
+      return {
+        canGrade: true,
+        reason: 'Bấm để nhập điểm và đánh giá đề tài',
+      };
+    }
+
+    if (role === 'REVIEWER1' || role === 'REVIEWER_1' || role === 'GVPB_KIN') {
+      if (!hasSupervisorGraded) {
+        return {
+          canGrade: false,
+          reason: 'Giảng viên hướng dẫn chưa hoàn thành chấm điểm. Chưa thể chấm điểm phản biện.',
+        };
+      }
+      return {
+        canGrade: true,
+        reason: 'Chấm điểm Giảng viên phản biện 1',
+      };
+    }
+
+    if (role === 'REVIEWER2' || role === 'REVIEWER_2' || role === 'GVPB_HOIDONG') {
+      if (!hasSupervisorGraded) {
+        return {
+          canGrade: false,
+          reason: 'Giảng viên hướng dẫn chưa hoàn thành chấm điểm. Chưa thể chấm điểm phản biện.',
+        };
+      }
+      return {
+        canGrade: true,
+        reason: 'Chấm điểm Giảng viên phản biện 2',
+      };
+    }
+
+    if (role === 'COUNCIL' || role === 'HOIDONG') {
+      if (!hasBothReviewersGraded) {
+        return {
+          canGrade: false,
+          reason: 'Chưa thể chấm điểm hội đồng do các giảng viên phản biện chưa hoàn tất chấm điểm.',
+        };
+      }
+      return {
+        canGrade: true,
+        reason: 'Chấm điểm Hội đồng',
+      };
+    }
+
+    return {
+      canGrade: true,
+      reason: 'Chấm điểm',
+    };
+  };
+
   // Open Grade Box Modal
   const handleOpenGradeBox = (thesis, targetRole = null) => {
-    if (!gradingPeriodStatus.canGrade) {
-      showToast(gradingPeriodStatus.statusText || 'Hiện không nằm trong thời gian nhập điểm', 'warning');
-      return;
-    }
-    if (activeTab === 'SUPERVISOR' && !targetRole) {
-      navigate(`/lecturer/theses/${thesis._id}/evaluate`);
-      return;
-    }
-    setGradeBoxThesis(thesis);
     const role =
       targetRole ||
       (activeTab === 'REVIEWER_1' || activeTab === 'REVIEW_BLIND'
@@ -743,6 +843,18 @@ const LecturerThesesPage = () => {
           : activeTab === 'REVIEWER_2'
             ? 'REVIEWER2'
             : 'SUPERVISOR');
+
+    const gradeStatus = getGradingStatusForThesis(thesis, role);
+    if (!gradeStatus.canGrade) {
+      showToast(gradeStatus.reason || 'Chưa thể chấm điểm ở giai đoạn này', 'warning');
+      return;
+    }
+
+    if (activeTab === 'SUPERVISOR' && !targetRole) {
+      navigate(`/lecturer/theses/${thesis._id}/evaluate`);
+      return;
+    }
+    setGradeBoxThesis(thesis);
     setGradeBoxRole(role);
 
     const isTwo = thesis.studentCount === 2 && thesis.secondStudentId;
@@ -912,6 +1024,39 @@ const LecturerThesesPage = () => {
       }
     } catch (err) {
       showToast(err.message || 'Không thể từ chối đề tài', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenCancel = (thesis) => {
+    setCancelThesisTarget(thesis);
+    setCancelThesisReason('');
+    setCancelModalOpen(true);
+  };
+
+  const handleConfirmCancel = async (e) => {
+    if (e) e.preventDefault();
+    if (!cancelThesisReason || !cancelThesisReason.trim()) {
+      showToast('Vui lòng nhập lý do hủy đề tài', 'warning');
+      return;
+    }
+    if (!cancelThesisTarget) return;
+
+    setActionLoading(true);
+    try {
+      const res = await thesisApi.supervisorCancel(cancelThesisTarget._id, {
+        reason: cancelThesisReason.trim(),
+      });
+      if (res.success) {
+        showToast(res.message || 'Đã hủy đề tài và giải phóng trạng thái đăng ký của sinh viên', 'success');
+        setCancelModalOpen(false);
+        setCancelThesisTarget(null);
+        setCancelThesisReason('');
+        fetchAssignedTheses();
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể hủy đề tài', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -1945,25 +2090,28 @@ const LecturerThesesPage = () => {
                                       <Eye className="w-3.5 h-3.5" />
                                       <span>Chi tiết</span>
                                     </button>
-                                    {item.status !== 'REJECTED' && (
-                                      <button
-                                        type="button"
-                                        disabled={!gradingPeriodStatus.canGrade}
-                                        onClick={() => {
-                                          if (!gradingPeriodStatus.canGrade) return;
-                                          handleOpenGradeBox(item, 'COUNCIL');
-                                        }}
-                                        className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
-                                          gradingPeriodStatus.canGrade
-                                            ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                                            : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                        }`}
-                                        title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm Hội đồng'}
-                                      >
-                                        <Award className="w-3.5 h-3.5" />
-                                        <span>Chấm điểm</span>
-                                      </button>
-                                    )}
+                                    {item.status !== 'REJECTED' && (() => {
+                                      const gradeStatus = getGradingStatusForThesis(item, 'COUNCIL');
+                                      return (
+                                        <button
+                                          type="button"
+                                          disabled={!gradeStatus.canGrade}
+                                          onClick={() => {
+                                            if (!gradeStatus.canGrade) return;
+                                            handleOpenGradeBox(item, 'COUNCIL');
+                                          }}
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                            gradeStatus.canGrade
+                                              ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                              : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                          }`}
+                                          title={gradeStatus.reason}
+                                        >
+                                          <Award className="w-3.5 h-3.5" />
+                                          <span>Chấm điểm</span>
+                                        </button>
+                                      );
+                                    })()}
                                   </div>
                                 </td>
                               </tr>
@@ -2142,25 +2290,28 @@ const LecturerThesesPage = () => {
                                   <Eye className="w-3.5 h-3.5" />
                                   <span>Chi tiết</span>
                                 </button>
-                                {item.status !== 'REJECTED' && (
-                                  <button
-                                    type="button"
-                                    disabled={!gradingPeriodStatus.canGrade}
-                                    onClick={() => {
-                                      if (!gradingPeriodStatus.canGrade) return;
-                                      handleOpenGradeBox(item, 'REVIEWER1');
-                                    }}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
-                                      gradingPeriodStatus.canGrade
-                                        ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                    }`}
-                                    title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm Giảng viên phản biện 1'}
-                                  >
-                                    <Award className="w-3.5 h-3.5" />
-                                    <span>Chấm điểm</span>
-                                  </button>
-                                )}
+                                {item.status !== 'REJECTED' && (() => {
+                                  const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER1');
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled={!gradeStatus.canGrade}
+                                      onClick={() => {
+                                        if (!gradeStatus.canGrade) return;
+                                        handleOpenGradeBox(item, 'REVIEWER1');
+                                      }}
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                        gradeStatus.canGrade
+                                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                      }`}
+                                      title={gradeStatus.reason}
+                                    >
+                                      <Award className="w-3.5 h-3.5" />
+                                      <span>Chấm điểm</span>
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             </td>
                           </tr>
@@ -2307,25 +2458,28 @@ const LecturerThesesPage = () => {
                                   <Eye className="w-3.5 h-3.5" />
                                   <span>Chi tiết</span>
                                 </button>
-                                {item.status !== 'REJECTED' && (
-                                  <button
-                                    type="button"
-                                    disabled={!gradingPeriodStatus.canGrade}
-                                    onClick={() => {
-                                      if (!gradingPeriodStatus.canGrade) return;
-                                      handleOpenGradeBox(item, 'REVIEWER2');
-                                    }}
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
-                                      gradingPeriodStatus.canGrade
-                                        ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                    }`}
-                                    title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm Giảng viên phản biện 2'}
-                                  >
-                                    <Award className="w-3.5 h-3.5" />
-                                    <span>Chấm điểm</span>
-                                  </button>
-                                )}
+                                {item.status !== 'REJECTED' && (() => {
+                                  const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER2');
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled={!gradeStatus.canGrade}
+                                      onClick={() => {
+                                        if (!gradeStatus.canGrade) return;
+                                        handleOpenGradeBox(item, 'REVIEWER2');
+                                      }}
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                        gradeStatus.canGrade
+                                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                      }`}
+                                      title={gradeStatus.reason}
+                                    >
+                                      <Award className="w-3.5 h-3.5" />
+                                      <span>Chấm điểm</span>
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             </td>
                           </tr>
@@ -2543,29 +2697,62 @@ const LecturerThesesPage = () => {
                             </button>
 
                             {/* Chấm điểm button (Mở trang đánh giá đầy đủ cho GVHD) */}
-                            {item.status !== 'REJECTED' && !isPendingApproval && (
-                              <button
-                                type="button"
-                                disabled={!gradingPeriodStatus.canGrade}
-                                onClick={() => {
-                                  if (!gradingPeriodStatus.canGrade) return;
-                                  if (activeTab === 'SUPERVISOR') {
-                                    navigate(`/lecturer/theses/${item._id}/evaluate`);
-                                  } else {
-                                    handleOpenGradeBox(item);
+                            {item.status !== 'REJECTED' && !isPendingApproval && (() => {
+                              const gradeStatus = getGradingStatusForThesis(item, 'SUPERVISOR');
+                              return (
+                                <button
+                                  type="button"
+                                  disabled={!gradeStatus.canGrade}
+                                  onClick={() => {
+                                    if (!gradeStatus.canGrade) return;
+                                    if (activeTab === 'SUPERVISOR') {
+                                      navigate(`/lecturer/theses/${item._id}/evaluate`);
+                                    } else {
+                                      handleOpenGradeBox(item);
+                                    }
+                                  }}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                    gradeStatus.canGrade
+                                      ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                      : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                  }`}
+                                  title={gradeStatus.reason}
+                                >
+                                  <Award className="w-3.5 h-3.5" />
+                                  <span>Chấm điểm</span>
+                                </button>
+                              );
+                            })()}
+
+                            {/* Hủy đề tài (GVHD) */}
+                            {activeTab === 'SUPERVISOR' && item.status !== 'REJECTED' && item.status !== 'COMPLETED' && !isPendingApproval && (() => {
+                              const s1 = item.scores?.student1SupervisorScore ?? item.scores?.supervisorScore;
+                              const isSupervisorGraded = s1 !== null && s1 !== undefined && s1 !== '';
+
+                              return (
+                                <button
+                                  type="button"
+                                  disabled={isSupervisorGraded}
+                                  onClick={() => {
+                                    if (isSupervisorGraded) return;
+                                    handleOpenCancel(item);
+                                  }}
+                                  className={`inline-flex items-center gap-1 px-2.5 py-1.5 font-bold rounded-xl text-xs transition ${
+                                    isSupervisorGraded
+                                      ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                                      : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer'
+                                  }`}
+                                  title={
+                                    isSupervisorGraded
+                                      ? 'Không thể hủy đề tài do GVHD đã nhập điểm đánh giá'
+                                      : 'Hủy đề tài và giải phóng đăng ký cho sinh viên'
                                   }
-                                }}
-                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
-                                  gradingPeriodStatus.canGrade
-                                    ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                                    : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                }`}
-                                title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Bấm để nhập điểm và đánh giá đề tài'}
-                              >
-                                <Award className="w-3.5 h-3.5" />
-                                <span>Chấm điểm</span>
-                              </button>
-                            )}
+                                >
+                                  <Ban className="w-3.5 h-3.5" />
+                                  <span>Hủy đề tài</span>
+                                </button>
+                              );
+                            })()}
 
                             {/* Duyệt & Từ chối khi có yêu cầu sinh viên gửi */}
                             {isPendingApproval && (
@@ -2925,6 +3112,101 @@ const LecturerThesesPage = () => {
         </div>
       )}
 
+      {/* Cancel Thesis Modal (GVHD) */}
+      {cancelModalOpen && cancelThesisTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <form onSubmit={handleConfirmCancel} className="w-full max-w-lg bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0 font-bold">
+                <Ban className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Xác Nhận Hủy Đề Tài Khóa Luận</h3>
+                <p className="text-xs text-slate-500">Thao tác này sẽ hủy đề tài và giải phóng quyền đăng ký đề tài mới cho sinh viên.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 text-xs space-y-2">
+              <div>
+                <span className="text-slate-400">Đề tài:</span>
+                <strong className="block text-slate-900 mt-0.5">{cancelThesisTarget.thesisTitle}</strong>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60">
+                <div>
+                  <span className="text-slate-400">Sinh viên 1:</span>
+                  <div className="font-semibold text-slate-800">
+                    {cancelThesisTarget.studentId?.userId?.fullName || cancelThesisTarget.studentId?.fullName} ({cancelThesisTarget.studentId?.studentCode})
+                  </div>
+                </div>
+                {cancelThesisTarget.secondStudentId && (
+                  <div>
+                    <span className="text-slate-400">Sinh viên 2:</span>
+                    <div className="font-semibold text-slate-800">
+                      {cancelThesisTarget.secondStudentId?.userId?.fullName || cancelThesisTarget.secondStudentId?.fullName} ({cancelThesisTarget.secondStudentId?.studentCode})
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
+              <p className="font-bold">Hậu quả của việc hủy đề tài:</p>
+              <ul className="list-disc pl-4 space-y-0.5 text-[11px]">
+                <li>Đề tài sẽ được chuyển sang trạng thái đã hủy (REJECTED).</li>
+                <li>Trạng thái đăng ký của tất cả sinh viên trong nhóm sẽ được giải phóng hoàn toàn.</li>
+                <li>Sinh viên có thể tiến hành đăng ký đề tài mới trong thời gian quy định.</li>
+              </ul>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Lý do hủy đề tài <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                required
+                value={cancelThesisReason}
+                onChange={(e) => setCancelThesisReason(e.target.value)}
+                placeholder="Nhập lý do hủy đề tài (bắt buộc)..."
+                className="w-full text-xs p-3 rounded-2xl border border-slate-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none transition resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancelModalOpen(false);
+                  setCancelThesisTarget(null);
+                  setCancelThesisReason('');
+                }}
+                disabled={actionLoading}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Quay lại
+              </button>
+              <button
+                type="submit"
+                disabled={actionLoading || !cancelThesisReason.trim()}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl shadow-xs transition cursor-pointer flex items-center gap-1.5"
+              >
+                {actionLoading ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang hủy...</span>
+                  </>
+                ) : (
+                  <>
+                    <Ban className="w-3.5 h-3.5" />
+                    <span>Xác nhận hủy đề tài</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
       {/* Comprehensive Detail Modal */}
       {detailModalOpen && targetThesis && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
@@ -3186,30 +3468,41 @@ const LecturerThesesPage = () => {
 
                 {targetThesis.status !== 'REJECTED' &&
                   targetThesis.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
-                  targetThesis.status !== 'PENDING_TBM_APPROVAL' && (
-                    <button
-                      type="button"
-                      disabled={!gradingPeriodStatus.canGrade}
-                      onClick={() => {
-                        if (!gradingPeriodStatus.canGrade) return;
-                        setDetailModalOpen(false);
-                        if (activeTab === 'SUPERVISOR') {
-                          navigate(`/lecturer/theses/${targetThesis._id}/evaluate`);
-                        } else {
-                          handleOpenGradeBox(targetThesis);
-                        }
-                      }}
-                      className={`px-4 py-2 text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 ${
-                        gradingPeriodStatus.canGrade
-                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                      }`}
-                      title={!gradingPeriodStatus.canGrade ? gradingPeriodStatus.statusText : 'Chấm điểm'}
-                    >
-                      <Award className="w-3.5 h-3.5" />
-                      <span>Chấm điểm</span>
-                    </button>
-                  )}
+                  targetThesis.status !== 'PENDING_TBM_APPROVAL' && (() => {
+                    const modalRole =
+                      activeTab === 'REVIEWER_1' || activeTab === 'REVIEW_BLIND'
+                        ? 'REVIEWER1'
+                        : activeTab === 'COUNCIL'
+                          ? 'COUNCIL'
+                          : activeTab === 'REVIEWER_2'
+                            ? 'REVIEWER2'
+                            : 'SUPERVISOR';
+                    const gradeStatus = getGradingStatusForThesis(targetThesis, modalRole);
+                    return (
+                      <button
+                        type="button"
+                        disabled={!gradeStatus.canGrade}
+                        onClick={() => {
+                          if (!gradeStatus.canGrade) return;
+                          setDetailModalOpen(false);
+                          if (activeTab === 'SUPERVISOR') {
+                            navigate(`/lecturer/theses/${targetThesis._id}/evaluate`);
+                          } else {
+                            handleOpenGradeBox(targetThesis, modalRole);
+                          }
+                        }}
+                        className={`px-4 py-2 text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 ${
+                          gradeStatus.canGrade
+                            ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                        }`}
+                        title={gradeStatus.reason}
+                      >
+                        <Award className="w-3.5 h-3.5" />
+                        <span>Chấm điểm</span>
+                      </button>
+                    );
+                  })()}
               </div>
 
               <button

@@ -848,7 +848,19 @@ const StudentThesisProgressPage = () => {
                         </div>
                       )}
 
-                      {/* Action 2: Edit diary (for author when DRAFT or NEEDS_REVISION) */}
+                      {/* Action 2A: Write / Rewrite diary when REJECTED by supervisor */}
+                      {hasProgress && isRejected && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenWriteModal(week)}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition"
+                        >
+                          <PlusCircle className="w-3.5 h-3.5" />
+                          <span>Viết nhật ký</span>
+                        </button>
+                      )}
+
+                      {/* Action 2B: Edit diary (for author when DRAFT or NEEDS_REVISION) */}
                       {hasProgress && (isDraft || isNeedsRevision) && isAuthor && (
                         <button
                           type="button"
@@ -1056,7 +1068,27 @@ const StudentThesisProgressPage = () => {
               </div>
             )}
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
+            <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+              {selectedProgress && ['REJECTED', 'NEEDS_REVISION', 'DRAFT'].includes(selectedProgress.status) ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const foundWeek = weeks.find((w) => w.weekNumber === selectedProgress.weekNumber) || {
+                      weekNumber: selectedProgress.weekNumber,
+                      label: `Tuần ${selectedProgress.weekNumber}`,
+                      progress: selectedProgress,
+                    };
+                    setDetailModalOpen(false);
+                    handleOpenWriteModal(foundWeek);
+                  }}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  <span>Viết nhật ký</span>
+                </button>
+              ) : (
+                <div />
+              )}
               <button
                 type="button"
                 onClick={() => setDetailModalOpen(false)}
@@ -1074,7 +1106,9 @@ const StudentThesisProgressPage = () => {
         isOpen={writeModalOpen}
         onClose={() => setWriteModalOpen(false)}
         title={
-          editingProgressId
+          currentWeek?.progress?.status === 'REJECTED'
+            ? `Viết Lại ${currentWeek?.label || 'Nhật Ký'}`
+            : editingProgressId
             ? `Chỉnh Sửa ${currentWeek?.label || 'Nhật Ký'}`
             : `Viết ${currentWeek?.label || 'Nhật Ký'}`
         }
@@ -1104,6 +1138,19 @@ const StudentThesisProgressPage = () => {
               </span>
             )}
           </div>
+
+          {/* Rejection Notice Banner if previously rejected by Supervisor */}
+          {currentWeek?.progress?.status === 'REJECTED' && currentWeek?.progress?.lecturerComment && (
+            <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-950 space-y-1">
+              <div className="flex items-center gap-1.5 font-bold text-rose-700">
+                <AlertTriangle className="w-4 h-4" />
+                <span>Nhận xét / Yêu cầu từ Giảng viên hướng dẫn:</span>
+              </div>
+              <p className="leading-relaxed pl-5 font-medium">
+                "{currentWeek.progress.lecturerComment}"
+              </p>
+            </div>
+          )}
 
           {/* Title */}
           <div>

@@ -116,6 +116,30 @@ router.patch(
   thesisController.cancelStudent2Invite,
 );
 
+// Student 2: Cancel group participation (before supervisor approval)
+router.patch(
+  "/:id/cancel-participation",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.cancelParticipationByStudent2,
+);
+
+// Student 1: Cancel group registration / thesis registration (before supervisor approval)
+router.patch(
+  "/:id/cancel-group",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.cancelGroupRegistrationByStudent1,
+);
+
+// Student 1: Remove Student 2 from group (before supervisor approval)
+router.patch(
+  "/:id/remove-student2",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.removeStudent2ByStudent1,
+);
+
 // ==========================================
 // 2. Shared Utilities (Supervisors & Lookup)
 // ==========================================
@@ -306,6 +330,14 @@ router.patch(
   thesisController.supervisorRejectThesis,
 );
 
+// Lecturer / Admin: Cancel supervision / thesis
+router.patch(
+  "/:id/supervisor-cancel",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.supervisorCancelThesis,
+);
+
 // TBM & ADMIN: Export theses to Excel
 router.get(
   "/export",
@@ -330,9 +362,16 @@ router.patch(
   thesisController.approveThesis,
 );
 
-// TBM: Reject Thesis
+// TBM: Reject / Cancel Thesis
 router.patch(
   "/:id/reject",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.rejectThesis,
+);
+
+router.patch(
+  "/:id/cancel",
   authMiddleware,
   authorizeRoles("TBM", "ADMIN"),
   thesisController.rejectThesis,

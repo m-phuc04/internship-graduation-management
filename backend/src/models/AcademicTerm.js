@@ -63,6 +63,11 @@ const academicTermSchema = new mongoose.Schema(
       assignmentEnd: { type: Date, default: null },
       defenseStart: { type: Date, default: null },
       defenseEnd: { type: Date, default: null },
+      isRegistrationLocked: { type: Boolean, default: false },
+      lockedAt: { type: Date, default: null },
+      lockedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
+      reopenedAt: { type: Date, default: null },
+      reopenedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
     },
 
     createdBy: {

@@ -243,6 +243,43 @@ const LecturerThesisEvaluationDetailPage = () => {
     (activeRoleTab === 'REVIEWER1' && thesis?.scores?.isReviewer1ScoreLocked) ||
     (activeRoleTab === 'REVIEWER2' && thesis?.scores?.isReviewer2ScoreLocked);
 
+  // Stage-based locking
+  const isPBKAssigned = Boolean(
+    thesis?.reviewer1Id ||
+    thesis?.reviewer2Id ||
+    (Array.isArray(thesis?.reviewers) && thesis.reviewers.length > 0) ||
+    thesis?.status === 'ASSIGNED_REVIEWERS' ||
+    thesis?.status === 'DEFENSE' ||
+    thesis?.status === 'COMPLETED'
+  );
+
+  const hasSupervisorGraded = Boolean(
+    thesis?.scores?.supervisorScore != null || thesis?.scores?.student1SupervisorScore != null
+  );
+
+  const hasReviewer1Graded = Boolean(
+    thesis?.scores?.reviewer1Score != null || thesis?.scores?.student1Reviewer1Score != null
+  );
+  const hasReviewer2Graded = Boolean(
+    thesis?.scores?.reviewer2Score != null || thesis?.scores?.student1Reviewer2Score != null
+  );
+  const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+
+  const isSupervisorLockedByPBK =
+    activeRoleTab === 'SUPERVISOR' && isPBKAssigned;
+
+  const isReviewerLockedBySupervisor =
+    (activeRoleTab === 'REVIEWER1' || activeRoleTab === 'REVIEWER2') &&
+    !hasSupervisorGraded;
+
+  const isCouncilLockedByReviewers =
+    activeRoleTab === 'COUNCIL' && !hasBothReviewersGraded;
+
+  const isStageLocked =
+    isSupervisorLockedByPBK ||
+    isReviewerLockedBySupervisor ||
+    isCouncilLockedByReviewers;
+
   // Criteria validation
   const requiredCriteria = criteriaList.filter((c) => c.isRequired !== false);
   const allRequiredChecked =
@@ -259,11 +296,12 @@ const LecturerThesisEvaluationDetailPage = () => {
     isRejected ||
     isRoleScoreLocked ||
     isPeriodClosed ||
+    isStageLocked ||
     isCriteriaIncompleteForSupervisor;
 
   // Toggle criteria checkbox
   const handleToggleCriteria = (criteriaId) => {
-    if (isCompleted || isRejected) {
+    if (isCompleted || isRejected || isSupervisorLockedByPBK) {
       return;
     }
     const idStr = criteriaId.toString();
@@ -274,7 +312,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Check all criteria
   const handleCheckAllCriteria = () => {
-    if (isCompleted || isRejected) {
+    if (isCompleted || isRejected || isSupervisorLockedByPBK) {
       return;
     }
     setCheckedCriteriaIds(criteriaList.map((c) => c._id.toString()));
@@ -282,7 +320,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Uncheck all criteria
   const handleUncheckAllCriteria = () => {
-    if (isCompleted || isRejected) {
+    if (isCompleted || isRejected || isSupervisorLockedByPBK) {
       return;
     }
     setCheckedCriteriaIds([]);
@@ -290,7 +328,7 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   // Save criteria evaluations
   const handleSaveCriteriaOnly = async () => {
-    if (!thesis?._id) return;
+    if (!thesis?._id || isCompleted || isRejected || isSupervisorLockedByPBK) return;
     setSavingCriteriaOnly(true);
     try {
       const res = await thesisApi.evaluateCriteria(thesis._id, {
@@ -312,6 +350,27 @@ const LecturerThesisEvaluationDetailPage = () => {
     if (isCompleted || isRejected) return;
 
     setError('');
+
+    if (isSupervisorLockedByPBK) {
+      const msg = 'Đề tài đã được phân công phản biện khóa luận (PBK). Giảng viên hướng dẫn không thể chỉnh sửa điểm.';
+      setError(msg);
+      showToast(msg, 'warning');
+      return;
+    }
+
+    if (isReviewerLockedBySupervisor) {
+      const msg = 'Giảng viên hướng dẫn chưa hoàn thành chấm điểm. Chưa thể chấm điểm phản biện.';
+      setError(msg);
+      showToast(msg, 'warning');
+      return;
+    }
+
+    if (isCouncilLockedByReviewers) {
+      const msg = 'Chưa thể chấm điểm hội đồng do các giảng viên phản biện chưa hoàn tất chấm điểm.';
+      setError(msg);
+      showToast(msg, 'warning');
+      return;
+    }
 
     if (activeRoleTab === 'SUPERVISOR') {
       if (isPeriodClosed) {
@@ -550,6 +609,36 @@ const LecturerThesisEvaluationDetailPage = () => {
             <div className="font-bold text-sm">Điểm của vai trò này đang bị khóa</div>
             <p className="text-xs text-amber-700 mt-0.5">
               Vui lòng mở khóa trên danh sách đề tài nếu bạn cần chỉnh sửa điểm hoặc nhận xét.
+            </p>
+          </div>
+        </div>
+      ) : isSupervisorLockedByPBK ? (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-2xs">
+          <Lock className="w-5 h-5 shrink-0 text-amber-600" />
+          <div>
+            <div className="font-bold text-sm">Giai đoạn đánh giá của GVHD đã kết thúc</div>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Đề tài đã được Trưởng bộ môn phân công phản biện khóa luận (PBK). Giảng viên hướng dẫn không thể chỉnh sửa điểm hay tiêu chí.
+            </p>
+          </div>
+        </div>
+      ) : isReviewerLockedBySupervisor ? (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-2xs">
+          <Lock className="w-5 h-5 shrink-0 text-amber-600" />
+          <div>
+            <div className="font-bold text-sm">Chưa đến lượt chấm điểm phản biện</div>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Giảng viên hướng dẫn chưa hoàn thành chấm điểm cho đề tài này. Giảng viên phản biện chỉ có thể chấm điểm sau khi GVHD đã chấm.
+            </p>
+          </div>
+        </div>
+      ) : isCouncilLockedByReviewers ? (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-3 shadow-2xs">
+          <Lock className="w-5 h-5 shrink-0 text-amber-600" />
+          <div>
+            <div className="font-bold text-sm">Chưa đến lượt chấm điểm Hội đồng</div>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Cả 2 giảng viên phản biện chưa hoàn tất chấm điểm. Hội đồng chỉ có thể chấm điểm sau khi các phản biện đã hoàn tất.
             </p>
           </div>
         </div>

@@ -459,15 +459,15 @@ const StudentReportPage = () => {
                         </button>
                       )}
 
-                      {/* Case B: Draft or Needs Revision (SV1 edit) */}
-                      {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION') && (
+                      {/* Case B: Draft, Needs Revision, or Rejected by GVHD */}
+                      {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
                         <button
                           type="button"
                           onClick={() => handleOpenCreateForWeek(week, report)}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
-                          <span>Chỉnh sửa báo cáo</span>
+                          <span>{report.status === 'REJECTED' ? 'Viết lại báo cáo' : 'Chỉnh sửa báo cáo'}</span>
                         </button>
                       )}
 

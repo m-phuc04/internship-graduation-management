@@ -44,6 +44,9 @@ import {
   CheckCheck,
   List,
   LayoutGrid,
+  Lock,
+  Unlock,
+  Ban,
 } from 'lucide-react';
 
 const TbmThesisManagement = () => {
@@ -245,6 +248,8 @@ const TbmThesisManagement = () => {
   const [assignSupervisorOpen, setAssignSupervisorOpen] = useState(false);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
+  const [cancelThesisConfirmOpen, setCancelThesisConfirmOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const [assignCouncilToThesisModalOpen, setAssignCouncilToThesisModalOpen] = useState(false);
   const [selectedThesisForCouncil, setSelectedThesisForCouncil] = useState(null);
 
@@ -431,11 +436,12 @@ const TbmThesisManagement = () => {
   }, [theses, hasBothReviewerScores]);
 
   const displayedTheses = React.useMemo(() => {
+    let list = status === 'ALL' ? theses.filter((t) => t.status !== 'REJECTED') : theses;
     if (activeMainTab === 'COUNCIL_REVIEWER') {
-      return theses.filter(hasBothReviewerScores);
+      return list.filter(hasBothReviewerScores);
     }
-    return theses;
-  }, [theses, activeMainTab, hasBothReviewerScores]);
+    return list;
+  }, [theses, activeMainTab, hasBothReviewerScores, status]);
 
   // Tính hình thức báo cáo:
   // Đề tài nằm trong top 20% điểm cao nhất (của các đề tài có điểm) VÀ điểm >= 8.0 => 'ORAL' (Báo cáo Oral)
@@ -567,6 +573,27 @@ const TbmThesisManagement = () => {
     }
   };
 
+  const handleCancelThesis = async () => {
+    if (!selectedThesis) return;
+    setActionLoading(true);
+    try {
+      const res = await thesisApi.cancel(selectedThesis._id, {
+        reason: cancelReason.trim() || 'Trưởng Bộ Môn đã hủy đề tài',
+      });
+      if (res.success) {
+        showToast(`Đã hủy đề tài "${selectedThesis.thesisTitle}" và giải phóng đăng ký cho sinh viên.`, 'success');
+        setCancelThesisConfirmOpen(false);
+        setDetailModalOpen(false);
+        setCancelReason('');
+        fetchTheses();
+      }
+    } catch (err) {
+      showToast(err.message || 'Hủy đề tài thất bại', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatDate = (d) => {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('vi-VN', {
@@ -578,8 +605,11 @@ const TbmThesisManagement = () => {
 
   // Get KLTN Window Badge for current term
   const getThesisWindowBadge = () => {
+    if (currentTerm?.thesis?.isRegistrationLocked) {
+      return { text: 'Đã khóa', color: 'bg-rose-100 text-rose-800', isLocked: true };
+    }
     if (!currentTerm?.thesis?.registrationStart && !currentTerm?.thesis?.registrationEnd) {
-      return { text: 'Mở tự do', color: 'bg-slate-100 text-slate-700' };
+      return { text: 'Mở tự do', color: 'bg-slate-100 text-slate-700', isLocked: false };
     }
     const now = new Date();
     now.setHours(0, 0, 0, 0);
@@ -588,12 +618,12 @@ const TbmThesisManagement = () => {
     if (end) end.setHours(23, 59, 59, 999);
 
     if (start && now < start) {
-      return { text: 'Sắp mở', color: 'bg-amber-100 text-amber-800' };
+      return { text: 'Sắp mở', color: 'bg-amber-100 text-amber-800', isLocked: false };
     }
     if (end && now > end) {
-      return { text: 'Đã đóng', color: 'bg-rose-100 text-rose-800' };
+      return { text: 'Hết hạn', color: 'bg-rose-100 text-rose-800', isLocked: true };
     }
-    return { text: 'Đang mở', color: 'bg-emerald-100 text-emerald-800' };
+    return { text: 'Đang mở', color: 'bg-emerald-100 text-emerald-800', isLocked: false };
   };
 
   const windowBadge = getThesisWindowBadge();
@@ -628,6 +658,29 @@ const TbmThesisManagement = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5">
+            {/* Lock / Unlock Icon Button with Tooltip and Badge */}
+            <button
+              type="button"
+              onClick={() => setTimelineModalOpen(true)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold rounded-xl border transition cursor-pointer shadow-2xs ${
+                windowBadge.isLocked
+                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200'
+                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+              }`}
+              title={
+                windowBadge.isLocked
+                  ? 'Đăng ký KLTN hiện đang bị KHÓA. Nhấn để xem cấu hình hoặc mở lại.'
+                  : 'Đăng ký KLTN hiện đang MỞ. Nhấn để xem cấu hình hoặc khóa lại.'
+              }
+            >
+              {windowBadge.isLocked ? (
+                <Lock className="w-3.5 h-3.5 text-rose-600" />
+              ) : (
+                <Unlock className="w-3.5 h-3.5 text-emerald-600" />
+              )}
+              <span>{windowBadge.isLocked ? 'Đã khóa đăng ký' : 'Đang mở đăng ký'}</span>
+            </button>
+
             {/* Configure KLTN Timeline Button */}
             <button
               type="button"
@@ -1488,6 +1541,21 @@ const TbmThesisManagement = () => {
                                 >
                                   <Eye className="w-4 h-4" />
                                 </button>
+
+                                {item.status !== 'REJECTED' && item.status !== 'COMPLETED' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedThesis(item);
+                                      setCancelReason('');
+                                      setCancelThesisConfirmOpen(true);
+                                    }}
+                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Hủy đề tài KLTN"
+                                  >
+                                    <Ban className="w-4 h-4" />
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
@@ -1682,6 +1750,21 @@ const TbmThesisManagement = () => {
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
+
+                              {item.status !== 'REJECTED' && item.status !== 'COMPLETED' && (
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setSelectedThesis(item);
+                                    setCancelReason('');
+                                    setCancelThesisConfirmOpen(true);
+                                  }}
+                                  className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                  title="Hủy đề tài KLTN"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                </button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -1908,6 +1991,11 @@ const TbmThesisManagement = () => {
           setSelectedThesis(t);
           setRejectConfirmOpen(true);
         }}
+        onCancelThesis={(t) => {
+          setSelectedThesis(t);
+          setCancelReason('');
+          setCancelThesisConfirmOpen(true);
+        }}
         onOpenAssignReviewers={(t) => {
           setSelectedThesis(t);
           setAssignReviewersOpen(true);
@@ -1993,6 +2081,76 @@ const TbmThesisManagement = () => {
         isDanger={true}
         loading={actionLoading}
       />
+
+      {/* Cancel Thesis Confirm Dialog */}
+      {cancelThesisConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 p-6 space-y-4 animate-scale-up">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-10 h-10 rounded-2xl bg-rose-50 flex items-center justify-center">
+                <Ban className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Xác nhận Hủy Đề tài KLTN</h3>
+                <p className="text-xs text-slate-500">Giải phóng trạng thái đăng ký của sinh viên</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-100 text-xs text-slate-700 space-y-1.5">
+              <div className="font-bold text-slate-900 line-clamp-2">{selectedThesis?.thesisTitle}</div>
+              <div>Sinh viên 1: <strong>{selectedThesis?.studentId?.userId?.fullName || selectedThesis?.studentId?.studentCode}</strong></div>
+              {selectedThesis?.secondStudentId && (
+                <div>Sinh viên 2: <strong>{selectedThesis?.secondStudentId?.userId?.fullName || selectedThesis?.secondStudentId?.studentCode}</strong></div>
+              )}
+              <div className="text-[11px] text-rose-600 pt-1 font-medium border-t border-slate-200/60 mt-1">
+                ⚠️ Hậu quả: Đề tài sẽ chuyển sang trạng thái ĐÃ HỦY (REJECTED). Toàn bộ sinh viên trong nhóm sẽ được giải phóng để đăng ký đề tài mới.
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Lý do hủy đề tài (Tùy chọn):
+              </label>
+              <textarea
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                placeholder="Nhập lý do hủy đề tài..."
+                rows={3}
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={() => setCancelThesisConfirmOpen(false)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              >
+                Quay lại
+              </button>
+              <button
+                type="button"
+                disabled={actionLoading}
+                onClick={handleCancelThesis}
+                className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 shadow-sm shadow-rose-600/20 transition cursor-pointer disabled:opacity-50 inline-flex items-center gap-1.5"
+              >
+                {actionLoading ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Đang xử lý...</span>
+                  </>
+                ) : (
+                  <>
+                    <Ban className="w-3.5 h-3.5" />
+                    <span>Xác nhận Hủy Đề tài</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Export Excel Modal */}
       <ExportModal

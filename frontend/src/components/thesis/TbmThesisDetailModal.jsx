@@ -13,6 +13,7 @@ import {
   UserCheck,
   Award,
   Lock,
+  Ban,
 } from 'lucide-react';
 
 const TbmThesisDetailModal = ({
@@ -21,6 +22,7 @@ const TbmThesisDetailModal = ({
   thesis,
   onApprove,
   onReject,
+  onCancelThesis,
   onOpenAssignReviewers,
   onOpenAssignSupervisor,
 }) => {
@@ -367,6 +369,18 @@ const TbmThesisDetailModal = ({
           </button>
 
           <div className="flex items-center gap-2">
+            {!isCompleted && thesis.status !== 'REJECTED' && (
+              <button
+                type="button"
+                onClick={() => (onCancelThesis ? onCancelThesis(thesis) : onReject(thesis))}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 transition cursor-pointer"
+                title="Hủy đề tài và giải phóng đăng ký cho sinh viên"
+              >
+                <Ban className="w-3.5 h-3.5" />
+                <span>Hủy đề tài</span>
+              </button>
+            )}
+
             {!isCompleted && !isPending && thesis.status !== 'REJECTED' && (
               <button
                 type="button"

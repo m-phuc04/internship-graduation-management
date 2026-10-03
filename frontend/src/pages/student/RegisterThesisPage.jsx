@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
+import { useAcademicTerm } from '../../context/AcademicTermContext';
+import { formatDateVN, formatFullDateVN } from '../../utils/dateUtils';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
@@ -18,12 +20,56 @@ import {
   ShieldAlert,
   Check,
   X,
+  Lock,
 } from 'lucide-react';
 
 const RegisterThesisPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { currentTerm } = useAcademicTerm();
+
+  // Registration Window & Lock calculation
+  const isRegistrationLocked = Boolean(currentTerm?.thesis?.isRegistrationLocked);
+  const regStart = currentTerm?.thesis?.registrationStart ? new Date(currentTerm.thesis.registrationStart) : null;
+  const regEnd = currentTerm?.thesis?.registrationEnd ? new Date(currentTerm.thesis.registrationEnd) : null;
+  if (regEnd) {
+    if (regEnd.getHours() === 0 && regEnd.getMinutes() === 0 && regEnd.getSeconds() === 0 && regEnd.getMilliseconds() === 0) {
+      regEnd.setHours(23, 59, 59, 999);
+    }
+  }
+
+  const now = new Date();
+  const isBeforeStart = regStart && now < regStart;
+  const isPastEnd = regEnd && now > regEnd;
+  const isClosedOrLocked = isRegistrationLocked || isBeforeStart || isPastEnd;
+
+  const getLockReason = () => {
+    if (isRegistrationLocked) {
+      return {
+        title: 'Cổng đăng ký đề tài KLTN đang bị KHÓA',
+        desc: 'Trưởng Bộ Môn hiện đang tạm khóa cổng đăng ký đề tài Khóa luận tốt nghiệp. Vui lòng quay lại sau.',
+        type: 'LOCKED',
+      };
+    }
+    if (isPastEnd) {
+      return {
+        title: 'Đã hết thời hạn đăng ký đề tài KLTN',
+        desc: `Hệ thống đã tự động khóa đăng ký do đã qua hạn chót (${formatFullDateVN(regEnd)} • ${formatDateVN(regEnd)}).`,
+        type: 'EXPIRED',
+      };
+    }
+    if (isBeforeStart) {
+      return {
+        title: 'Chưa đến thời gian mở cổng đăng ký đề tài KLTN',
+        desc: `Cổng đăng ký đề tài dự kiến sẽ mở vào ngày ${formatFullDateVN(regStart)} (${formatDateVN(regStart)}).`,
+        type: 'UPCOMING',
+      };
+    }
+    return null;
+  };
+
+  const lockInfo = getLockReason();
 
   // SV1 (Current Student)
   const [student1, setStudent1] = useState(null);
@@ -150,6 +196,10 @@ const RegisterThesisPage = () => {
   // Submit Topic Selection
   const handleConfirmTopicRegistration = async () => {
     if (!selectedTopicForRegistration) return;
+    if (isClosedOrLocked) {
+      showToast(lockInfo?.desc || 'Cổng đăng ký đề tài KLTN hiện đang đóng', 'error');
+      return;
+    }
     if (existingThesis) {
       showToast('Bạn đã có đề tài khóa luận đang hoạt động trong hệ thống!', 'error');
       return;
@@ -207,6 +257,25 @@ const RegisterThesisPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Registration Locked / Closed / Upcoming Banner */}
+      {isClosedOrLocked && lockInfo && (
+        <div className={`p-4 rounded-2xl border text-xs flex items-start gap-3 shadow-2xs ${
+          lockInfo.type === 'UPCOMING'
+            ? 'bg-amber-50/90 border-amber-200 text-amber-950'
+            : 'bg-rose-50/90 border-rose-200 text-rose-950'
+        }`}>
+          <div className="p-2 rounded-xl bg-white border border-rose-100 shadow-2xs shrink-0 mt-0.5">
+            <Lock className={`w-5 h-5 ${lockInfo.type === 'UPCOMING' ? 'text-amber-600' : 'text-rose-600'}`} />
+          </div>
+          <div>
+            <div className="font-bold text-sm text-slate-900">{lockInfo.title}</div>
+            <div className="mt-1 leading-relaxed text-slate-700">
+              {lockInfo.desc}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Existing Active Thesis Warning */}
       {existingThesis && (
@@ -321,8 +390,12 @@ const RegisterThesisPage = () => {
                         <td className="py-3.5 px-4 whitespace-nowrap text-right">
                           <button
                             type="button"
-                            disabled={isFull || !!existingThesis}
+                            disabled={isFull || !!existingThesis || isClosedOrLocked}
                             onClick={() => {
+                              if (isClosedOrLocked) {
+                                showToast(lockInfo?.desc || 'Cổng đăng ký đề tài KLTN hiện đang đóng', 'error');
+                                return;
+                              }
                               setSelectedTopicForRegistration(topic);
                               setTopicStudentCount(1);
                               setTopicStudent2(null);
@@ -332,19 +405,25 @@ const RegisterThesisPage = () => {
                               setRegisterTopicModalOpen(true);
                             }}
                             className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs ${
-                              isFull || existingThesis
+                              isFull || existingThesis || isClosedOrLocked
                                 ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
                                 : 'bg-[#123891] hover:bg-blue-700 text-white'
                             }`}
                             title={
-                              isFull
+                              isClosedOrLocked
+                                ? lockInfo?.title || 'Cổng đăng ký đề tài KLTN hiện đang đóng'
+                                : isFull
                                 ? 'Đề tài đã đủ số lượng nhóm đăng ký'
                                 : existingThesis
                                 ? 'Bạn đã có đề tài khóa luận trong kỳ'
                                 : 'Đăng ký đề tài này'
                             }
                           >
-                            {isFull ? 'Đã đủ nhóm' : 'Chọn đề tài'}
+                            {isClosedOrLocked
+                              ? 'Đã khóa'
+                              : isFull
+                              ? 'Đã đủ nhóm'
+                              : 'Chọn đề tài'}
                           </button>
                         </td>
                       </tr>

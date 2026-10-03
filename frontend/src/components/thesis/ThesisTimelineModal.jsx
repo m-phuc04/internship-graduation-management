@@ -17,6 +17,7 @@ import {
   AlertCircle,
   X,
   Lock,
+  Unlock,
   CalendarCheck,
   RotateCcw,
   GraduationCap,
@@ -65,7 +66,20 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
   if (!isOpen) return null;
 
   // Calculate Registration Window Status
+  const isManuallyLocked = Boolean(term?.thesis?.isRegistrationLocked);
+
   const getWindowStatus = () => {
+    if (isManuallyLocked) {
+      return {
+        type: 'MANUALLY_LOCKED',
+        label: `Cổng đăng ký KLTN đang bị KHÓA bởi Trưởng Bộ Môn${
+          term.thesis.lockedAt ? ` (Khóa lúc ${new Date(term.thesis.lockedAt).toLocaleString('vi-VN')})` : ''
+        }`,
+        badge: 'bg-rose-50 text-rose-800 border-rose-200',
+        icon: Lock,
+      };
+    }
+
     if (!formData.registrationStart && !formData.registrationEnd) {
       return {
         type: 'UNRESTRICTED',
@@ -94,7 +108,7 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     if (end && now > end) {
       return {
         type: 'CLOSED',
-        label: `Đã đóng cổng đăng ký đề tài (hết hạn ngày ${formatFullDateVN(end)} • ${formatDateVN(end)})`,
+        label: `Đã tự động khóa do hết hạn đăng ký (${formatFullDateVN(end)} • ${formatDateVN(end)})`,
         badge: 'bg-rose-50 text-rose-700 border-rose-200',
         icon: Lock,
       };
@@ -113,41 +127,49 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
   const windowStatus = getWindowStatus();
   const StatusIcon = windowStatus.icon;
 
+  const handleToggleLock = async () => {
+    if (!term?._id) return;
+    setSubmitting(true);
+    try {
+      const nextLockState = !isManuallyLocked;
+      const res = await academicTermApi.toggleThesisRegistrationLock(term._id, {
+        isLocked: nextLockState,
+        newDeadline: formData.registrationEnd || null,
+      });
+
+      showToast(
+        nextLockState
+          ? 'Đã khóa cổng đăng ký KLTN thành công!'
+          : 'Đã mở lại cổng đăng ký KLTN thành công!',
+        'success'
+      );
+      await refreshTerms();
+    } catch (err) {
+      showToast(err.response?.data?.message || err.message || 'Lỗi khi thay đổi trạng thái khóa', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Presets
   const applyPresetDays = (days) => {
     const today = new Date();
     const endReg = new Date();
     endReg.setDate(today.getDate() + days);
 
-    const startAssign = new Date();
-    startAssign.setDate(today.getDate() + days + 1);
-    const endAssign = new Date();
-    endAssign.setDate(today.getDate() + days + 14);
-
-    const startDefense = new Date();
-    startDefense.setDate(today.getDate() + days + 75);
-    const endDefense = new Date();
-    endDefense.setDate(today.getDate() + days + 90);
-
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       registrationStart: formatDateForInput(today),
       registrationEnd: formatDateForInput(endReg),
-      assignmentStart: formatDateForInput(startAssign),
-      assignmentEnd: formatDateForInput(endAssign),
-      defenseStart: formatDateForInput(startDefense),
-      defenseEnd: formatDateForInput(endDefense),
-    });
+    }));
   };
 
   const clearMilestones = () => {
-    setFormData({
+    setFormData((prev) => ({
+      ...prev,
       registrationStart: '',
       registrationEnd: '',
-      assignmentStart: '',
-      assignmentEnd: '',
-      defenseStart: '',
-      defenseEnd: '',
-    });
+    }));
   };
 
   const handleSubmit = async (e) => {
@@ -164,30 +186,13 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
       }
     }
 
-    if (formData.assignmentStart && formData.assignmentEnd) {
-      if (new Date(formData.assignmentEnd) < new Date(formData.assignmentStart)) {
-        showToast('Hạn chót phân công GVHD/PB phải sau ngày bắt đầu phân công', 'error');
-        return;
-      }
-    }
-
-    if (formData.defenseStart && formData.defenseEnd) {
-      if (new Date(formData.defenseEnd) < new Date(formData.defenseStart)) {
-        showToast('Hạn chót bảo vệ khóa luận phải sau ngày bắt đầu bảo vệ', 'error');
-        return;
-      }
-    }
-
     setSubmitting(true);
     try {
       await academicTermApi.updateTerm(term._id, {
         thesis: {
+          ...(term?.thesis?.toObject ? term.thesis.toObject() : (term?.thesis || {})),
           registrationStart: formData.registrationStart || null,
           registrationEnd: formData.registrationEnd || null,
-          assignmentStart: formData.assignmentStart || null,
-          assignmentEnd: formData.assignmentEnd || null,
-          defenseStart: formData.defenseStart || null,
-          defenseEnd: formData.defenseEnd || null,
         },
       });
 
@@ -231,14 +236,40 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* Status Alert */}
-          <div className={`p-3.5 rounded-2xl border flex items-center gap-3 ${windowStatus.badge}`}>
-            <StatusIcon className="w-5 h-5 shrink-0" />
-            <div className="text-xs font-semibold">
-              <span className="font-bold uppercase tracking-wider block text-[10px] opacity-75">
-                Trạng thái đăng ký đề tài:
-              </span>
-              {windowStatus.label}
+          <div className={`p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${windowStatus.badge}`}>
+            <div className="flex items-center gap-3">
+              <StatusIcon className="w-5 h-5 shrink-0" />
+              <div className="text-xs font-semibold">
+                <span className="font-bold uppercase tracking-wider block text-[10px] opacity-75">
+                  Trạng thái đăng ký đề tài:
+                </span>
+                {windowStatus.label}
+              </div>
             </div>
+
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleToggleLock}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 transition cursor-pointer shrink-0 shadow-2xs ${
+                isManuallyLocked
+                  ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                  : 'bg-rose-600 hover:bg-rose-700 text-white'
+              }`}
+              title={isManuallyLocked ? 'Mở lại quyền đăng ký đề tài KLTN cho sinh viên' : 'Khóa ngay cổng đăng ký đề tài KLTN'}
+            >
+              {isManuallyLocked ? (
+                <>
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>Mở lại đăng ký</span>
+                </>
+              ) : (
+                <>
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Khóa đăng ký</span>
+                </>
+              )}
+            </button>
           </div>
 
           {/* Quick Presets */}
@@ -318,104 +349,12 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
           </div>
 
-          {/* 2. Lecturer Assignment Window */}
-          <div className="space-y-3 pt-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-              <Users className="w-4 h-4 text-[#123891]" />
-              2. Thời gian phân công GVHD & Phản biện
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Bắt đầu phân công:
-                </label>
-                <input
-                  type="date"
-                  value={formData.assignmentStart}
-                  onChange={(e) => setFormData({ ...formData, assignmentStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                />
-                {formData.assignmentStart && (
-                  <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
-                    <span>📅</span>
-                    <span>{formatFullDateVN(formData.assignmentStart)} ({formatDateVN(formData.assignmentStart)})</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Hạn chót phân công:
-                </label>
-                <input
-                  type="date"
-                  value={formData.assignmentEnd}
-                  onChange={(e) => setFormData({ ...formData, assignmentEnd: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                />
-                {formData.assignmentEnd && (
-                  <div className="text-[11px] font-semibold text-[#102d7d] mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
-                    <span>📅</span>
-                    <span>{formatFullDateVN(formData.assignmentEnd)} ({formatDateVN(formData.assignmentEnd)})</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Defense Window */}
-          <div className="space-y-3 pt-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-              <GraduationCap className="w-4 h-4 text-emerald-600" />
-              3. Thời gian tổ chức Hội đồng Bảo vệ Khóa luận
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Bắt đầu đợt bảo vệ:
-                </label>
-                <input
-                  type="date"
-                  value={formData.defenseStart}
-                  onChange={(e) => setFormData({ ...formData, defenseStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition"
-                />
-                {formData.defenseStart && (
-                  <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
-                    <span>📅</span>
-                    <span>{formatFullDateVN(formData.defenseStart)} ({formatDateVN(formData.defenseStart)})</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Kết thúc đợt bảo vệ:
-                </label>
-                <input
-                  type="date"
-                  value={formData.defenseEnd}
-                  onChange={(e) => setFormData({ ...formData, defenseEnd: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition"
-                />
-                {formData.defenseEnd && (
-                  <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
-                    <span>📅</span>
-                    <span>{formatFullDateVN(formData.defenseEnd)} ({formatDateVN(formData.defenseEnd)})</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Grading Window (Thời gian nhập điểm KLTN của GVHD) */}
+          {/* 2. Grading Window (Thời gian nhập điểm KLTN của GVHD) */}
           <div className="space-y-3 pt-2">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div className="flex items-center gap-1.5">
                 <GraduationCap className="w-4 h-4 text-blue-600" />
-                <span>4. Thời gian nhập điểm KLTN (Đợt nhập điểm)</span>
+                <span>2. Thời gian nhập điểm KLTN (Đợt nhập điểm)</span>
               </div>
               <a
                 href="/tbm/thesis-evaluations"

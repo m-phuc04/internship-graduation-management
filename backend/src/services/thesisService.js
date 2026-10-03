@@ -30,6 +30,42 @@ export const ACTIVE_THESIS_STATUSES = [
 ];
 
 // ====================
+// Validate KLTN Registration Window & Lock Status
+// ====================
+export const validateThesisRegistrationWindow = (activeTerm, checkDate = new Date()) => {
+  if (!activeTerm) return;
+  const thesisCfg = activeTerm.thesis || {};
+
+  if (thesisCfg.isRegistrationLocked) {
+    throw new AppError("Cổng đăng ký KLTN hiện đang bị khóa bởi Trưởng Bộ Môn.", 400);
+  }
+
+  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
+
+  if (thesisCfg.registrationStart) {
+    const start = new Date(thesisCfg.registrationStart);
+    if (now < start) {
+      throw new AppError("Chưa đến thời gian mở cổng đăng ký Khóa luận Tốt nghiệp cho học kỳ này.", 400);
+    }
+  }
+
+  if (thesisCfg.registrationEnd) {
+    let end = new Date(thesisCfg.registrationEnd);
+    if (
+      end.getHours() === 0 &&
+      end.getMinutes() === 0 &&
+      end.getSeconds() === 0 &&
+      end.getMilliseconds() === 0
+    ) {
+      end = new Date(end.getTime() + 24 * 60 * 60 * 1000 - 1);
+    }
+    if (now > end) {
+      throw new AppError("Đã hết thời gian đăng ký Khóa luận Tốt nghiệp cho học kỳ này.", 400);
+    }
+  }
+};
+
+// ====================
 // Student Registers Thesis (1 SV or 2 SV)
 // ====================
 const createThesis = async ({
@@ -58,14 +94,8 @@ const createThesis = async ({
   // 2. Identify Current Academic Term automatically (by Date or ACTIVE status)
   const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
 
-  // Validate Registration Window (if configured)
-  const now = new Date();
-  if (activeTerm.thesis?.registrationStart && now < new Date(activeTerm.thesis.registrationStart)) {
-    throw new AppError("Chưa đến thời gian mở cổng đăng ký Khóa luận Tốt nghiệp cho học kỳ này.", 400);
-  }
-  if (activeTerm.thesis?.registrationEnd && now > new Date(activeTerm.thesis.registrationEnd)) {
-    throw new AppError("Đã hết thời gian đăng ký Khóa luận Tốt nghiệp cho học kỳ này.", 400);
-  }
+  // Validate Registration Window & Lock Status
+  validateThesisRegistrationWindow(activeTerm);
 
   // 3. Check SV1 Active Thesis Constraint in active term
   const sv1ActiveThesis = await Thesis.findOne({
@@ -511,6 +541,8 @@ const getAllThesesForTbm = async ({
 
   if (status && status !== "ALL") {
     query.status = status;
+  } else {
+    query.status = { $ne: "REJECTED" };
   }
 
   if (search && search.trim()) {
@@ -726,38 +758,101 @@ const approveThesis = async (thesisId, { supervisorId = null, tbmUserId }) => {
 };
 
 // ====================
-// 3. TBM Rejects Thesis
+// 3. TBM Rejects / Cancels Thesis
 // ====================
-const rejectThesis = async (thesisId, { reason = null, tbmUserId }) => {
-  const thesis = await Thesis.findById(thesisId).populate("studentId secondStudentId");
+const rejectThesis = async (thesisId, { reason = null, tbmUserId = null }) => {
+  const thesis = await Thesis.findById(thesisId).populate("studentId secondStudentId supervisorId");
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
 
   if (thesis.status === "COMPLETED") {
-    throw new AppError("Khóa luận đã hoàn thành và không thể từ chối.", 400);
+    throw new AppError("Khóa luận đã hoàn thành và không thể hủy / từ chối.", 400);
   }
 
+  if (thesis.status === "REJECTED") {
+    throw new AppError("Đề tài này đã bị hủy / từ chối trước đó.", 400);
+  }
+
+  const cancelReason = reason && reason.trim() ? reason.trim() : "Trưởng Bộ Môn đã hủy / từ chối đề tài";
+
   thesis.status = "REJECTED";
+  thesis.rejectionReason = cancelReason;
+  thesis.rejectedAt = new Date();
   thesis.assignedBy = tbmUserId || null;
   await thesis.save();
 
+  // If thesis was created from a ThesisTopic, release the FIFO slot atomically
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId },
+      {
+        $inc: { currentGroups: -1 },
+        $pull: {
+          registeredGroups: {
+            $or: [
+              { thesisId: thesis._id },
+              { studentId: thesis.studentId?._id || thesis.studentId },
+            ],
+          },
+        },
+      }
+    );
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId, currentGroups: { $lt: 0 } },
+      { $set: { currentGroups: 0 } }
+    );
+  }
+
   // Reset student registration flag so students can re-register
-  await Student.findByIdAndUpdate(thesis.studentId._id || thesis.studentId, { thesisRegistered: false });
+  if (thesis.studentId) {
+    await Student.findByIdAndUpdate(thesis.studentId._id || thesis.studentId, { thesisRegistered: false });
+  }
   if (thesis.secondStudentId) {
     await Student.findByIdAndUpdate(thesis.secondStudentId._id || thesis.secondStudentId, { thesisRegistered: false });
   }
 
-  // Notify Students
-  const s1 = await Student.findById(thesis.studentId._id || thesis.studentId);
-  if (s1 && s1.userId) {
+  // Notify SV1
+  const s1 = thesis.studentId?.userId ? thesis.studentId : await Student.findById(thesis.studentId).populate("userId");
+  if (s1?.userId?._id || s1?.userId) {
     await notificationService.createNotification({
-      recipientId: s1.userId,
+      recipientId: s1.userId._id || s1.userId,
       type: "THESIS",
-      title: "Đề tài Khóa luận đã bị từ chối",
-      message: `Đề tài "${thesis.thesisTitle}" đã bị từ chối: ${reason || "Chưa đạt yêu cầu"}. Bạn có thể đăng ký lại đề tài khác.`,
+      title: "Đề tài Khóa luận đã bị hủy / từ chối",
+      message: `Đề tài "${thesis.thesisTitle}" đã bị hủy / từ chối bởi Trưởng Bộ Môn: ${cancelReason}. Bạn có thể đăng ký lại đề tài khác.`,
       referenceId: thesis._id,
       referenceModel: "Thesis",
+      link: "/student/thesis",
+    });
+  }
+
+  // Notify SV2
+  if (thesis.secondStudentId) {
+    const s2 = thesis.secondStudentId?.userId ? thesis.secondStudentId : await Student.findById(thesis.secondStudentId).populate("userId");
+    if (s2?.userId?._id || s2?.userId) {
+      await notificationService.createNotification({
+        recipientId: s2.userId._id || s2.userId,
+        type: "THESIS",
+        title: "Đề tài Khóa luận đã bị hủy / từ chối",
+        message: `Đề tài "${thesis.thesisTitle}" đã bị hủy / từ chối bởi Trưởng Bộ Môn: ${cancelReason}. Bạn có thể đăng ký lại đề tài khác.`,
+        referenceId: thesis._id,
+        referenceModel: "Thesis",
+        link: "/student/thesis",
+      });
+    }
+  }
+
+  // Notify Supervisor
+  const supervisorRecipientId = thesis.supervisorId?.userId?._id || thesis.supervisorId?.userId;
+  if (supervisorRecipientId) {
+    await notificationService.createNotification({
+      recipientId: supervisorRecipientId,
+      type: "THESIS",
+      title: "Đề tài Khóa luận đã bị hủy bởi Trưởng Bộ Môn",
+      message: `Đề tài "${thesis.thesisTitle}" do bạn hướng dẫn đã bị hủy / từ chối bởi Trưởng Bộ Môn. Lý do: ${cancelReason}.`,
+      referenceId: thesis._id,
+      referenceModel: "Thesis",
+      link: "/lecturer/theses",
     });
   }
 
@@ -1055,7 +1150,7 @@ const assignReviewers = async (
         message: `Bạn được phân công làm Giảng viên phản biện hội đồng cho đề tài: "${thesis.thesisTitle}"`,
         referenceId: thesis._id,
         referenceModel: "Thesis",
-        link: "/lecturer/theses?tab=reviewer2",
+        link: "/lecturer/theses?tab=review",
       });
     }
   } else {
@@ -1152,7 +1247,7 @@ const supervisorAcceptThesis = async (thesisId, requestingUser) => {
     throw new AppError("Bạn không có quyền duyệt / chấp nhận đề tài", 403);
   }
 
-  const lecturer = await Lecturer.findOne({ userId: requestingUser.userId }).populate("userId");
+  const lecturer = await Lecturer.findOne({ userId: requestingUser.userId || requestingUser._id }).populate("userId");
   if (!lecturer) {
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }
@@ -1230,7 +1325,7 @@ const supervisorRejectThesis = async (thesisId, requestingUser, { reason } = {})
     throw new AppError("Bạn không có quyền từ chối hướng dẫn", 403);
   }
 
-  const lecturer = await Lecturer.findOne({ userId: requestingUser.userId }).populate("userId");
+  const lecturer = await Lecturer.findOne({ userId: requestingUser.userId || requestingUser._id }).populate("userId");
   if (!lecturer) {
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }
@@ -1312,6 +1407,125 @@ const supervisorRejectThesis = async (thesisId, requestingUser, { reason } = {})
   return thesis;
 };
 
+// ====================
+// 7b. Supervisor (GVHD) Cancels Thesis
+// ====================
+const supervisorCancelThesis = async (thesisId, requestingUser, { reason = null } = {}) => {
+  if (!["LECTURER", "TBM", "ADMIN"].includes(requestingUser.role)) {
+    throw new AppError("Bạn không có quyền hủy đề tài", 403);
+  }
+
+  const thesis = await Thesis.findById(thesisId)
+    .populate("studentId")
+    .populate("secondStudentId")
+    .populate("supervisorId");
+
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  // Check supervisor ownership if role is LECTURER
+  if (requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({ userId: requestingUser.userId || requestingUser._id });
+    if (!lecturer || !thesis.supervisorId || thesis.supervisorId._id.toString() !== lecturer._id.toString()) {
+      throw new AppError("Bạn không phải là giảng viên hướng dẫn của đề tài này", 403);
+    }
+  }
+
+  if (thesis.status === "COMPLETED") {
+    throw new AppError("Đề tài đã hoàn thành, không thể hủy.", 400);
+  }
+
+  if (thesis.status === "REJECTED") {
+    throw new AppError("Đề tài này đã bị hủy / từ chối trước đó.", 400);
+  }
+
+  const supervisorScoreVal = thesis.scores?.student1SupervisorScore ?? thesis.scores?.supervisorScore;
+  if (supervisorScoreVal !== null && supervisorScoreVal !== undefined && supervisorScoreVal !== '') {
+    throw new AppError("Không thể hủy đề tài do Giảng viên hướng dẫn đã nhập điểm đánh giá.", 400);
+  }
+
+  const cancelReason = reason && reason.trim() ? reason.trim() : "Giảng viên hướng dẫn đã hủy đề tài";
+
+  thesis.status = "REJECTED";
+  thesis.rejectionReason = cancelReason;
+  thesis.rejectedAt = new Date();
+  await thesis.save();
+
+  // 1. Release Topic FIFO slot if registered from Topic bank
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId },
+      {
+        $inc: { currentGroups: -1 },
+        $pull: {
+          registeredGroups: {
+            $or: [
+              { thesisId: thesis._id },
+              { studentId: thesis.studentId?._id || thesis.studentId },
+            ],
+          },
+        },
+      }
+    );
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId, currentGroups: { $lt: 0 } },
+      { $set: { currentGroups: 0 } }
+    );
+  }
+
+  // 2. Release Student 1
+  if (thesis.studentId) {
+    await Student.findByIdAndUpdate(thesis.studentId._id || thesis.studentId, { thesisRegistered: false });
+  }
+
+  // 3. Release Student 2
+  if (thesis.secondStudentId) {
+    await Student.findByIdAndUpdate(thesis.secondStudentId._id || thesis.secondStudentId, { thesisRegistered: false });
+  }
+
+  // 4. Send notifications
+  const s1 = thesis.studentId?.userId ? thesis.studentId : await Student.findById(thesis.studentId).populate("userId");
+  if (s1?.userId?._id || s1?.userId) {
+    await notificationService.createNotification({
+      recipientId: s1.userId._id || s1.userId,
+      type: "THESIS",
+      title: "Đề tài Khóa luận đã bị hủy bởi GVHD",
+      message: `Giảng viên hướng dẫn đã hủy đề tài "${thesis.thesisTitle}". Lý do: ${cancelReason}. Bạn hiện có thể đăng ký đề tài mới.`,
+      referenceId: thesis._id,
+      referenceModel: "Thesis",
+      link: "/student/thesis",
+    });
+  }
+
+  if (thesis.secondStudentId) {
+    const s2 = thesis.secondStudentId?.userId ? thesis.secondStudentId : await Student.findById(thesis.secondStudentId).populate("userId");
+    if (s2?.userId?._id || s2?.userId) {
+      await notificationService.createNotification({
+        recipientId: s2.userId._id || s2.userId,
+        type: "THESIS",
+        title: "Đề tài Khóa luận đã bị hủy bởi GVHD",
+        message: `Giảng viên hướng dẫn đã hủy đề tài "${thesis.thesisTitle}". Lý do: ${cancelReason}. Bạn hiện có thể đăng ký đề tài mới.`,
+        referenceId: thesis._id,
+        referenceModel: "Thesis",
+        link: "/student/thesis",
+      });
+    }
+  }
+
+  // Notify TBM
+  await notificationService.createNotificationForRole("TBM", {
+    type: "THESIS",
+    title: "GVHD đã hủy đề tài Khóa luận",
+    message: `Đề tài "${thesis.thesisTitle}" đã bị hủy bởi GVHD. Lý do: ${cancelReason}`,
+    referenceId: thesis._id,
+    referenceModel: "Thesis",
+    link: "/tbm/theses",
+  });
+
+  return thesis;
+};
+
 // ==========================================
 // PHASE 11: LECTURER / REVIEWER WORKFLOW & RBAC
 // ==========================================
@@ -1331,7 +1545,7 @@ const getThesesForLecturerRole = async (
   // Base Query: Theses where lecturer is Supervisor OR Reviewer 1 (PB Kín) OR Reviewer 2 (PB Hội đồng)
   const baseQuery = {
     status: {
-      $nin: ["WAITING_FOR_STUDENT2_CONFIRMATION", "WAITING_FOR_SUPERVISOR_REQUEST"],
+      $nin: ["WAITING_FOR_STUDENT2_CONFIRMATION", "WAITING_FOR_SUPERVISOR_REQUEST", "REJECTED"],
     },
   };
 
@@ -1469,15 +1683,39 @@ const getThesesForLecturerRole = async (
     if (isReviewer1) roles.push("GVPB_KIN");
     if (isReviewer2) roles.push("GVPB_HOIDONG");
 
+    const isPBKAssigned = Boolean(
+      t.reviewer1Id ||
+      t.reviewer2Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.length > 0) ||
+      t.status === "ASSIGNED_REVIEWERS" ||
+      t.status === "DEFENSE" ||
+      t.status === "COMPLETED"
+    );
+    const isCompletedOrRejected = ["COMPLETED", "REJECTED"].includes(t.status);
+    const hasSupervisorGraded = Boolean(
+      t.scores?.supervisorScore != null || t.scores?.student1SupervisorScore != null
+    );
+    const hasReviewer1Graded = Boolean(
+      t.scores?.reviewer1Score != null || t.scores?.student1Reviewer1Score != null
+    );
+    const hasReviewer2Graded = Boolean(
+      t.scores?.reviewer2Score != null || t.scores?.student1Reviewer2Score != null
+    );
+    const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+
     return {
       ...t,
       userRoles: roles,
       isSupervisor,
       isReviewer1,
       isReviewer2,
-      canGradeSupervisor: isSupervisor && !["COMPLETED", "REJECTED"].includes(t.status),
-      canGradeReviewer1: isReviewer1 && !["COMPLETED", "REJECTED"].includes(t.status),
-      canGradeReviewer2: isReviewer2 && !["COMPLETED", "REJECTED"].includes(t.status),
+      isPBKAssigned,
+      hasSupervisorGraded,
+      hasBothReviewersGraded,
+      canGradeSupervisor: isSupervisor && !isCompletedOrRejected && !isPBKAssigned,
+      canGradeReviewer1: isReviewer1 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
+      canGradeReviewer2: isReviewer2 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
+      canGradeCouncil: !isCompletedOrRejected && hasBothReviewersGraded,
     };
   });
 
@@ -1486,6 +1724,7 @@ const getThesesForLecturerRole = async (
     status: {
       $nin: [
         "CANCELLED",
+        "REJECTED",
         "WAITING_FOR_STUDENT2_CONFIRMATION",
         "WAITING_FOR_SUPERVISOR_REQUEST",
       ],
@@ -1544,15 +1783,39 @@ const getThesesForLecturerRole = async (
     if (isReviewer1) roles.push("GVPB_KIN");
     if (isReviewer2) roles.push("GVPB_HOIDONG");
 
+    const isPBKAssigned = Boolean(
+      t.reviewer1Id ||
+      t.reviewer2Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.length > 0) ||
+      t.status === "ASSIGNED_REVIEWERS" ||
+      t.status === "DEFENSE" ||
+      t.status === "COMPLETED"
+    );
+    const isCompletedOrRejected = ["COMPLETED", "REJECTED"].includes(t.status);
+    const hasSupervisorGraded = Boolean(
+      t.scores?.supervisorScore != null || t.scores?.student1SupervisorScore != null
+    );
+    const hasReviewer1Graded = Boolean(
+      t.scores?.reviewer1Score != null || t.scores?.student1Reviewer1Score != null
+    );
+    const hasReviewer2Graded = Boolean(
+      t.scores?.reviewer2Score != null || t.scores?.student1Reviewer2Score != null
+    );
+    const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+
     return {
       ...t,
       userRoles: roles,
       isSupervisor,
       isReviewer1,
       isReviewer2,
-      canGradeSupervisor: isSupervisor && !["COMPLETED", "REJECTED"].includes(t.status),
-      canGradeReviewer1: isReviewer1 && !["COMPLETED", "REJECTED"].includes(t.status),
-      canGradeReviewer2: isReviewer2 && !["COMPLETED", "REJECTED"].includes(t.status),
+      isPBKAssigned,
+      hasSupervisorGraded,
+      hasBothReviewersGraded,
+      canGradeSupervisor: isSupervisor && !isCompletedOrRejected && !isPBKAssigned,
+      canGradeReviewer1: isReviewer1 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
+      canGradeReviewer2: isReviewer2 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
+      canGradeCouncil: !isCompletedOrRejected && hasBothReviewersGraded,
     };
   });
 
@@ -1692,7 +1955,31 @@ const gradeThesisByLecturer = async (
     }
   }
 
+  const isPBKAssigned = Boolean(
+    thesis.reviewer1Id ||
+    thesis.reviewer2Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.length > 0) ||
+    thesis.status === "ASSIGNED_REVIEWERS" ||
+    thesis.status === "DEFENSE"
+  );
+  const hasSupervisorGraded = Boolean(
+    thesis.scores?.supervisorScore != null || thesis.scores?.student1SupervisorScore != null
+  );
+  const hasReviewer1Graded = Boolean(
+    thesis.scores?.reviewer1Score != null || thesis.scores?.student1Reviewer1Score != null
+  );
+  const hasReviewer2Graded = Boolean(
+    thesis.scores?.reviewer2Score != null || thesis.scores?.student1Reviewer2Score != null
+  );
+  const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+
   if (activeRole === "SUPERVISOR" || activeRole === "GVHD") {
+    if (isPBKAssigned) {
+      throw new AppError(
+        "Đề tài đã được phân công phản biện khóa luận (PBK). Giảng viên hướng dẫn không thể chỉnh sửa điểm.",
+        400,
+      );
+    }
     const isSup = thesis.supervisorId?.toString() === lecIdStr;
     if (!isSup) {
       throw new AppError(
@@ -1769,6 +2056,12 @@ const gradeThesisByLecturer = async (
     activeRole === "REVIEWER1" ||
     activeRole === "GVPB_KIN"
   ) {
+    if (!hasSupervisorGraded) {
+      throw new AppError(
+        "Giảng viên hướng dẫn chưa hoàn thành chấm điểm. Chưa thể thực hiện chấm điểm phản biện.",
+        400,
+      );
+    }
     const isRev1Legacy = thesis.reviewer1Id?.toString() === lecIdStr;
     const isRev1Array = Array.isArray(thesis.reviewers) && thesis.reviewers.some(
       (r) => ((r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr) && r.isPrivateReviewer
@@ -1799,6 +2092,12 @@ const gradeThesisByLecturer = async (
     activeRole === "GVPB_2" ||
     activeRole === "GVPB2"
   ) {
+    if (!hasSupervisorGraded) {
+      throw new AppError(
+        "Giảng viên hướng dẫn chưa hoàn thành chấm điểm. Chưa thể thực hiện chấm điểm phản biện.",
+        400,
+      );
+    }
     if (thesis.scores?.isReviewer2ScoreLocked) {
       throw new AppError("Điểm phản biện 2 của đề tài này đang bị khóa. Vui lòng mở khóa để chỉnh sửa.", 400);
     }
@@ -1826,6 +2125,12 @@ const gradeThesisByLecturer = async (
     activeRole === "HOIDONG" ||
     activeRole === "GVPB_HOIDONG"
   ) {
+    if (!hasBothReviewersGraded) {
+      throw new AppError(
+        "Chưa thể chấm điểm hội đồng do các giảng viên phản biện chưa hoàn tất chấm điểm.",
+        400,
+      );
+    }
     // Store this lecturer's individual council score
     if (!Array.isArray(thesis.scores.councilLecturerScores)) {
       thesis.scores.councilLecturerScores = [];
@@ -2031,6 +2336,17 @@ const evaluateCriteriaBySupervisor = async (
   const isSup = thesis.supervisorId?.toString() === lecturer._id.toString();
   if (!isSup) {
     throw new AppError("Bạn không phải là giảng viên hướng dẫn của đề tài này", 403);
+  }
+
+  const isPBKAssigned = Boolean(
+    thesis.reviewer1Id ||
+    thesis.reviewer2Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.length > 0) ||
+    thesis.status === "ASSIGNED_REVIEWERS" ||
+    thesis.status === "DEFENSE"
+  );
+  if (isPBKAssigned) {
+    throw new AppError("Đề tài đã được phân công phản biện khóa luận (PBK). Không thể chỉnh sửa đánh giá tiêu chí.", 400);
   }
 
   let activeCriteria = await ThesisEvaluationCriteria.find({
@@ -2816,6 +3132,9 @@ const registerTopicByStudent = async ({
   // 2. Identify Current Academic Term
   const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
 
+  // Validate Registration Window & Lock Status
+  validateThesisRegistrationWindow(activeTerm);
+
   // 3. Check SV1 has NO active thesis in active term
   const sv1ActiveThesis = await Thesis.findOne({
     academicTermId: activeTerm._id,
@@ -3486,6 +3805,11 @@ const respondStudent2Invitation = async (thesisId, userId, action) => {
   const sv2Code = student2.studentCode;
 
   if (action === "ACCEPT") {
+    const activeTermDoc = thesis.academicTermId
+      ? await AcademicTerm.findById(thesis.academicTermId)
+      : await academicTermService.getCurrentAcademicTerm(new Date());
+    validateThesisRegistrationWindow(activeTermDoc);
+
     thesis.student2Status = "ACCEPTED";
     thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
     await thesis.save();
@@ -3577,6 +3901,12 @@ const sendSupervisorRequest = async (thesisId, userId) => {
     throw new AppError(`Không thể gửi yêu cầu khi đề tài ở trạng thái ${thesis.status}`, 400);
   }
 
+  // Validate Registration Window
+  const activeTermDoc = thesis.academicTermId
+    ? await AcademicTerm.findById(thesis.academicTermId)
+    : await academicTermService.getCurrentAcademicTerm(new Date());
+  validateThesisRegistrationWindow(activeTermDoc);
+
   // If group has 2 students, SV2 MUST be ACCEPTED
   if (thesis.studentCount === 2) {
     if (!thesis.secondStudentId || thesis.student2Status !== "ACCEPTED") {
@@ -3585,7 +3915,7 @@ const sendSupervisorRequest = async (thesisId, userId) => {
   }
 
   // Check Lecturer Capacity
-  const activeTerm = thesis.academicTermId || (await academicTermService.getCurrentAcademicTerm(new Date()))._id;
+  const activeTerm = activeTermDoc._id;
   const supervisor = await Lecturer.findById(thesis.supervisorId._id || thesis.supervisorId).populate("userId");
   if (!supervisor) {
     throw new AppError("Không tìm thấy giảng viên hướng dẫn", 404);
@@ -3691,6 +4021,12 @@ const inviteStudent2 = async (thesisId, userId, { secondStudentId, secondStudent
     throw new AppError("Không thể mời thành viên khi đề tài đã gửi GVHD hoặc đang được xét duyệt", 400);
   }
 
+  // Validate Registration Window
+  const activeTermDoc = thesis.academicTermId
+    ? await AcademicTerm.findById(thesis.academicTermId)
+    : await academicTermService.getCurrentAcademicTerm(new Date());
+  validateThesisRegistrationWindow(activeTermDoc);
+
   let student2 = null;
   if (secondStudentId) {
     student2 = await Student.findById(secondStudentId).populate("userId");
@@ -3708,7 +4044,7 @@ const inviteStudent2 = async (thesisId, userId, { secondStudentId, secondStudent
     throw new AppError("Sinh viên thứ hai không được trùng với bạn", 400);
   }
 
-  const activeTerm = thesis.academicTermId || (await academicTermService.getCurrentAcademicTerm(new Date()))._id;
+  const activeTerm = activeTermDoc._id;
 
   // Check SV2 Active Thesis
   const sv2ActiveThesis = await Thesis.findOne({
@@ -3837,6 +4173,326 @@ const cancelStudent2Invite = async (thesisId, userId) => {
     .populate({ path: "supervisorId", populate: { path: "userId" } });
 };
 
+// ====================
+// Student 2: Cancel Group Participation (before supervisor approval)
+// ====================
+const cancelGroupParticipationByStudent2 = async (thesisId, userId) => {
+  const student2 = await Student.findOne({ userId }).populate("userId");
+  if (!student2) {
+    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+  }
+
+  const thesis = await Thesis.findById(thesisId)
+    .populate({ path: "studentId", populate: { path: "userId" } })
+    .populate({ path: "secondStudentId", populate: { path: "userId" } })
+    .populate({ path: "supervisorId", populate: { path: "userId" } });
+
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  if (
+    !thesis.secondStudentId ||
+    thesis.secondStudentId._id.toString() !== student2._id.toString()
+  ) {
+    throw new AppError("Bạn không phải là thành viên thứ hai của đề tài này", 403);
+  }
+
+  // Check if supervisor already approved
+  const NON_CANCELLABLE_STATUSES = [
+    "APPROVED",
+    "ASSIGNED_REVIEWERS",
+    "IN_PROGRESS",
+    "SUBMITTED",
+    "GRADED",
+    "COMPLETED",
+  ];
+  if (NON_CANCELLABLE_STATUSES.includes(thesis.status)) {
+    throw new AppError(
+      "Không thể hủy tham gia nhóm khi đề tài đã được Giảng viên hướng dẫn duyệt chính thức.",
+      400
+    );
+  }
+
+  const sv1 = thesis.studentId;
+  const sv1Name = sv1.userId?.fullName || sv1.studentCode;
+  const sv2Name = student2.userId?.fullName || student2.studentCode;
+  const sv2Code = student2.studentCode;
+  const prevStatus = thesis.status;
+
+  // Release SV2
+  student2.thesisRegistered = false;
+  await student2.save();
+
+  // Update Thesis
+  thesis.secondStudentId = null;
+  thesis.student2Status = null;
+  thesis.studentCount = 1;
+  // Revert to WAITING_FOR_SUPERVISOR_REQUEST because group composition changed
+  thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
+  thesis.submittedAt = null;
+  await thesis.save();
+
+  // If thesis was created from Topic, update registeredGroups
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId, "registeredGroups.thesisId": thesis._id },
+      {
+        $set: {
+          "registeredGroups.$.secondStudentId": null,
+          "registeredGroups.$.secondStudentCode": null,
+        },
+      }
+    );
+  }
+
+  // Notify SV1
+  if (sv1.userId?._id) {
+    await notificationService.createNotification({
+      recipientId: sv1.userId._id,
+      type: "THESIS",
+      title: "Thành viên đã hủy tham gia nhóm",
+      message: `Sinh viên ${sv2Name} (${sv2Code}) đã hủy tham gia nhóm đề tài "${thesis.thesisTitle}". Đề tài đã chuyển về trạng thái cá nhân (1 thành viên). Bạn có thể mời thành viên khác hoặc gửi yêu cầu đến GVHD.`,
+      referenceId: thesis._id,
+      referenceModel: "Thesis",
+      link: "/student/thesis",
+    });
+  }
+
+  // If request was pending supervisor approval, notify supervisor
+  if (["PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE"].includes(prevStatus)) {
+    const supervisorRecipientId = thesis.supervisorId?.userId?._id || thesis.supervisorId?.userId;
+    if (supervisorRecipientId) {
+      await notificationService.createNotification({
+        recipientId: supervisorRecipientId,
+        type: "THESIS",
+        title: "Thay đổi thành viên nhóm đề tài",
+        message: `Sinh viên ${sv2Name} (${sv2Code}) đã hủy tham gia nhóm đề tài "${thesis.thesisTitle}". Đề tài đã được rút lại để trưởng nhóm xử lý.`,
+        referenceId: thesis._id,
+        referenceModel: "Thesis",
+        link: "/lecturer/theses",
+      });
+    }
+  }
+
+  return await Thesis.findById(thesis._id)
+    .populate({ path: "studentId", populate: { path: "userId" } })
+    .populate({ path: "secondStudentId", populate: { path: "userId" } })
+    .populate({ path: "supervisorId", populate: { path: "userId" } });
+};
+
+// ====================
+// Student 1: Cancel Group Registration / Thesis (before supervisor approval)
+// ====================
+const cancelGroupRegistrationByStudent1 = async (thesisId, userId) => {
+  const student1 = await Student.findOne({ userId }).populate("userId");
+  if (!student1) {
+    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+  }
+
+  const thesis = await Thesis.findById(thesisId)
+    .populate({ path: "studentId", populate: { path: "userId" } })
+    .populate({ path: "secondStudentId", populate: { path: "userId" } })
+    .populate({ path: "supervisorId", populate: { path: "userId" } });
+
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  if (thesis.studentId._id.toString() !== student1._id.toString()) {
+    throw new AppError("Chỉ có trưởng nhóm (SV1) mới có quyền hủy đăng ký nhóm", 403);
+  }
+
+  const NON_CANCELLABLE_STATUSES = [
+    "APPROVED",
+    "ASSIGNED_REVIEWERS",
+    "IN_PROGRESS",
+    "SUBMITTED",
+    "GRADED",
+    "COMPLETED",
+  ];
+  if (NON_CANCELLABLE_STATUSES.includes(thesis.status)) {
+    throw new AppError(
+      "Không thể hủy nhóm khi đề tài đã được Giảng viên hướng dẫn duyệt chính thức.",
+      400
+    );
+  }
+
+  const sv1Name = student1.userId?.fullName || student1.studentCode;
+  const sv1Code = student1.studentCode;
+  const prevStudent2 = thesis.secondStudentId;
+  const prevStatus = thesis.status;
+  const thesisTitle = thesis.thesisTitle;
+
+  // Release SV1
+  student1.thesisRegistered = false;
+  await student1.save();
+
+  // Release SV2 if exists
+  if (prevStudent2) {
+    const s2Doc = await Student.findById(prevStudent2._id || prevStudent2).populate("userId");
+    if (s2Doc) {
+      s2Doc.thesisRegistered = false;
+      await s2Doc.save();
+    }
+
+    const s2UserId = prevStudent2.userId?._id || prevStudent2.userId;
+    if (s2UserId) {
+      await notificationService.createNotification({
+        recipientId: s2UserId,
+        type: "THESIS",
+        title: "Đề tài nhóm đã được hủy",
+        message: `Trưởng nhóm ${sv1Name} (${sv1Code}) đã hủy đăng ký đề tài nhóm "${thesisTitle}". Bạn hiện có thể đăng ký đề tài mới hoặc tham gia nhóm khác.`,
+        referenceId: null,
+        referenceModel: "Thesis",
+        link: "/student/thesis/register",
+      });
+    }
+  }
+
+  // If thesis was created from Topic, release the Topic FIFO slot
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId, "registeredGroups.thesisId": thesis._id },
+      {
+        $inc: { currentGroups: -1 },
+        $pull: { registeredGroups: { thesisId: thesis._id } },
+      }
+    );
+  }
+
+  // If request was pending supervisor approval, notify supervisor
+  if (["PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE"].includes(prevStatus)) {
+    const supervisorRecipientId = thesis.supervisorId?.userId?._id || thesis.supervisorId?.userId;
+    if (supervisorRecipientId) {
+      await notificationService.createNotification({
+        recipientId: supervisorRecipientId,
+        type: "THESIS",
+        title: "Yêu cầu đăng ký đề tài đã bị hủy bởi sinh viên",
+        message: `Trưởng nhóm ${sv1Name} (${sv1Code}) đã hủy yêu cầu đăng ký đề tài "${thesisTitle}".`,
+        referenceId: null,
+        referenceModel: "Thesis",
+        link: "/lecturer/theses",
+      });
+    }
+  }
+
+  // Delete the unapproved thesis document
+  await Thesis.findByIdAndDelete(thesis._id);
+
+  return { success: true, message: "Đã hủy đăng ký nhóm đề tài thành công" };
+};
+
+// ====================
+// Student 1: Remove Student 2 from Group (before supervisor approval)
+// ====================
+const removeStudent2ByStudent1 = async (thesisId, userId) => {
+  const student1 = await Student.findOne({ userId }).populate("userId");
+  if (!student1) {
+    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+  }
+
+  const thesis = await Thesis.findById(thesisId)
+    .populate({ path: "studentId", populate: { path: "userId" } })
+    .populate({ path: "secondStudentId", populate: { path: "userId" } })
+    .populate({ path: "supervisorId", populate: { path: "userId" } });
+
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  if (thesis.studentId._id.toString() !== student1._id.toString()) {
+    throw new AppError("Chỉ có trưởng nhóm mới có quyền xóa thành viên", 403);
+  }
+
+  const NON_CANCELLABLE_STATUSES = [
+    "APPROVED",
+    "ASSIGNED_REVIEWERS",
+    "IN_PROGRESS",
+    "SUBMITTED",
+    "GRADED",
+    "COMPLETED",
+  ];
+  if (NON_CANCELLABLE_STATUSES.includes(thesis.status)) {
+    throw new AppError(
+      "Không thể thay đổi thành viên khi đề tài đã được Giảng viên hướng dẫn duyệt chính thức.",
+      400
+    );
+  }
+
+  if (!thesis.secondStudentId) {
+    throw new AppError("Đề tài hiện không có thành viên thứ hai", 400);
+  }
+
+  const prevStudent2 = thesis.secondStudentId;
+  const prevStatus = thesis.status;
+  const sv1Name = student1.userId?.fullName || student1.studentCode;
+  const sv1Code = student1.studentCode;
+
+  // Release SV2
+  const s2Doc = await Student.findById(prevStudent2._id || prevStudent2).populate("userId");
+  if (s2Doc) {
+    s2Doc.thesisRegistered = false;
+    await s2Doc.save();
+  }
+
+  // Update thesis
+  thesis.secondStudentId = null;
+  thesis.student2Status = null;
+  thesis.studentCount = 1;
+  thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
+  thesis.submittedAt = null;
+  await thesis.save();
+
+  // If thesis was created from Topic, update registeredGroups
+  if (thesis.topicId) {
+    await ThesisTopic.updateOne(
+      { _id: thesis.topicId, "registeredGroups.thesisId": thesis._id },
+      {
+        $set: {
+          "registeredGroups.$.secondStudentId": null,
+          "registeredGroups.$.secondStudentCode": null,
+        },
+      }
+    );
+  }
+
+  // Notify SV2
+  const s2UserId = prevStudent2.userId?._id || prevStudent2.userId;
+  if (s2UserId) {
+    await notificationService.createNotification({
+      recipientId: s2UserId,
+      type: "THESIS",
+      title: "Bạn đã được rút khỏi nhóm đề tài",
+      message: `Trưởng nhóm ${sv1Name} (${sv1Code}) đã rút bạn khỏi nhóm đề tài "${thesis.thesisTitle}". Bạn hiện có thể đăng ký đề tài mới hoặc tham gia nhóm khác.`,
+      referenceId: null,
+      referenceModel: "Thesis",
+      link: "/student/thesis/register",
+    });
+  }
+
+  // If request was pending supervisor approval, notify supervisor
+  if (["PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE"].includes(prevStatus)) {
+    const supervisorRecipientId = thesis.supervisorId?.userId?._id || thesis.supervisorId?.userId;
+    if (supervisorRecipientId) {
+      await notificationService.createNotification({
+        recipientId: supervisorRecipientId,
+        type: "THESIS",
+        title: "Thay đổi thành viên nhóm đề tài",
+        message: `Trưởng nhóm ${sv1Name} (${sv1Code}) đã rút thành viên khỏi nhóm đề tài "${thesis.thesisTitle}". Đề tài đã được chuyển về trạng thái chờ xử lý lại.`,
+        referenceId: thesis._id,
+        referenceModel: "Thesis",
+        link: "/lecturer/theses",
+      });
+    }
+  }
+
+  return await Thesis.findById(thesis._id)
+    .populate({ path: "studentId", populate: { path: "userId" } })
+    .populate({ path: "secondStudentId", populate: { path: "userId" } })
+    .populate({ path: "supervisorId", populate: { path: "userId" } });
+};
+
 export default {
   createThesis,
   lookupStudentByCode,
@@ -3852,6 +4508,8 @@ export default {
   assignReviewers,
   supervisorAcceptThesis,
   supervisorRejectThesis,
+  supervisorCancelThesis,
+  validateThesisRegistrationWindow,
   getThesesForLecturerRole,
   gradeThesisByLecturer,
   evaluateCriteriaBySupervisor,
@@ -3865,6 +4523,9 @@ export default {
   sendSupervisorRequest,
   inviteStudent2,
   cancelStudent2Invite,
+  cancelGroupParticipationByStudent2,
+  cancelGroupRegistrationByStudent1,
+  removeStudent2ByStudent1,
   // Criteria & Grading Period Management
   getThesisEvaluationCriteria,
   createThesisEvaluationCriteria,

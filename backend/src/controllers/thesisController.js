@@ -468,6 +468,27 @@ const supervisorRejectThesis = async (req, res, next) => {
 };
 
 // ====================
+// Lecturer / Supervisor Cancels Thesis
+// ====================
+const supervisorCancelThesis = async (req, res, next) => {
+  try {
+    const thesis = await thesisService.supervisorCancelThesis(
+      req.params.id,
+      req.user,
+      { reason: req.body?.reason },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã hủy đề tài khóa luận thành công",
+      data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
 // Export Theses to Excel
 // ====================
 const exportTheses = async (req, res, next) => {
@@ -878,6 +899,8 @@ const inviteStudent2 = async (req, res, next) => {
 // ====================
 // Student 1: Cancel Student 2 Invite
 // ====================
+// Student 1: Cancel Student 2 Invite
+// ====================
 const cancelStudent2Invite = async (req, res, next) => {
   try {
     const result = await thesisService.cancelStudent2Invite(
@@ -888,6 +911,66 @@ const cancelStudent2Invite = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Đã hủy lời mời tham gia nhóm",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 2: Cancel Group Participation (before supervisor approval)
+// ====================
+const cancelParticipationByStudent2 = async (req, res, next) => {
+  try {
+    const result = await thesisService.cancelGroupParticipationByStudent2(
+      req.params.id,
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã hủy tham gia nhóm làm đề tài khóa luận thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 1: Cancel Group Registration (before supervisor approval)
+// ====================
+const cancelGroupRegistrationByStudent1 = async (req, res, next) => {
+  try {
+    const result = await thesisService.cancelGroupRegistrationByStudent1(
+      req.params.id,
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã hủy đăng ký nhóm đề tài khóa luận thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student 1: Remove Student 2 from Group (before supervisor approval)
+// ====================
+const removeStudent2ByStudent1 = async (req, res, next) => {
+  try {
+    const result = await thesisService.removeStudent2ByStudent1(
+      req.params.id,
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã rút thành viên thứ hai khỏi nhóm đề tài",
       data: result,
     });
   } catch (error) {
@@ -910,6 +993,7 @@ export default {
   assignReviewers,
   supervisorAcceptThesis,
   supervisorRejectThesis,
+  supervisorCancelThesis,
   getAssignedThesesForLecturer,
   gradeThesisByLecturer,
   evaluateThesisCriteriaBySupervisor,
@@ -924,6 +1008,9 @@ export default {
   sendSupervisorRequest,
   inviteStudent2,
   cancelStudent2Invite,
+  cancelParticipationByStudent2,
+  cancelGroupRegistrationByStudent1,
+  removeStudent2ByStudent1,
   // Criteria & Grading Period Management
   getThesisEvaluationCriteria,
   createThesisEvaluationCriteria,

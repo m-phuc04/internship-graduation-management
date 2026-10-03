@@ -45,6 +45,11 @@ const academicTermApi = {
   deleteTerm: async (id) => {
     return await axiosClient.delete(`/academic-terms/${id}`);
   },
+
+  // Toggle thesis registration lock (TBM / ADMIN)
+  toggleThesisRegistrationLock: async (id, data) => {
+    return await axiosClient.patch(`/academic-terms/${id}/toggle-thesis-registration-lock`, data);
+  },
 };
 
 export default academicTermApi;

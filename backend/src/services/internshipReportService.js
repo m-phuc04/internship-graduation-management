@@ -220,7 +220,7 @@ const updateReport = async ({
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
   }
 
-  if (!["DRAFT", "NEEDS_REVISION"].includes(report.status)) {
+  if (!["DRAFT", "NEEDS_REVISION", "REJECTED"].includes(report.status)) {
     throw new AppError(
       `Không thể chỉnh sửa báo cáo khi đang ở trạng thái "${report.status}"`,
       400,

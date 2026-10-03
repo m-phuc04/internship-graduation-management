@@ -154,7 +154,35 @@ const deleteTerm = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: result.message,
+      message: result.message || "Xóa học kỳ thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// 8b. Toggle Thesis Registration Lock
+// ====================
+const toggleThesisRegistrationLock = async (req, res, next) => {
+  try {
+    const { isLocked, newDeadline } = req.body;
+    const updated = await academicTermService.toggleThesisRegistrationLock(
+      req.params.id,
+      {
+        isLocked,
+        newDeadline,
+        userId: req.user.userId || req.user._id,
+      },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: isLocked
+        ? "Đã khóa đăng ký đề tài KLTN thành công"
+        : "Đã mở lại đăng ký đề tài KLTN thành công",
+      data: updated,
     });
   } catch (error) {
     next(error);
@@ -171,4 +199,5 @@ export default {
   activateTerm,
   closeTerm,
   deleteTerm,
+  toggleThesisRegistrationLock,
 };

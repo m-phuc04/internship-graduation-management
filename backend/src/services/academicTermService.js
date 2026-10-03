@@ -381,6 +381,52 @@ const deleteTerm = async (id) => {
 };
 
 // ====================
+// 8b. Toggle Thesis Registration Lock (TBM / ADMIN)
+// ====================
+const toggleThesisRegistrationLock = async (id, { isLocked, newDeadline = null, userId = null }) => {
+  const term = await AcademicTerm.findById(id);
+  if (!term) {
+    throw new AppError("Không tìm thấy học kỳ", 404);
+  }
+
+  if (!term.thesis) {
+    term.thesis = {};
+  }
+
+  const shouldLock = Boolean(isLocked);
+  term.thesis.isRegistrationLocked = shouldLock;
+
+  if (shouldLock) {
+    term.thesis.lockedAt = new Date();
+    term.thesis.lockedBy = userId || null;
+  } else {
+    term.thesis.reopenedAt = new Date();
+    term.thesis.reopenedBy = userId || null;
+
+    if (newDeadline) {
+      const deadlineDate = new Date(newDeadline);
+      if (isNaN(deadlineDate.getTime())) {
+        throw new AppError("Hạn chót mới không hợp lệ", 400);
+      }
+      term.thesis.registrationEnd = deadlineDate;
+    } else if (term.thesis.registrationEnd && new Date() > new Date(term.thesis.registrationEnd)) {
+      // If reopening past the previous deadline without specifying a new date, extend deadline to term end or +7 days
+      const extendedDate = new Date();
+      extendedDate.setDate(extendedDate.getDate() + 7);
+      extendedDate.setHours(23, 59, 59, 999);
+      term.thesis.registrationEnd = term.endDate && term.endDate > extendedDate ? extendedDate : term.endDate;
+    }
+  }
+
+  await term.save();
+
+  return await AcademicTerm.findById(term._id)
+    .populate({ path: "thesis.lockedBy", select: "fullName email role" })
+    .populate({ path: "thesis.reopenedBy", select: "fullName email role" })
+    .populate({ path: "createdBy", select: "fullName email role" });
+};
+
+// ====================
 // 9. Startup Seed & Safe Data Migration
 // ====================
 const ensureDefaultActiveTerm = async () => {
@@ -460,5 +506,6 @@ export default {
   activateTerm,
   closeTerm,
   deleteTerm,
+  toggleThesisRegistrationLock,
   ensureDefaultActiveTerm,
 };

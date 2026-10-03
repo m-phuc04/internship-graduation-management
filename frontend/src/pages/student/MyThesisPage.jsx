@@ -51,6 +51,9 @@ const MyThesisPage = () => {
   const [respondingInvitation, setRespondingInvitation] = useState(false);
   const [sendingToSupervisor, setSendingToSupervisor] = useState(false);
   const [cancelingInvite, setCancelingInvite] = useState(false);
+  const [cancelingParticipation, setCancelingParticipation] = useState(false);
+  const [cancelingGroup, setCancelingGroup] = useState(false);
+  const [removingStudent2, setRemovingStudent2] = useState(false);
 
   // Invite Partner Modal states
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
@@ -105,6 +108,82 @@ const MyThesisPage = () => {
       showToast(err.message || 'Thao tác thất bại', 'error');
     } finally {
       setRespondingInvitation(false);
+    }
+  };
+
+  // Handle SV2 Cancel Group Participation
+  const handleCancelParticipation = async () => {
+    if (!thesis?._id) return;
+    if (
+      !window.confirm(
+        'Bạn có chắc chắn muốn hủy tham gia nhóm đăng ký khóa luận này không?'
+      )
+    ) {
+      return;
+    }
+    setCancelingParticipation(true);
+    try {
+      const res = await thesisApi.cancelParticipation(thesis._id);
+      if (res.success) {
+        showToast('Đã hủy tham gia nhóm đăng ký khóa luận thành công!', 'success');
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Hủy tham gia nhóm thất bại', 'error');
+    } finally {
+      setCancelingParticipation(false);
+    }
+  };
+
+  // Handle SV1 Cancel Group Registration (Cancel whole thesis before supervisor approval)
+  const handleCancelGroupRegistration = async () => {
+    if (!thesis?._id) return;
+    if (
+      !window.confirm(
+        'Bạn có chắc chắn muốn hủy đăng ký nhóm khóa luận này không? Toàn bộ thành viên sẽ được giải phóng để đăng ký lại.'
+      )
+    ) {
+      return;
+    }
+    setCancelingGroup(true);
+    try {
+      const res = await thesisApi.cancelGroupRegistration(thesis._id);
+      if (res.success) {
+        showToast('Đã hủy đăng ký nhóm đề tài thành công!', 'success');
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Hủy nhóm thất bại', 'error');
+    } finally {
+      setCancelingGroup(false);
+    }
+  };
+
+  // Handle SV1 Remove Student 2 from Group
+  const handleRemoveStudent2 = async () => {
+    if (!thesis?._id) return;
+    const s2Name =
+      thesis.secondStudentId?.userId?.fullName ||
+      thesis.secondStudentId?.studentCode ||
+      'Sinh viên thứ hai';
+    if (
+      !window.confirm(
+        `Bạn có chắc chắn muốn rút thành viên ${s2Name} khỏi nhóm không?`
+      )
+    ) {
+      return;
+    }
+    setRemovingStudent2(true);
+    try {
+      const res = await thesisApi.removeStudent2(thesis._id);
+      if (res.success) {
+        showToast(`Đã rút sinh viên ${s2Name} khỏi nhóm thành công!`, 'success');
+        fetchMyThesis();
+      }
+    } catch (err) {
+      showToast(err.message || 'Thao tác thất bại', 'error');
+    } finally {
+      setRemovingStudent2(false);
     }
   };
 
@@ -251,6 +330,8 @@ const MyThesisPage = () => {
   }, []);
 
   const isPendingApproval = ['PENDING_SUPERVISOR_APPROVAL', 'PENDING_TBM_APPROVAL', 'PENDING_SUPERVISOR_ACCEPTANCE'].includes(thesis?.status);
+  const isSupervisorApproved = ['APPROVED', 'ASSIGNED_REVIEWERS', 'IN_PROGRESS', 'SUBMITTED', 'GRADED', 'COMPLETED'].includes(thesis?.status);
+  const canCancelRegistration = thesis && !isSupervisorApproved && !['REJECTED'].includes(thesis?.status);
 
   // Calculations for Thesis Evaluation
   const supervisorScore = (() => {
@@ -666,7 +747,7 @@ const MyThesisPage = () => {
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleCancelStudent2Invite}
               disabled={cancelingInvite}
@@ -674,6 +755,14 @@ const MyThesisPage = () => {
             >
               <UserMinus className="w-3.5 h-3.5" />
               <span>{cancelingInvite ? 'Đang hủy...' : 'Hủy lời mời SV2'}</span>
+            </button>
+            <button
+              onClick={handleCancelGroupRegistration}
+              disabled={cancelingGroup}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-xl font-semibold transition cursor-pointer text-xs"
+            >
+              <X className="w-3.5 h-3.5" />
+              <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy đăng ký'}</span>
             </button>
           </div>
         </div>
@@ -712,8 +801,23 @@ const MyThesisPage = () => {
             </div>
           </div>
 
-          {isStudent1 && (
+          {/* SV2 Action */}
+          {isStudent2 && canCancelRegistration && (
             <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handleCancelParticipation}
+                disabled={cancelingParticipation}
+                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 rounded-xl font-bold transition cursor-pointer text-xs shadow-xs"
+              >
+                <UserMinus className="w-4 h-4" />
+                <span>{cancelingParticipation ? 'Đang xử lý...' : 'Hủy tham gia nhóm'}</span>
+              </button>
+            </div>
+          )}
+
+          {/* SV1 Actions */}
+          {isStudent1 && (
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               {(!thesis.secondStudentId || thesis.student2Status === 'REJECTED') && (
                 <button
                   onClick={() => setInviteModalOpen(true)}
@@ -723,6 +827,28 @@ const MyThesisPage = () => {
                   <span>Mời Sinh viên 2</span>
                 </button>
               )}
+
+              {thesis.secondStudentId && thesis.student2Status === 'ACCEPTED' && (
+                <button
+                  onClick={handleRemoveStudent2}
+                  disabled={removingStudent2}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-amber-50 text-amber-800 border border-amber-300 rounded-xl font-bold transition cursor-pointer text-xs"
+                  title="Rút SV2 khỏi nhóm để thực hiện 1 người hoặc mời SV khác"
+                >
+                  <UserMinus className="w-4 h-4" />
+                  <span>{removingStudent2 ? 'Đang rút...' : 'Rút SV2'}</span>
+                </button>
+              )}
+
+              <button
+                onClick={handleCancelGroupRegistration}
+                disabled={cancelingGroup}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 rounded-xl font-bold transition cursor-pointer text-xs"
+                title="Hủy đề tài nhóm để đăng ký lại"
+              >
+                <X className="w-4 h-4" />
+                <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy nhóm'}</span>
+              </button>
 
               <button
                 onClick={handleSendSupervisorRequest}
@@ -739,22 +865,48 @@ const MyThesisPage = () => {
 
       {/* 4. Pending Approval Notice Banner */}
       {thesis && isPendingApproval && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-3 shadow-2xs">
-          <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-          <div>
-            <div className="font-bold text-sm text-amber-900">
-              Đang chờ Giảng viên hướng dẫn duyệt đăng ký
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+          <div className="flex items-start gap-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
+            <div>
+              <div className="font-bold text-sm text-amber-900">
+                Đang chờ Giảng viên hướng dẫn duyệt đăng ký
+              </div>
+              <div className="mt-0.5 leading-relaxed text-slate-700">
+                Đề tài <strong>"{thesis.thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
+                <strong>
+                  {formatLecturerDisplay(
+                    thesis.supervisorId?.academicTitle,
+                    thesis.supervisorId?.userId?.fullName,
+                  )}
+                </strong>{' '}
+                xác nhận tiếp nhận hướng dẫn. Các chức năng nộp báo cáo tiến độ và chấm điểm sẽ mở sau khi Giảng viên duyệt.
+              </div>
             </div>
-            <div className="mt-0.5 leading-relaxed text-slate-700">
-              Đề tài <strong>"{thesis.thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
-              <strong>
-                {formatLecturerDisplay(
-                  thesis.supervisorId?.academicTitle,
-                  thesis.supervisorId?.userId?.fullName,
-                )}
-              </strong>{' '}
-              xác nhận tiếp nhận hướng dẫn. Các chức năng nộp báo cáo tiến độ và chấm điểm sẽ mở sau khi Giảng viên duyệt.
-            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
+            {isStudent2 && canCancelRegistration && (
+              <button
+                onClick={handleCancelParticipation}
+                disabled={cancelingParticipation}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 rounded-xl font-bold transition cursor-pointer text-xs shadow-xs"
+              >
+                <UserMinus className="w-3.5 h-3.5" />
+                <span>{cancelingParticipation ? 'Đang xử lý...' : 'Hủy tham gia nhóm'}</span>
+              </button>
+            )}
+
+            {isStudent1 && canCancelRegistration && (
+              <button
+                onClick={handleCancelGroupRegistration}
+                disabled={cancelingGroup}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 rounded-xl font-bold transition cursor-pointer text-xs shadow-xs"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy đăng ký nhóm'}</span>
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -1227,6 +1379,32 @@ const MyThesisPage = () => {
                           className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
                         >
                           {cancelingInvite ? 'Đang hủy...' : 'Hủy lời mời'}
+                        </button>
+                      </div>
+                    )}
+
+                    {isStudent1 && thesis.student2Status === 'ACCEPTED' && canCancelRegistration && (
+                      <div className="pt-1.5 flex justify-end">
+                        <button
+                          onClick={handleRemoveStudent2}
+                          disabled={removingStudent2}
+                          className="text-[11px] font-semibold text-amber-700 hover:text-amber-900 hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          <UserMinus className="w-3 h-3" />
+                          <span>{removingStudent2 ? 'Đang rút...' : 'Rút SV2 khỏi nhóm'}</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {isStudent2 && thesis.student2Status === 'ACCEPTED' && canCancelRegistration && (
+                      <div className="pt-1.5 flex justify-end">
+                        <button
+                          onClick={handleCancelParticipation}
+                          disabled={cancelingParticipation}
+                          className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer flex items-center gap-1"
+                        >
+                          <UserMinus className="w-3 h-3" />
+                          <span>{cancelingParticipation ? 'Đang xử lý...' : 'Hủy tham gia nhóm'}</span>
                         </button>
                       </div>
                     )}

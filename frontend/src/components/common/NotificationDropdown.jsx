@@ -161,34 +161,23 @@ const NotificationDropdown = () => {
     }
 
     if (role === 'LECTURER') {
-      // 1. Phân công phản biện / Phân công Hội đồng đánh giá Khóa luận -> Nhảy vào Phản biện khóa luận
+      // 1. Phân công phản biện khóa luận (GVPB 1, GVPB 2, PB kín) -> Luôn nhảy vào Phản biện khóa luận
       if (
-        titleLower.includes('phân công hội đồng') ||
-        titleLower.includes('phân công phản biện') ||
         titleLower.includes('phản biện') ||
         messageLower.includes('phản biện') ||
-        titleLower.includes('hội đồng') ||
-        messageLower.includes('hội đồng') ||
         item.type === 'THESIS_REVIEW' ||
         targetLink?.includes('tab=review') ||
-        targetLink?.includes('tab=reviewer') ||
+        targetLink?.includes('tab=reviewer')
+      ) {
+        targetLink = '/lecturer/theses?tab=review';
+      }
+      // 2. Hội đồng bảo vệ (Phòng hội đồng bảo vệ)
+      else if (
+        titleLower.includes('hội đồng') ||
+        messageLower.includes('hội đồng') ||
         targetLink?.includes('tab=council')
       ) {
-        if (
-          titleLower.includes('hội đồng') ||
-          messageLower.includes('hội đồng') ||
-          targetLink?.includes('tab=council')
-        ) {
-          targetLink = '/lecturer/theses?tab=council';
-        } else if (
-          titleLower.includes('phản biện 2') ||
-          messageLower.includes('phản biện 2') ||
-          targetLink?.includes('tab=reviewer2')
-        ) {
-          targetLink = '/lecturer/theses?tab=reviewer2';
-        } else {
-          targetLink = '/lecturer/theses?tab=review';
-        }
+        targetLink = '/lecturer/theses?tab=council';
       }
       // 2. Tiến độ / Nhật ký khóa luận
       else if (

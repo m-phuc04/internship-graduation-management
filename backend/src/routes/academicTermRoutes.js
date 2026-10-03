@@ -72,12 +72,18 @@ router.patch(
   academicTermController.closeTerm,
 );
 
-// Delete term (Safe delete)
+// Toggle thesis registration lock (TBM / ADMIN)
+router.patch(
+  "/:id/toggle-thesis-registration-lock",
+  authMiddleware,
+  authorizeRoles("ADMIN", "TBM"),
+  academicTermController.toggleThesisRegistrationLock,
+);
+
 // Delete term (Safe delete, Admin only)
 router.delete(
   "/:id",
   authMiddleware,
-  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.deleteTerm,
 );

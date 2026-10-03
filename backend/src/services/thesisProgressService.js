@@ -256,7 +256,7 @@ const updateProgress = async ({
     throw new AppError("Bạn không thuộc đề tài khóa luận này", 403);
   }
 
-  if (!["DRAFT", "NEEDS_REVISION"].includes(progress.status)) {
+  if (!["DRAFT", "NEEDS_REVISION", "REJECTED"].includes(progress.status)) {
     throw new AppError(
       `Không thể chỉnh sửa nhật ký đang ở trạng thái "${progress.status}"`,
       400,
@@ -277,6 +277,8 @@ const updateProgress = async ({
   if (weekStartDate) progress.weekStartDate = new Date(weekStartDate);
   if (weekEndDate) progress.weekEndDate = new Date(weekEndDate);
 
+  progress.studentId = student._id;
+
   const hasStudent2 = !!thesis.secondStudentId;
 
   if (status === "DRAFT") {
@@ -286,6 +288,8 @@ const updateProgress = async ({
     if (hasStudent2) {
       progress.status = "WAITING_STUDENT_2";
       progress.student2Status = "PENDING";
+      progress.student2RejectedReason = null;
+      progress.student2ConfirmedAt = null;
       progress.submittedAt = new Date();
 
       // Notify the OTHER partner (not the writer)
