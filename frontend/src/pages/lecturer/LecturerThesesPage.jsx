@@ -1519,21 +1519,13 @@ const LecturerThesesPage = () => {
 
   const filteredApprovedTopics = approvedTopics.filter((topic) => {
     const q = (search || '').trim().toLowerCase();
-    const matchSearch =
-      !q ||
+    if (!q) return true;
+    return (
       topic.title?.toLowerCase().includes(q) ||
       topic.description?.toLowerCase().includes(q) ||
       topic.supervisor?.fullName?.toLowerCase().includes(q) ||
-      topic.supervisor?.lecturerCode?.toLowerCase().includes(q);
-
-    const isMyTopic =
-      topic.supervisor?._id === user?._id ||
-      topic.supervisorId?._id === user?._id ||
-      topic.supervisor?.email === user?.email ||
-      topic.supervisor?.userId === user?._id;
-
-    const matchMine = !onlyMyApprovedTopics || isMyTopic;
-    return matchSearch && matchMine;
+      topic.supervisor?.lecturerCode?.toLowerCase().includes(q)
+    );
   });
 
   const filteredMyTopics = myTopics.filter((topic) => {
@@ -1694,7 +1686,7 @@ const LecturerThesesPage = () => {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>Ngân hàng đề tài đã duyệt</span>
+              <span>Tất cả đề tài</span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
                 topicsSubTab === 'APPROVED_BANK' ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
               }`}>
@@ -1781,17 +1773,6 @@ const LecturerThesesPage = () => {
             </select>
           </div>
 
-          {isTopicsView && topicsSubTab === 'APPROVED_BANK' && (
-            <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-xl border border-slate-200/80 cursor-pointer select-none transition">
-              <input
-                type="checkbox"
-                checked={onlyMyApprovedTopics}
-                onChange={(e) => setOnlyMyApprovedTopics(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-[#123891] focus:ring-[#123891] cursor-pointer"
-              />
-              <span>Chỉ hiện đề tài của tôi</span>
-            </label>
-          )}
           {!isTopicsView && (
             <div className="text-xs text-slate-500 font-medium">
               Hiển thị <strong>{currentList.length}</strong> đề tài
@@ -1924,7 +1905,7 @@ const LecturerThesesPage = () => {
                 <p className="text-xs text-slate-400 max-w-md mx-auto">
                   {approvedTopics.length === 0
                     ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
-                    : 'Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn "Chỉ hiện đề tài của tôi".'}
+                    : 'Thử thay đổi từ khóa tìm kiếm.'}
                 </p>
               </div>
             ) : (

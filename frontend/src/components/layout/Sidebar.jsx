@@ -40,12 +40,6 @@ const Sidebar = ({ onCloseMobile }) => {
   // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ các mục nghiệp vụ chính)
   const tbmBusinessItems = [
     {
-      to: '/tbm/academic-terms',
-      label: 'Học kỳ & Năm học',
-      icon: Calendar,
-      badge: 'HK',
-    },
-    {
       to: '/tbm/internships',
       label: 'Quản lý Thực tập',
       icon: Briefcase,
