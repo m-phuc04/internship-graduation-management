@@ -3071,32 +3071,37 @@ const getApprovedTopicsForStudent = async ({ academicTermId = null, search = "",
     }
   }
 
-  // If no term is found or term is closed
-  if (!targetTerm || targetTerm.status === "CLOSED") {
+  // If no term is found
+  if (!targetTerm) {
     return [];
-  }
-
-  // Check if registration is open for this term:
-  const now = new Date();
-  const isLocked = Boolean(targetTerm.thesis?.isRegistrationLocked);
-  let isExpired = false;
-  let isUpcoming = false;
-
-  if (targetTerm.thesis?.registrationStart) {
-    const start = new Date(targetTerm.thesis.registrationStart);
-    if (now < start) isUpcoming = true;
-  }
-  if (targetTerm.thesis?.registrationEnd) {
-    let end = new Date(targetTerm.thesis.registrationEnd);
-    if (end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0 && end.getMilliseconds() === 0) {
-      end = new Date(end.getTime() + 24 * 60 * 60 * 1000 - 1);
-    }
-    if (now > end) isExpired = true;
   }
 
   // Student can ONLY see topics when registration is actually OPEN for that term
-  if (isLocked || isExpired || isUpcoming) {
-    return [];
+  if (student) {
+    if (targetTerm.status === "CLOSED") {
+      return [];
+    }
+
+    const now = new Date();
+    const isLocked = Boolean(targetTerm.thesis?.isRegistrationLocked);
+    let isExpired = false;
+    let isUpcoming = false;
+
+    if (targetTerm.thesis?.registrationStart) {
+      const start = new Date(targetTerm.thesis.registrationStart);
+      if (now < start) isUpcoming = true;
+    }
+    if (targetTerm.thesis?.registrationEnd) {
+      let end = new Date(targetTerm.thesis.registrationEnd);
+      if (end.getHours() === 0 && end.getMinutes() === 0 && end.getSeconds() === 0 && end.getMilliseconds() === 0) {
+        end = new Date(end.getTime() + 24 * 60 * 60 * 1000 - 1);
+      }
+      if (now > end) isExpired = true;
+    }
+
+    if (isLocked || isExpired || isUpcoming) {
+      return [];
+    }
   }
 
   // Strictly filter by this specific academic term:

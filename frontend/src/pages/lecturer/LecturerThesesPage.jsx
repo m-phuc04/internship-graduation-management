@@ -737,15 +737,16 @@ const LecturerThesesPage = () => {
   }
 
   // Helper to determine if a thesis can be graded for a specific role
-  const isPastTerm = currentTerm?.status === 'CLOSED';
+  const isActiveTerm = currentTerm?.status === 'ACTIVE';
+  const isPastTerm = !isActiveTerm;
 
   const getGradingStatusForThesis = (item, role = 'SUPERVISOR') => {
     if (!item) return { canGrade: false, reason: '' };
 
-    if (isPastTerm || item?.academicTermId?.status === 'CLOSED') {
+    if (!isActiveTerm || isPastTerm || item?.academicTermId?.status !== 'ACTIVE') {
       return {
         canGrade: false,
-        reason: 'Học kỳ này đã kết thúc (CLOSED). Bạn đang ở chế độ xem lại lịch sử, không thể chỉnh sửa hoặc chấm điểm.',
+        reason: 'Học kỳ này không ở trạng thái đang diễn ra (ACTIVE). Bạn đang ở chế độ xem lại lịch sử, không thể chỉnh sửa hoặc chấm điểm.',
       };
     }
 
@@ -1604,21 +1605,15 @@ const LecturerThesesPage = () => {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {isTopicsView && (
+            {isTopicsView && isActiveTerm && (
               <button
                 type="button"
-                disabled={isPastTerm}
                 onClick={() => {
-                  if (isPastTerm) return;
                   setSelectedTermForCreation(currentTerm?._id || (terms && terms[0]?._id) || '');
                   setCreateTopicModalOpen(true);
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
-                  isPastTerm
-                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 cursor-pointer'
-                }`}
-                title={isPastTerm ? 'Học kỳ đã kết thúc (CLOSED). Không thể đề xuất thêm đề tài.' : 'Đề xuất đề tài KLTN'}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 cursor-pointer"
+                title="Đề xuất đề tài KLTN"
               >
                 <BookOpen className="w-4 h-4" />
                 <span>+ Đề xuất đề tài KLTN</span>
@@ -1639,19 +1634,16 @@ const LecturerThesesPage = () => {
           </div>
         </div>
 
-        {/* Past Term Read-Only Notification Banner */}
-        {isPastTerm && (
+        {/* Past/Non-active Term Notification Banner */}
+        {!isActiveTerm && (
           <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs mt-4">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
             <div className="flex-1">
-              <span className="font-bold">Đang xem học kỳ trước (Lịch sử - {currentTerm?.name} • {currentTerm?.academicYear}):</span>
+              <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
               <span className="ml-1 text-amber-800">
-                Học kỳ này đã kết thúc. Chế độ <strong>Chỉ xem (Read-Only)</strong> đang bật — giảng viên chỉ được xem lại đề tài, sinh viên, tiến độ và điểm số lịch sử.
+                Học kỳ này không ở trạng thái đang diễn ra.
               </span>
             </div>
-            <span className="px-2.5 py-1 bg-amber-200/80 text-amber-900 rounded-xl font-bold text-[10px] uppercase tracking-wider shrink-0 border border-amber-300">
-              Chỉ xem (Read-Only)
-            </span>
           </div>
         )}
 
@@ -1799,7 +1791,9 @@ const LecturerThesesPage = () => {
                 </div>
                 <p className="text-xs text-slate-400 max-w-md mx-auto">
                   {myTopics.length === 0
-                    ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                    ? isActiveTerm
+                      ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                      : 'Học kỳ này không có đề tài đề xuất nào.'
                     : 'Thử thay đổi từ khóa tìm kiếm để tìm đề tài mong muốn.'}
                 </p>
               </div>
@@ -1904,7 +1898,9 @@ const LecturerThesesPage = () => {
                 </div>
                 <p className="text-xs text-slate-400 max-w-md mx-auto">
                   {approvedTopics.length === 0
-                    ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                    ? isActiveTerm
+                      ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                      : 'Học kỳ này chưa có đề tài nào được duyệt.'
                     : 'Thử thay đổi từ khóa tìm kiếm.'}
                 </p>
               </div>

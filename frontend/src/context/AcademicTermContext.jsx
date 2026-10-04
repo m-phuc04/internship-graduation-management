@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import academicTermApi from '../api/academicTermApi';
+import { useAuth } from './AuthContext';
 
 const AcademicTermContext = createContext(null);
 
 export const AcademicTermProvider = ({ children }) => {
+  const { token } = useAuth();
   const [terms, setTerms] = useState([]);
   const [activeTerm, setActiveTerm] = useState(null);
   const [selectedTermId, setSelectedTermId] = useState(() => {
@@ -23,17 +25,15 @@ export const AcademicTermProvider = ({ children }) => {
         const currentActive = termList.find((t) => t.status === 'ACTIVE') || null;
         setActiveTerm(currentActive);
 
-        // If no selected term in localStorage, default to active term
         const savedId = localStorage.getItem('selectedAcademicTermId');
-        if (!savedId && currentActive) {
+        if (savedId && termList.some((t) => t._id === savedId)) {
+          setSelectedTermId(savedId);
+        } else if (currentActive) {
           setSelectedTermId(currentActive._id);
           localStorage.setItem('selectedAcademicTermId', currentActive._id);
-        } else if (savedId) {
-          const found = termList.find((t) => t._id === savedId);
-          if (!found && currentActive) {
-            setSelectedTermId(currentActive._id);
-            localStorage.setItem('selectedAcademicTermId', currentActive._id);
-          }
+        } else if (termList.length > 0) {
+          setSelectedTermId(termList[0]._id);
+          localStorage.setItem('selectedAcademicTermId', termList[0]._id);
         }
       }
     } catch (err) {
@@ -44,7 +44,7 @@ export const AcademicTermProvider = ({ children }) => {
           const act = activeRes.data;
           setActiveTerm(act);
           setTerms([act]);
-          setSelectedTermId(act._id);
+          setSelectedTermId((prev) => prev || act._id);
         }
       } catch (fallbackErr) {
         console.error('Lỗi khi tải thông tin học kỳ:', fallbackErr);
@@ -56,7 +56,7 @@ export const AcademicTermProvider = ({ children }) => {
 
   useEffect(() => {
     refreshTerms();
-  }, [refreshTerms]);
+  }, [refreshTerms, token]);
 
   // Set current selected term
   const setCurrentTerm = useCallback((termOrId) => {
@@ -69,12 +69,12 @@ export const AcademicTermProvider = ({ children }) => {
 
   // Compute currentTerm object
   const currentTerm = useMemo(() => {
-    if (!terms.length) return null;
+    if (!terms.length) return activeTerm || null;
     if (selectedTermId) {
       const found = terms.find((t) => t._id === selectedTermId);
       if (found) return found;
     }
-    return activeTerm || terms[0] || null;
+    return activeTerm || terms.find((t) => t.status === 'ACTIVE') || terms[0] || null;
   }, [terms, selectedTermId, activeTerm]);
 
   const value = useMemo(

@@ -63,6 +63,10 @@ const AcademicTermManagement = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [yearFilter, setYearFilter] = useState('ALL');
 
+  useEffect(() => {
+    refreshTerms();
+  }, [refreshTerms]);
+
   // Modal States
   const [modalOpen, setModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
