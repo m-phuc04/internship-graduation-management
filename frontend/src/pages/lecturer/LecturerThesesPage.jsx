@@ -737,15 +737,16 @@ const LecturerThesesPage = () => {
   }
 
   // Helper to determine if a thesis can be graded for a specific role
-  const isPastTerm = currentTerm?.status === 'CLOSED';
+  const isActiveTerm = currentTerm?.status === 'ACTIVE';
+  const isPastTerm = !isActiveTerm;
 
   const getGradingStatusForThesis = (item, role = 'SUPERVISOR') => {
     if (!item) return { canGrade: false, reason: '' };
 
-    if (isPastTerm || item?.academicTermId?.status === 'CLOSED') {
+    if (!isActiveTerm || isPastTerm || item?.academicTermId?.status !== 'ACTIVE') {
       return {
         canGrade: false,
-        reason: 'Học kỳ này đã kết thúc (CLOSED). Bạn đang ở chế độ xem lại lịch sử, không thể chỉnh sửa hoặc chấm điểm.',
+        reason: 'Học kỳ này không ở trạng thái đang diễn ra (ACTIVE). Bạn đang ở chế độ xem lại lịch sử, không thể chỉnh sửa hoặc chấm điểm.',
       };
     }
 
@@ -1519,21 +1520,13 @@ const LecturerThesesPage = () => {
 
   const filteredApprovedTopics = approvedTopics.filter((topic) => {
     const q = (search || '').trim().toLowerCase();
-    const matchSearch =
-      !q ||
+    if (!q) return true;
+    return (
       topic.title?.toLowerCase().includes(q) ||
       topic.description?.toLowerCase().includes(q) ||
       topic.supervisor?.fullName?.toLowerCase().includes(q) ||
-      topic.supervisor?.lecturerCode?.toLowerCase().includes(q);
-
-    const isMyTopic =
-      topic.supervisor?._id === user?._id ||
-      topic.supervisorId?._id === user?._id ||
-      topic.supervisor?.email === user?.email ||
-      topic.supervisor?.userId === user?._id;
-
-    const matchMine = !onlyMyApprovedTopics || isMyTopic;
-    return matchSearch && matchMine;
+      topic.supervisor?.lecturerCode?.toLowerCase().includes(q)
+    );
   });
 
   const filteredMyTopics = myTopics.filter((topic) => {
@@ -1612,21 +1605,15 @@ const LecturerThesesPage = () => {
           </div>
 
           <div className="flex items-center gap-2.5">
-            {isTopicsView && (
+            {isTopicsView && isActiveTerm && (
               <button
                 type="button"
-                disabled={isPastTerm}
                 onClick={() => {
-                  if (isPastTerm) return;
                   setSelectedTermForCreation(currentTerm?._id || (terms && terms[0]?._id) || '');
                   setCreateTopicModalOpen(true);
                 }}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition ${
-                  isPastTerm
-                    ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 cursor-pointer'
-                }`}
-                title={isPastTerm ? 'Học kỳ đã kết thúc (CLOSED). Không thể đề xuất thêm đề tài.' : 'Đề xuất đề tài KLTN'}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 cursor-pointer"
+                title="Đề xuất đề tài KLTN"
               >
                 <BookOpen className="w-4 h-4" />
                 <span>+ Đề xuất đề tài KLTN</span>
@@ -1647,19 +1634,16 @@ const LecturerThesesPage = () => {
           </div>
         </div>
 
-        {/* Past Term Read-Only Notification Banner */}
-        {isPastTerm && (
+        {/* Past/Non-active Term Notification Banner */}
+        {!isActiveTerm && (
           <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs mt-4">
             <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
             <div className="flex-1">
-              <span className="font-bold">Đang xem học kỳ trước (Lịch sử - {currentTerm?.name} • {currentTerm?.academicYear}):</span>
+              <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
               <span className="ml-1 text-amber-800">
-                Học kỳ này đã kết thúc. Chế độ <strong>Chỉ xem (Read-Only)</strong> đang bật — giảng viên chỉ được xem lại đề tài, sinh viên, tiến độ và điểm số lịch sử.
+                Học kỳ này không ở trạng thái đang diễn ra.
               </span>
             </div>
-            <span className="px-2.5 py-1 bg-amber-200/80 text-amber-900 rounded-xl font-bold text-[10px] uppercase tracking-wider shrink-0 border border-amber-300">
-              Chỉ xem (Read-Only)
-            </span>
           </div>
         )}
 
@@ -1694,7 +1678,7 @@ const LecturerThesesPage = () => {
               }`}
             >
               <BookOpen className="w-4 h-4" />
-              <span>Ngân hàng đề tài đã duyệt</span>
+              <span>Tất cả đề tài</span>
               <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
                 topicsSubTab === 'APPROVED_BANK' ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
               }`}>
@@ -1781,17 +1765,6 @@ const LecturerThesesPage = () => {
             </select>
           </div>
 
-          {isTopicsView && topicsSubTab === 'APPROVED_BANK' && (
-            <label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 px-3 py-2 rounded-xl border border-slate-200/80 cursor-pointer select-none transition">
-              <input
-                type="checkbox"
-                checked={onlyMyApprovedTopics}
-                onChange={(e) => setOnlyMyApprovedTopics(e.target.checked)}
-                className="w-4 h-4 rounded border-slate-300 text-[#123891] focus:ring-[#123891] cursor-pointer"
-              />
-              <span>Chỉ hiện đề tài của tôi</span>
-            </label>
-          )}
           {!isTopicsView && (
             <div className="text-xs text-slate-500 font-medium">
               Hiển thị <strong>{currentList.length}</strong> đề tài
@@ -1818,7 +1791,9 @@ const LecturerThesesPage = () => {
                 </div>
                 <p className="text-xs text-slate-400 max-w-md mx-auto">
                   {myTopics.length === 0
-                    ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                    ? isActiveTerm
+                      ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                      : 'Học kỳ này không có đề tài đề xuất nào.'
                     : 'Thử thay đổi từ khóa tìm kiếm để tìm đề tài mong muốn.'}
                 </p>
               </div>
@@ -1923,8 +1898,10 @@ const LecturerThesesPage = () => {
                 </div>
                 <p className="text-xs text-slate-400 max-w-md mx-auto">
                   {approvedTopics.length === 0
-                    ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
-                    : 'Thử thay đổi từ khóa tìm kiếm hoặc bỏ chọn "Chỉ hiện đề tài của tôi".'}
+                    ? isActiveTerm
+                      ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                      : 'Học kỳ này chưa có đề tài nào được duyệt.'
+                    : 'Thử thay đổi từ khóa tìm kiếm.'}
                 </p>
               </div>
             ) : (

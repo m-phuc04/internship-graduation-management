@@ -30,7 +30,7 @@ import {
 
 const LecturerThesisProgressPage = () => {
   const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
-  const isPastTerm = currentTerm?.status === 'CLOSED';
+  const isPastTerm = currentTerm?.status !== 'ACTIVE';
 
   const [theses, setTheses] = useState([]);
   const [selectedThesisId, setSelectedThesisId] = useState('ALL');

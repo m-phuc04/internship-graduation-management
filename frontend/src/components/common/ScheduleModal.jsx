@@ -3,6 +3,7 @@ import Modal from './Modal';
 import scheduleApi from '../../api/scheduleApi';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
+import { useAcademicTerm } from '../../context/AcademicTermContext';
 import {
   Calendar,
   Clock,
@@ -32,6 +33,8 @@ const SCHEDULE_TYPES = [
 const ScheduleModal = ({ isOpen, onClose }) => {
   const { user } = useAuth();
   const { showToast } = useToast();
+  const { activeTerm, currentTerm } = useAcademicTerm();
+  const displayTerm = activeTerm || currentTerm;
 
   const [schedules, setSchedules] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -190,7 +193,7 @@ const ScheduleModal = ({ isOpen, onClose }) => {
           <div>
             <div className="font-bold text-sm flex items-center gap-2">
               <Calendar className="w-4 h-4 text-[#123891]" />
-              <span>Học kỳ 1 — Năm học 2026 - 2027</span>
+              <span>{displayTerm ? `${displayTerm.name} — Năm học ${displayTerm.academicYear}` : 'Học kỳ & Năm học'}</span>
             </div>
             <div className="text-slate-600 text-[11px] mt-0.5">
               Khoa Công nghệ Thông tin • Đại học Công nghiệp TP.HCM (IUH)
