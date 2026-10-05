@@ -27,10 +27,12 @@ import {
   FileText,
   CheckCircle2,
   Shield,
+  AlertCircle,
 } from 'lucide-react';
 
 const LecturerInternshipPage = () => {
-  const { currentTerm } = useAcademicTerm();
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
+  const isActiveTerm = currentTerm?.status === 'ACTIVE';
   const [internships, setInternships] = useState([]);
   const [stats, setStats] = useState(null);
   const [lecturerInfo, setLecturerInfo] = useState(null);
@@ -110,7 +112,9 @@ const LecturerInternshipPage = () => {
   const handleOpenConfirmationDoc = async () => {
     setLoadingDoc(true);
     try {
-      const res = await internshipApi.getSupervisionDocument();
+      const res = await internshipApi.getSupervisionDocument({
+        academicTermId: currentTerm?._id || '',
+      });
       if (res.success) {
         setConfirmationData(res.data);
         setDocType('CONFIRMATION');
@@ -281,16 +285,50 @@ const LecturerInternshipPage = () => {
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-        <div className="max-w-md">
+      {/* Search Bar & Academic Term Selector */}
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="w-full sm:w-80">
           <SearchInput
             value={search}
             onChange={handleSearchChange}
             placeholder="Tìm theo MSSV, Tên SV, Doanh nghiệp..."
           />
         </div>
+
+        {/* Academic Term Selector */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
+          <select
+            value={currentTerm?._id || ''}
+            onChange={(e) => {
+              if (setCurrentTerm && e.target.value) {
+                setCurrentTerm(e.target.value);
+              }
+            }}
+            className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+          >
+            {Array.isArray(terms) &&
+              terms.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                </option>
+              ))}
+          </select>
+        </div>
       </div>
+
+      {/* Non-active Term Notification Banner */}
+      {!isActiveTerm && (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+          <div className="flex-1">
+            <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
+            <span className="ml-1 text-amber-800">
+              Học kỳ này không ở trạng thái đang diễn ra.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
@@ -300,8 +338,8 @@ const LecturerInternshipPage = () => {
           </div>
         ) : internships.length === 0 ? (
           <EmptyState
-            title="Chưa có sinh viên thực tập được phân công"
-            description="Bạn hiện chưa có sinh viên thực tập nào được Trưởng Bộ Môn (TBM) phân công hướng dẫn."
+            title={isActiveTerm ? "Chưa có sinh viên thực tập được phân công" : "Không có sinh viên thực tập trong học kỳ này"}
+            description={isActiveTerm ? "Bạn hiện chưa có sinh viên thực tập nào được Trưởng Bộ Môn (TBM) phân công hướng dẫn." : "Không tìm thấy dữ liệu sinh viên thực tập hướng dẫn của học kỳ này."}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -389,10 +427,10 @@ const LecturerInternshipPage = () => {
                         {/* If evaluated: Complete or Print */}
                         {item.evaluation?.score !== undefined && item.evaluation?.score !== null && (
                           <>
-                            {item.status !== 'COMPLETED' && (
+                            {isActiveTerm && item.status !== 'COMPLETED' && (
                               <button
                                 onClick={() => handleOpenComplete(item)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition cursor-pointer"
                                 title="Xác nhận hoàn thành thực tập và khóa phiếu đánh giá"
                               >
                                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
@@ -402,7 +440,7 @@ const LecturerInternshipPage = () => {
 
                             <button
                               onClick={() => handleOpenEvaluationDoc(item)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl transition"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl transition cursor-pointer"
                               title="In phiếu đánh giá thực tập này"
                             >
                               <Printer className="w-3.5 h-3.5" />

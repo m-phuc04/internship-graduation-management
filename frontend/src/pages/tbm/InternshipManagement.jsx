@@ -31,6 +31,7 @@ import {
   UserCheck,
   FileSpreadsheet,
   Download,
+  AlertCircle,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
@@ -44,7 +45,8 @@ const STATUS_FILTERS = [
 ];
 
 const InternshipManagement = () => {
-  const { currentTerm } = useAcademicTerm();
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
+  const isActiveTerm = currentTerm?.status === 'ACTIVE';
   const [internships, setInternships] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -192,12 +194,32 @@ const InternshipManagement = () => {
             />
           </div>
 
+          {/* Academic Term Selector */}
+          <div>
+            <select
+              value={currentTerm?._id || ''}
+              onChange={(e) => {
+                if (setCurrentTerm && e.target.value) {
+                  setCurrentTerm(e.target.value);
+                }
+              }}
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+            >
+              {Array.isArray(terms) &&
+                terms.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                  </option>
+                ))}
+            </select>
+          </div>
+
           {/* Status Filter */}
           <div>
             <select
               value={status}
               onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
             >
               {STATUS_FILTERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -208,6 +230,19 @@ const InternshipManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Non-active Term Notification Banner */}
+      {!isActiveTerm && (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+          <div className="flex-1">
+            <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
+            <span className="ml-1 text-amber-800">
+              Học kỳ này không ở trạng thái đang diễn ra.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">

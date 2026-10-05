@@ -949,6 +949,7 @@ const getSupervisionConfirmationDocument = async ({
   userRole,
   lecturerId = null,
   companyId = null,
+  academicTermId = null,
 }) => {
   let targetLecturerId = lecturerId;
 
@@ -980,6 +981,10 @@ const getSupervisionConfirmationDocument = async ({
     lecturerId: lecturer._id,
     status: { $in: ["APPROVED", "INTERNING", "COMPLETED"] },
   };
+
+  if (academicTermId && academicTermId !== "ALL") {
+    query.academicTermId = academicTermId;
+  }
 
   if (companyId) {
     query.companyId = companyId;
