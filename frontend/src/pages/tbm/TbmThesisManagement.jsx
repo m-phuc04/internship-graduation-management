@@ -657,7 +657,7 @@ const TbmThesisManagement = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5 justify-end">
             {/* Lock / Unlock Icon Button with Tooltip and Badge */}
             <button
               type="button"
@@ -707,10 +707,10 @@ const TbmThesisManagement = () => {
 
             <button
               onClick={() => (activeMainTab === 'PROPOSED_TOPICS' ? fetchProposedTopics() : fetchTheses())}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer"
+              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+              title="Làm mới danh sách"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${(loading || loadingProposedTopics) ? 'animate-spin' : ''}`} />
-              <span>Làm mới</span>
+              <RefreshCw className={`w-4 h-4 ${(loading || loadingProposedTopics) ? 'animate-spin' : ''}`} />
             </button>
 
             <button
@@ -782,16 +782,40 @@ const TbmThesisManagement = () => {
       {activeMainTab === 'PROPOSED_TOPICS' && (
         <div className="space-y-4">
           {/* Filter Bar & View Mode Toggle */}
-          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
-            <div className="w-full md:w-96">
-              <SearchInput
-                value={topicSearch}
-                onChange={(val) => setTopicSearch(val)}
-                placeholder="Tìm tên đề tài, mô tả, GVHD, mã GV, tên SV..."
-              />
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            {/* Row 1: Search Input (left) & Academic Term Selector (right) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+              <div className="w-full sm:w-80 md:w-96">
+                <SearchInput
+                  value={topicSearch}
+                  onChange={(val) => setTopicSearch(val)}
+                  placeholder="Tìm tên đề tài, mô tả, GVHD, mã..."
+                />
+              </div>
+
+              {/* Academic Term Selector */}
+              <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
+                <span className="text-xs font-semibold text-slate-500">Học kỳ:</span>
+                <select
+                  value={currentTerm?._id || ''}
+                  onChange={(e) => {
+                    if (setCurrentTerm && e.target.value) {
+                      setCurrentTerm(e.target.value);
+                    }
+                  }}
+                  className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                >
+                  {Array.isArray(terms) && terms.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+            {/* Row 2: View Mode Toggle (left) & Status Filter + Expand/Collapse (right) */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               {/* View Mode Toggle */}
               <div className="inline-flex p-1 bg-slate-100 rounded-xl border border-slate-200 text-xs">
                 <button
@@ -820,63 +844,45 @@ const TbmThesisManagement = () => {
                 </button>
               </div>
 
-              {/* Academic Term Selector */}
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
-                <select
-                  value={currentTerm?._id || ''}
-                  onChange={(e) => {
-                    if (setCurrentTerm && e.target.value) {
-                      setCurrentTerm(e.target.value);
-                    }
-                  }}
-                  className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
-                >
-                  {Array.isArray(terms) && terms.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : ''}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Status Filter */}
-              <div className="flex items-center gap-1.5">
-                <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-                <select
-                  value={topicStatusFilter}
-                  onChange={(e) => setTopicStatusFilter(e.target.value)}
-                  className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                >
-                  <option value="ALL">Tất cả trạng thái</option>
-                  <option value="PENDING">Chờ duyệt (PENDING)</option>
-                  <option value="APPROVED">Đã duyệt (APPROVED)</option>
-                  <option value="REJECTED">Đã từ chối (REJECTED)</option>
-                </select>
-              </div>
-
-              {/* Expand/Collapse All (Only in BY_LECTURER mode) */}
-              {topicViewMode === 'BY_LECTURER' && groupedByLecturer.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={expandAllLecturers}
-                    className="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-medium transition cursor-pointer"
-                    title="Mở rộng tất cả giảng viên"
+              {/* Status Filter & Expand/Collapse All */}
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto justify-end">
+                <div className="flex items-center gap-1.5">
+                  <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+                  <select
+                    value={topicStatusFilter}
+                    onChange={(e) => setTopicStatusFilter(e.target.value)}
+                    className="px-3.5 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
                   >
-                    Mở tất cả
-                  </button>
-                  <span className="text-slate-300">|</span>
-                  <button
-                    type="button"
-                    onClick={collapseAllLecturers}
-                    className="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-medium transition cursor-pointer"
-                    title="Thu gọn tất cả"
-                  >
-                    Thu gọn
-                  </button>
+                    <option value="ALL">Tất cả trạng thái</option>
+                    <option value="PENDING">Chờ duyệt (PENDING)</option>
+                    <option value="APPROVED">Đã duyệt (APPROVED)</option>
+                    <option value="REJECTED">Đã từ chối (REJECTED)</option>
+                  </select>
                 </div>
-              )}
+
+                {/* Expand/Collapse All (Only in BY_LECTURER mode) */}
+                {topicViewMode === 'BY_LECTURER' && groupedByLecturer.length > 0 && (
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={expandAllLecturers}
+                      className="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-medium transition cursor-pointer"
+                      title="Mở rộng tất cả giảng viên"
+                    >
+                      Mở tất cả
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={collapseAllLecturers}
+                      className="px-2.5 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg text-xs font-medium transition cursor-pointer"
+                      title="Thu gọn tất cả"
+                    >
+                      Thu gọn
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

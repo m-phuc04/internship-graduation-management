@@ -250,7 +250,7 @@ const RegisterInternshipPage = () => {
           Bạn đang có hồ sơ thực tập hoạt động
         </h3>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Quy chế học vụ quy định <strong>1 sinh viên chỉ được tham gia tối đa 1 hồ sơ thực tập đang hoạt động</strong> (PENDING, APPROVED, hoặc INTERNING). Bạn không thể tạo thêm hồ sơ mới trong lúc hồ sơ hiện tại chưa kết thúc hoặc chưa bị từ chối.
+          Bạn không thể tạo thêm hồ sơ mới trong lúc hồ sơ hiện tại chưa kết thúc hoặc chưa bị từ chối.
         </p>
         <div className="pt-2">
           <Link

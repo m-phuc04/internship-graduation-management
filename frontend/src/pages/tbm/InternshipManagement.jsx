@@ -141,13 +141,10 @@ const InternshipManagement = () => {
             <h1 className="text-xl font-bold text-slate-900">
               Quản lý Thực tập Doanh nghiệp (TTDN)
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Xét duyệt hồ sơ đăng ký thực tập của sinh viên, cấu hình mốc thời gian mở cổng và phân công GVHD
-            </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 justify-end">
           {/* Configure Timeline Window Button */}
           <button
             type="button"
@@ -164,11 +161,10 @@ const InternshipManagement = () => {
 
           <button
             onClick={() => fetchInternships()}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer"
+            className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Làm mới</span>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <button

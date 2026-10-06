@@ -422,9 +422,6 @@ const TbmEvaluationManagement = () => {
             <h1 className="text-xl font-bold text-slate-900">
               Tổng hợp Đánh giá Thực tập Doanh nghiệp (TTDN)
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Theo dõi kết quả đánh giá, kỹ năng chuyên môn và quản lý link đánh giá trực tuyến
-            </p>
           </div>
         </div>
 

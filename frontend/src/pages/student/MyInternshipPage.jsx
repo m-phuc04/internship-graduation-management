@@ -485,7 +485,7 @@ const MyInternshipPage = () => {
           } else if (internship.status === 'INTERNING') {
             content = (
               <span>
-                Bạn đang trong quá trình <strong>THỰC TẬP (INTERNING)</strong> tại doanh nghiệp. Nhớ nộp báo cáo định kỳ đầy đủ.
+                Bạn đang trong quá trình <strong>THỰC TẬP</strong> tại doanh nghiệp. Nhớ nộp báo cáo định kỳ đầy đủ.
               </span>
             );
           } else if (internship.status === 'REJECTED') {

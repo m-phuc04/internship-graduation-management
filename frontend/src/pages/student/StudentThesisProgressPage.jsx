@@ -444,9 +444,15 @@ const StudentThesisProgressPage = () => {
                 </h2>
                 {thesis && <StatusBadge status={thesis.status} size="md" />}
               </div>
-              <p className="text-xs text-slate-500 font-medium mt-1">
-                Theo dõi, viết nhật ký và nộp tệp báo cáo hàng tuần theo tiến độ thực hiện Khóa luận tốt nghiệp (KLTN).
-              </p>
+              <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
+                <span>Học kỳ 1 — Năm học 2026 - 2027</span>
+                <span>•</span>
+                <span>Khoa Công nghệ Thông tin (IUH)</span>
+                <span>•</span>
+                <span>Nhóm 2 SV</span>
+                <span>•</span>
+                <span>Thời gian KLTN: 01/08/2026 — 15/01/2027</span>
+              </div>
             </div>
           </div>
 

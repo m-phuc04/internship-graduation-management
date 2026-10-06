@@ -199,9 +199,6 @@ const LecturerNewsManagement = () => {
             <h1 className="text-xl font-bold text-slate-900 leading-tight">
               Quản Lý Tin Tức & Sự Kiện
             </h1>
-            <p className="text-xs text-slate-500 mt-1">
-              Tạo và quản lý các thông báo, sự kiện và tin tức hiển thị trực tiếp trên Cổng thông tin công khai.
-            </p>
           </div>
         </div>
 
@@ -293,7 +290,6 @@ const LecturerNewsManagement = () => {
                   <td colSpan={7} className="px-5 py-12 text-center text-slate-400">
                     <Newspaper className="w-10 h-10 mx-auto text-slate-300 mb-2" />
                     <div className="font-semibold text-slate-600 text-sm">Chưa có tin tức nào</div>
-                    <div className="text-xs text-slate-400 mt-1">Bấm nút "Tạo Tin Tức Mới" để đăng bài viết đầu tiên.</div>
                   </td>
                 </tr>
               ) : (

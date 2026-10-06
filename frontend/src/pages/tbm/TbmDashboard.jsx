@@ -70,18 +70,15 @@ const TbmDashboard = () => {
             <h1 className="text-xl font-bold text-slate-900">
               Tổng quan Thực tập & Khóa luận
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Theo dõi tiến độ thực tập doanh nghiệp, khóa luận tốt nghiệp và tình hình xét duyệt
-            </p>
           </div>
         </div>
 
         <button
           onClick={fetchDashboard}
-          className="self-start sm:self-auto inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition cursor-pointer shrink-0"
+          className="self-start sm:self-auto p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer shrink-0"
+          title="Làm mới dữ liệu"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Làm mới dữ liệu</span>
+          <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 
