@@ -36,12 +36,12 @@ import {
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'PENDING', label: 'Chờ duyệt (PENDING)' },
-  { value: 'APPROVED', label: 'Đã duyệt (APPROVED)' },
-  { value: 'INTERNING', label: 'Đang thực tập (INTERNING)' },
-  { value: 'COMPLETED', label: 'Đã hoàn thành (COMPLETED)' },
-  { value: 'REJECTED', label: 'Đã từ chối (REJECTED)' },
-  { value: 'CANCELLED', label: 'Đã hủy (CANCELLED)' },
+  { value: 'PENDING', label: 'Chờ duyệt' },
+  { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'INTERNING', label: 'Đang thực tập' },
+  { value: 'COMPLETED', label: 'Đã hoàn thành' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
+  { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
 const InternshipManagement = () => {
@@ -204,7 +204,7 @@ const InternshipManagement = () => {
               {Array.isArray(terms) &&
                 terms.map((t) => (
                   <option key={t._id} value={t._id}>
-                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
                   </option>
                 ))}
             </select>

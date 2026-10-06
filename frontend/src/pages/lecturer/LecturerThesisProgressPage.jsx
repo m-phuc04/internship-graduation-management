@@ -375,7 +375,7 @@ const LecturerThesisProgressPage = () => {
               {Array.isArray(terms) &&
                 terms.map((t) => (
                   <option key={t._id} value={t._id}>
-                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
                   </option>
                 ))}
             </select>
@@ -405,10 +405,10 @@ const LecturerThesisProgressPage = () => {
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
           >
             <option value="ALL">Tất cả trạng thái</option>
-            <option value="SUBMITTED">Chờ duyệt (SUBMITTED)</option>
-            <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
-            <option value="APPROVED">Đã duyệt (APPROVED)</option>
-            <option value="REJECTED">Từ chối (REJECTED)</option>
+            <option value="SUBMITTED">Chờ duyệt</option>
+            <option value="REVIEWING">Đang xem xét</option>
+            <option value="APPROVED">Đã duyệt</option>
+            <option value="REJECTED">Từ chối</option>
           </select>
         </div>
       </div>
@@ -879,9 +879,9 @@ const LecturerThesisProgressPage = () => {
                 onChange={(e) => setReviewStatus(e.target.value)}
                 className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               >
-                <option value="APPROVED">Phê duyệt (APPROVED)</option>
-                <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
-                <option value="REJECTED">Yêu cầu sửa / Từ chối (REJECTED)</option>
+                <option value="APPROVED">Phê duyệt</option>
+                <option value="REVIEWING">Đang xem xét</option>
+                <option value="REJECTED">Yêu cầu sửa / Từ chối</option>
               </select>
             </div>
 

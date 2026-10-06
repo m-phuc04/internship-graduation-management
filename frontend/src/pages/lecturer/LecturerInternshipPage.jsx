@@ -310,7 +310,7 @@ const LecturerInternshipPage = () => {
             {Array.isArray(terms) &&
               terms.map((t) => (
                 <option key={t._id} value={t._id}>
-                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
                 </option>
               ))}
           </select>

@@ -284,10 +284,10 @@ const AcademicTermManagement = () => {
             className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700"
           >
             <option value="ALL">Tất cả trạng thái</option>
-            <option value="ACTIVE">🟢 Đang diễn ra (ACTIVE)</option>
-            <option value="UPCOMING">🟡 Sắp diễn ra (UPCOMING)</option>
-            <option value="CLOSED">🔵 Đã đóng (CLOSED)</option>
-            <option value="DRAFT">⚪ Nháp cấu hình (DRAFT)</option>
+            <option value="ACTIVE">🟢 Đang diễn ra</option>
+            <option value="UPCOMING">🟡 Sắp diễn ra</option>
+            <option value="CLOSED">🔵 Đã đóng</option>
+            <option value="DRAFT">⚪ Nháp cấu hình</option>
           </select>
 
           {/* Academic Year Filter */}
@@ -559,10 +559,10 @@ const AcademicTermManagement = () => {
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] font-medium"
                     >
-                      <option value="DRAFT">Nháp cấu hình (DRAFT)</option>
-                      <option value="UPCOMING">Sắp diễn ra (UPCOMING)</option>
-                      <option value="ACTIVE">Đang diễn ra (ACTIVE)</option>
-                      <option value="CLOSED">Đã đóng (CLOSED)</option>
+                      <option value="DRAFT">Nháp cấu hình</option>
+                      <option value="UPCOMING">Sắp diễn ra</option>
+                      <option value="ACTIVE">Đang diễn ra</option>
+                      <option value="CLOSED">Đã đóng</option>
                     </select>
                   </div>
 

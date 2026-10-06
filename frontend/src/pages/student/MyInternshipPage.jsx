@@ -473,13 +473,13 @@ const MyInternshipPage = () => {
           if (internship.status === 'PENDING') {
             content = (
               <span>
-                Hồ sơ của bạn đã được tiếp nhận và đang ở trạng thái <strong>PENDING (Chờ xét duyệt)</strong>. Trưởng Bộ Môn (TBM) sẽ kiểm tra thông tin và phân công Giảng viên hướng dẫn.
+                Hồ sơ của bạn đã được tiếp nhận và đang ở trạng thái <strong>Chờ xét duyệt</strong>. Trưởng Bộ Môn (TBM) sẽ kiểm tra thông tin và phân công Giảng viên hướng dẫn.
               </span>
             );
           } else if (internship.status === 'APPROVED') {
             content = (
               <span>
-                Hồ sơ thực tập của bạn đã được <strong>PHÊ DUYỆT (APPROVED)</strong> thành công. Vui lòng liên hệ Giảng viên hướng dẫn để bắt đầu quá trình thực tập.
+                Hồ sơ thực tập của bạn đã được <strong>PHÊ DUYỆT</strong> thành công. Vui lòng liên hệ Giảng viên hướng dẫn để bắt đầu quá trình thực tập.
               </span>
             );
           } else if (internship.status === 'INTERNING') {
@@ -493,7 +493,7 @@ const MyInternshipPage = () => {
             content = (
               <div className="space-y-2">
                 <div className="font-bold text-rose-900 text-sm flex items-center gap-1.5">
-                  <span>Hồ sơ thực tập đã bị TỪ CHỐI (REJECTED)</span>
+                  <span>Hồ sơ thực tập đã bị TỪ CHỐI</span>
                 </div>
                 <div className="p-3.5 bg-white rounded-xl border border-rose-200 text-rose-900 shadow-2xs">
                   <span className="font-bold text-rose-800 block mb-1">Lý do từ chối:</span>
@@ -512,7 +512,7 @@ const MyInternshipPage = () => {
           } else if (internship.status === 'COMPLETED') {
             content = (
               <span>
-                Chúc mừng bạn đã <strong>HOÀN THÀNH (COMPLETED)</strong> kỳ thực tập doanh nghiệp!
+                Chúc mừng bạn đã <strong>HOÀN THÀNH</strong> kỳ thực tập doanh nghiệp!
               </span>
             );
           }

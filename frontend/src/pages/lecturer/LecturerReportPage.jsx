@@ -23,10 +23,10 @@ import {
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Chờ chấm (SUBMITTED)' },
-  { value: 'APPROVED', label: 'Đã duyệt (APPROVED)' },
-  { value: 'REJECTED', label: 'Yêu cầu sửa (REJECTED)' },
-  { value: 'REVIEWING', label: 'Đang xem xét (REVIEWING)' },
+  { value: 'SUBMITTED', label: 'Chờ chấm' },
+  { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Yêu cầu sửa' },
+  { value: 'REVIEWING', label: 'Đang xem xét' },
 ];
 
 const TYPE_OPTIONS = [

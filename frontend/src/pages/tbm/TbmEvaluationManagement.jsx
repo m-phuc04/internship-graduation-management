@@ -35,9 +35,9 @@ import evaluationRecreateService from '../../utils/evaluationRecreateService';
 
 const EVAL_STATUS_FILTERS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Đã gửi (SUBMITTED)' },
-  { value: 'CONFIRMED', label: 'Hoàn tất (COMPLETED)' },
-  { value: 'DRAFT', label: 'Bản nháp (DRAFT)' },
+  { value: 'SUBMITTED', label: 'Đã gửi' },
+  { value: 'CONFIRMED', label: 'Hoàn tất' },
+  { value: 'DRAFT', label: 'Bản nháp' },
   { value: 'UNASSESSED', label: 'Chưa đánh giá' },
 ];
 
@@ -748,9 +748,9 @@ const TbmEvaluationManagement = () => {
                 className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-amber-500/20"
               >
                 <option value="">Tất cả trạng thái yêu cầu</option>
-                <option value="PENDING">Chờ TBM duyệt (PENDING)</option>
-                <option value="APPROVED">Đã duyệt (APPROVED)</option>
-                <option value="REJECTED">Từ chối (REJECTED)</option>
+                <option value="PENDING">Chờ TBM duyệt</option>
+                <option value="APPROVED">Đã duyệt</option>
+                <option value="REJECTED">Từ chối</option>
               </select>
 
               <button
@@ -925,10 +925,10 @@ const TbmEvaluationManagement = () => {
                 className="px-3 py-2 text-xs font-medium border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20"
               >
                 <option value="">Tất cả trạng thái link</option>
-                <option value="PENDING">Chờ DN đánh giá (PENDING)</option>
-                <option value="SUBMITTED">Đã nộp (SUBMITTED)</option>
-                <option value="EXPIRED">Đã hết hạn (EXPIRED)</option>
-                <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+                <option value="PENDING">Chờ DN đánh giá</option>
+                <option value="SUBMITTED">Đã nộp</option>
+                <option value="EXPIRED">Đã hết hạn</option>
+                <option value="CANCELLED">Đã hủy</option>
               </select>
 
               <button

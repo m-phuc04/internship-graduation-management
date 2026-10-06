@@ -67,9 +67,8 @@ const thesisTopicSchema = new mongoose.Schema(
 
     maxGroups: {
       type: Number,
-      required: [true, "Số lượng nhóm tối đa là bắt buộc"],
-      min: [1, "Số lượng nhóm phải từ 1 trở lên"],
       default: 1,
+      min: 1,
     },
 
     currentGroups: {
@@ -112,6 +111,41 @@ const thesisTopicSchema = new mongoose.Schema(
     rejectedAt: {
       type: Date,
       default: null,
+    },
+
+    editRequest: {
+      newTitle: { type: String, trim: true, default: null },
+      newDescription: { type: String, trim: true, default: null },
+      requestedAt: { type: Date, default: null },
+      status: {
+        type: String,
+        enum: ["NONE", "PENDING", "APPROVED", "REJECTED"],
+        default: "NONE",
+      },
+      rejectReason: { type: String, default: null },
+      reviewedAt: { type: Date, default: null },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+    },
+
+    deleteRequest: {
+      reason: { type: String, trim: true, default: null },
+      requestedAt: { type: Date, default: null },
+      status: {
+        type: String,
+        enum: ["NONE", "PENDING", "APPROVED", "REJECTED"],
+        default: "NONE",
+      },
+      rejectReason: { type: String, default: null },
+      reviewedAt: { type: Date, default: null },
+      reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
     },
 
     registeredGroups: [registeredGroupSchema],

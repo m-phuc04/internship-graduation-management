@@ -26,8 +26,8 @@ import {
 const EVAL_STATUS_FILTERS = [
   { value: '', label: 'Tất cả trạng thái' },
   { value: 'UNASSESSED', label: 'Chưa đánh giá' },
-  { value: 'DRAFT', label: 'Bản nháp (DRAFT)' },
-  { value: 'SUBMITTED', label: 'Đã gửi (SUBMITTED)' },
+  { value: 'DRAFT', label: 'Bản nháp' },
+  { value: 'SUBMITTED', label: 'Đã gửi' },
 ];
 
 const CompanyEvaluationPage = () => {

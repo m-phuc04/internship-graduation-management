@@ -470,7 +470,7 @@ const GradeThesisModal = ({
           <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2.5 shadow-2xs">
             <Lock className="w-4 h-4 shrink-0 text-emerald-600" />
             <div>
-              <div className="font-bold">Đánh giá đã hoàn thành (COMPLETED)</div>
+              <div className="font-bold">Đánh giá đã hoàn thành</div>
               <p className="text-[11px] text-emerald-700 mt-0.5">
                 Đề tài khóa luận này đã hoàn tất nghiệm thu và đánh giá. Không được phép chỉnh sửa điểm và nhận xét.
               </p>
@@ -577,7 +577,7 @@ const GradeThesisModal = ({
                 </div>
               </div>
               <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-center">
-                <div className="text-[10.5px] font-bold text-emerald-700 uppercase">Đã duyệt (Approved)</div>
+                <div className="text-[10.5px] font-bold text-emerald-700 uppercase">Đã duyệt</div>
                 <div className="text-base font-extrabold text-emerald-950 font-mono mt-0.5">
                   {loadingProgress ? '...' : stats.approved || 0}
                 </div>

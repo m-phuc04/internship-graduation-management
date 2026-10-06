@@ -235,8 +235,8 @@ const StudentFormModal = ({
                 }
                 className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               >
-                <option value="true">Hoạt động (Active)</option>
-                <option value="false">Khóa / Vô hiệu hóa (Inactive)</option>
+                <option value="true">Hoạt động</option>
+                <option value="false">Khóa / Vô hiệu hóa</option>
               </select>
             </div>
           )}

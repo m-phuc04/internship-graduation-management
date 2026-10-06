@@ -253,8 +253,8 @@ const CompanyFormModal = ({
               onChange={handleChange}
               className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
-              <option value="ACTIVE">Đang hợp tác (ACTIVE)</option>
-              <option value="INACTIVE">Tạm ngưng (INACTIVE)</option>
+              <option value="ACTIVE">Đang hợp tác</option>
+              <option value="INACTIVE">Tạm ngưng</option>
             </select>
           </div>
         </div>

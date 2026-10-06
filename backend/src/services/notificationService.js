@@ -40,15 +40,20 @@ const createNotification = async ({
       }
     }
 
-    // Avoid duplicate unread notification for the same reference
+    // Avoid duplicate unread notification for the same reference and same title
     if (referenceId && referenceModel && targetRecipientId) {
       const existing = await Notification.findOne({
         recipientId: targetRecipientId,
         referenceId,
         referenceModel,
+        title: title.trim(),
         isRead: false,
       });
       if (existing) {
+        existing.message = message.trim();
+        existing.link = link || existing.link;
+        existing.updatedAt = new Date();
+        await existing.save();
         return existing;
       }
     }

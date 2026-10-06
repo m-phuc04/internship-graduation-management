@@ -611,7 +611,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-3 shadow-2xs">
           <Lock className="w-5 h-5 shrink-0 text-emerald-600" />
           <div>
-            <div className="font-bold text-sm">Đánh giá đã hoàn thành (COMPLETED)</div>
+            <div className="font-bold text-sm">Đánh giá đã hoàn thành</div>
             <p className="text-xs text-emerald-700 mt-0.5">
               Đề tài khóa luận này đã hoàn tất nghiệm thu và khóa đánh giá. Không được phép chỉnh sửa điểm và nhận xét.
             </p>
@@ -621,7 +621,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-3 shadow-2xs">
           <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600" />
           <div>
-            <div className="font-bold text-sm">Đề tài đã bị dừng quy trình (FAIL / REJECTED)</div>
+            <div className="font-bold text-sm">Đề tài đã bị dừng quy trình</div>
             <p className="text-xs text-rose-700 mt-0.5">
               {thesis.rejectionReason || 'Đề tài không đủ điều kiện hoặc quá hạn đánh giá KLTN.'}
             </p>
@@ -746,7 +746,7 @@ const LecturerThesisEvaluationDetailPage = () => {
             </div>
 
             <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1">
-              <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Đã phê duyệt (Approved)</div>
+              <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Đã phê duyệt</div>
               <div className="text-2xl font-extrabold text-emerald-950 font-mono">
                 {loadingProgress ? '...' : stats.approved || 0}
               </div>

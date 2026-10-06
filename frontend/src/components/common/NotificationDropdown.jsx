@@ -218,6 +218,20 @@ const NotificationDropdown = () => {
       }
     }
 
+    if (role === 'TBM') {
+      if (
+        titleLower.includes('đề tài') ||
+        messageLower.includes('đề tài') ||
+        titleLower.includes('chỉnh sửa đề tài') ||
+        titleLower.includes('xóa đề tài') ||
+        item.type === 'THESIS'
+      ) {
+        if (!targetLink || targetLink === '/tbm/theses') {
+          targetLink = '/tbm/theses?tab=proposed';
+        }
+      }
+    }
+
     if (role === 'STUDENT' && targetLink) {
       if (targetLink.startsWith('/lecturer/reports') || targetLink.startsWith('/tbm/reports')) {
         targetLink = '/student/reports';

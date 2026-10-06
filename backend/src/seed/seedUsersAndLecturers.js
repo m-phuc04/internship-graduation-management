@@ -456,7 +456,6 @@ const seedUsersAndLecturers = async () => {
               title: item.title,
               supervisorId: lecturer._id,
               academicTermId: targetSeedTerm?._id || null,
-              maxGroups: 1,
               currentGroups: 0,
               description: null,
               status: "APPROVED",

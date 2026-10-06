@@ -167,8 +167,8 @@ const CompanyManagement = () => {
               className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
               <option value="">-- Tất cả trạng thái --</option>
-              <option value="ACTIVE">Đang hợp tác (ACTIVE)</option>
-              <option value="INACTIVE">Tạm ngưng (INACTIVE)</option>
+              <option value="ACTIVE">Đang hợp tác</option>
+              <option value="INACTIVE">Tạm ngưng</option>
             </select>
           </div>
         </div>

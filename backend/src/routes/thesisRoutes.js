@@ -49,6 +49,70 @@ router.patch(
   thesisController.rejectTopicByTbm,
 );
 
+// TBM / ADMIN: Chỉnh sửa đề tài trực tiếp
+router.put(
+  "/topics/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
+  thesisController.updateTopic,
+);
+
+// TBM / ADMIN: Xóa đề tài trực tiếp (Tự động gửi thông báo cho GVHD)
+router.delete(
+  "/topics/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
+  thesisController.deleteTopic,
+);
+
+// GV: Gửi yêu cầu chỉnh sửa đề tài đến TBM
+router.post(
+  "/topics/:id/request-edit",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.requestEditTopic,
+);
+
+// GV: Gửi yêu cầu xóa đề tài đến TBM
+router.post(
+  "/topics/:id/request-delete",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.requestDeleteTopic,
+);
+
+// TBM: Duyệt yêu cầu chỉnh sửa đề tài
+router.patch(
+  "/topics/:id/approve-edit",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.approveEditTopic,
+);
+
+// TBM: Từ chối yêu cầu chỉnh sửa đề tài
+router.patch(
+  "/topics/:id/reject-edit",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.rejectEditTopic,
+);
+
+// TBM: Duyệt yêu cầu xóa đề tài
+router.patch(
+  "/topics/:id/approve-delete",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.approveDeleteTopic,
+);
+
+// TBM: Từ chối yêu cầu xóa đề tài
+router.patch(
+  "/topics/:id/reject-delete",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.rejectDeleteTopic,
+);
+
 // SV: Xem danh sách đề tài APPROVED
 router.get(
   "/topics/approved",

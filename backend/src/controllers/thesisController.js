@@ -618,6 +618,149 @@ const rejectTopicByTbm = async (req, res, next) => {
   }
 };
 
+// Cập nhật thông tin đề tài trực tiếp (TBM / ADMIN)
+const updateTopic = async (req, res, next) => {
+  try {
+    const topic = await thesisService.updateTopic(
+      req.params.id,
+      req.user.userId || req.user._id,
+      req.body
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Đã cập nhật đề tài "${topic.title}" thành công`,
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GV gửi yêu cầu chỉnh sửa đề tài đến TBM
+const requestEditTopic = async (req, res, next) => {
+  try {
+    const topic = await thesisService.requestEditTopicByLecturer(
+      req.params.id,
+      req.user.userId || req.user._id,
+      req.body
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã gửi yêu cầu chỉnh sửa đề tài đến Trưởng Bộ Môn để xét duyệt",
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// GV gửi yêu cầu xóa đề tài đến TBM
+const requestDeleteTopic = async (req, res, next) => {
+  try {
+    const topic = await thesisService.requestDeleteTopicByLecturer(
+      req.params.id,
+      req.user.userId || req.user._id,
+      req.body
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã gửi yêu cầu xóa đề tài đến Trưởng Bộ Môn để xét duyệt",
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM duyệt yêu cầu chỉnh sửa đề tài
+const approveEditTopic = async (req, res, next) => {
+  try {
+    const topic = await thesisService.approveEditTopicByTbm(
+      req.params.id,
+      req.user.userId || req.user._id
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Đã phê duyệt yêu cầu chỉnh sửa đề tài "${topic.title}"`,
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM từ chối yêu cầu chỉnh sửa đề tài
+const rejectEditTopic = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const topic = await thesisService.rejectEditTopicByTbm(
+      req.params.id,
+      req.user.userId || req.user._id,
+      reason
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã từ chối yêu cầu chỉnh sửa đề tài",
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM duyệt yêu cầu xóa đề tài
+const approveDeleteTopic = async (req, res, next) => {
+  try {
+    const result = await thesisService.approveDeleteTopicByTbm(
+      req.params.id,
+      req.user.userId || req.user._id
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM từ chối yêu cầu xóa đề tài
+const rejectDeleteTopic = async (req, res, next) => {
+  try {
+    const { reason } = req.body;
+    const topic = await thesisService.rejectDeleteTopicByTbm(
+      req.params.id,
+      req.user.userId || req.user._id,
+      reason
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Đã từ chối yêu cầu xóa đề tài",
+      data: topic,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Xóa đề tài trực tiếp (TBM / GV)
+const deleteTopic = async (req, res, next) => {
+  try {
+    const result = await thesisService.deleteTopic(
+      req.params.id,
+      req.user.userId || req.user._id
+    );
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // SV: Lấy danh sách đề tài APPROVED
 const getApprovedTopicsForStudent = async (req, res, next) => {
   try {
@@ -651,7 +794,7 @@ const registerTopicByStudent = async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: `Đăng ký đề tài "${result.topic.title}" thành công (Nhóm ${result.groupOrder}/${result.topic.maxGroups})`,
+      message: `Đăng ký đề tài "${result.topic.title}" thành công`,
       data: result,
     });
   } catch (error) {
@@ -1027,6 +1170,14 @@ export default {
   getTopicsForTbm,
   approveTopicByTbm,
   rejectTopicByTbm,
+  updateTopic,
+  deleteTopic,
+  requestEditTopic,
+  requestDeleteTopic,
+  approveEditTopic,
+  rejectEditTopic,
+  approveDeleteTopic,
+  rejectDeleteTopic,
   getApprovedTopicsForStudent,
   registerTopicByStudent,
 };

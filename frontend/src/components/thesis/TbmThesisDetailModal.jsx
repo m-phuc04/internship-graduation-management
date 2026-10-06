@@ -77,7 +77,7 @@ const TbmThesisDetailModal = ({
           <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs flex items-center gap-2.5 shadow-2xs">
             <Lock className="w-4 h-4 shrink-0 text-emerald-600" />
             <div>
-              <div className="font-bold">Đề tài đã hoàn thành nghiệm thu (COMPLETED)</div>
+              <div className="font-bold">Đề tài đã hoàn thành nghiệm thu</div>
               <p className="text-[11px] text-emerald-700 mt-0.5">
                 Dữ liệu đánh giá, bảng điểm và phân công đã được khóa cố định. Chế độ chỉ xem (Read-only).
               </p>
