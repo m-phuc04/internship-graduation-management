@@ -574,49 +574,6 @@ const ProfilePage = () => {
                   <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
                 </div>
               </div>
-
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Số lượng SV có thể nhận (Tối đa)</span>
-                {isEditing ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      min={lecturer.currentSupervisedStudents || 1}
-                      max="50"
-                      value={maxSupervisedStudents}
-                      onChange={(e) => setMaxSupervisedStudents(e.target.value)}
-                      className="w-full p-2.5 bg-blue-50/50 border border-blue-300 rounded-xl text-xs font-bold text-[#102d7d] focus:outline-none focus:ring-2 focus:ring-[#123891]/20"
-                    />
-                  </div>
-                ) : (
-                  <div className="p-3 bg-blue-50/50 border border-blue-100 rounded-xl text-xs font-bold text-[#102d7d] flex items-center justify-between">
-                    <span>Tối đa {lecturer.maxSupervisedStudents ?? lecturer.maxStudents ?? 5} sinh viên</span>
-                    <span className="text-[10px] text-[#123891] font-normal">Có thể chỉnh sửa</span>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Đang hướng dẫn / Còn lại</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between">
-                  <span>
-                    Đang nhận: {lecturer.currentSupervisedStudents || 0} / {lecturer.maxSupervisedStudents ?? lecturer.maxStudents ?? 5} SV
-                  </span>
-                  <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200/60">
-                    Còn {lecturer.remainingQuota ?? Math.max(0, (lecturer.maxSupervisedStudents ?? 5) - (lecturer.currentSupervisedStudents || 0))}
-                  </span>
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Trạng thái tiếp nhận SV</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold flex items-center justify-between">
-                  <span className={lecturer.isAvailable ? 'text-emerald-700' : 'text-amber-700'}>
-                    {lecturer.isAvailable ? '✓ Sẵn sàng nhận SV' : 'Tạm ngưng nhận'}
-                  </span>
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              </div>
             </div>
           )}
 

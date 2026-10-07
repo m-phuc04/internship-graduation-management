@@ -89,16 +89,22 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
           >
             <option value="">-- Chưa phân công (Phân công sau) --</option>
-            {availableLecturers.map((lec) => (
-              <option
-                key={lec._id}
-                value={lec._id}
-                disabled={!lec.canAssign}
-              >
-                {lec.academicTitle} {lec.userId?.fullName} - Mã GV: {lec.lecturerCode} [{lec.activeStudentsCount}/{lec.maxStudents} SV]
-                {!lec.canAssign ? ' - ĐÃ HẾT CHỈ TIÊU' : ''}
-              </option>
-            ))}
+            {availableLecturers.map((lec) => {
+              const rawName = (lec.fullName || lec.userId?.fullName || 'Giảng viên').trim();
+              const title = (lec.academicTitle || '').trim();
+              const displayName = title && !rawName.toLowerCase().startsWith(title.toLowerCase())
+                ? `${title} ${rawName}`
+                : rawName;
+              const code = lec.lecturerCode ? ` - Mã GV: ${lec.lecturerCode}` : '';
+              return (
+                <option
+                  key={lec._id}
+                  value={lec._id}
+                >
+                  {displayName}{code}
+                </option>
+              );
+            })}
           </select>
           <p className="text-[11px] text-slate-400 mt-1">
             Bạn có thể chọn GVHD ngay bây giờ hoặc phân công sau trong danh sách hồ sơ.

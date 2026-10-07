@@ -94,28 +94,28 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
             ) : (
               availableLecturers.map((lec) => {
                 const isSelected = selectedLecturerId === lec._id;
-                const isFull = !lec.canAssign;
+                const rawName = (lec.fullName || lec.userId?.fullName || 'Giảng viên').trim();
+                const title = (lec.academicTitle || '').trim();
+                const displayName = title && !rawName.toLowerCase().startsWith(title.toLowerCase())
+                  ? `${title} ${rawName}`
+                  : rawName;
 
                 return (
                   <div
                     key={lec._id}
                     onClick={() => {
-                      if (!isFull) {
-                        setSelectedLecturerId(lec._id);
-                        setError('');
-                      }
+                      setSelectedLecturerId(lec._id);
+                      setError('');
                     }}
                     className={`p-3 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-3 ${
                       isSelected
                         ? 'bg-blue-50 border-[#123891] ring-2 ring-blue-500/20'
-                        : isFull
-                        ? 'bg-slate-50/60 border-slate-200 opacity-60 cursor-not-allowed'
                         : 'bg-white border-slate-200 hover:border-blue-300'
                     }`}
                   >
                     <div className="min-w-0">
                       <div className="font-bold text-slate-900">
-                        {lec.academicTitle} {lec.userId?.fullName}
+                        {displayName}
                       </div>
                       <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 mt-0.5">
                         <span className="font-semibold text-[#123891]">Mã GV: {lec.lecturerCode}</span>
@@ -123,20 +123,9 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                     </div>
 
                     <div className="text-right shrink-0">
-                      <span
-                        className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                          isFull
-                            ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                            : 'bg-blue-50 text-[#102d7d] border border-blue-200'
-                        }`}
-                      >
-                        {lec.activeStudentsCount} / {lec.maxStudents} SV
+                      <span className="text-[11px] font-bold text-slate-500 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded-md">
+                        Giảng viên
                       </span>
-                      {isFull && (
-                        <div className="text-[10px] text-rose-600 font-semibold mt-0.5">
-                          Hết chỉ tiêu
-                        </div>
-                      )}
                     </div>
                   </div>
                 );

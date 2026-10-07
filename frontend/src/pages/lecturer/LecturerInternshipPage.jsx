@@ -267,10 +267,10 @@ const LecturerInternshipPage = () => {
 
             <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-right">
               <div className="text-[11px] font-semibold text-[#102d7d] uppercase tracking-wider">
-                Chỉ tiêu hướng dẫn
+                SV đang hướng dẫn
               </div>
               <div className="text-lg font-extrabold text-[#123891] mt-0.5">
-                {stats?.activeCount || 0} / {stats?.maxStudents || 10} <span className="text-xs font-semibold text-[#123891]">SV</span>
+                {stats?.activeCount || 0} <span className="text-xs font-semibold text-[#123891]">SV</span>
               </div>
             </div>
 
