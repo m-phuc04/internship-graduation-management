@@ -927,6 +927,7 @@ const TbmThesisEvaluationManagement = () => {
                       <th className="py-3.5 px-4">Giảng viên Khóa Luận</th>
                       <th className="py-3.5 px-4">Bảng điểm thành phần</th>
                       <th className="py-3.5 px-4">Điểm Tổng Kết</th>
+                      <th className="py-3.5 px-4 text-center">Kết quả</th>
                       <th className="py-3.5 px-4 text-right">Thao tác</th>
                     </tr>
                   </thead>
@@ -1093,7 +1094,11 @@ const TbmThesisEvaluationManagement = () => {
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             {scoreInfo.finalScore !== null ? (
                               <div className="inline-flex flex-col">
-                                <span className="text-base font-extrabold text-emerald-600 font-mono">
+                                <span
+                                  className={`text-base font-extrabold font-mono ${
+                                    scoreInfo.finalScore >= 5.0 ? 'text-emerald-600' : 'text-rose-600'
+                                  }`}
+                                >
                                   {scoreInfo.finalScore}
                                 </span>
                                 <span className="text-[10px] text-slate-400 font-normal">
@@ -1102,6 +1107,28 @@ const TbmThesisEvaluationManagement = () => {
                               </div>
                             ) : (
                               <span className="text-slate-400 font-normal font-sans text-sm">—</span>
+                            )}
+                          </td>
+
+                          {/* Result (PASS / FAIL) */}
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            {scoreInfo.finalScore !== null ? (
+                              scoreInfo.finalScore >= 5.0 ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                  <span>PASS (Đạt)</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                                  <span>FAIL (Không đạt)</span>
+                                </span>
+                              )
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
+                                <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                <span>Chưa có điểm</span>
+                              </span>
                             )}
                           </td>
 
@@ -1824,15 +1851,43 @@ const TbmThesisEvaluationManagement = () => {
                 </div>
               </div>
 
-              {/* Final Score */}
-              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between">
+              {/* Final Score & Result */}
+              <div
+                className={`p-4 rounded-2xl border flex items-center justify-between ${
+                  modalScoreInfo.finalScore !== null
+                    ? modalScoreInfo.finalScore >= 5.0
+                      ? 'bg-emerald-50 border-emerald-200'
+                      : 'bg-rose-50 border-rose-200'
+                    : 'bg-slate-50 border-slate-200'
+                }`}
+              >
                 <div>
-                  <div className="font-bold text-emerald-900 text-sm">Điểm Tổng Kết Khóa Luận</div>
-                  <div className="text-[11px] text-emerald-700">
+                  <div className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                    <span>Điểm Tổng Kết Khóa Luận</span>
+                    {modalScoreInfo.finalScore !== null &&
+                      (modalScoreInfo.finalScore >= 5.0 ? (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                          PASS (Đạt)
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                          FAIL (Không đạt)
+                        </span>
+                      ))}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
                     Công thức: (GVHD × 0.5) + (PB Kín × 0.3) + (Hội đồng × 0.2)
                   </div>
                 </div>
-                <div className="text-2xl font-black font-mono text-emerald-700">
+                <div
+                  className={`text-2xl font-black font-mono ${
+                    modalScoreInfo.finalScore !== null
+                      ? modalScoreInfo.finalScore >= 5.0
+                        ? 'text-emerald-700'
+                        : 'text-rose-700'
+                      : 'text-slate-400'
+                  }`}
+                >
                   {modalScoreInfo.finalScore ?? '—'}
                 </div>
               </div>

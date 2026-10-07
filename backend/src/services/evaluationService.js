@@ -8,8 +8,133 @@ import Company from "../models/Company.js";
 import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
+import AcademicTerm from "../models/AcademicTerm.js";
 import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
+
+// ====================
+// Helper: Validate TTDN Evaluation Window
+// ====================
+export const validateInternshipEvaluationWindow = (term, checkDate = new Date()) => {
+  if (!term) return { allowed: true };
+  const internshipCfg = term.internship || {};
+  const startRaw =
+    internshipCfg.evaluationStartDate ||
+    internshipCfg.evaluationStart ||
+    internshipCfg.reportStart;
+  const endRaw =
+    internshipCfg.evaluationEndDate ||
+    internshipCfg.evaluationEnd ||
+    internshipCfg.reportDeadline;
+
+  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
+
+  if (startRaw) {
+    const start = new Date(startRaw);
+    start.setHours(0, 0, 0, 0);
+    if (now < start) {
+      throw new AppError("Chưa đến thời gian mở tạo link đánh giá thực tập doanh nghiệp.", 400);
+    }
+  }
+
+  if (endRaw) {
+    let end = new Date(endRaw);
+    if (
+      end.getHours() === 0 &&
+      end.getMinutes() === 0 &&
+      end.getSeconds() === 0 &&
+      end.getMilliseconds() === 0
+    ) {
+      end = new Date(end.getTime() + 24 * 60 * 60 * 1000 - 1);
+    } else {
+      end.setHours(23, 59, 59, 999);
+    }
+
+    if (now > end) {
+      throw new AppError("Đã hết thời gian tạo link đánh giá thực tập doanh nghiệp.", 400);
+    }
+  }
+
+  return { allowed: true };
+};
+
+// ====================
+// Helper: Compute TTDN Evaluation Result (PASS / FAIL / IN_PROGRESS / NOT_OPEN)
+// ====================
+export const computeInternshipEvaluationResult = (internship, evaluation, term, checkDate = new Date()) => {
+  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
+  const internshipCfg = term?.internship || {};
+  const startRaw =
+    internshipCfg.evaluationStartDate ||
+    internshipCfg.evaluationStart ||
+    internshipCfg.reportStart;
+  const endRaw =
+    internshipCfg.evaluationEndDate ||
+    internshipCfg.evaluationEnd ||
+    internshipCfg.reportDeadline;
+
+  let startDate = null;
+  if (startRaw) {
+    startDate = new Date(startRaw);
+    startDate.setHours(0, 0, 0, 0);
+  }
+
+  let endDate = null;
+  if (endRaw) {
+    endDate = new Date(endRaw);
+    if (
+      endDate.getHours() === 0 &&
+      endDate.getMinutes() === 0 &&
+      endDate.getSeconds() === 0 &&
+      endDate.getMilliseconds() === 0
+    ) {
+      endDate = new Date(endDate.getTime() + 24 * 60 * 60 * 1000 - 1);
+    } else {
+      endDate.setHours(23, 59, 59, 999);
+    }
+  }
+
+  // Check if student has valid evaluation score
+  const hasValidScore = Boolean(
+    evaluation &&
+    evaluation.score !== null &&
+    evaluation.score !== undefined &&
+    !isNaN(evaluation.score) &&
+    (evaluation.status === "SUBMITTED" || evaluation.status === "CONFIRMED" || internship?.status === "COMPLETED")
+  );
+
+  const isExpired = Boolean(endDate && now > endDate);
+  const isNotOpen = Boolean(startDate && now < startDate);
+
+  let result = "IN_PROGRESS";
+  let isPass = false;
+  let isFail = false;
+
+  if (hasValidScore) {
+    // RULE: Has valid score -> ALWAYS PASS (even after deadline, result is preserved)
+    result = "PASS";
+    isPass = true;
+  } else if (isExpired) {
+    // RULE: Expired and no valid score -> FAIL
+    result = "FAIL";
+    isFail = true;
+  } else if (isNotOpen) {
+    result = "NOT_OPEN";
+  } else {
+    result = "IN_PROGRESS";
+  }
+
+  return {
+    result,
+    isPass,
+    isFail,
+    hasValidScore,
+    isExpired,
+    isNotOpen,
+    startDate,
+    endDate,
+  };
+};
 
 // ====================
 // Company Gets Internships with Evaluation Status
@@ -396,10 +521,19 @@ const getAllEvaluationsForTbm = async ({
 
   let enriched = internships.map((intern) => {
     const ev = evalMap.get(intern._id.toString());
+    const evalResult = computeInternshipEvaluationResult(intern, ev, intern.academicTermId);
     return {
       ...intern,
       evaluation: ev || null,
       evaluationStatus: ev ? ev.status : "UNASSESSED",
+      evaluationResult: evalResult.result,
+      isPass: evalResult.isPass,
+      isFail: evalResult.isFail,
+      hasValidScore: evalResult.hasValidScore,
+      isExpired: evalResult.isExpired,
+      isNotOpen: evalResult.isNotOpen,
+      evaluationStartDate: evalResult.startDate,
+      evaluationEndDate: evalResult.endDate,
     };
   });
 
@@ -448,6 +582,16 @@ const createStudentEvaluationLink = async (userId, academicTermId = null) => {
   if (!internship) {
     throw new AppError("Bạn chưa có đợt thực tập hợp lệ nào được duyệt.", 400);
   }
+
+  // Enforce evaluation time window at backend
+  let term = null;
+  if (internship.academicTermId) {
+    term = await AcademicTerm.findById(internship.academicTermId);
+  }
+  if (!term) {
+    term = await AcademicTerm.findOne({ isCurrent: true }).catch(() => null);
+  }
+  validateInternshipEvaluationWindow(term, new Date());
 
   // Check if evaluation request already exists
   let existingRequest = await CompanyEvaluationRequest.findOne({
@@ -538,7 +682,8 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
     .populate({
       path: "lecturerId",
       populate: { path: "userId", select: "fullName email phone" },
-    });
+    })
+    .populate("academicTermId");
 
   if (!internship) {
     return { hasInternship: false };
@@ -567,12 +712,35 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
 
   const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
 
+  let term = internship.academicTermId || null;
+  if (!term) {
+    term = await AcademicTerm.findOne({ isCurrent: true }).catch(() => null);
+  }
+
+  const evalResult = computeInternshipEvaluationResult(internship, evaluation, term, new Date());
+
   return {
     hasInternship: true,
     internship,
     request,
     evaluation,
     isEvaluationDeletedByTbm,
+    evaluationResult: evalResult.result,
+    isPass: evalResult.isPass,
+    isFail: evalResult.isFail,
+    hasValidScore: evalResult.hasValidScore,
+    isExpired: evalResult.isExpired,
+    isNotOpen: evalResult.isNotOpen,
+    startDate: evalResult.startDate,
+    endDate: evalResult.endDate,
+    term: term
+      ? {
+          _id: term._id,
+          name: term.name,
+          code: term.code,
+          internship: term.internship,
+        }
+      : null,
   };
 };
 

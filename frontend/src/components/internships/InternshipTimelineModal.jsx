@@ -41,8 +41,12 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
       setFormData({
         registrationStart: formatDateForInput(term.internship.registrationStart),
         registrationEnd: formatDateForInput(term.internship.registrationEnd),
-        reportStart: formatDateForInput(term.internship.reportStart),
-        reportDeadline: formatDateForInput(term.internship.reportDeadline),
+        reportStart: formatDateForInput(
+          term.internship.evaluationStartDate || term.internship.reportStart
+        ),
+        reportDeadline: formatDateForInput(
+          term.internship.evaluationEndDate || term.internship.reportDeadline
+        ),
       });
     } else {
       setFormData({
@@ -149,7 +153,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
 
     if (formData.reportStart && formData.reportDeadline) {
       if (new Date(formData.reportDeadline) < new Date(formData.reportStart)) {
-        showToast('Hạn chót nộp báo cáo thực tập phải sau ngày bắt đầu nộp', 'error');
+        showToast('Hạn chót mở đánh giá & nộp báo cáo phải sau ngày bắt đầu', 'error');
         return;
       }
     }
@@ -162,6 +166,8 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
           registrationEnd: formData.registrationEnd || null,
           reportStart: formData.reportStart || null,
           reportDeadline: formData.reportDeadline || null,
+          evaluationStartDate: formData.reportStart || null,
+          evaluationEndDate: formData.reportDeadline || null,
         },
       });
 
@@ -299,17 +305,17 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
           </div>
 
-          {/* 2. Report Submission Window */}
+          {/* 2. Evaluation Link Creation & Report Submission Window */}
           <div className="space-y-3 pt-2">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
               <Calendar className="w-4 h-4 text-blue-600" />
-              2. Thời gian nộp báo cáo kết quả thực tập
+              2. Thời gian mở tạo link đánh giá & nộp báo cáo TTDN
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Bắt đầu nhận báo cáo:
+                  Bắt đầu mở tạo link & nộp báo cáo:
                 </label>
                 <input
                   type="date"

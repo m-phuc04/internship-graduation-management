@@ -229,8 +229,10 @@ const createTerm = async (data, userId) => {
     internship: {
       registrationStart: internship.registrationStart ? new Date(internship.registrationStart) : null,
       registrationEnd: internship.registrationEnd ? new Date(internship.registrationEnd) : null,
-      reportStart: internship.reportStart ? new Date(internship.reportStart) : null,
-      reportDeadline: internship.reportDeadline ? new Date(internship.reportDeadline) : null,
+      reportStart: internship.reportStart ? new Date(internship.reportStart) : (internship.evaluationStartDate ? new Date(internship.evaluationStartDate) : null),
+      reportDeadline: internship.reportDeadline ? new Date(internship.reportDeadline) : (internship.evaluationEndDate ? new Date(internship.evaluationEndDate) : null),
+      evaluationStartDate: internship.evaluationStartDate ? new Date(internship.evaluationStartDate) : (internship.reportStart ? new Date(internship.reportStart) : null),
+      evaluationEndDate: internship.evaluationEndDate ? new Date(internship.evaluationEndDate) : (internship.reportDeadline ? new Date(internship.reportDeadline) : null),
     },
     thesis: {
       registrationStart: thesis.registrationStart ? new Date(thesis.registrationStart) : null,
@@ -298,11 +300,20 @@ const updateTerm = async (id, data) => {
   }
 
   if (internship) {
+    const rStart = internship.reportStart !== undefined
+      ? (internship.reportStart ? new Date(internship.reportStart) : null)
+      : (internship.evaluationStartDate !== undefined ? (internship.evaluationStartDate ? new Date(internship.evaluationStartDate) : null) : term.internship?.reportStart);
+    const rEnd = internship.reportDeadline !== undefined
+      ? (internship.reportDeadline ? new Date(internship.reportDeadline) : null)
+      : (internship.evaluationEndDate !== undefined ? (internship.evaluationEndDate ? new Date(internship.evaluationEndDate) : null) : term.internship?.reportDeadline);
+
     term.internship = {
       registrationStart: internship.registrationStart !== undefined ? (internship.registrationStart ? new Date(internship.registrationStart) : null) : term.internship?.registrationStart,
       registrationEnd: internship.registrationEnd !== undefined ? (internship.registrationEnd ? new Date(internship.registrationEnd) : null) : term.internship?.registrationEnd,
-      reportStart: internship.reportStart !== undefined ? (internship.reportStart ? new Date(internship.reportStart) : null) : term.internship?.reportStart,
-      reportDeadline: internship.reportDeadline !== undefined ? (internship.reportDeadline ? new Date(internship.reportDeadline) : null) : term.internship?.reportDeadline,
+      reportStart: rStart,
+      reportDeadline: rEnd,
+      evaluationStartDate: rStart,
+      evaluationEndDate: rEnd,
     };
   }
 

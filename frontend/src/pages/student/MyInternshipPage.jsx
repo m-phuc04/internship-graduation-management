@@ -336,6 +336,63 @@ const MyInternshipPage = () => {
     ) && !canCreateNewLink && !isRecreatePending
   );
 
+  // Evaluation time window computation
+  const startRaw =
+    evalData?.startDate ||
+    evalData?.term?.internship?.evaluationStartDate ||
+    evalData?.term?.internship?.evaluationStart ||
+    evalData?.term?.internship?.reportStart ||
+    currentTerm?.internship?.evaluationStartDate ||
+    currentTerm?.internship?.evaluationStart ||
+    currentTerm?.internship?.reportStart;
+
+  const endRaw =
+    evalData?.endDate ||
+    evalData?.term?.internship?.evaluationEndDate ||
+    evalData?.term?.internship?.evaluationEnd ||
+    evalData?.term?.internship?.reportDeadline ||
+    currentTerm?.internship?.evaluationEndDate ||
+    currentTerm?.internship?.evaluationEnd ||
+    currentTerm?.internship?.reportDeadline;
+
+  const now = new Date();
+  let evalStartDate = null;
+  if (startRaw) {
+    evalStartDate = new Date(startRaw);
+    evalStartDate.setHours(0, 0, 0, 0);
+  }
+
+  let evalEndDate = null;
+  if (endRaw) {
+    evalEndDate = new Date(endRaw);
+    if (
+      evalEndDate.getHours() === 0 &&
+      evalEndDate.getMinutes() === 0 &&
+      evalEndDate.getSeconds() === 0 &&
+      evalEndDate.getMilliseconds() === 0
+    ) {
+      evalEndDate = new Date(evalEndDate.getTime() + 24 * 60 * 60 * 1000 - 1);
+    } else {
+      evalEndDate.setHours(23, 59, 59, 999);
+    }
+  }
+
+  const isEvalWindowNotOpen = Boolean(evalStartDate && now < evalStartDate);
+  const isEvalWindowExpired = Boolean(evalEndDate && now > evalEndDate);
+
+  const hasValidScore = Boolean(
+    isEvaluated &&
+    activeEvaluation?.score !== undefined &&
+    activeEvaluation?.score !== null &&
+    !isNaN(activeEvaluation?.score)
+  );
+
+  // Core Result Rule:
+  // - Has valid score -> PASS (preserved even after expiration)
+  // - Expired and no valid score -> FAIL
+  const isPass = hasValidScore;
+  const isFail = !hasValidScore && isEvalWindowExpired;
+
   // If no internship registered yet
   if (!internship) {
     return (
@@ -746,7 +803,22 @@ const MyInternshipPage = () => {
                   Đánh Giá Thực Tập Doanh Nghiệp
                 </h3>
               </div>
-              {isEvaluated ? (
+              {isPass ? (
+                <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>PASS (Đạt)</span>
+                </span>
+              ) : isFail ? (
+                <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 shadow-2xs">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                  <span>FAIL (Không đạt - Quá hạn)</span>
+                </span>
+              ) : isEvalWindowNotOpen ? (
+                <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Chưa đến thời gian mở tạo link</span>
+                </span>
+              ) : isEvaluated ? (
                 <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Doanh nghiệp đã đánh giá
@@ -799,30 +871,87 @@ const MyInternshipPage = () => {
               <>
                 {/* Case 1: No Evaluation Request Created Yet */}
                 {!isEvaluated && !isPendingEvaluation && !isEvaluationDeletedByTbm && (
-                  <div className="py-4 text-center space-y-3">
-                    <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-left text-xs text-[#123891] space-y-1">
-                      <div className="font-bold">Quy trình đánh giá thực tập:</div>
-                      <div>1. Sinh viên nhấn nút <strong>[Tạo link đánh giá]</strong> để nhận liên kết đánh giá an toàn.</div>
-                      <div>2. Gửi liên kết cho Người phụ trách / Mentor tại Doanh nghiệp để họ điền phiếu online không cần đăng nhập.</div>
-                      <div>3. <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo 01 link duy nhất cho đợt thực tập này.</div>
-                    </div>
+                  <div className="py-2 text-center space-y-3">
+                    {/* Time Window Notification Alert */}
+                    {isFail ? (
+                      <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200 text-left text-xs text-rose-950 space-y-2">
+                        <div className="font-bold flex items-center gap-1.5 text-rose-700">
+                          <AlertCircle className="w-4 h-4 text-rose-600" />
+                          <span>Đã hết thời gian tạo link đánh giá Thực tập Doanh nghiệp</span>
+                        </div>
+                        <p className="text-slate-700 leading-relaxed">
+                          Hạn chót tạo link đánh giá đã kết thúc vào ngày <strong>{evalEndDate ? evalEndDate.toLocaleDateString('vi-VN') : '—'}</strong>. Vì chưa có kết quả đánh giá hợp lệ từ Doanh nghiệp trước thời hạn, kết quả của bạn được ghi nhận là <strong className="text-rose-600 font-bold">KHÔNG ĐẠT (FAIL)</strong>.
+                        </p>
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            disabled
+                            className="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed inline-flex items-center gap-2"
+                          >
+                            <Lock className="w-4 h-4" />
+                            <span>Đã hết thời gian tạo link đánh giá</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : isEvalWindowNotOpen ? (
+                      <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-left text-xs text-blue-950 space-y-2">
+                        <div className="font-bold flex items-center gap-1.5 text-[#123891]">
+                          <Clock className="w-4 h-4 text-[#123891]" />
+                          <span>Chưa đến thời gian mở tạo link đánh giá Thực tập Doanh nghiệp</span>
+                        </div>
+                        <p className="text-slate-700 leading-relaxed">
+                          Cổng tạo link đánh giá sẽ mở từ ngày <strong>{evalStartDate ? evalStartDate.toLocaleDateString('vi-VN') : '—'}</strong> đến ngày <strong>{evalEndDate ? evalEndDate.toLocaleDateString('vi-VN') : '—'}</strong>. Vui lòng quay lại trong thời gian quy định.
+                        </p>
+                        <div className="pt-1">
+                          <button
+                            type="button"
+                            disabled
+                            className="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed inline-flex items-center gap-2"
+                          >
+                            <Clock className="w-4 h-4" />
+                            <span>Chưa đến thời gian mở tạo link</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-left text-xs text-[#123891] space-y-1">
+                          <div className="font-bold">Quy trình đánh giá thực tập:</div>
+                          <div>1. Sinh viên nhấn nút <strong>[Tạo link đánh giá]</strong> để nhận liên kết đánh giá an toàn.</div>
+                          <div>2. Gửi liên kết cho Người phụ trách / Mentor tại Doanh nghiệp để họ điền phiếu online không cần đăng nhập.</div>
+                          <div>3. <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo 01 link duy nhất cho đợt thực tập này.</div>
+                          {evalEndDate && (
+                            <div className="text-amber-800 font-semibold pt-1">
+                              📅 Hạn chót tạo link & hoàn thành đánh giá: {evalEndDate.toLocaleDateString('vi-VN')}
+                            </div>
+                          )}
+                        </div>
 
-                    <div className="pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setCreateLinkModalOpen(true)}
-                        className="px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-200 transition inline-flex items-center gap-2 cursor-pointer"
-                      >
-                        <PlusCircle className="w-4 h-4" />
-                        <span>Tạo Link Đánh Giá Cho Doanh Nghiệp</span>
-                      </button>
-                    </div>
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setCreateLinkModalOpen(true)}
+                            className="px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-200 transition inline-flex items-center gap-2 cursor-pointer"
+                          >
+                            <PlusCircle className="w-4 h-4" />
+                            <span>Tạo Link Đánh Giá Cho Doanh Nghiệp</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
 
                 {/* Case 2: Link Created (Pending Submission) */}
                 {isPendingEvaluation && activeRequest?.token && (
                   <div className="space-y-3 text-xs">
+                    {isFail && (
+                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 font-semibold flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>Đã hết thời hạn đánh giá ({evalEndDate ? evalEndDate.toLocaleDateString('vi-VN') : '—'}) mà chưa có điểm từ Doanh nghiệp. Kết quả: <strong>KHÔNG ĐẠT (FAIL)</strong>.</span>
+                      </div>
+                    )}
+
                     <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5 text-amber-950">
                       <div className="font-bold flex items-center gap-2">
                         <Clock className="w-4 h-4 text-amber-600" />

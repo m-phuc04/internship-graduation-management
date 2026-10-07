@@ -538,9 +538,10 @@ const MyThesisPage = () => {
 
   if (thesis) {
     // 1. GVHD (tên)
-    const gvhdName =
-      formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName) ||
-      'Giảng viên Hướng dẫn';
+    const gvhdRawName = thesis.supervisorId?.userId?.fullName || thesis.supervisorId?.fullName;
+    const gvhdName = gvhdRawName
+      ? formatLecturerDisplay(thesis.supervisorId?.academicTitle, gvhdRawName)
+      : 'Giảng viên Hướng dẫn';
     evaluators.push({
       num: 1,
       title: `1. GVHD (${gvhdName})`,
@@ -549,9 +550,11 @@ const MyThesisPage = () => {
     });
 
     // 2. GVPB 1 (tên)
-    const gvpb1Name =
-      formatLecturerDisplay(thesis.reviewer1Id?.academicTitle, thesis.reviewer1Id?.userId?.fullName) ||
-      'Giảng viên Phản biện 1';
+    const gvpb1Lecturer = thesis.reviewer1Id;
+    const gvpb1RawName = gvpb1Lecturer?.userId?.fullName || gvpb1Lecturer?.fullName;
+    const gvpb1Name = gvpb1RawName
+      ? formatLecturerDisplay(gvpb1Lecturer?.academicTitle, gvpb1RawName)
+      : 'Giảng viên Phản biện 1';
     evaluators.push({
       num: 2,
       title: `2. GVPB 1 (${gvpb1Name})`,

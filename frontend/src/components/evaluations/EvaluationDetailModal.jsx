@@ -87,6 +87,16 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                       {internship.studentId?.userId?.fullName}
                     </span>
                     <StatusBadge status={ev?.status || 'UNASSESSED'} size="sm" />
+                    {ev?.score !== undefined && ev?.score !== null && !isNaN(ev?.score) ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>PASS (Đạt)</span>
+                      </span>
+                    ) : internship?.isFail ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                        FAIL (Không đạt)
+                      </span>
+                    ) : null}
                   </div>
                   <div className="text-xs text-slate-600 font-mono mt-0.5">
                     MSSV: <strong>{internship.studentId?.studentCode}</strong> • Lớp: <strong>{internship.studentId?.className}</strong> • Vị trí: <strong>{internship.position}</strong>
