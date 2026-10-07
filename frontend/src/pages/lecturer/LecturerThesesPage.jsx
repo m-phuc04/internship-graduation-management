@@ -1473,7 +1473,7 @@ const LecturerThesesPage = () => {
     );
   };
 
-  // 2c. Điểm phản biện kín tổng hợp (Trung bình cộng của GVPB 1 và GVPB 2 nếu có 2 người chấm, hoặc lấy trực tiếp điểm 1 người không cần chia)
+  // 2c. Điểm phản biện kín tổng hợp (Nếu phân công 2 GVPB thì trung bình cộng khi cả 2 chấm xong; nếu phân công 1 GVPB thì lấy điểm của 1 GVPB đó)
   const renderCombinedReviewerScore = (item) => {
     const isTwo = item.studentCount === 2 && item.secondStudentId;
     const s1_pb1 = item.scores?.student1Reviewer1Score ?? item.scores?.reviewer1Score;
@@ -1481,17 +1481,29 @@ const LecturerThesesPage = () => {
     const s2_pb1 = item.scores?.student2Reviewer1Score;
     const s2_pb2 = item.scores?.student2Reviewer2Score;
 
+    const hasAssignedRev1 = Boolean(
+      item.reviewer1Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const hasAssignedRev2 = Boolean(
+      item.reviewer2Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+
     const calcCombined = (pb1, pb2) => {
       const has1 = pb1 !== null && pb1 !== undefined && pb1 !== '' && !isNaN(Number(pb1));
       const has2 = pb2 !== null && pb2 !== undefined && pb2 !== '' && !isNaN(Number(pb2));
 
-      if (has1 && has2) {
-        return Number(((Number(pb1) + Number(pb2)) / 2).toFixed(2));
+      if (hasAssignedRev1 && hasAssignedRev2) {
+        if (has1 && has2) {
+          return Number(((Number(pb1) + Number(pb2)) / 2).toFixed(2));
+        }
+        return null;
       }
-      if (has1) {
+      if (hasAssignedRev1 && has1) {
         return Number(Number(pb1).toFixed(2));
       }
-      if (has2) {
+      if (hasAssignedRev2 && has2) {
         return Number(Number(pb2).toFixed(2));
       }
       return null;

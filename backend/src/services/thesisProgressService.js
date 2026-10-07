@@ -403,6 +403,7 @@ const confirmProgressByStudent2 = async (progressId, userId, { action, rejection
   }
 
   // The partner to notify is the author of this progress record
+  const isSV1 = (thesis.studentId?._id || thesis.studentId)?.toString() === student._id.toString();
   const authorStudent = isSV1 ? thesis.secondStudentId : thesis.studentId;
 
   if (action === "CONFIRM") {

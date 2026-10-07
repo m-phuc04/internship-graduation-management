@@ -357,16 +357,33 @@ const MyThesisPage = () => {
       ? Number(thesis.scores.reviewer2Score)
       : null;
 
-  // 2. Điểm Phản biện kín (30%) = Trung bình cộng GVPB 1 và GVPB 2
+  const isAssignedPB1 = Boolean(
+    thesis?.reviewer1Id ||
+    (Array.isArray(thesis?.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+  );
+  const isAssignedPB2 = Boolean(
+    thesis?.reviewer2Id ||
+    (Array.isArray(thesis?.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+  );
+
+  // 2. Điểm Phản biện kín (30%):
+  // - Nếu phân công 2 GVPB: trung bình cộng khi cả 2 đã chấm
+  // - Nếu phân công 1 GVPB: lấy điểm của 1 GVPB đó
   let privateReviewerScore = null;
-  if (reviewer1Score !== null && reviewer2Score !== null) {
-    privateReviewerScore = Number(((reviewer1Score + reviewer2Score) / 2).toFixed(2));
+  if (isAssignedPB1 && isAssignedPB2) {
+    if (reviewer1Score !== null && reviewer2Score !== null) {
+      privateReviewerScore = Number(((reviewer1Score + reviewer2Score) / 2).toFixed(2));
+    }
+  } else if (isAssignedPB1) {
+    if (reviewer1Score !== null) {
+      privateReviewerScore = reviewer1Score;
+    }
+  } else if (isAssignedPB2) {
+    if (reviewer2Score !== null) {
+      privateReviewerScore = reviewer2Score;
+    }
   } else if (thesis?.scores?.reviewerScore !== null && thesis?.scores?.reviewerScore !== undefined) {
     privateReviewerScore = Number(thesis.scores.reviewerScore);
-  } else if (reviewer1Score !== null) {
-    privateReviewerScore = reviewer1Score;
-  } else if (reviewer2Score !== null) {
-    privateReviewerScore = reviewer2Score;
   }
 
   // 3. Điểm Hội đồng (20%) = Trung bình cộng các GV Hội đồng
@@ -383,7 +400,7 @@ const MyThesisPage = () => {
 
   let scoredCount = 0;
   if (supervisorScore !== null) scoredCount++;
-  if (privateReviewerScore !== null && (reviewer1Score !== null && reviewer2Score !== null)) scoredCount++;
+  if (privateReviewerScore !== null) scoredCount++;
   if (councilScore !== null) scoredCount++;
 
   const isFullGraded = supervisorScore !== null && privateReviewerScore !== null && councilScore !== null;
@@ -1080,14 +1097,30 @@ const MyThesisPage = () => {
                       <div className="text-[10.5px] text-slate-500 pt-1 border-t border-blue-100/70">
                         {!isReviewerPublished ? (
                           <span className="text-slate-400">—</span>
-                        ) : reviewer1Score !== null && reviewer2Score !== null ? (
-                          <span>GVPB 1: {reviewer1Score.toFixed(1)} | GVPB 2: {reviewer2Score.toFixed(1)}</span>
-                        ) : reviewer1Score !== null ? (
-                          <span>GVPB 1: {reviewer1Score.toFixed(1)} (Chờ GVPB 2)</span>
-                        ) : reviewer2Score !== null ? (
-                          <span>GVPB 2: {reviewer2Score.toFixed(1)} (Chờ GVPB 1)</span>
+                        ) : isAssignedPB1 && isAssignedPB2 ? (
+                          reviewer1Score !== null && reviewer2Score !== null ? (
+                            <span>GVPB 1: {reviewer1Score.toFixed(1)} | GVPB 2: {reviewer2Score.toFixed(1)}</span>
+                          ) : reviewer1Score !== null ? (
+                            <span>GVPB 1: {reviewer1Score.toFixed(1)} (Chờ GVPB 2)</span>
+                          ) : reviewer2Score !== null ? (
+                            <span>GVPB 2: {reviewer2Score.toFixed(1)} (Chờ GVPB 1)</span>
+                          ) : (
+                            <span>Chờ 2 GVPB chấm</span>
+                          )
+                        ) : isAssignedPB1 ? (
+                          reviewer1Score !== null ? (
+                            <span>GVPB 1: {reviewer1Score.toFixed(1)}</span>
+                          ) : (
+                            <span>Chờ GVPB 1 chấm</span>
+                          )
+                        ) : isAssignedPB2 ? (
+                          reviewer2Score !== null ? (
+                            <span>GVPB 2: {reviewer2Score.toFixed(1)}</span>
+                          ) : (
+                            <span>Chờ GVPB 2 chấm</span>
+                          )
                         ) : (
-                          <span>Chờ 2 GVPB chấm</span>
+                          <span>Chưa phân công</span>
                         )}
                       </div>
                     </div>

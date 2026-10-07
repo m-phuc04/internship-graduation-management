@@ -3,6 +3,7 @@ import Modal from '../common/Modal';
 import lecturerApi from '../../api/lecturerApi';
 import notificationApi from '../../api/notificationApi';
 import { useToast } from '../../context/ToastContext';
+import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
 import { AlertCircle, Users, Award, Clock } from 'lucide-react';
 
 const AssignCouncilModal = ({
@@ -116,6 +117,11 @@ const AssignCouncilModal = ({
     e.preventDefault();
     setError('');
 
+    if (isCouncilReportTimeExpired(council)) {
+      setError('Phòng hội đồng này đã kết thúc thời gian báo cáo, không thể thay đổi phân công!');
+      return;
+    }
+
     const filledIds = assignedLecturerIds.filter(Boolean);
     const uniqueIds = new Set(filledIds);
     if (uniqueIds.size !== filledIds.length) {
@@ -200,6 +206,7 @@ const AssignCouncilModal = ({
   if (!council) return null;
 
   const displayName = (council.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+  const isExpired = isCouncilReportTimeExpired(council);
 
   return (
     <Modal
@@ -215,15 +222,22 @@ const AssignCouncilModal = ({
               <Users className="w-4 h-4 text-[#123891] shrink-0" />
               <strong className="text-slate-900 text-sm font-bold">{displayName}</strong>
             </div>
-            <span
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                council.type === 'POSTER'
-                  ? 'bg-blue-50 text-[#102d7d] border-blue-200'
-                  : 'bg-blue-50 text-[#102d7d] border-blue-200'
-              }`}
-            >
-              {council.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral'}
-            </span>
+            <div className="flex items-center gap-1.5">
+              {isExpired && (
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  Đã kết thúc
+                </span>
+              )}
+              <span
+                className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                  council.type === 'POSTER'
+                    ? 'bg-blue-50 text-[#102d7d] border-blue-200'
+                    : 'bg-blue-50 text-[#102d7d] border-blue-200'
+                }`}
+              >
+                {council.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral'}
+              </span>
+            </div>
           </div>
 
           <div className="text-[11px] text-slate-600 flex flex-wrap items-center gap-3 pt-1 border-t border-blue-100/80">
@@ -247,6 +261,13 @@ const AssignCouncilModal = ({
             )}
           </div>
         </div>
+
+        {isExpired && (
+          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-amber-600" />
+            <span className="font-semibold">Phòng hội đồng này đã kết thúc thời gian báo cáo, không thể thay đổi phân công giảng viên.</span>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-center gap-2">
@@ -289,8 +310,10 @@ const AssignCouncilModal = ({
                   <select
                     value={currentSelectedId}
                     onChange={(e) => handleLecturerChange(idx, e.target.value)}
-                    disabled={loadingLecturers}
-                    className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                    disabled={loadingLecturers || isExpired}
+                    className={`w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
+                      isExpired ? 'opacity-60 bg-slate-100 cursor-not-allowed' : ''
+                    }`}
                   >
                     <option value="">-- Chọn giảng viên {idx + 1} --</option>
                     {lecturers.map((lec) => {
@@ -305,7 +328,7 @@ const AssignCouncilModal = ({
                         ? (supervisorOfAssignedThesesMap.get(lecIdStr) || supervisorOfAssignedThesesMap.get(lec.lecturerCode))
                         : '';
 
-                      const disabled = isAssignedToOther || isSelectedInThisModal || isSupervisorOfAssignedThesis;
+                      const disabled = isAssignedToOther || isSelectedInThisModal || isSupervisorOfAssignedThesis || isExpired;
 
                       const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
                       const name = lec.userId?.fullName || 'Giảng viên';
@@ -343,8 +366,10 @@ const AssignCouncilModal = ({
           </button>
           <button
             type="submit"
-            disabled={submitting}
-            className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-100 transition disabled:opacity-50 cursor-pointer"
+            disabled={submitting || isExpired}
+            className={`px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-100 transition disabled:opacity-50 ${
+              isExpired ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
+            }`}
           >
             {submitting ? 'Đang lưu...' : 'Xác nhận'}
           </button>

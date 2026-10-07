@@ -997,9 +997,11 @@ const assignReviewers = async (
     throw new AppError("Đề tài đã bị từ chối / không đạt (FAIL), không thể phân công giảng viên phản biện.", 400);
   }
 
+  const scoreHD = thesis.scores?.supervisorScore ?? thesis.scores?.student1SupervisorScore;
   if (
-    thesis.scores?.supervisorScore === null ||
-    thesis.scores?.supervisorScore === undefined ||
+    scoreHD === null ||
+    scoreHD === undefined ||
+    isNaN(scoreHD) ||
     thesis.isCriteriaPassed === false
   ) {
     throw new AppError(
@@ -2248,27 +2250,53 @@ const gradeThesisByLecturer = async (
     throw new AppError("Vai trò đánh giá không hợp lệ", 400);
   }
 
-  // Auto-calculate combined reviewer score (Trung bình cộng của GVPB 1 và GVPB 2)
+  // Auto-calculate combined reviewer score (Nếu phân công 2 GVPB thì trung bình cộng khi cả 2 chấm xong; nếu phân công 1 GVPB thì lấy điểm của 1 GVPB đó luôn)
+  const isAssignedPB1 = Boolean(
+    thesis.reviewer1Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+  );
+  const isAssignedPB2 = Boolean(
+    thesis.reviewer2Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+  );
+
   const hasPB1 = thesis.scores.reviewer1Score !== null && thesis.scores.reviewer1Score !== undefined;
   const hasPB2 = thesis.scores.reviewer2Score !== null && thesis.scores.reviewer2Score !== undefined;
-  if (hasPB1 && hasPB2) {
-    thesis.scores.reviewerScore = Number(((thesis.scores.reviewer1Score + thesis.scores.reviewer2Score) / 2).toFixed(2));
-  } else if (hasPB1) {
-    thesis.scores.reviewerScore = thesis.scores.reviewer1Score;
-  } else if (hasPB2) {
-    thesis.scores.reviewerScore = thesis.scores.reviewer2Score;
+
+  if (isAssignedPB1 && isAssignedPB2) {
+    if (hasPB1 && hasPB2) {
+      thesis.scores.reviewerScore = Number(((thesis.scores.reviewer1Score + thesis.scores.reviewer2Score) / 2).toFixed(2));
+    } else {
+      thesis.scores.reviewerScore = null;
+    }
+  } else if (isAssignedPB1) {
+    if (hasPB1) {
+      thesis.scores.reviewerScore = thesis.scores.reviewer1Score;
+    } else {
+      thesis.scores.reviewerScore = null;
+    }
+  } else if (isAssignedPB2) {
+    if (hasPB2) {
+      thesis.scores.reviewerScore = thesis.scores.reviewer2Score;
+    } else {
+      thesis.scores.reviewerScore = null;
+    }
+  } else {
+    thesis.scores.reviewerScore = null;
   }
 
   // Student 1 combined reviewer score
   const s1_pb1 = thesis.scores.student1Reviewer1Score;
   const s1_pb2 = thesis.scores.student1Reviewer2Score;
   let s1_rev = null;
-  if (s1_pb1 != null && s1_pb2 != null) {
-    s1_rev = Number(((s1_pb1 + s1_pb2) / 2).toFixed(2));
-  } else if (s1_pb1 != null) {
-    s1_rev = s1_pb1;
-  } else if (s1_pb2 != null) {
-    s1_rev = s1_pb2;
+  if (isAssignedPB1 && isAssignedPB2) {
+    if (s1_pb1 != null && s1_pb2 != null) {
+      s1_rev = Number(((s1_pb1 + s1_pb2) / 2).toFixed(2));
+    }
+  } else if (isAssignedPB1) {
+    if (s1_pb1 != null) s1_rev = s1_pb1;
+  } else if (isAssignedPB2) {
+    if (s1_pb2 != null) s1_rev = s1_pb2;
   }
   thesis.scores.student1ReviewerScore = s1_rev;
 
@@ -2276,12 +2304,14 @@ const gradeThesisByLecturer = async (
   const s2_pb1 = thesis.scores.student2Reviewer1Score;
   const s2_pb2 = thesis.scores.student2Reviewer2Score;
   let s2_rev = null;
-  if (s2_pb1 != null && s2_pb2 != null) {
-    s2_rev = Number(((s2_pb1 + s2_pb2) / 2).toFixed(2));
-  } else if (s2_pb1 != null) {
-    s2_rev = s2_pb1;
-  } else if (s2_pb2 != null) {
-    s2_rev = s2_pb2;
+  if (isAssignedPB1 && isAssignedPB2) {
+    if (s2_pb1 != null && s2_pb2 != null) {
+      s2_rev = Number(((s2_pb1 + s2_pb2) / 2).toFixed(2));
+    }
+  } else if (isAssignedPB1) {
+    if (s2_pb1 != null) s2_rev = s2_pb1;
+  } else if (isAssignedPB2) {
+    if (s2_pb2 != null) s2_rev = s2_pb2;
   }
   thesis.scores.student2ReviewerScore = s2_rev;
 
@@ -2572,18 +2602,14 @@ const toggleAllThesisScoresLock = async ({ academicTermId, roleType = "SUPERVISO
 // 1. Get Theses For Evaluation (AcademicTerm-aware)
 // ====================
 const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTermId = "" } = {}) => {
-  // CRITICAL INVARIANT: Theses with BOTH PB KÍN and PB HỘI ĐỒNG assigned, excluding REJECTED
+  // Theses with at least one reviewer assigned, excluding REJECTED
   const baseQuery = {
     $and: [
       {
         $or: [
           { "reviewers.isPrivateReviewer": true },
-          { reviewer1Id: { $ne: null } },
-        ],
-      },
-      {
-        $or: [
           { "reviewers.isCouncilReviewer": true },
+          { reviewer1Id: { $ne: null } },
           { reviewer2Id: { $ne: null } },
         ],
       },
@@ -2677,12 +2703,8 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
       {
         $or: [
           { "reviewers.isPrivateReviewer": true },
-          { reviewer1Id: { $ne: null } },
-        ],
-      },
-      {
-        $or: [
           { "reviewers.isCouncilReviewer": true },
+          { reviewer1Id: { $ne: null } },
           { reviewer2Id: { $ne: null } },
         ],
       },
@@ -2698,12 +2720,26 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
   ).length;
   const pendingGradeCount = allEligible.filter((t) => {
     const s = t.scores;
-    return (
-      !s ||
-      s.supervisorScore === null ||
-      s.reviewer1Score === null ||
-      s.reviewer2Score === null
+    if (!s || s.supervisorScore === null) return true;
+    const isAssignedPB1 = Boolean(
+      t.reviewer1Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
     );
+    const isAssignedPB2 = Boolean(
+      t.reviewer2Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+    const hasPB1 = s.reviewer1Score !== null && s.reviewer1Score !== undefined;
+    const hasPB2 = s.reviewer2Score !== null && s.reviewer2Score !== undefined;
+
+    if (isAssignedPB1 && isAssignedPB2) {
+      if (!hasPB1 || !hasPB2) return true;
+    } else if (isAssignedPB1) {
+      if (!hasPB1) return true;
+    } else if (isAssignedPB2) {
+      if (!hasPB2) return true;
+    }
+    return false;
   }).length;
 
   return {
@@ -2730,15 +2766,34 @@ const completeThesisEvaluation = async (thesisId, tbmUserId) => {
     throw new AppError("Đề tài đã bị từ chối, không thể hoàn tất đánh giá.", 400);
   }
 
+  const isAssignedPB1 = Boolean(
+    thesis.reviewer1Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+  );
+  const isAssignedPB2 = Boolean(
+    thesis.reviewer2Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+  );
+  const hasPB1 = thesis.scores?.reviewer1Score !== null && thesis.scores?.reviewer1Score !== undefined;
+  const hasPB2 = thesis.scores?.reviewer2Score !== null && thesis.scores?.reviewer2Score !== undefined;
+
+  let isPBDone = false;
+  if (isAssignedPB1 && isAssignedPB2) {
+    isPBDone = hasPB1 && hasPB2;
+  } else if (isAssignedPB1) {
+    isPBDone = hasPB1;
+  } else if (isAssignedPB2) {
+    isPBDone = hasPB2;
+  }
+
   if (
     !thesis.scores ||
     thesis.scores.supervisorScore === null ||
-    thesis.scores.reviewer1Score === null ||
-    thesis.scores.reviewer2Score === null ||
+    !isPBDone ||
     thesis.scores.finalScore === null
   ) {
     throw new AppError(
-      "Đề tài chưa được chấm đầy đủ cả 3 cột điểm (GVHD, PB1, PB2) để hoàn tất",
+      "Đề tài chưa được chấm đầy đủ điểm (GVHD, GVPB, Hội đồng) để hoàn tất",
       400,
     );
   }
