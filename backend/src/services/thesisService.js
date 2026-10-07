@@ -1010,6 +1010,13 @@ const assignReviewers = async (
     );
   }
 
+  if (Number(scoreHD) < 4.0) {
+    throw new AppError(
+      "Đề tài có điểm GVHD dưới 4.0 (Không đạt), không thể phân công giảng viên phản biện.",
+      400,
+    );
+  }
+
   const supervisorIdStr = thesis.supervisorId.toString();
 
   let effectiveReviewer1Id = null;
@@ -2602,18 +2609,9 @@ const toggleAllThesisScoresLock = async ({ academicTermId, roleType = "SUPERVISO
 // 1. Get Theses For Evaluation (AcademicTerm-aware)
 // ====================
 const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTermId = "" } = {}) => {
-  // Theses with at least one reviewer assigned, excluding REJECTED
+  // All active theses with supervisor assigned, excluding REJECTED
   const baseQuery = {
-    $and: [
-      {
-        $or: [
-          { "reviewers.isPrivateReviewer": true },
-          { "reviewers.isCouncilReviewer": true },
-          { reviewer1Id: { $ne: null } },
-          { reviewer2Id: { $ne: null } },
-        ],
-      },
-    ],
+    supervisorId: { $ne: null },
     status: { $ne: "REJECTED" },
   };
 
@@ -2657,6 +2655,9 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
       })
       .then((docs) => docs.filter((d) => d.userId).map((d) => d._id));
 
+    if (!baseQuery.$and) {
+      baseQuery.$and = [];
+    }
     baseQuery.$and.push({
       $or: [
         { thesisTitle: regex },
@@ -2698,20 +2699,14 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
     })
     .lean();
 
-  const allEligible = await Thesis.find({
-    $and: [
-      {
-        $or: [
-          { "reviewers.isPrivateReviewer": true },
-          { "reviewers.isCouncilReviewer": true },
-          { reviewer1Id: { $ne: null } },
-          { reviewer2Id: { $ne: null } },
-        ],
-      },
-      ...(academicTermId && academicTermId !== "ALL" ? [{ academicTermId }] : []),
-    ],
+  const allEligibleQuery = {
+    supervisorId: { $ne: null },
     status: { $ne: "REJECTED" },
-  }).lean();
+  };
+  if (academicTermId && academicTermId !== "ALL") {
+    allEligibleQuery.academicTermId = academicTermId;
+  }
+  const allEligible = await Thesis.find(allEligibleQuery).lean();
 
   const totalEligible = allEligible.length;
   const gradedCount = allEligible.filter((t) => t.status === "GRADED").length;
@@ -2720,7 +2715,8 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
   ).length;
   const pendingGradeCount = allEligible.filter((t) => {
     const s = t.scores;
-    if (!s || s.supervisorScore === null) return true;
+    const scoreHD = s?.supervisorScore ?? s?.student1SupervisorScore;
+    if (scoreHD === null || scoreHD === undefined) return true;
     const isAssignedPB1 = Boolean(
       t.reviewer1Id ||
       (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
@@ -2729,8 +2725,10 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
       t.reviewer2Id ||
       (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
     );
-    const hasPB1 = s.reviewer1Score !== null && s.reviewer1Score !== undefined;
-    const hasPB2 = s.reviewer2Score !== null && s.reviewer2Score !== undefined;
+    const s1 = s?.reviewer1Score ?? s?.student1Reviewer1Score;
+    const s2 = s?.reviewer2Score ?? s?.student1Reviewer2Score;
+    const hasPB1 = s1 !== null && s1 !== undefined;
+    const hasPB2 = s2 !== null && s2 !== undefined;
 
     if (isAssignedPB1 && isAssignedPB2) {
       if (!hasPB1 || !hasPB2) return true;
@@ -2738,6 +2736,8 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
       if (!hasPB1) return true;
     } else if (isAssignedPB2) {
       if (!hasPB2) return true;
+    } else {
+      return true;
     }
     return false;
   }).length;

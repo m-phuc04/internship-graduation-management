@@ -30,6 +30,8 @@ import {
   Printer,
   Award,
   RotateCcw,
+  Copy,
+  Check,
 } from 'lucide-react';
 import evaluationRecreateService from '../../utils/evaluationRecreateService';
 
@@ -127,20 +129,10 @@ const MyInternshipPage = () => {
   const handleCreateEvaluationLink = async () => {
     setCreatingLink(true);
     try {
-      const termId = internship?.academicTermId?._id || internship?.academicTermId || '';
-      let res;
-      try {
-        res = await evaluationApi.createStudentEvaluationLink({
-          academicTermId: termId,
-        });
-      } catch (err) {
-        // If failed with term constraint, retry with empty academicTermId
-        if (termId) {
-          res = await evaluationApi.createStudentEvaluationLink({});
-        } else {
-          throw err;
-        }
-      }
+      const termId = internship?.academicTermId?._id || internship?.academicTermId || currentTerm?._id || '';
+      const res = await evaluationApi.createStudentEvaluationLink({
+        academicTermId: termId,
+      });
 
       if (res?.success) {
         evaluationRecreateService.clearDeletedEvaluation(rawInternship?._id || internship?._id);
@@ -149,7 +141,7 @@ const MyInternshipPage = () => {
         await fetchMyInternship();
       }
     } catch (err) {
-      showToast(err.message || 'Không thể tạo link đánh giá', 'error');
+      showToast(err.response?.data?.message || err.message || 'Không thể tạo link đánh giá', 'error');
     } finally {
       setCreatingLink(false);
     }
@@ -342,6 +334,9 @@ const MyInternshipPage = () => {
     evalData?.term?.internship?.evaluationStartDate ||
     evalData?.term?.internship?.evaluationStart ||
     evalData?.term?.internship?.reportStart ||
+    internship?.academicTermId?.internship?.evaluationStartDate ||
+    internship?.academicTermId?.internship?.evaluationStart ||
+    internship?.academicTermId?.internship?.reportStart ||
     currentTerm?.internship?.evaluationStartDate ||
     currentTerm?.internship?.evaluationStart ||
     currentTerm?.internship?.reportStart;
@@ -351,6 +346,9 @@ const MyInternshipPage = () => {
     evalData?.term?.internship?.evaluationEndDate ||
     evalData?.term?.internship?.evaluationEnd ||
     evalData?.term?.internship?.reportDeadline ||
+    internship?.academicTermId?.internship?.evaluationEndDate ||
+    internship?.academicTermId?.internship?.evaluationEnd ||
+    internship?.academicTermId?.internship?.reportDeadline ||
     currentTerm?.internship?.evaluationEndDate ||
     currentTerm?.internship?.evaluationEnd ||
     currentTerm?.internship?.reportDeadline;
@@ -784,12 +782,14 @@ const MyInternshipPage = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-amber-900 text-xs leading-relaxed">
-                <div className="font-bold mb-0.5 flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-amber-600" />
+              <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/20 text-[#123891] text-xs leading-relaxed">
+                <div className="font-bold mb-0.5 flex items-center gap-1.5 text-[#123891]">
+                  <Clock className="w-4 h-4 text-[#123891]" />
                   Chờ phân công GVHD
                 </div>
-                Trưởng Bộ Môn sẽ chỉ định Giảng viên hướng dẫn sau khi phê duyệt hồ sơ thực tập của bạn.
+                <p className="text-slate-700">
+                  Trưởng Bộ Môn sẽ chỉ định Giảng viên hướng dẫn sau khi phê duyệt hồ sơ thực tập của bạn.
+                </p>
               </div>
             )}
           </div>
@@ -829,8 +829,8 @@ const MyInternshipPage = () => {
                   Kết quả đã bị xóa bởi TBM
                 </span>
               ) : isPendingEvaluation ? (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#123891]/10 text-[#123891] border border-[#123891]/30 flex items-center gap-1">
+                  <Clock className="w-3.5 h-3.5 text-[#123891]" />
                   Đã tạo link — Chờ DN đánh giá
                 </span>
               ) : (
@@ -842,13 +842,13 @@ const MyInternshipPage = () => {
 
             {/* Condition 1: Internship is PENDING / Awaiting approval */}
             {internship.status === 'PENDING' && (
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 text-amber-900 text-xs leading-relaxed space-y-1">
-                <div className="font-bold flex items-center gap-1.5">
-                  <Clock className="w-4 h-4 text-amber-600" />
+              <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/20 text-[#123891] text-xs leading-relaxed space-y-1">
+                <div className="font-bold flex items-center gap-1.5 text-[#123891]">
+                  <Clock className="w-4 h-4 text-[#123891]" />
                   Hồ sơ thực tập đang chờ xét duyệt
                 </div>
-                <p>
-                  Hồ sơ đăng ký thực tập của bạn đang ở trạng thái <strong>Chờ Trưởng Bộ Môn xét duyệt</strong>. Bạn sẽ có thể tạo link đánh giá gửi Doanh nghiệp sau khi hồ sơ được phê duyệt chính thức.
+                <p className="text-slate-700 leading-relaxed">
+                  Hồ sơ đăng ký thực tập của bạn đang ở trạng thái <strong className="text-[#123891]">Chờ Trưởng Bộ Môn xét duyệt</strong>. Bạn sẽ có thể tạo link đánh giá gửi Doanh nghiệp sau khi hồ sơ được phê duyệt chính thức.
                 </p>
               </div>
             )}
@@ -921,7 +921,7 @@ const MyInternshipPage = () => {
                           <div>2. Gửi liên kết cho Người phụ trách / Mentor tại Doanh nghiệp để họ điền phiếu online không cần đăng nhập.</div>
                           <div>3. <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo 01 link duy nhất cho đợt thực tập này.</div>
                           {evalEndDate && (
-                            <div className="text-amber-800 font-semibold pt-1">
+                            <div className="text-[#123891] font-semibold pt-1">
                               📅 Hạn chót tạo link & hoàn thành đánh giá: {evalEndDate.toLocaleDateString('vi-VN')}
                             </div>
                           )}
@@ -952,13 +952,13 @@ const MyInternshipPage = () => {
                       </div>
                     )}
 
-                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5 text-amber-950">
-                      <div className="font-bold flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-amber-600" />
+                    <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/25 space-y-2.5 text-[#123891]">
+                      <div className="font-bold flex items-center gap-2 text-[#123891]">
+                        <Clock className="w-4 h-4 text-[#123891]" />
                         <span>Link đánh giá thực tập của bạn đã sẵn sàng:</span>
                       </div>
 
-                      <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-amber-200">
+                      <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#123891]/30">
                         <input
                           type="text"
                           readOnly
@@ -968,24 +968,16 @@ const MyInternshipPage = () => {
                         <button
                           type="button"
                           onClick={() => handleCopyLink(`${window.location.origin}/company-evaluation/${activeRequest.token}`)}
-                          className="px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-[11px] rounded-lg transition shrink-0 cursor-pointer"
+                          className="p-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-lg transition shrink-0 cursor-pointer shadow-xs flex items-center justify-center"
+                          title={copied ? 'Đã sao chép link!' : 'Sao chép link'}
                         >
-                          {copied ? 'Đã sao chép!' : 'Sao chép link'}
+                          {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
                         </button>
-                        <a
-                          href={`${window.location.origin}/company-evaluation/${activeRequest.token}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] rounded-lg transition shrink-0 inline-flex items-center gap-1 cursor-pointer"
-                        >
-                          <span>Xem link</span>
-                        </a>
                       </div>
 
                       <div className="text-[11px] text-slate-600 space-y-0.5">
-                        <div>• Bạn hãy gửi link trên cho Cán bộ quản lý / Mentor tại Doanh nghiệp qua Email, Zalo, Teams.</div>
                         <div>• Doanh nghiệp mở link để đánh giá trực tiếp mà <strong>không cần tài khoản / đăng nhập</strong>.</div>
-                        <div className="text-amber-800 font-medium pt-1">
+                        <div className="text-[#123891] font-medium pt-1">
                           ⚠️ Mỗi sinh viên chỉ được tạo 1 link duy nhất. Nếu cần tạo lại link, vui lòng liên hệ Trưởng Bộ Môn.
                         </div>
                       </div>
@@ -1189,7 +1181,7 @@ const MyInternshipPage = () => {
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-50 text-amber-900 text-[11px] leading-relaxed border border-amber-200/70">
+            <div className="p-3 rounded-xl bg-[#123891]/5 text-[#123891] text-[11px] leading-relaxed border border-[#123891]/20">
               <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo 01 link đánh giá cho 01 đợt thực tập. Vui lòng gửi link cho Người phụ trách / Mentor tại doanh nghiệp tiếp nhận.
             </div>
 
