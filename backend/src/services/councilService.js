@@ -8,6 +8,65 @@ import Notification from "../models/Notification.js";
 import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
 
+/**
+ * Check if the report time / defense time of a Council room has expired (ended)
+ */
+const isCouncilReportTimeExpired = (council) => {
+  if (!council) return false;
+  try {
+    const now = new Date();
+
+    // 1. If reportDate is set
+    if (council.reportDate) {
+      const dateObj = new Date(council.reportDate);
+      if (!isNaN(dateObj.getTime())) {
+        let endHour = 23;
+        let endMinute = 59;
+        if (council.reportEndTime && typeof council.reportEndTime === "string") {
+          const [h, m] = council.reportEndTime.split(":").map(Number);
+          if (!isNaN(h)) endHour = h;
+          if (!isNaN(m)) endMinute = m;
+        }
+        dateObj.setHours(endHour, endMinute, 59, 999);
+        return now > dateObj;
+      }
+    }
+
+    // 2. Parse from reportTime string (e.g. "08:00 - 11:30, 07/10/2026")
+    if (council.reportTime && typeof council.reportTime === "string") {
+      const dateMatchVN = council.reportTime.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      const dateMatchISO = council.reportTime.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+      const timeRangeMatch = council.reportTime.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+
+      let year, month, day;
+      if (dateMatchVN) {
+        day = parseInt(dateMatchVN[1], 10);
+        month = parseInt(dateMatchVN[2], 10) - 1;
+        year = parseInt(dateMatchVN[3], 10);
+      } else if (dateMatchISO) {
+        year = parseInt(dateMatchISO[1], 10);
+        month = parseInt(dateMatchISO[2], 10) - 1;
+        day = parseInt(dateMatchISO[3], 10);
+      }
+
+      if (year !== undefined && month !== undefined && day !== undefined) {
+        let endHour = 23;
+        let endMinute = 59;
+        if (timeRangeMatch && timeRangeMatch[2]) {
+          const [h, m] = timeRangeMatch[2].split(":").map(Number);
+          if (!isNaN(h)) endHour = h;
+          if (!isNaN(m)) endMinute = m;
+        }
+        const endDateTime = new Date(year, month, day, endHour, endMinute, 59, 999);
+        return now > endDateTime;
+      }
+    }
+  } catch (err) {
+    console.warn("Error checking council expiry on server:", err);
+  }
+  return false;
+};
+
 // ====================
 // 1. Get Councils List
 // ====================
@@ -168,6 +227,10 @@ const updateCouncil = async (id, data, userId) => {
     throw new AppError("Không tìm thấy phòng hội đồng", 404);
   }
 
+  if (isCouncilReportTimeExpired(council)) {
+    throw new AppError("Phòng hội đồng đã kết thúc thời gian báo cáo, không thể chỉnh sửa hoặc thay đổi phân công", 400);
+  }
+
   const oldLecturerIds = (council.lecturers || []).map((l) => String(l.lecturerId));
 
   if (data.name !== undefined) council.name = data.name.trim();
@@ -268,6 +331,10 @@ const deleteCouncil = async (id) => {
     throw new AppError("Không tìm thấy phòng hội đồng", 404);
   }
 
+  if (isCouncilReportTimeExpired(council)) {
+    throw new AppError("Phòng hội đồng đã kết thúc thời gian báo cáo, không thể xóa", 400);
+  }
+
   const escapedName = council.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   // Delete all notifications for this council
@@ -298,10 +365,20 @@ const assignCouncilToThesis = async ({ thesisId, councilId }) => {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
 
+  if (thesis.councilId) {
+    const currentCouncil = await Council.findById(thesis.councilId);
+    if (isCouncilReportTimeExpired(currentCouncil)) {
+      throw new AppError("Phòng hội đồng hiện tại đã kết thúc thời gian báo cáo, không thể thay đổi phân công", 400);
+    }
+  }
+
   if (councilId) {
     const council = await Council.findById(councilId);
     if (!council) {
       throw new AppError("Không tìm thấy phòng hội đồng để gán", 404);
+    }
+    if (isCouncilReportTimeExpired(council)) {
+      throw new AppError("Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công đề tài", 400);
     }
     thesis.councilId = council._id;
   } else {

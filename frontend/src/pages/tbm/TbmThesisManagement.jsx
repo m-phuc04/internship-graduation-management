@@ -18,6 +18,7 @@ import ExportModal from '../../components/common/ExportModal';
 import ThesisTimelineModal from '../../components/thesis/ThesisTimelineModal';
 import CouncilManagementSection from '../../components/thesis/CouncilManagementSection';
 import AssignCouncilToThesisModal from '../../components/thesis/AssignCouncilToThesisModal';
+import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
 
 import {
   GraduationCap,
@@ -448,6 +449,22 @@ const TbmThesisManagement = () => {
   }, [currentTerm?._id]);
 
   const handleAssignCouncilToThesis = (thesisId, councilId) => {
+    const councilsList = getCouncilsList();
+    const targetCouncil = councilsList.find((c) => (c.id && String(c.id) === String(councilId)) || (c._id && String(c._id) === String(councilId)));
+    if (targetCouncil && isCouncilReportTimeExpired(targetCouncil)) {
+      showToast('Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công đề tài!', 'error');
+      return;
+    }
+
+    const currentAssignedId = thesisCouncilMap[thesisId];
+    if (currentAssignedId) {
+      const currentCouncil = councilsList.find((c) => (c.id && String(c.id) === String(currentAssignedId)) || (c._id && String(c._id) === String(currentAssignedId)));
+      if (currentCouncil && isCouncilReportTimeExpired(currentCouncil)) {
+        showToast('Phòng hội đồng hiện tại đã kết thúc thời gian báo cáo, không thể thay đổi phân công!', 'error');
+        return;
+      }
+    }
+
     // Persist to MongoDB
     councilApi.assignThesis({ thesisId, councilId }).catch((err) => {
       console.warn('Error assigning council to thesis in MongoDB:', err.message);
@@ -480,23 +497,35 @@ const TbmThesisManagement = () => {
     });
   };
 
-  // Tính Điểm HD + PB theo công thức: (Điểm GVHD + (Điểm GVPB1 + Điểm GVPB2)/2) / 2
+  // Tính Điểm HD + PB theo công thức:
+  // Nếu phân công 2 GVPB: (Điểm GVHD + (Điểm GVPB1 + Điểm GVPB2)/2) / 2 (khi cả 2 đã nhập điểm)
+  // Nếu phân công 1 GVPB: (Điểm GVHD + Điểm GVPB) / 2 (khi 1 GVPB đó đã nhập điểm)
   const calculateScoreHDPB = useCallback((item) => {
     const scoreHD = item.scores?.supervisorScore ?? item.scores?.student1SupervisorScore;
     const scorePB1 = item.scores?.reviewer1Score ?? item.scores?.student1Reviewer1Score;
     const scorePB2 = item.scores?.reviewer2Score ?? item.scores?.student1Reviewer2Score;
 
-    const validPB = [];
-    if (scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1) && scorePB1 !== '') {
-      validPB.push(Number(scorePB1));
-    }
-    if (scorePB2 !== null && scorePB2 !== undefined && !isNaN(scorePB2) && scorePB2 !== '') {
-      validPB.push(Number(scorePB2));
-    }
+    const isAssignedPB1 = Boolean(
+      item.reviewer1Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const isAssignedPB2 = Boolean(
+      item.reviewer2Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+
+    const hasS1 = scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1) && scorePB1 !== '';
+    const hasS2 = scorePB2 !== null && scorePB2 !== undefined && !isNaN(scorePB2) && scorePB2 !== '';
 
     let avgPB = null;
-    if (validPB.length > 0) {
-      avgPB = validPB.reduce((a, b) => a + b, 0) / validPB.length;
+    if (isAssignedPB1 && isAssignedPB2) {
+      if (hasS1 && hasS2) {
+        avgPB = (Number(scorePB1) + Number(scorePB2)) / 2;
+      }
+    } else if (isAssignedPB1) {
+      if (hasS1) avgPB = Number(scorePB1);
+    } else if (isAssignedPB2) {
+      if (hasS2) avgPB = Number(scorePB2);
     }
 
     const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && scoreHD !== '';
@@ -507,8 +536,8 @@ const TbmThesisManagement = () => {
       return {
         score: Number(finalScore.toFixed(2)),
         scoreHD: numHD,
-        scorePB1: scorePB1 !== null && scorePB1 !== undefined ? Number(scorePB1) : null,
-        scorePB2: scorePB2 !== null && scorePB2 !== undefined ? Number(scorePB2) : null,
+        scorePB1: hasS1 ? Number(scorePB1) : null,
+        scorePB2: hasS2 ? Number(scorePB2) : null,
         avgPB: Number(avgPB.toFixed(2)),
       };
     }
@@ -517,8 +546,8 @@ const TbmThesisManagement = () => {
       return {
         score: Number(numHD.toFixed(2)),
         scoreHD: numHD,
-        scorePB1: null,
-        scorePB2: null,
+        scorePB1: hasS1 ? Number(scorePB1) : null,
+        scorePB2: hasS2 ? Number(scorePB2) : null,
         avgPB: null,
       };
     }
@@ -527,8 +556,8 @@ const TbmThesisManagement = () => {
       return {
         score: Number(avgPB.toFixed(2)),
         scoreHD: null,
-        scorePB1: scorePB1 !== null && scorePB1 !== undefined ? Number(scorePB1) : null,
-        scorePB2: scorePB2 !== null && scorePB2 !== undefined ? Number(scorePB2) : null,
+        scorePB1: hasS1 ? Number(scorePB1) : null,
+        scorePB2: hasS2 ? Number(scorePB2) : null,
         avgPB: Number(avgPB.toFixed(2)),
       };
     }
@@ -584,12 +613,45 @@ const TbmThesisManagement = () => {
     fetchTheses();
   }, [fetchTheses]);
 
-  // Check if a thesis has received scores from both Reviewer 1 and Reviewer 2
+  // Kiểm tra đề tài đã có điểm GVHD để đủ điều kiện phân công phản biện kín:
+  const hasSupervisorScore = useCallback((item) => {
+    if (!item) return false;
+    const scoreHD = item.scores?.supervisorScore ?? item.scores?.student1SupervisorScore;
+    return scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && scoreHD !== '';
+  }, []);
+
+  // Kiểm tra đề tài đã hoàn tất chấm điểm phản biện kín:
+  // - Nếu phân công 2 GVPB: cả 2 phải chấm xong mới hoàn tất
+  // - Nếu phân công 1 GVPB: 1 GVPB chấm xong là hoàn tất
   const hasBothReviewerScores = useCallback((item) => {
+    const isAssignedPB1 = Boolean(
+      item.reviewer1Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const isAssignedPB2 = Boolean(
+      item.reviewer2Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+
     const s1 = item.scores?.reviewer1Score ?? item.scores?.student1Reviewer1Score;
     const s2 = item.scores?.reviewer2Score ?? item.scores?.student1Reviewer2Score;
-    return s1 !== null && s1 !== undefined && s2 !== null && s2 !== undefined;
+
+    const hasS1 = s1 !== null && s1 !== undefined && !isNaN(s1) && s1 !== '';
+    const hasS2 = s2 !== null && s2 !== undefined && !isNaN(s2) && s2 !== '';
+
+    if (isAssignedPB1 && isAssignedPB2) {
+      return hasS1 && hasS2;
+    } else if (isAssignedPB1) {
+      return hasS1;
+    } else if (isAssignedPB2) {
+      return hasS2;
+    }
+    return false;
   }, []);
+
+  const privateReviewerEligibleCount = React.useMemo(() => {
+    return theses.filter((t) => t.status !== 'REJECTED' && hasSupervisorScore(t)).length;
+  }, [theses, hasSupervisorScore]);
 
   const councilEligibleCount = React.useMemo(() => {
     return theses.filter(hasBothReviewerScores).length;
@@ -597,11 +659,14 @@ const TbmThesisManagement = () => {
 
   const displayedTheses = React.useMemo(() => {
     let list = status === 'ALL' ? theses.filter((t) => t.status !== 'REJECTED') : theses;
+    if (activeMainTab === 'PRIVATE_REVIEWER') {
+      return list.filter(hasSupervisorScore);
+    }
     if (activeMainTab === 'COUNCIL_REVIEWER') {
       return list.filter(hasBothReviewerScores);
     }
     return list;
-  }, [theses, activeMainTab, hasBothReviewerScores, status]);
+  }, [theses, activeMainTab, hasSupervisorScore, hasBothReviewerScores, status]);
 
   // Tính hình thức báo cáo:
   // Đề tài nằm trong top 20% điểm cao nhất (của các đề tài có điểm) VÀ điểm >= 8.0 => 'ORAL' (Báo cáo Oral)
@@ -943,7 +1008,7 @@ const TbmThesisManagement = () => {
             <UserCheck className="w-4 h-4" />
             <span>2. Phân công phản biện kín</span>
             <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeMainTab === 'PRIVATE_REVIEWER' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
-              {stats.total}
+              {privateReviewerEligibleCount}
             </span>
           </button>
 
@@ -1665,11 +1730,15 @@ const TbmThesisManagement = () => {
                   title={
                     activeMainTab === 'COUNCIL_REVIEWER'
                       ? 'Chưa có đề tài nào đủ điều kiện phản biện hội đồng'
+                      : activeMainTab === 'PRIVATE_REVIEWER'
+                      ? 'Chưa có đề tài nào có điểm GVHD để phân công phản biện kín'
                       : 'Không tìm thấy đề tài khóa luận nào'
                   }
                   description={
                     activeMainTab === 'COUNCIL_REVIEWER'
-                      ? 'Chỉ các đề tài đã có đầy đủ điểm của Giảng viên Phản biện 1 và Giảng viên Phản biện 2 mới xuất hiện tại đây.'
+                      ? 'Chỉ các đề tài đã có đầy đủ điểm của Giảng viên Phản biện mới xuất hiện tại đây.'
+                      : activeMainTab === 'PRIVATE_REVIEWER'
+                      ? 'Chỉ các đề tài đã được Giảng viên hướng dẫn (GVHD) chấm điểm mới xuất hiện tại đây để phân công phản biện kín.'
                       : 'Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh bộ lọc trạng thái.'
                   }
                 />
@@ -1715,11 +1784,12 @@ const TbmThesisManagement = () => {
                       if (activeMainTab === 'COUNCIL_REVIEWER') {
                         const scoreHDPB = calculateScoreHDPB(item);
                         const councilFinalScore = calculateCouncilScore(item, assignedCouncil);
+                        const isAssignedCouncilExpired = assignedCouncil ? isCouncilReportTimeExpired(assignedCouncil) : false;
 
                         return (
                           <tr
                             key={item._id}
-                            className="hover:bg-slate-50/80 transition"
+                            className={`transition ${isAssignedCouncilExpired ? 'bg-slate-50/40 hover:bg-slate-50/70' : 'hover:bg-slate-50/80'}`}
                           >
                             {/* 1. STT */}
                             <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
@@ -1816,9 +1886,16 @@ const TbmThesisManagement = () => {
                             <td className="py-3.5 px-4 whitespace-nowrap">
                               {assignedCouncil ? (
                                 <div className="space-y-0.5">
-                                  <strong className="text-slate-900 block font-bold text-xs">
-                                    {(assignedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}
-                                  </strong>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <strong className="text-slate-900 block font-bold text-xs">
+                                      {(assignedCouncil.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}
+                                    </strong>
+                                    {isAssignedCouncilExpired && (
+                                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                        Đã kết thúc
+                                      </span>
+                                    )}
+                                  </div>
                                   <div className="text-[10px] text-slate-500 font-mono">
                                     Phòng: {assignedCouncil.room}
                                   </div>
@@ -1853,12 +1930,21 @@ const TbmThesisManagement = () => {
                                 {/* Phân công phòng hội đồng */}
                                 <button
                                   type="button"
+                                  disabled={isAssignedCouncilExpired}
                                   onClick={() => {
                                     setSelectedThesisForCouncil(item);
                                     setAssignCouncilToThesisModalOpen(true);
                                   }}
-                                  className="p-1.5 text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                                  title="Phân công phòng hội đồng cho đề tài"
+                                  className={`p-1.5 rounded-lg transition ${
+                                    isAssignedCouncilExpired
+                                      ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                      : 'text-[#123891] hover:bg-blue-50 cursor-pointer'
+                                  }`}
+                                  title={
+                                    isAssignedCouncilExpired
+                                      ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể thay đổi phân công'
+                                      : 'Phân công phòng hội đồng cho đề tài'
+                                  }
                                 >
                                   <UserCheck className="w-4 h-4" />
                                 </button>

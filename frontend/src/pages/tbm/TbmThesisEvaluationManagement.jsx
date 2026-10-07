@@ -171,12 +171,44 @@ const TbmThesisEvaluationManagement = () => {
           ? s.student1SupervisorScore
           : null;
 
-      const scorePB1 =
+      const isAssignedPB1 = Boolean(
+        item.reviewer1Id ||
+        (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+      );
+      const isAssignedPB2 = Boolean(
+        item.reviewer2Id ||
+        (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+      );
+
+      const sPB1 =
         s.reviewer1Score !== null && s.reviewer1Score !== undefined
           ? s.reviewer1Score
           : s.student1Reviewer1Score !== null && s.student1Reviewer1Score !== undefined
           ? s.student1Reviewer1Score
           : null;
+
+      const sPB2 =
+        s.reviewer2Score !== null && s.reviewer2Score !== undefined
+          ? s.reviewer2Score
+          : s.student1Reviewer2Score !== null && s.student1Reviewer2Score !== undefined
+          ? s.student1Reviewer2Score
+          : null;
+
+      const hasPB1 = sPB1 !== null && sPB1 !== undefined && !isNaN(sPB1);
+      const hasPB2 = sPB2 !== null && sPB2 !== undefined && !isNaN(sPB2);
+
+      let scorePB = null;
+      if (isAssignedPB1 && isAssignedPB2) {
+        if (hasPB1 && hasPB2) {
+          scorePB = Number(((Number(sPB1) + Number(sPB2)) / 2).toFixed(2));
+        }
+      } else if (isAssignedPB1) {
+        if (hasPB1) scorePB = Number(Number(sPB1).toFixed(2));
+      } else if (isAssignedPB2) {
+        if (hasPB2) scorePB = Number(Number(sPB2).toFixed(2));
+      } else if (s.reviewerScore !== null && s.reviewerScore !== undefined && !isNaN(s.reviewerScore)) {
+        scorePB = Number(Number(s.reviewerScore).toFixed(2));
+      }
 
       // Lookup Council assignment
       const councilId = thesisCouncilMap ? thesisCouncilMap[item._id] : null;
@@ -227,15 +259,15 @@ const TbmThesisEvaluationManagement = () => {
       }
 
       const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
-      const hasPB1 = scorePB1 !== null && scorePB1 !== undefined && !isNaN(scorePB1);
+      const hasPB = scorePB !== null && scorePB !== undefined && !isNaN(scorePB);
       const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
 
       // STRICT RULE: Điểm Tổng Kết (100%) CHỈ ĐƯỢC TÍNH KHI ĐỦ TẤT CẢ CÁC CỘT ĐIỂM (GVHD 50%, PB kín 30%, Hội đồng 20%)!
       // Chưa đủ tất cả cột điểm thì tuyệt đối KHÔNG được tính, chỉ để null (để trống)!
       let finalScore = null;
-      if (hasHD && hasPB1 && hasCouncil) {
+      if (hasHD && hasPB && hasCouncil) {
         finalScore = Number(
-          (Number(scoreHD) * 0.5 + Number(scorePB1) * 0.3 + Number(scoreCouncil) * 0.2).toFixed(2)
+          (Number(scoreHD) * 0.5 + Number(scorePB) * 0.3 + Number(scoreCouncil) * 0.2).toFixed(2)
         );
       } else {
         finalScore = null;
@@ -243,13 +275,17 @@ const TbmThesisEvaluationManagement = () => {
 
       return {
         scoreHD: hasHD ? Number(scoreHD) : null,
-        scorePB1: hasPB1 ? Number(scorePB1) : null,
+        scorePB: hasPB ? Number(scorePB) : null,
+        scorePB1: hasPB ? Number(scorePB) : null,
+        scorePB2: hasPB2 ? Number(sPB2) : null,
         scoreGVHD1: scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null,
         scoreGVHD2: scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null,
         scoreCouncil: hasCouncil ? Number(scoreCouncil) : null,
         finalScore,
         hasHD,
-        hasPB1,
+        hasPB,
+        hasPB1: hasPB,
+        hasPB2,
         hasCouncil,
         assignedCouncil,
       };
@@ -333,14 +369,14 @@ const TbmThesisEvaluationManagement = () => {
         // "Đang thực hiện": GVHD chưa chấm điểm
         if (info.hasHD) return false;
       } else if (statusFilter === 'PB_KIN') {
-        // "Phản biện kín": Có điểm GVHD rồi, điểm GVPB1 hoặc GVPB2 chưa thấy
-        if (!info.hasHD || (info.hasPB1 && info.hasPB2)) return false;
+        // "Phản biện kín": Có điểm GVHD rồi, điểm PB kín chưa hoàn thành
+        if (!info.hasHD || info.hasPB) return false;
       } else if (statusFilter === 'BC_HOIDONG') {
-        // "Báo cáo hội đồng": Đã có điểm GVPB1, GVPB2 chưa có điểm hội đồng
-        if (!info.hasPB1 || !info.hasPB2 || info.hasCouncil) return false;
+        // "Báo cáo hội đồng": Đã có điểm PB kín, chưa có điểm hội đồng
+        if (!info.hasPB || info.hasCouncil) return false;
       } else if (statusFilter === 'COMPLETED') {
         // "Hoàn tất": Các nhóm đã có tất cả các điểm đầy đủ hoặc trạng thái COMPLETED
-        const isAllScored = info.hasHD && info.hasPB1 && info.hasPB2 && info.hasCouncil;
+        const isAllScored = info.hasHD && info.hasPB && info.hasCouncil;
         if (!isAllScored && item.status !== 'COMPLETED') return false;
       }
 
@@ -365,7 +401,7 @@ const TbmThesisEvaluationManagement = () => {
       if (info.finalScore !== null) {
         gradedCount += 1;
       }
-      if (!info.hasHD || !info.hasPB1 || !info.hasPB2 || !info.hasCouncil) {
+      if (!info.hasHD || !info.hasPB || !info.hasCouncil) {
         pendingGradeCount += 1;
       }
     });

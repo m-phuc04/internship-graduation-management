@@ -5,6 +5,7 @@ import councilApi from '../../api/councilApi';
 import AssignCouncilModal from './AssignCouncilModal';
 import CreateCouncilModal from './CreateCouncilModal';
 
+import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
 import {
   Users,
   Plus,
@@ -142,6 +143,10 @@ const CouncilManagementSection = ({ theses = [] }) => {
   };
 
   const handleCouncilSaved = async (savedCouncil) => {
+    if (editingCouncil && isCouncilReportTimeExpired(editingCouncil)) {
+      showToast('Phòng hội đồng này đã kết thúc thời gian báo cáo, không thể chỉnh sửa!', 'error');
+      return;
+    }
     const sId = editingCouncil?._id || editingCouncil?.id || savedCouncil.id || savedCouncil._id;
     try {
       if (editingCouncil && sId) {
@@ -166,6 +171,10 @@ const CouncilManagementSection = ({ theses = [] }) => {
   };
 
   const handleSaveCouncilFromAssign = async (councilId, updatedCouncil) => {
+    if (isCouncilReportTimeExpired(updatedCouncil)) {
+      showToast('Phòng hội đồng này đã kết thúc thời gian báo cáo, không thể thay đổi phân công!', 'error');
+      return;
+    }
     try {
       const cId = updatedCouncil._id || updatedCouncil.id || councilId;
       await councilApi.update(cId, {
@@ -180,6 +189,11 @@ const CouncilManagementSection = ({ theses = [] }) => {
   };
 
   const handleDeleteCouncil = async (councilId, councilName) => {
+    const target = councils.find((c) => c.id === councilId || c._id === councilId);
+    if (target && isCouncilReportTimeExpired(target)) {
+      showToast('Phòng hội đồng đã kết thúc thời gian báo cáo, không thể xóa!', 'error');
+      return;
+    }
     const cleanName = (councilName || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
     if (window.confirm(`Bạn có chắc chắn muốn xóa "${cleanName}" không?`)) {
       try {
@@ -217,11 +231,19 @@ const CouncilManagementSection = ({ theses = [] }) => {
   };
 
   const handleOpenAssignModal = (council) => {
+    if (isCouncilReportTimeExpired(council)) {
+      showToast('Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công giảng viên!', 'warning');
+      return;
+    }
     setTargetCouncil(council);
     setAssignCouncilModalOpen(true);
   };
 
   const handleOpenEditModal = (council) => {
+    if (isCouncilReportTimeExpired(council)) {
+      showToast('Phòng hội đồng đã kết thúc thời gian báo cáo, không thể chỉnh sửa!', 'warning');
+      return;
+    }
     setEditingCouncil(council);
     setCreateCouncilModalOpen(true);
   };
@@ -313,9 +335,10 @@ const CouncilManagementSection = ({ theses = [] }) => {
                   const cleanName = (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
                   const lec1 = c.lecturers?.[0];
                   const lec2 = c.lecturers?.[1];
+                  const isExpired = isCouncilReportTimeExpired(c);
 
                   return (
-                    <tr key={c.id} className="hover:bg-slate-50/80 transition">
+                    <tr key={c.id} className={`transition ${isExpired ? 'bg-slate-50/40 hover:bg-slate-50/70' : 'hover:bg-slate-50/80'}`}>
                       <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
                         {idx + 1}
                       </td>
@@ -343,10 +366,17 @@ const CouncilManagementSection = ({ theses = [] }) => {
 
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
                         {c.reportTime ? (
-                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                            <Clock className="w-3.5 h-3.5 text-[#123891]" />
-                            <span>{c.reportTime}</span>
-                          </span>
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                              <Clock className="w-3.5 h-3.5 text-[#123891]" />
+                              <span>{c.reportTime}</span>
+                            </span>
+                            {isExpired && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                Đã kết thúc
+                              </span>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-slate-400 italic text-[11px]">—</span>
                         )}
@@ -397,9 +427,18 @@ const CouncilManagementSection = ({ theses = [] }) => {
                           {/* Phân công GV */}
                           <button
                             type="button"
+                            disabled={isExpired}
                             onClick={() => handleOpenAssignModal(c)}
-                            className="p-1.5 text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                            title={`Phân công giảng viên cho ${cleanName}`}
+                            className={`p-1.5 rounded-lg transition ${
+                              isExpired
+                                ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                : 'text-[#123891] hover:bg-blue-50 cursor-pointer'
+                            }`}
+                            title={
+                              isExpired
+                                ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công giảng viên'
+                                : `Phân công giảng viên cho ${cleanName}`
+                            }
                           >
                             <UserCheck className="w-4 h-4" />
                           </button>
@@ -407,9 +446,18 @@ const CouncilManagementSection = ({ theses = [] }) => {
                           {/* Chỉnh sửa thông tin hội đồng */}
                           <button
                             type="button"
+                            disabled={isExpired}
                             onClick={() => handleOpenEditModal(c)}
-                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer"
-                            title={`Chỉnh sửa thông tin ${cleanName}`}
+                            className={`p-1.5 rounded-lg transition ${
+                              isExpired
+                                ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                : 'text-amber-600 hover:bg-amber-50 cursor-pointer'
+                            }`}
+                            title={
+                              isExpired
+                                ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể chỉnh sửa'
+                                : `Chỉnh sửa thông tin ${cleanName}`
+                            }
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
@@ -417,9 +465,18 @@ const CouncilManagementSection = ({ theses = [] }) => {
                           {/* Xóa hội đồng */}
                           <button
                             type="button"
+                            disabled={isExpired}
                             onClick={() => handleDeleteCouncil(c.id, cleanName)}
-                            className="p-1.5 text-rose-500 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                            title="Xóa phòng hội đồng này"
+                            className={`p-1.5 rounded-lg transition ${
+                              isExpired
+                                ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                : 'text-rose-500 hover:bg-rose-50 cursor-pointer'
+                            }`}
+                            title={
+                              isExpired
+                                ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể xóa'
+                                : 'Xóa phòng hội đồng này'
+                            }
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

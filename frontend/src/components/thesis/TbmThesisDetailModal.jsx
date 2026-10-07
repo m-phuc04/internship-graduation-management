@@ -286,15 +286,38 @@ const TbmThesisDetailModal = ({
               <div className="p-2 bg-white rounded-xl border border-slate-200 text-center">
                 <div className="text-[10px] text-slate-400 font-bold uppercase">PB Kín (30%)</div>
                 <div className="text-sm font-mono font-bold text-[#102d7d] mt-0.5">
-                  {thesis.scores.reviewerScore !== null && thesis.scores.reviewerScore !== undefined
-                    ? `${thesis.scores.reviewerScore}`
-                    : thesis.scores.reviewer1Score !== null && thesis.scores.reviewer2Score !== null
-                    ? `${((thesis.scores.reviewer1Score + thesis.scores.reviewer2Score) / 2).toFixed(1)}`
-                    : thesis.scores.reviewer1Score !== null
-                    ? `${thesis.scores.reviewer1Score}`
-                    : thesis.scores.reviewer2Score !== null
-                    ? `${thesis.scores.reviewer2Score}`
-                    : '—'}
+                  {(() => {
+                    const isAssignedPB1 = Boolean(
+                      thesis.reviewer1Id ||
+                      (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+                    );
+                    const isAssignedPB2 = Boolean(
+                      thesis.reviewer2Id ||
+                      (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+                    );
+                    const s1 = thesis.scores?.reviewer1Score ?? thesis.scores?.student1Reviewer1Score;
+                    const s2 = thesis.scores?.reviewer2Score ?? thesis.scores?.student1Reviewer2Score;
+
+                    const has1 = s1 !== null && s1 !== undefined && s1 !== '';
+                    const has2 = s2 !== null && s2 !== undefined && s2 !== '';
+
+                    if (isAssignedPB1 && isAssignedPB2) {
+                      if (has1 && has2) {
+                        return `${((Number(s1) + Number(s2)) / 2).toFixed(1)}`;
+                      }
+                      return '—';
+                    }
+                    if (isAssignedPB1 && has1) {
+                      return `${Number(s1)}`;
+                    }
+                    if (isAssignedPB2 && has2) {
+                      return `${Number(s2)}`;
+                    }
+                    if (thesis.scores?.reviewerScore !== null && thesis.scores?.reviewerScore !== undefined) {
+                      return `${thesis.scores.reviewerScore}`;
+                    }
+                    return '—';
+                  })()}
                 </div>
                 {(thesis.scores.reviewer1Score !== null || thesis.scores.reviewer2Score !== null) && (
                   <div className="text-[9px] text-slate-400 font-mono mt-0.5">

@@ -8,6 +8,7 @@ import { AlertCircle, BookOpen } from 'lucide-react';
 const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
   const [lecturers, setLecturers] = useState([]);
   const [loadingLecturers, setLoadingLecturers] = useState(false);
+  const [reviewerCount, setReviewerCount] = useState(2);
   const [reviewer1Id, setReviewer1Id] = useState('');
   const [reviewer2Id, setReviewer2Id] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -50,6 +51,11 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
 
       setReviewer1Id(r1);
       setReviewer2Id(r2);
+      if (r1 && !r2) {
+        setReviewerCount(1);
+      } else {
+        setReviewerCount(2);
+      }
       fetchLecturers();
     }
   }, [isOpen, thesis]);
@@ -68,6 +74,14 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
     }
   };
 
+  const handleSetReviewerCount = (count) => {
+    setReviewerCount(count);
+    setError('');
+    if (count === 1) {
+      setReviewer2Id('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (thesis?.status === 'COMPLETED') {
@@ -76,28 +90,37 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
     }
     setError('');
 
-    if (!reviewer1Id && !reviewer2Id) {
-      setError('Vui lòng chọn ít nhất một giảng viên phản biện.');
-      return;
-    }
-
-    if (reviewer1Id && reviewer2Id && reviewer1Id === reviewer2Id) {
-      setError('Giảng viên phản biện 1 và Giảng viên phản biện 2 không được trùng nhau.');
-      return;
-    }
-
-    if (reviewer1Id && reviewer1Id === supervisorIdStr) {
-      setError('Giảng viên hướng dẫn (GVHD) không được làm Giảng viên phản biện 1.');
-      return;
-    }
-
-    if (reviewer2Id && reviewer2Id === supervisorIdStr) {
-      setError('Giảng viên hướng dẫn (GVHD) không được làm Giảng viên phản biện 2.');
-      return;
+    if (reviewerCount === 1) {
+      if (!reviewer1Id) {
+        setError('Vui lòng chọn giảng viên phản biện.');
+        return;
+      }
+      if (reviewer1Id === supervisorIdStr) {
+        setError('Giảng viên hướng dẫn (GVHD) không được làm Giảng viên phản biện.');
+        return;
+      }
+    } else {
+      if (!reviewer1Id && !reviewer2Id) {
+        setError('Vui lòng chọn ít nhất một giảng viên phản biện.');
+        return;
+      }
+      if (reviewer1Id && reviewer2Id && reviewer1Id === reviewer2Id) {
+        setError('Giảng viên phản biện 1 và Giảng viên phản biện 2 không được trùng nhau.');
+        return;
+      }
+      if (reviewer1Id && reviewer1Id === supervisorIdStr) {
+        setError('Giảng viên hướng dẫn (GVHD) không được làm Giảng viên phản biện 1.');
+        return;
+      }
+      if (reviewer2Id && reviewer2Id === supervisorIdStr) {
+        setError('Giảng viên hướng dẫn (GVHD) không được làm Giảng viên phản biện 2.');
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
+      const effectiveReviewer2Id = reviewerCount === 2 ? reviewer2Id : '';
       const reviewersPayload = [];
       if (reviewer1Id) {
         reviewersPayload.push({
@@ -106,9 +129,9 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
           isCouncilReviewer: false,
         });
       }
-      if (reviewer2Id) {
+      if (effectiveReviewer2Id) {
         reviewersPayload.push({
-          lecturerId: reviewer2Id,
+          lecturerId: effectiveReviewer2Id,
           isPrivateReviewer: false,
           isCouncilReviewer: true,
         });
@@ -116,7 +139,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
 
       const payload = {
         reviewer1Id: reviewer1Id || null,
-        reviewer2Id: reviewer2Id || null,
+        reviewer2Id: effectiveReviewer2Id || null,
         reviewers: reviewersPayload,
       };
 
@@ -192,14 +215,42 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
 
         {/* Phân công giảng viên phản biện */}
         <div className="space-y-3.5">
-          <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
-            Phân công giảng viên phản biện
-          </label>
+          <div className="flex items-center justify-between gap-2">
+            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wide">
+              Phân công giảng viên phản biện
+            </label>
+
+            {/* Toggle 1 GV / 2 GV */}
+            <div className="inline-flex items-center p-0.5 bg-slate-100 rounded-xl border border-slate-200">
+              <button
+                type="button"
+                onClick={() => handleSetReviewerCount(1)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+                  reviewerCount === 1
+                    ? 'bg-[#123891] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                1 GV
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSetReviewerCount(2)}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+                  reviewerCount === 2
+                    ? 'bg-[#123891] text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                2 GV
+              </button>
+            </div>
+          </div>
 
           {/* Reviewer 1 */}
           <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
             <label className="block text-xs font-semibold text-slate-700">
-              Giảng viên phản biện 1
+              {reviewerCount === 1 ? 'Giảng viên phản biện' : 'Giảng viên phản biện 1'}
             </label>
             <select
               value={reviewer1Id}
@@ -208,9 +259,9 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                 setReviewer1Id(e.target.value);
               }}
               disabled={loadingLecturers || submitting}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
             >
-              <option value="">-- Chọn Giảng viên phản biện 1 --</option>
+              <option value="">{reviewerCount === 1 ? '-- Chọn Giảng viên phản biện --' : '-- Chọn Giảng viên phản biện 1 --'}</option>
               {availableReviewer1Lecturers.map((lec) => (
                 <option key={lec._id} value={lec._id}>
                   {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
@@ -220,29 +271,31 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
             </select>
           </div>
 
-          {/* Reviewer 2 */}
-          <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5">
-            <label className="block text-xs font-semibold text-slate-700">
-              Giảng viên phản biện 2
-            </label>
-            <select
-              value={reviewer2Id}
-              onChange={(e) => {
-                setError('');
-                setReviewer2Id(e.target.value);
-              }}
-              disabled={loadingLecturers || submitting}
-              className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="">-- Chọn Giảng viên phản biện 2 --</option>
-              {availableReviewer2Lecturers.map((lec) => (
-                <option key={lec._id} value={lec._id}>
-                  {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
-                  {lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Reviewer 2 (Only when reviewerCount === 2) */}
+          {reviewerCount === 2 && (
+            <div className="p-3 rounded-xl border border-slate-200 bg-slate-50/50 space-y-1.5 animate-in fade-in duration-200">
+              <label className="block text-xs font-semibold text-slate-700">
+                Giảng viên phản biện 2
+              </label>
+              <select
+                value={reviewer2Id}
+                onChange={(e) => {
+                  setError('');
+                  setReviewer2Id(e.target.value);
+                }}
+                disabled={loadingLecturers || submitting}
+                className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+              >
+                <option value="">-- Chọn Giảng viên phản biện 2 --</option>
+                {availableReviewer2Lecturers.map((lec) => (
+                  <option key={lec._id} value={lec._id}>
+                    {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
+                    {lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}
@@ -261,8 +314,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               submitting ||
               thesis.status === 'REJECTED' ||
               !thesis.isCriteriaPassed ||
-              thesis.scores?.supervisorScore === null ||
-              thesis.scores?.supervisorScore === undefined
+              (thesis.scores?.supervisorScore == null && thesis.scores?.student1SupervisorScore == null)
             }
             className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >

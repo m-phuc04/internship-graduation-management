@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import { useToast } from '../../context/ToastContext';
 import notificationApi from '../../api/notificationApi';
+import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
 import { BookOpen, Users, Clock, Check, AlertCircle, Sparkles } from 'lucide-react';
 
 const AssignCouncilToThesisModal = ({
@@ -48,7 +49,15 @@ const AssignCouncilToThesisModal = ({
           const hasLecturers = hasLecturersAssigned(found);
           const hasSupConflict = isSupervisorInCouncil(found);
           const isTypeMismatch = found.type !== reportFormat;
+          const isExpired = isCouncilReportTimeExpired(found);
 
+          if (isExpired) {
+            setError(
+              `Phòng "${(found.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}" đã kết thúc thời gian báo cáo.`
+            );
+            setSelectedCouncilId('');
+            return;
+          }
           if (!hasLecturers) {
             setError(
               `Phòng "${(found.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim()}" chưa được phân công giảng viên hội đồng. Vui lòng phân công giảng viên trước!`
@@ -95,6 +104,15 @@ const AssignCouncilToThesisModal = ({
 
     const cleanName = (found.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
 
+    // 0. Kiểm tra phòng đã kết thúc thời gian báo cáo chưa
+    if (isCouncilReportTimeExpired(found)) {
+      const errorMsg = `Phòng "${cleanName}" đã kết thúc thời gian báo cáo! Không thể phân công đề tài vào phòng này.`;
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
+      setSelectedCouncilId('');
+      return;
+    }
+
     // 1. Kiểm tra phòng đã phân công giảng viên chưa
     if (!hasLecturersAssigned(found)) {
       const errorMsg = `Phòng "${cleanName}" chưa được phân công giảng viên hội đồng! Vui lòng phân công giảng viên cho hội đồng trước khi gán đề tài.`;
@@ -135,6 +153,12 @@ const AssignCouncilToThesisModal = ({
       const found = councils.find((c) => (c.id || c._id) === selectedCouncilId || String(c.id || c._id) === String(selectedCouncilId));
       if (found) {
         const cleanName = (found.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+        if (isCouncilReportTimeExpired(found)) {
+          const errorMsg = `Phòng "${cleanName}" đã kết thúc thời gian báo cáo!`;
+          setError(errorMsg);
+          showToast(errorMsg, 'error');
+          return;
+        }
         if (!hasLecturersAssigned(found)) {
           const errorMsg = `Phòng "${cleanName}" chưa được phân công giảng viên hội đồng!`;
           setError(errorMsg);
@@ -294,7 +318,8 @@ const AssignCouncilToThesisModal = ({
               const hasLecturers = hasLecturersAssigned(c);
               const hasSup = isSupervisorInCouncil(c);
               const isMismatch = c.type !== reportFormat;
-              const isDisabled = !hasLecturers || hasSup || isMismatch;
+              const isExpired = isCouncilReportTimeExpired(c);
+              const isDisabled = !hasLecturers || hasSup || isMismatch || isExpired;
 
               return (
                 <option
@@ -303,7 +328,7 @@ const AssignCouncilToThesisModal = ({
                   disabled={isDisabled}
                   className={isDisabled ? 'text-slate-400 bg-slate-100 font-normal' : 'text-slate-900 font-semibold'}
                 >
-                  {cleanName} (Phòng {c.room || '—'}) - {typeText}{timeText}
+                  {cleanName} (Phòng {c.room || '—'}) - {typeText}{timeText}{isExpired ? ' (Đã kết thúc)' : ''}
                 </option>
               );
             })}

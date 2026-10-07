@@ -86,12 +86,12 @@ const updateProgress = async (req, res, next) => {
 // ====================
 const confirmStudent2 = async (req, res, next) => {
   try {
-    const { action, rejectionReason } = req.body;
+    const { action, rejectionReason, reason } = req.body;
 
     const progress = await thesisProgressService.confirmProgressByStudent2(
       req.params.id,
       req.user.userId,
-      { action, rejectionReason },
+      { action, rejectionReason: rejectionReason || reason },
     );
 
     res.status(200).json({
