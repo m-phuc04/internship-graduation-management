@@ -259,18 +259,50 @@ const TbmThesisEvaluationManagement = () => {
       }
 
       const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
+      const isHDFailed = hasHD && Number(scoreHD) < 4.0;
+
       const hasPB = scorePB !== null && scorePB !== undefined && !isNaN(scorePB);
+      const isPBFailed = hasPB && Number(scorePB) === 0;
+
       const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
+      const isCouncilFailed = hasCouncil && Number(scoreCouncil) === 0;
 
       // STRICT RULE: Điểm Tổng Kết (100%) CHỈ ĐƯỢC TÍNH KHI ĐỦ TẤT CẢ CÁC CỘT ĐIỂM (GVHD 50%, PB kín 30%, Hội đồng 20%)!
       // Chưa đủ tất cả cột điểm thì tuyệt đối KHÔNG được tính, chỉ để null (để trống)!
       let finalScore = null;
-      if (hasHD && hasPB && hasCouncil) {
+      if (hasHD && hasPB && hasCouncil && !isHDFailed && !isPBFailed && !isCouncilFailed) {
         finalScore = Number(
           (Number(scoreHD) * 0.5 + Number(scorePB) * 0.3 + Number(scoreCouncil) * 0.2).toFixed(2)
         );
       } else {
         finalScore = null;
+      }
+
+      // STRICT RULE CHO KẾT QUẢ ĐÁNH GIÁ:
+      // 1. Điểm GVHD < 4.0 -> FAIL ngay từ bước GVHD (Không tiếp tục quy trình)
+      // 2. Điểm PB kín = 0 -> FAIL ở bước PB kín (Không sang Hội đồng)
+      // 3. Điểm Hội đồng = 0 -> FAIL
+      // 4. Khi đủ 3 cột điểm và không có điểm liệt: finalScore >= 5.0 -> PASS, < 5.0 -> FAIL
+      let isFailed = false;
+      let failReason = '';
+      let isPassed = false;
+
+      if (isHDFailed) {
+        isFailed = true;
+        failReason = 'Điểm GVHD < 4.0 (Không đạt)';
+      } else if (isPBFailed) {
+        isFailed = true;
+        failReason = 'Điểm PB kín = 0 (Không đạt)';
+      } else if (isCouncilFailed) {
+        isFailed = true;
+        failReason = 'Điểm Hội đồng = 0 (Không đạt)';
+      } else if (finalScore !== null) {
+        if (finalScore >= 5.0) {
+          isPassed = true;
+        } else {
+          isFailed = true;
+          failReason = 'Điểm tổng kết < 5.0 (Không đạt)';
+        }
       }
 
       return {
@@ -288,6 +320,12 @@ const TbmThesisEvaluationManagement = () => {
         hasPB2,
         hasCouncil,
         assignedCouncil,
+        isHDFailed,
+        isPBFailed,
+        isCouncilFailed,
+        isFailed,
+        isPassed,
+        failReason,
       };
     },
     [thesisCouncilMap, councilsMap]
@@ -366,14 +404,14 @@ const TbmThesisEvaluationManagement = () => {
       const info = getThesisScoreInfo(item);
 
       if (statusFilter === 'IN_PROGRESS') {
-        // "Đang thực hiện": GVHD chưa chấm điểm
+        // "Đang thực hiện": GVHD chưa chấm điểm và chưa bị FAIL
         if (info.hasHD) return false;
       } else if (statusFilter === 'PB_KIN') {
-        // "Phản biện kín": Có điểm GVHD rồi, điểm PB kín chưa hoàn thành
-        if (!info.hasHD || info.hasPB) return false;
+        // "Phản biện kín": Có điểm GVHD rồi (và GVHD >= 4.0), điểm PB kín chưa hoàn thành
+        if (!info.hasHD || info.isHDFailed || info.hasPB) return false;
       } else if (statusFilter === 'BC_HOIDONG') {
-        // "Báo cáo hội đồng": Đã có điểm PB kín, chưa có điểm hội đồng
-        if (!info.hasPB || info.hasCouncil) return false;
+        // "Báo cáo hội đồng": Đã có điểm PB kín (và không bị fail HD/PB), chưa có điểm hội đồng
+        if (!info.hasPB || info.isHDFailed || info.isPBFailed || info.hasCouncil) return false;
       } else if (statusFilter === 'COMPLETED') {
         // "Hoàn tất": Các nhóm đã có tất cả các điểm đầy đủ hoặc trạng thái COMPLETED
         const isAllScored = info.hasHD && info.hasPB && info.hasCouncil;
@@ -825,29 +863,29 @@ const TbmThesisEvaluationManagement = () => {
         {/* Stats Grid (Only on EVALUATIONS tab) */}
         {mainTab === 'EVALUATIONS' && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <div className="text-[11px] text-slate-500 font-medium">Đủ điều kiện hội đồng</div>
+            <div className="p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
+              <div className="text-[11px] text-[#123891] font-semibold">Đủ điều kiện hội đồng</div>
               <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.totalEligible}
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80">
-              <div className="text-[11px] text-amber-700 font-medium">Chờ chấm điểm</div>
+            <div className="p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
+              <div className="text-[11px] text-[#123891] font-semibold">Chờ chấm điểm</div>
               <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.pendingGradeCount}
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80">
-              <div className="text-[11px] text-emerald-700 font-medium">Đã có điểm tổng kết</div>
+            <div className="p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
+              <div className="text-[11px] text-[#123891] font-semibold">Đã có điểm tổng kết</div>
               <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.gradedCount}
               </div>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80">
-              <div className="text-[11px] text-[#123891] font-medium">Đã hoàn tất bảo vệ</div>
+            <div className="p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
+              <div className="text-[11px] text-[#123891] font-semibold">Đã hoàn tất bảo vệ</div>
               <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.completedCount}
               </div>
@@ -1112,18 +1150,19 @@ const TbmThesisEvaluationManagement = () => {
 
                           {/* Result (PASS / FAIL) */}
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            {scoreInfo.finalScore !== null ? (
-                              scoreInfo.finalScore >= 5.0 ? (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                  <span>PASS (Đạt)</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                  <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                                  <span>FAIL (Không đạt)</span>
-                                </span>
-                              )
+                            {scoreInfo.isFailed ? (
+                              <span
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                                title={scoreInfo.failReason}
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                                <span>FAIL (Không đạt)</span>
+                              </span>
+                            ) : scoreInfo.isPassed ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span>PASS (Đạt)</span>
+                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
                                 <Clock className="w-3.5 h-3.5 text-slate-400" />

@@ -13,10 +13,44 @@ import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
 
 // ====================
+// Helper: Resolve Academic Term for Internship
+// ====================
+export const resolveAcademicTermForInternship = async (internship, explicitTermId = null) => {
+  let term = null;
+  if (internship?.academicTermId) {
+    if (internship.academicTermId.internship !== undefined || internship.academicTermId.name) {
+      term = internship.academicTermId;
+    } else {
+      term = await AcademicTerm.findById(internship.academicTermId).lean();
+    }
+  }
+  if (!term && explicitTermId && explicitTermId !== "ALL") {
+    term = await AcademicTerm.findById(explicitTermId).lean();
+  }
+  if (!term) {
+    term = await AcademicTerm.findOne({ status: "ACTIVE" }).lean();
+  }
+  if (!term) {
+    const now = new Date();
+    term = await AcademicTerm.findOne({
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+      status: { $ne: "CLOSED" },
+    }).lean();
+  }
+  if (!term) {
+    term = await AcademicTerm.findOne().sort({ createdAt: -1 }).lean();
+  }
+  return term;
+};
+
+// ====================
 // Helper: Validate TTDN Evaluation Window
 // ====================
 export const validateInternshipEvaluationWindow = (term, checkDate = new Date()) => {
-  if (!term) return { allowed: true };
+  if (!term) {
+    throw new AppError("Không tìm thấy thông tin học kỳ để kiểm tra thời gian tạo link đánh giá.", 400);
+  }
   const internshipCfg = term.internship || {};
   const startRaw =
     internshipCfg.evaluationStartDate ||
@@ -25,7 +59,8 @@ export const validateInternshipEvaluationWindow = (term, checkDate = new Date())
   const endRaw =
     internshipCfg.evaluationEndDate ||
     internshipCfg.evaluationEnd ||
-    internshipCfg.reportDeadline;
+    internshipCfg.reportDeadline ||
+    internshipCfg.evaluationDeadline;
 
   const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
 
@@ -33,7 +68,8 @@ export const validateInternshipEvaluationWindow = (term, checkDate = new Date())
     const start = new Date(startRaw);
     start.setHours(0, 0, 0, 0);
     if (now < start) {
-      throw new AppError("Chưa đến thời gian mở tạo link đánh giá thực tập doanh nghiệp.", 400);
+      const formattedDate = start.toLocaleDateString("vi-VN");
+      throw new AppError(`Chưa đến thời gian mở tạo link đánh giá thực tập doanh nghiệp (Mở từ ngày ${formattedDate}).`, 400);
     }
   }
 
@@ -51,7 +87,8 @@ export const validateInternshipEvaluationWindow = (term, checkDate = new Date())
     }
 
     if (now > end) {
-      throw new AppError("Đã hết thời gian tạo link đánh giá thực tập doanh nghiệp.", 400);
+      const formattedDate = end.toLocaleDateString("vi-VN");
+      throw new AppError(`Đã hết thời gian tạo link đánh giá thực tập doanh nghiệp (Hạn chót: ${formattedDate}).`, 400);
     }
   }
 
@@ -577,19 +614,18 @@ const createStudentEvaluationLink = async (userId, academicTermId = null) => {
   // Active internship of this student (sorted by most recent)
   const internship = await Internship.findOne(query)
     .sort({ createdAt: -1 })
-    .populate("companyId");
+    .populate("companyId")
+    .populate("academicTermId");
 
   if (!internship) {
     throw new AppError("Bạn chưa có đợt thực tập hợp lệ nào được duyệt.", 400);
   }
 
   // Enforce evaluation time window at backend
-  let term = null;
-  if (internship.academicTermId) {
-    term = await AcademicTerm.findById(internship.academicTermId);
-  }
-  if (!term) {
-    term = await AcademicTerm.findOne({ isCurrent: true }).catch(() => null);
+  const term = await resolveAcademicTermForInternship(internship, academicTermId);
+  if (term && !internship.academicTermId) {
+    internship.academicTermId = term._id;
+    await internship.save().catch(() => {});
   }
   validateInternshipEvaluationWindow(term, new Date());
 
@@ -712,10 +748,7 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
 
   const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
 
-  let term = internship.academicTermId || null;
-  if (!term) {
-    term = await AcademicTerm.findOne({ isCurrent: true }).catch(() => null);
-  }
+  const term = await resolveAcademicTermForInternship(internship, academicTermId);
 
   const evalResult = computeInternshipEvaluationResult(internship, evaluation, term, new Date());
 

@@ -613,17 +613,22 @@ const TbmThesisManagement = () => {
     fetchTheses();
   }, [fetchTheses]);
 
-  // Kiểm tra đề tài đã có điểm GVHD để đủ điều kiện phân công phản biện kín:
+  // Kiểm tra đề tài đã có điểm GVHD VÀ điểm GVHD >= 4.0 để đủ điều kiện phân công phản biện kín:
   const hasSupervisorScore = useCallback((item) => {
     if (!item) return false;
     const scoreHD = item.scores?.supervisorScore ?? item.scores?.student1SupervisorScore;
-    return scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && scoreHD !== '';
+    if (scoreHD === null || scoreHD === undefined || isNaN(scoreHD) || scoreHD === '') return false;
+    return Number(scoreHD) >= 4.0;
   }, []);
 
-  // Kiểm tra đề tài đã hoàn tất chấm điểm phản biện kín:
-  // - Nếu phân công 2 GVPB: cả 2 phải chấm xong mới hoàn tất
-  // - Nếu phân công 1 GVPB: 1 GVPB chấm xong là hoàn tất
+  // Kiểm tra đề tài đã hoàn tất chấm điểm phản biện kín VÀ không bị rớt (GVHD >= 4.0, PB kín > 0):
   const hasBothReviewerScores = useCallback((item) => {
+    // 1. Phải đạt điểm GVHD >= 4.0
+    const scoreHD = item.scores?.supervisorScore ?? item.scores?.student1SupervisorScore;
+    if (scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && scoreHD !== '') {
+      if (Number(scoreHD) < 4.0) return false;
+    }
+
     const isAssignedPB1 = Boolean(
       item.reviewer1Id ||
       (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
@@ -639,14 +644,22 @@ const TbmThesisManagement = () => {
     const hasS1 = s1 !== null && s1 !== undefined && !isNaN(s1) && s1 !== '';
     const hasS2 = s2 !== null && s2 !== undefined && !isNaN(s2) && s2 !== '';
 
+    let avgPB = null;
     if (isAssignedPB1 && isAssignedPB2) {
-      return hasS1 && hasS2;
+      if (hasS1 && hasS2) {
+        avgPB = (Number(s1) + Number(s2)) / 2;
+      }
     } else if (isAssignedPB1) {
-      return hasS1;
+      if (hasS1) avgPB = Number(s1);
     } else if (isAssignedPB2) {
-      return hasS2;
+      if (hasS2) avgPB = Number(s2);
     }
-    return false;
+
+    // 2. Điểm PB kín phải hoàn thành và PB kín > 0 (nếu = 0 là FAIL, không sang hội đồng)
+    if (avgPB === null || avgPB === undefined || isNaN(avgPB)) return false;
+    if (Number(avgPB) === 0) return false;
+
+    return true;
   }, []);
 
   const privateReviewerEligibleCount = React.useMemo(() => {

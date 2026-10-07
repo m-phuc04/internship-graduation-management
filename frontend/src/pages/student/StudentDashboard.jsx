@@ -216,7 +216,7 @@ const StudentDashboard = () => {
   return (
     <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
       {/* 1. Top Student Identity Card */}
-      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-linear-to-r from-[#123891] via-[#123891] to-[#1B4DA1] text-white shadow-lg shadow-blue-900/10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#123891] text-white shadow-lg shadow-blue-900/10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="flex items-start sm:items-center gap-3 sm:gap-4 z-10 min-w-0 w-full md:w-auto">
@@ -269,7 +269,7 @@ const StudentDashboard = () => {
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1B4DA1] flex items-center justify-center font-bold shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold shrink-0">
                   <Briefcase className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -300,7 +300,7 @@ const StudentDashboard = () => {
                       </div>
                       <div className="sm:text-right shrink-0">
                         <div className="text-[10.5px] font-medium text-slate-400 uppercase tracking-wider">Vị trí</div>
-                        <div className="font-semibold text-[#1B4DA1] mt-0.5 break-words">
+                        <div className="font-semibold text-[#123891] mt-0.5 break-words">
                           {internship.position || 'Thực tập sinh'}
                         </div>
                       </div>
@@ -339,7 +339,7 @@ const StudentDashboard = () => {
                   {internship.status !== 'REJECTED' && (
                     <div className="p-2.5 sm:p-3 rounded-xl bg-blue-50/50 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                       <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="w-4 h-4 text-[#1B4DA1] shrink-0" />
+                        <FileText className="w-4 h-4 text-[#123891] shrink-0" />
                         <div className="min-w-0 truncate">
                           <span className="text-slate-500 text-[11px]">Báo cáo gần nhất:</span>{' '}
                           <strong className="text-slate-900 truncate">
@@ -359,7 +359,7 @@ const StudentDashboard = () => {
                 </div>
               ) : (
                 <div className="py-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1B4DA1] mx-auto flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#123891] mx-auto flex items-center justify-center">
                     <Briefcase className="w-6 h-6" />
                   </div>
                   <div>
@@ -370,7 +370,7 @@ const StudentDashboard = () => {
                   </div>
                   <Link
                     to="/student/internship/register"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] text-white font-bold text-xs rounded-xl shadow-xs transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Đăng ký thực tập ngay</span>
@@ -391,7 +391,7 @@ const StudentDashboard = () => {
               </Link>
               <Link
                 to="/student/reports"
-                className="font-bold text-[#1B4DA1] hover:text-[#ECA124] inline-flex items-center gap-1"
+                className="font-bold text-[#123891] hover:text-[#ECA124] inline-flex items-center gap-1"
               >
                 <span>Nộp báo cáo định kỳ</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -405,7 +405,7 @@ const StudentDashboard = () => {
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 gap-2">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#1B4DA1] flex items-center justify-center font-bold shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold shrink-0">
                   <BookOpen className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
@@ -448,7 +448,7 @@ const StudentDashboard = () => {
 
                   <div className="p-2.5 sm:p-3 rounded-xl bg-blue-50/50 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                     <div className="flex items-center gap-2 min-w-0">
-                      <BookOpen className="w-4 h-4 text-[#1B4DA1] shrink-0" />
+                      <BookOpen className="w-4 h-4 text-[#123891] shrink-0" />
                       <div className="min-w-0 truncate">
                         <span className="text-slate-500 text-[11px]">Tiến độ gần nhất:</span>{' '}
                         <strong className="text-slate-900 truncate">
@@ -467,7 +467,7 @@ const StudentDashboard = () => {
                 </div>
               ) : (
                 <div className="py-6 text-center space-y-3">
-                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#1B4DA1] mx-auto flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#123891] mx-auto flex items-center justify-center">
                     <BookOpen className="w-6 h-6" />
                   </div>
                   <div>
@@ -478,7 +478,7 @@ const StudentDashboard = () => {
                   </div>
                   <Link
                     to="/student/thesis/register"
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] text-white font-bold text-xs rounded-xl shadow-xs transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
                     <span>Đăng ký đề tài KLTN</span>
@@ -499,7 +499,7 @@ const StudentDashboard = () => {
               </Link>
               <Link
                 to="/student/thesis/progress"
-                className="font-bold text-[#1B4DA1] hover:text-[#ECA124] inline-flex items-center gap-1"
+                className="font-bold text-[#123891] hover:text-[#ECA124] inline-flex items-center gap-1"
               >
                 <span>Cập nhật tiến độ</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -664,7 +664,7 @@ const StudentDashboard = () => {
                   >
                     <div className="space-y-0.5 min-w-0 flex-1">
                       <div className="font-bold text-slate-900 flex items-center gap-1.5">
-                        <Clock className="w-3.5 h-3.5 text-[#1B4DA1] shrink-0" />
+                        <Clock className="w-3.5 h-3.5 text-[#123891] shrink-0" />
                         <span className="break-words">{action.title || 'Nhiệm vụ mới'}</span>
                       </div>
                       <div className="text-[11px] text-slate-500 line-clamp-2 break-words">
@@ -673,7 +673,7 @@ const StudentDashboard = () => {
                     </div>
                     <Link
                       to={action.actionUrl || action.link || '/student/dashboard'}
-                      className="px-3.5 py-1.5 bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] text-white font-bold rounded-xl text-[11px] transition shrink-0 inline-flex items-center gap-1 shadow-2xs self-end sm:self-auto"
+                      className="px-3.5 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl text-[11px] transition shrink-0 inline-flex items-center gap-1 shadow-2xs self-end sm:self-auto cursor-pointer"
                     >
                       <span>{action.actionLabel || 'Xử lý'}</span>
                       <ArrowRight className="w-3 h-3" />
@@ -695,10 +695,10 @@ const StudentDashboard = () => {
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
-              <Bell className="w-4 h-4 text-[#1B4DA1] shrink-0" />
+              <Bell className="w-4 h-4 text-[#123891] shrink-0" />
               <span>Thông Báo Mới Nhất</span>
             </div>
-            <span className="text-xs font-mono font-bold text-[#1B4DA1] bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 shrink-0">
+            <span className="text-xs font-mono font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100 shrink-0">
               {notifications.length} tin
             </span>
           </div>

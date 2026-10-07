@@ -90,6 +90,13 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
     }
     setError('');
 
+    const scoreHD = thesis?.scores?.supervisorScore ?? thesis?.scores?.student1SupervisorScore;
+    const isHDFailed = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && Number(scoreHD) < 4.0;
+    if (isHDFailed) {
+      setError('Đề tài có điểm GVHD < 4.0 (Không đạt), không thể phân công giảng viên phản biện.');
+      return;
+    }
+
     if (reviewerCount === 1) {
       if (!reviewer1Id) {
         setError('Vui lòng chọn giảng viên phản biện.');
@@ -314,7 +321,9 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               submitting ||
               thesis.status === 'REJECTED' ||
               !thesis.isCriteriaPassed ||
-              (thesis.scores?.supervisorScore == null && thesis.scores?.student1SupervisorScore == null)
+              (thesis.scores?.supervisorScore == null && thesis.scores?.student1SupervisorScore == null) ||
+              (thesis.scores?.supervisorScore !== null && thesis.scores?.supervisorScore !== undefined && Number(thesis.scores.supervisorScore) < 4.0) ||
+              (thesis.scores?.student1SupervisorScore !== null && thesis.scores?.student1SupervisorScore !== undefined && Number(thesis.scores.student1SupervisorScore) < 4.0)
             }
             className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
           >

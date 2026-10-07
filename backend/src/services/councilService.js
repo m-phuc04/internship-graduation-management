@@ -380,6 +380,28 @@ const assignCouncilToThesis = async ({ thesisId, councilId }) => {
     if (isCouncilReportTimeExpired(council)) {
       throw new AppError("Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công đề tài", 400);
     }
+
+    const scoreHD = thesis.scores?.supervisorScore ?? thesis.scores?.student1SupervisorScore;
+    if (scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD) && Number(scoreHD) < 4.0) {
+      throw new AppError("Đề tài có điểm GVHD < 4.0 (Không đạt), không thể phân công vào hội đồng.", 400);
+    }
+
+    const s1 = thesis.scores?.reviewer1Score ?? thesis.scores?.student1Reviewer1Score;
+    const s2 = thesis.scores?.reviewer2Score ?? thesis.scores?.student1Reviewer2Score;
+    const hasS1 = s1 !== null && s1 !== undefined && !isNaN(s1);
+    const hasS2 = s2 !== null && s2 !== undefined && !isNaN(s2);
+    let avgPB = null;
+    if (hasS1 && hasS2) avgPB = (Number(s1) + Number(s2)) / 2;
+    else if (hasS1) avgPB = Number(s1);
+    else if (hasS2) avgPB = Number(s2);
+    else if (thesis.scores?.reviewerScore !== null && thesis.scores?.reviewerScore !== undefined) {
+      avgPB = Number(thesis.scores.reviewerScore);
+    }
+
+    if (avgPB !== null && Number(avgPB) === 0) {
+      throw new AppError("Đề tài có điểm phản biện kín bằng 0 (Không đạt), không thể phân công vào hội đồng.", 400);
+    }
+
     thesis.councilId = council._id;
   } else {
     thesis.councilId = null;
