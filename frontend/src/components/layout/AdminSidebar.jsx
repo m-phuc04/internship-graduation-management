@@ -2,7 +2,6 @@ import React from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
-  ShieldCheck,
   Users,
   KeyRound,
   Calendar,
@@ -10,10 +9,11 @@ import {
   BookOpen,
   Building2,
   Newspaper,
+  Menu,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
-const AdminSidebar = ({ onCloseMobile }) => {
+const AdminSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   const { user } = useAuth();
 
   const handleNavClick = () => {
@@ -71,7 +71,7 @@ const AdminSidebar = ({ onCloseMobile }) => {
   return (
     <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 sm:px-5 border-b border-[#0e2c73] bg-[#0e2c73]">
+      <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73]">
         <Link
           to="/admin/permissions"
           onClick={handleNavClick}

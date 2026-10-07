@@ -9,18 +9,18 @@ import {
   PlusCircle,
   Award,
   ChevronDown,
+  Menu,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
-const StudentSidebar = ({ onCloseMobile }) => {
+const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   const { user } = useAuth();
   const location = useLocation();
 
   // Accordion state: open by default if active route matches
   const isInternshipRoute =
     location.pathname.startsWith('/student/internship') || location.pathname.startsWith('/student/reports');
-  const isThesisRoute =
-    location.pathname.startsWith('/student/thesis');
+  const isThesisRoute = location.pathname.startsWith('/student/thesis');
 
   const [internshipOpen, setInternshipOpen] = useState(true);
   const [thesisOpen, setThesisOpen] = useState(true);
@@ -46,26 +46,83 @@ const StudentSidebar = ({ onCloseMobile }) => {
         : 'text-slate-300 hover:text-white hover:bg-white/10'
     }`;
 
+  // Submenu items data
+  const internshipSubItems = [
+    {
+      to: '/student/internship/register',
+      label: 'Đăng ký thực tập',
+      icon: PlusCircle,
+      active: location.pathname === '/student/internship/register',
+    },
+    {
+      to: '/student/internship',
+      label: 'Thông tin thực tập',
+      icon: Briefcase,
+      active: isItemActive('/student/internship'),
+    },
+    {
+      to: '/student/reports',
+      label: 'Nhật ký thực tập',
+      icon: BookOpen,
+      active: isItemActive('/student/reports'),
+    },
+    {
+      to: '/student/internship?view=evaluation',
+      label: 'Đánh giá thực tập',
+      icon: Award,
+      active: isItemActive('/student/internship', '?view=evaluation'),
+    },
+  ];
+
+  const thesisSubItems = [
+    {
+      to: '/student/thesis/register',
+      label: 'Đăng ký đề tài',
+      icon: PlusCircle,
+      active: location.pathname === '/student/thesis/register',
+    },
+    {
+      to: '/student/thesis',
+      label: 'Thông tin khóa luận',
+      icon: GraduationCap,
+      active: isItemActive('/student/thesis'),
+    },
+    {
+      to: '/student/thesis/progress',
+      label: 'Nhật ký khóa luận',
+      icon: BookOpen,
+      active: location.pathname === '/student/thesis/progress',
+    },
+    {
+      to: '/student/thesis?view=evaluation',
+      label: 'Đánh giá khóa luận',
+      icon: Award,
+      active: isItemActive('/student/thesis', '?view=evaluation'),
+    },
+  ];
+
   return (
-    <aside className="w-64 bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
+    <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
-      <Link
-        to="/"
-        onClick={onCloseMobile}
-        className="h-16 flex items-center gap-3 px-5 border-b border-[#0e2c73] bg-[#0e2c73] cursor-pointer group transition"
-      >
-        <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
-          <IUHLogo className="h-7 w-auto object-contain" />
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-amber-300 transition">
-            Cổng Sinh Viên
+      <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73]">
+        <Link
+          to="/"
+          onClick={onCloseMobile}
+          className="flex items-center gap-3 cursor-pointer group transition min-w-0"
+        >
+          <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
+            <IUHLogo className="h-7 w-auto object-contain" />
           </div>
-          <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
-            Quản lý TTDN & KLTN
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-amber-300 transition truncate">
+              Cổng Sinh Viên
+            </div>
+            <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
+              Quản lý TTDN & KLTN
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* Navigation List */}
       <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
@@ -105,45 +162,20 @@ const StudentSidebar = ({ onCloseMobile }) => {
 
           {internshipOpen && (
             <div className="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-white/20 ml-5 animate-in slide-in-from-top-1 duration-150">
-              {/* Item 1: Đăng ký thực tập */}
-              <Link
-                to="/student/internship/register"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(location.pathname === '/student/internship/register')}
-              >
-                <PlusCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Đăng ký thực tập</span>
-              </Link>
-
-              {/* Item 2: Thông tin thực tập */}
-              <Link
-                to="/student/internship"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/internship'))}
-              >
-                <Briefcase className="w-3.5 h-3.5 shrink-0" />
-                <span>Thông tin thực tập</span>
-              </Link>
-
-              {/* Item 3: Nhật ký thực tập */}
-              <Link
-                to="/student/reports"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/reports'))}
-              >
-                <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                <span>Nhật ký thực tập</span>
-              </Link>
-
-              {/* Item 4: Đánh giá thực tập */}
-              <Link
-                to="/student/internship?view=evaluation"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/internship', '?view=evaluation'))}
-              >
-                <Award className="w-3.5 h-3.5 shrink-0" />
-                <span>Đánh giá thực tập</span>
-              </Link>
+              {internshipSubItems.map((sub) => {
+                const SubIcon = sub.icon;
+                return (
+                  <Link
+                    key={sub.to}
+                    to={sub.to}
+                    onClick={onCloseMobile}
+                    className={getSubLinkClass(sub.active)}
+                  >
+                    <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{sub.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>
@@ -168,45 +200,20 @@ const StudentSidebar = ({ onCloseMobile }) => {
 
           {thesisOpen && (
             <div className="pl-4 pr-1 py-1 space-y-0.5 border-l-2 border-white/20 ml-5 animate-in slide-in-from-top-1 duration-150">
-              {/* Item 1: Đăng ký đề tài */}
-              <Link
-                to="/student/thesis/register"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(location.pathname === '/student/thesis/register')}
-              >
-                <PlusCircle className="w-3.5 h-3.5 shrink-0" />
-                <span>Đăng ký đề tài</span>
-              </Link>
-
-              {/* Item 2: Thông tin khóa luận */}
-              <Link
-                to="/student/thesis"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/thesis'))}
-              >
-                <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-                <span>Thông tin khóa luận</span>
-              </Link>
-
-              {/* Item 3: Nhật ký khóa luận */}
-              <Link
-                to="/student/thesis/progress"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(location.pathname === '/student/thesis/progress')}
-              >
-                <BookOpen className="w-3.5 h-3.5 shrink-0" />
-                <span>Nhật ký khóa luận</span>
-              </Link>
-
-              {/* Item 4: Đánh giá khóa luận */}
-              <Link
-                to="/student/thesis?view=evaluation"
-                onClick={onCloseMobile}
-                className={getSubLinkClass(isItemActive('/student/thesis', '?view=evaluation'))}
-              >
-                <Award className="w-3.5 h-3.5 shrink-0" />
-                <span>Đánh giá khóa luận</span>
-              </Link>
+              {thesisSubItems.map((sub) => {
+                const SubIcon = sub.icon;
+                return (
+                  <Link
+                    key={sub.to}
+                    to={sub.to}
+                    onClick={onCloseMobile}
+                    className={getSubLinkClass(sub.active)}
+                  >
+                    <SubIcon className="w-3.5 h-3.5 shrink-0" />
+                    <span>{sub.label}</span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </div>

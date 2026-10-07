@@ -12,10 +12,11 @@ import {
   Shield,
   Sliders,
   Newspaper,
+  Menu,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
-const LecturerSidebar = ({ onCloseMobile }) => {
+const LecturerSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   const { user } = useAuth();
   const location = useLocation();
 
@@ -87,25 +88,27 @@ const LecturerSidebar = ({ onCloseMobile }) => {
   const isTbm = user?.role === 'TBM';
 
   return (
-    <aside className="w-64 bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
+    <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
-      <Link
-        to="/"
-        onClick={onCloseMobile}
-        className="h-16 flex items-center gap-3 px-5 border-b border-[#0e2c73] bg-[#0e2c73] cursor-pointer group transition"
-      >
-        <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
-          <IUHLogo className="h-7 w-auto object-contain" />
-        </div>
-        <div className="min-w-0">
-          <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-amber-300 transition">
-            Cổng Giảng Viên
+      <div className="h-16 flex items-center justify-between px-4 border-b border-[#0e2c73] bg-[#0e2c73]">
+        <Link
+          to="/"
+          onClick={onCloseMobile}
+          className="flex items-center gap-3 cursor-pointer group transition min-w-0"
+        >
+          <div className="p-1 bg-white rounded-xl border border-slate-100 flex items-center justify-center shadow-xs group-hover:scale-105 transition shrink-0">
+            <IUHLogo className="h-7 w-auto object-contain" />
           </div>
-          <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
-            Quản lý Hướng dẫn TTDN & KLTN
+          <div className="min-w-0">
+            <div className="text-sm font-bold text-white tracking-tight leading-tight group-hover:text-amber-300 transition truncate">
+              Cổng Giảng Viên
+            </div>
+            <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
+              Quản lý Hướng dẫn TTDN & KLTN
+            </div>
           </div>
-        </div>
-      </Link>
+        </Link>
+      </div>
 
       {/* Navigation List */}
       <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">

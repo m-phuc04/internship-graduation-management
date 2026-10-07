@@ -16,10 +16,11 @@ import {
   Calendar,
   X,
   Newspaper,
+  Menu,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
-const Sidebar = ({ onCloseMobile }) => {
+const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN';
 
@@ -124,7 +125,7 @@ const Sidebar = ({ onCloseMobile }) => {
   return (
     <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-4 sm:px-5 border-b border-[#0e2c73] bg-[#0e2c73]">
+      <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73]">
         <Link
           to={isAdmin ? '/admin/permissions' : '/tbm/dashboard'}
           onClick={handleNavClick}
@@ -158,7 +159,7 @@ const Sidebar = ({ onCloseMobile }) => {
 
       {/* Quick Action: Back to Lecturer Portal (Chỉ hiển thị cho TBM) */}
       {!isAdmin && (
-        <div className="px-3.5 pt-3 pb-1 border-b border-[#0e2c73]">
+        <div className="pt-3 pb-1 border-b border-[#0e2c73] px-3.5">
           <Link
             to="/lecturer/dashboard"
             onClick={handleNavClick}
@@ -326,15 +327,13 @@ const Sidebar = ({ onCloseMobile }) => {
                           <Icon className="w-4 h-4 shrink-0" />
                           <span className="whitespace-nowrap truncate">{item.label}</span>
                         </div>
-                        {item.badge && (
-                          <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                            isActive
-                              ? 'bg-slate-950/15 text-slate-950'
-                              : 'bg-white/15 text-white'
-                          }`}>
-                            {item.badge}
-                          </span>
-                        )}
+                        <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
+                          isActive
+                            ? 'bg-slate-950/15 text-slate-950'
+                            : 'bg-white/15 text-white'
+                        }`}>
+                          {item.badge}
+                        </span>
                       </>
                     )}
                   </NavLink>

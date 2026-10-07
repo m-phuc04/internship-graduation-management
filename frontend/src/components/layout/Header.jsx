@@ -6,7 +6,7 @@ import NotificationDropdown from '../common/NotificationDropdown';
 import ScheduleModal from '../common/ScheduleModal';
 import AcademicTermSelector from '../common/AcademicTermSelector';
 
-const Header = ({ onOpenMobile }) => {
+const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -39,6 +39,7 @@ const Header = ({ onOpenMobile }) => {
     <header className="h-16 bg-white border-b border-slate-200/80 px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs gap-2 sm:gap-4 w-full">
       {/* Left: Hamburger & Title */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        {/* Mobile Hamburger Toggle */}
         <button
           type="button"
           onClick={onOpenMobile}
@@ -48,6 +49,19 @@ const Header = ({ onOpenMobile }) => {
         >
           <Menu className="w-5 h-5" />
         </button>
+
+        {/* Desktop Hamburger Toggle */}
+        {onToggleCollapse && (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-label="Đóng/mở menu"
+            className="hidden lg:flex p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
+            title={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
 
         <div className="min-w-0">
           <h1 className="text-sm sm:text-base lg:text-lg font-bold text-slate-900 leading-tight truncate">

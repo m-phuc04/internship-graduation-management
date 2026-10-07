@@ -6,6 +6,17 @@ import Footer from './Footer';
 
 const TbmLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    return localStorage.getItem('sidebar_collapsed') === 'true';
+  });
+
+  const toggleSidebar = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem('sidebar_collapsed', String(next));
+      return next;
+    });
+  };
 
   // Close mobile drawer on Escape key or when resizing to desktop
   useEffect(() => {
@@ -32,8 +43,14 @@ const TbmLayout = () => {
   return (
     <div className="flex min-h-screen bg-[#F4F7FC] text-slate-900 w-full">
       {/* Desktop Sidebar (Fixed Left, visible ONLY on >= 1024px) */}
-      <div className="hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 w-64 bg-[#123891] border-r border-[#0e2c73]">
-        <Sidebar />
+      <div
+        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
+          isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
+        } bg-[#123891]`}
+      >
+        <Sidebar
+          onToggleCollapse={toggleSidebar}
+        />
       </div>
 
       {/* Mobile Off-Canvas Drawer Backdrop & Sidebar (< 1024px) */}
@@ -55,8 +72,12 @@ const TbmLayout = () => {
 
       {/* Main Content Area: 100% width on Mobile, flex-1 on Desktop */}
       <div className="flex-1 flex flex-col min-w-0 w-full min-h-screen">
-        <Header onOpenMobile={() => setMobileOpen(true)} />
-        <main className="flex-1 p-3 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
+        <Header
+          onOpenMobile={() => setMobileOpen(true)}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={toggleSidebar}
+        />
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full max-w-full">
           <Outlet />
         </main>
         <Footer />

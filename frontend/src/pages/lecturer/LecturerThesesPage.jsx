@@ -44,6 +44,7 @@ import {
   Trash2,
   Download,
   Paperclip,
+  ChevronDown,
 } from 'lucide-react';
 
 const LecturerThesesPage = () => {
@@ -80,6 +81,16 @@ const LecturerThesesPage = () => {
   const [topicsSubTab, setTopicsSubTab] = useState('MY_PROPOSALS'); // 'MY_PROPOSALS' | 'APPROVED_BANK'
   const [search, setSearch] = useState('');
 
+  // Accordion open/collapse states for GVPB 1 and GVPB 2 (default closed)
+  const [reviewer1AccordionOpen, setReviewer1AccordionOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') === 'reviewer1' || params.get('open') === 'reviewer1' || params.get('open') === 'all';
+  });
+  const [reviewer2AccordionOpen, setReviewer2AccordionOpen] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('tab') === 'reviewer2' || params.get('open') === 'reviewer2' || params.get('open') === 'all';
+  });
+
   // Proposed Topics (KLTN Topic Management)
   const [myTopics, setMyTopics] = useState([]);
   const [loadingMyTopics, setLoadingMyTopics] = useState(false);
@@ -105,12 +116,28 @@ const LecturerThesesPage = () => {
   const [onlyMyApprovedTopics, setOnlyMyApprovedTopics] = useState(false);
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tab = searchParams.get('tab');
+    const openParam = searchParams.get('open');
+
     if (location.search.includes('tab=topics')) {
       setActiveTab('MY_TOPICS');
     } else if (location.search.includes('tab=council')) {
       setActiveTab('COUNCIL');
-    } else if (location.search.includes('tab=review') || location.search.includes('tab=reviewer1') || location.search.includes('tab=reviewer2')) {
+    } else if (
+      location.search.includes('tab=review') ||
+      location.search.includes('tab=reviewer1') ||
+      location.search.includes('tab=reviewer2')
+    ) {
       setActiveTab('REVIEW_BLIND');
+      if (tab === 'reviewer1' || openParam === 'reviewer1') {
+        setReviewer1AccordionOpen(true);
+      } else if (tab === 'reviewer2' || openParam === 'reviewer2') {
+        setReviewer2AccordionOpen(true);
+      } else if (openParam === 'all') {
+        setReviewer1AccordionOpen(true);
+        setReviewer2AccordionOpen(true);
+      }
     } else if (location.search.includes('tab=supervisor') || !location.search) {
       setActiveTab('SUPERVISOR');
     }
@@ -2584,10 +2611,14 @@ const LecturerThesesPage = () => {
             {/* ========================================================================= */}
             {/* BẢNG 1: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 1 (GVPB 1) */}
             {/* ========================================================================= */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between">
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => setReviewer1AccordionOpen((prev) => !prev)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between cursor-pointer hover:bg-blue-100/40 transition text-left select-none"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
                     <Shield className="w-4 h-4" />
                   </div>
                   <div>
@@ -2596,155 +2627,164 @@ const LecturerThesesPage = () => {
                     </h3>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
-                  {filteredReviewer1Theses.length} đề tài
-                </span>
-              </div>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
+                    {filteredReviewer1Theses.length} đề tài
+                  </span>
+                  <div className={`p-1.5 rounded-lg bg-white/90 border border-blue-200 text-[#123891] transition-transform duration-200 ${reviewer1AccordionOpen ? 'rotate-180 bg-blue-100' : ''}`}>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+              </button>
 
-              {loading ? (
-                <div className="p-6">
-                  <LoadingSkeleton rows={4} cols={10} />
-                </div>
-              ) : filteredReviewer1Theses.length === 0 ? (
-                <div className="p-8">
-                  <EmptyState
-                    title="Chưa có đề tài nào làm Giảng viên phản biện 1"
-                    description="Bạn hiện chưa được phân công làm GVPB 1 cho đề tài nào trong học kỳ này hoặc chưa khớp với từ khóa tìm kiếm."
-                  />
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                        <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                        <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
-                        <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
-                        <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
-                        <th className="py-3.5 px-4 min-w-[150px] bg-blue-50/70 text-[#102d7d]">GVPB 1 (Bạn)</th>
-                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 1</th>
-                        <th className="py-3.5 px-4 min-w-[150px]">GVPB 2</th>
-                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px]">Điểm GVPB 2</th>
-                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[125px]">Điểm phản biện kín</th>
-                        <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[130px]">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredReviewer1Theses.map((item, index) => {
-                        return (
-                          <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                              {index + 1}
-                            </td>
-                            <td className="py-3.5 px-4 max-w-sm">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDetail(item)}
-                                className="text-left block group cursor-pointer"
-                                title="Bấm để xem toàn bộ thông tin đề tài"
-                              >
-                                <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
-                                  {item.thesisTitle}
-                                </strong>
-                              </button>
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
-                                {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="flex flex-col gap-1.5 min-w-[170px]">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                    SV1
+              {reviewer1AccordionOpen && (
+                <div className="animate-in slide-in-from-top-2 duration-200">
+                  {loading ? (
+                    <div className="p-6">
+                      <LoadingSkeleton rows={4} cols={10} />
+                    </div>
+                  ) : filteredReviewer1Theses.length === 0 ? (
+                    <div className="p-8">
+                      <EmptyState
+                        title="Chưa có đề tài nào làm Giảng viên phản biện 1"
+                        description="Bạn hiện chưa được phân công làm GVPB 1 cho đề tài nào trong học kỳ này hoặc chưa khớp với từ khóa tìm kiếm."
+                      />
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                            <th className="py-3 px-2 w-10 text-center">STT</th>
+                            <th className="py-3 px-3 min-w-[170px]">Tên đề tài KLTN</th>
+                            <th className="py-3 px-3 min-w-[140px]">Sinh viên</th>
+                            <th className="py-3 px-3 min-w-[120px]">GV Hướng Dẫn</th>
+                            <th className="py-3 px-3 min-w-[120px] bg-blue-50/70 text-[#102d7d]">GVPB 1 (Bạn)</th>
+                            <th className="py-3 px-2 text-center whitespace-nowrap min-w-[90px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 1</th>
+                            <th className="py-3 px-3 min-w-[120px]">GVPB 2</th>
+                            <th className="py-3 px-2 text-center whitespace-nowrap min-w-[90px]">Điểm GVPB 2</th>
+                            <th className="py-3 px-2 text-center whitespace-nowrap min-w-[95px]">Điểm phản biện kín</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredReviewer1Theses.map((item, index) => {
+                            return (
+                              <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                                <td className="py-3 px-2 text-center text-slate-400 font-mono font-semibold">
+                                  {index + 1}
+                                </td>
+                                <td className="py-3 px-3 max-w-sm">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDetail(item)}
+                                    className="text-left block group cursor-pointer"
+                                    title="Bấm để xem toàn bộ thông tin đề tài"
+                                  >
+                                    <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                                      {item.thesisTitle}
+                                    </strong>
+                                  </button>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                    {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
                                   </span>
-                                  <UserNameClickable
-                                    user={item.studentId}
-                                    name={item.studentId?.userId?.fullName}
-                                    subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                    avatarSize="w-6 h-6"
-                                  />
-                                </div>
-                                {item.studentCount === 2 && item.secondStudentId && (
-                                  <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-                                    <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                      SV2
-                                    </span>
-                                    <UserNameClickable
-                                      user={item.secondStudentId}
-                                      name={item.secondStudentId?.userId?.fullName}
-                                      subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                      avatarSize="w-6 h-6"
-                                    />
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <div className="flex flex-col gap-1.5 min-w-[140px]">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV1
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.studentId}
+                                        name={item.studentId?.userId?.fullName}
+                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                        avatarSize="w-6 h-6"
+                                      />
+                                    </div>
+                                    {item.studentCount === 2 && item.secondStudentId && (
+                                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                        <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                          SV2
+                                        </span>
+                                        <UserNameClickable
+                                          user={item.secondStudentId}
+                                          name={item.secondStudentId?.userId?.fullName}
+                                          subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                          avatarSize="w-6 h-6"
+                                        />
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="font-semibold text-slate-800">
-                                {formatLecturerDisplay(item.supervisorId)}
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
-                              {getReviewer1Display(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center bg-blue-50/40 font-bold">
-                              {renderReviewer1Score(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              {getReviewer2Display(item) !== 'Chưa phân công' ? (
-                                <span className="font-semibold text-slate-800">
-                                  {getReviewer2Display(item)}
-                                </span>
-                              ) : (
-                                <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                              {renderReviewer2Score(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                              {renderCombinedReviewerScore(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenDetail(item)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
-                                  title="Xem chi tiết đề tài"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  <span>Chi tiết</span>
-                                </button>
-                                {item.status !== 'REJECTED' && (() => {
-                                  const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER1');
-                                  return (
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <div className="font-semibold text-slate-800">
+                                    {formatLecturerDisplay(item.supervisorId)}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
+                                  {getReviewer1Display(item)}
+                                </td>
+                                <td className="py-3 px-2 whitespace-nowrap text-center bg-blue-50/40 font-bold">
+                                  {renderReviewer1Score(item)}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  {getReviewer2Display(item) !== 'Chưa phân công' ? (
+                                    <span className="font-semibold text-slate-800">
+                                      {getReviewer2Display(item)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 whitespace-nowrap text-center">
+                                  {renderReviewer2Score(item)}
+                                </td>
+                                <td className="py-3 px-2 whitespace-nowrap text-center">
+                                  {renderCombinedReviewerScore(item)}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
                                     <button
                                       type="button"
-                                      disabled={!gradeStatus.canGrade}
-                                      onClick={() => {
-                                        if (!gradeStatus.canGrade) return;
-                                        handleOpenGradeBox(item, 'REVIEWER1');
-                                      }}
-                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
-                                        gradeStatus.canGrade
-                                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                      }`}
-                                      title={gradeStatus.reason}
+                                      onClick={() => handleOpenDetail(item)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                      title="Xem chi tiết đề tài"
                                     >
-                                      <Award className="w-3.5 h-3.5" />
-                                      <span>Chấm điểm</span>
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Chi tiết</span>
                                     </button>
-                                  );
-                                })()}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                    {item.status !== 'REJECTED' && (() => {
+                                      const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER1');
+                                      return (
+                                        <button
+                                          type="button"
+                                          disabled={!gradeStatus.canGrade}
+                                          onClick={() => {
+                                            if (!gradeStatus.canGrade) return;
+                                            handleOpenGradeBox(item, 'REVIEWER1');
+                                          }}
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                            gradeStatus.canGrade
+                                              ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                              : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                          }`}
+                                          title={gradeStatus.reason}
+                                        >
+                                          <Award className="w-3.5 h-3.5" />
+                                          <span>Chấm điểm</span>
+                                        </button>
+                                      );
+                                    })()}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -2752,10 +2792,14 @@ const LecturerThesesPage = () => {
             {/* ========================================================================= */}
             {/* BẢNG 2: ĐỀ TÀI GIẢNG VIÊN PHẢN BIỆN 2 (GVPB 2) */}
             {/* ========================================================================= */}
-            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between">
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden transition-all">
+              <button
+                type="button"
+                onClick={() => setReviewer2AccordionOpen((prev) => !prev)}
+                className="w-full px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between cursor-pointer hover:bg-blue-100/40 transition text-left select-none"
+              >
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
@@ -2764,155 +2808,164 @@ const LecturerThesesPage = () => {
                     </h3>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
-                  {filteredReviewer2Theses.length} đề tài
-                </span>
-              </div>
+                <div className="flex items-center gap-3">
+                  <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
+                    {filteredReviewer2Theses.length} đề tài
+                  </span>
+                  <div className={`p-1.5 rounded-lg bg-white/90 border border-blue-200 text-[#123891] transition-transform duration-200 ${reviewer2AccordionOpen ? 'rotate-180 bg-blue-100' : ''}`}>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+              </button>
 
-              {loading ? (
-                <div className="p-6">
-                  <LoadingSkeleton rows={4} cols={10} />
-                </div>
-              ) : filteredReviewer2Theses.length === 0 ? (
-                <div className="p-8">
-                  <EmptyState
-                    title="Chưa có đề tài nào làm Giảng viên phản biện 2"
-                    description="Bạn hiện chưa được phân công làm GVPB 2 cho đề tài nào trong học kỳ này hoặc chưa khớp với từ khóa tìm kiếm."
-                  />
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                        <th className="py-3.5 px-4 w-12 text-center">STT</th>
-                        <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
-                        <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
-                        <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
-                        <th className="py-3.5 px-4 min-w-[150px]">GVPB 1</th>
-                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px]">Điểm GVPB 1</th>
-                        <th className="py-3.5 px-4 min-w-[150px] bg-blue-50/70 text-[#102d7d]">GVPB 2 (Bạn)</th>
-                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[110px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 2</th>
-                        <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[125px]">Điểm phản biện kín</th>
-                        <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[130px]">Thao tác</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredReviewer2Theses.map((item, index) => {
-                        return (
-                          <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                              {index + 1}
-                            </td>
-                            <td className="py-3.5 px-4 max-w-sm">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDetail(item)}
-                                className="text-left block group cursor-pointer"
-                                title="Bấm để xem toàn bộ thông tin đề tài"
-                              >
-                                <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
-                                  {item.thesisTitle}
-                                </strong>
-                              </button>
-                              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
-                                {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
-                              </span>
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="flex flex-col gap-1.5 min-w-[170px]">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                    SV1
+              {reviewer2AccordionOpen && (
+                <div className="animate-in slide-in-from-top-2 duration-200">
+                  {loading ? (
+                    <div className="p-6">
+                      <LoadingSkeleton rows={4} cols={10} />
+                    </div>
+                  ) : filteredReviewer2Theses.length === 0 ? (
+                    <div className="p-8">
+                      <EmptyState
+                        title="Chưa có đề tài nào làm Giảng viên phản biện 2"
+                        description="Bạn hiện chưa được phân công làm GVPB 2 cho đề tài nào trong học kỳ này hoặc chưa khớp với từ khóa tìm kiếm."
+                      />
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs">
+                        <thead>
+                          <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                            <th className="py-3 px-2 w-10 text-center">STT</th>
+                            <th className="py-3 px-3 min-w-[170px]">Tên đề tài KLTN</th>
+                            <th className="py-3 px-3 min-w-[140px]">Sinh viên</th>
+                            <th className="py-3 px-3 min-w-[120px]">GV Hướng Dẫn</th>
+                            <th className="py-3 px-3 min-w-[120px]">GVPB 1</th>
+                            <th className="py-3 px-2 text-center whitespace-nowrap min-w-[90px]">Điểm GVPB 1</th>
+                            <th className="py-3 px-3 min-w-[120px] bg-blue-50/70 text-[#102d7d]">GVPB 2 (Bạn)</th>
+                            <th className="py-3 px-2 text-center whitespace-nowrap min-w-[90px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 2</th>
+                            <th className="py-3 px-2 text-center whitespace-nowrap min-w-[95px]">Điểm phản biện kín</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {filteredReviewer2Theses.map((item, index) => {
+                            return (
+                              <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                                <td className="py-3 px-2 text-center text-slate-400 font-mono font-semibold">
+                                  {index + 1}
+                                </td>
+                                <td className="py-3 px-3 max-w-sm">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDetail(item)}
+                                    className="text-left block group cursor-pointer"
+                                    title="Bấm để xem toàn bộ thông tin đề tài"
+                                  >
+                                    <strong className="text-slate-900 group-hover:text-[#123891] line-clamp-2 leading-snug transition">
+                                      {item.thesisTitle}
+                                    </strong>
+                                  </button>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                    {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
                                   </span>
-                                  <UserNameClickable
-                                    user={item.studentId}
-                                    name={item.studentId?.userId?.fullName}
-                                    subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                    avatarSize="w-6 h-6"
-                                  />
-                                </div>
-                                {item.studentCount === 2 && item.secondStudentId && (
-                                  <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
-                                    <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                      SV2
-                                    </span>
-                                    <UserNameClickable
-                                      user={item.secondStudentId}
-                                      name={item.secondStudentId?.userId?.fullName}
-                                      subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                      avatarSize="w-6 h-6"
-                                    />
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <div className="flex flex-col gap-1.5 min-w-[140px]">
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV1
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.studentId}
+                                        name={item.studentId?.userId?.fullName}
+                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                        avatarSize="w-6 h-6"
+                                      />
+                                    </div>
+                                    {item.studentCount === 2 && item.secondStudentId && (
+                                      <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
+                                        <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                          SV2
+                                        </span>
+                                        <UserNameClickable
+                                          user={item.secondStudentId}
+                                          name={item.secondStudentId?.userId?.fullName}
+                                          subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                          avatarSize="w-6 h-6"
+                                        />
+                                      </div>
+                                    )}
                                   </div>
-                                )}
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              <div className="font-semibold text-slate-800">
-                                {formatLecturerDisplay(item.supervisorId)}
-                              </div>
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap">
-                              {getReviewer1Display(item) !== 'Chưa phân công' ? (
-                                <span className="font-semibold text-slate-800">
-                                  {getReviewer1Display(item)}
-                                </span>
-                              ) : (
-                                <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
-                              )}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                              {renderReviewer1Score(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
-                              {getReviewer2Display(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center bg-blue-50/40 font-bold">
-                              {renderReviewer2Score(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                              {renderCombinedReviewerScore(item)}
-                            </td>
-                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleOpenDetail(item)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
-                                  title="Xem chi tiết đề tài"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                  <span>Chi tiết</span>
-                                </button>
-                                {item.status !== 'REJECTED' && (() => {
-                                  const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER2');
-                                  return (
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  <div className="font-semibold text-slate-800">
+                                    {formatLecturerDisplay(item.supervisorId)}
+                                  </div>
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap">
+                                  {getReviewer1Display(item) !== 'Chưa phân công' ? (
+                                    <span className="font-semibold text-slate-800">
+                                      {getReviewer1Display(item)}
+                                    </span>
+                                  ) : (
+                                    <span className="text-amber-600 italic text-[11px]">Chưa phân công</span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-2 whitespace-nowrap text-center">
+                                  {renderReviewer1Score(item)}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap bg-blue-50/40 font-semibold text-[#102d7d]">
+                                  {getReviewer2Display(item)}
+                                </td>
+                                <td className="py-3 px-2 whitespace-nowrap text-center bg-blue-50/40 font-bold">
+                                  {renderReviewer2Score(item)}
+                                </td>
+                                <td className="py-3 px-2 whitespace-nowrap text-center">
+                                  {renderCombinedReviewerScore(item)}
+                                </td>
+                                <td className="py-3 px-3 whitespace-nowrap text-right">
+                                  <div className="flex items-center justify-end gap-1.5">
                                     <button
                                       type="button"
-                                      disabled={!gradeStatus.canGrade}
-                                      onClick={() => {
-                                        if (!gradeStatus.canGrade) return;
-                                        handleOpenGradeBox(item, 'REVIEWER2');
-                                      }}
-                                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
-                                        gradeStatus.canGrade
-                                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
-                                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                                      }`}
-                                      title={gradeStatus.reason}
+                                      onClick={() => handleOpenDetail(item)}
+                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                      title="Xem chi tiết đề tài"
                                     >
-                                      <Award className="w-3.5 h-3.5" />
-                                      <span>Chấm điểm</span>
+                                      <Eye className="w-3.5 h-3.5" />
+                                      <span>Chi tiết</span>
                                     </button>
-                                  );
-                                })()}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                    {item.status !== 'REJECTED' && (() => {
+                                      const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER2');
+                                      return (
+                                        <button
+                                          type="button"
+                                          disabled={!gradeStatus.canGrade}
+                                          onClick={() => {
+                                            if (!gradeStatus.canGrade) return;
+                                            handleOpenGradeBox(item, 'REVIEWER2');
+                                          }}
+                                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                            gradeStatus.canGrade
+                                              ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                              : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                          }`}
+                                          title={gradeStatus.reason}
+                                        >
+                                          <Award className="w-3.5 h-3.5" />
+                                          <span>Chấm điểm</span>
+                                        </button>
+                                      );
+                                    })()}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -2938,29 +2991,29 @@ const LecturerThesesPage = () => {
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                     {/* 1. STT */}
-                    <th className="py-3.5 px-4 w-12 text-center">STT</th>
+                    <th className="py-3 px-2 w-10 text-center">STT</th>
                     {/* 2. Tên đề tài KLTN */}
-                    <th className="py-3.5 px-4 min-w-[220px]">Tên đề tài KLTN</th>
+                    <th className="py-3 px-3 min-w-[170px]">Tên đề tài KLTN</th>
                     {/* 3. Sinh viên */}
-                    <th className="py-3.5 px-4 min-w-[180px]">Sinh viên</th>
+                    <th className="py-3 px-3 min-w-[140px]">Sinh viên</th>
                     {/* 4. GV Hướng Dẫn */}
-                    <th className="py-3.5 px-4 min-w-[150px]">GV Hướng Dẫn</th>
+                    <th className="py-3 px-3 min-w-[120px]">GV Hướng Dẫn</th>
                     {/* 5. GVPB 1 */}
-                    <th className="py-3.5 px-4 min-w-[150px]">GVPB 1</th>
+                    <th className="py-3 px-3 min-w-[110px]">GVPB 1</th>
                     {/* 6. GVPB 2 */}
-                    <th className="py-3.5 px-4 min-w-[150px]">GVPB 2</th>
+                    <th className="py-3 px-3 min-w-[110px]">GVPB 2</th>
                     {/* 7. Hội đồng */}
-                    <th className="py-3.5 px-4 min-w-[150px]">Hội đồng</th>
+                    <th className="py-3 px-3 min-w-[120px]">Hội đồng</th>
                     {/* 8. Điểm GVHD */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px]">Điểm GVHD</th>
+                    <th className="py-3 px-2 text-center whitespace-nowrap min-w-[80px]">Điểm GVHD</th>
                     {/* 9. Điểm phản biện kín */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[120px]">Điểm phản biện kín</th>
+                    <th className="py-3 px-2 text-center whitespace-nowrap min-w-[95px]">Điểm PB kín</th>
                     {/* 10. Điểm phản biện hội đồng */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[130px]">Điểm phản biện hội đồng</th>
+                    <th className="py-3 px-2 text-center whitespace-nowrap min-w-[100px]">Điểm PB Hội đồng</th>
                     {/* 11. Tổng điểm */}
-                    <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[100px]">Tổng điểm</th>
+                    <th className="py-3 px-2 text-center whitespace-nowrap min-w-[75px]">Tổng điểm</th>
                     {/* 12. Thao tác */}
-                    <th className="py-3.5 px-4 text-right whitespace-nowrap min-w-[120px]">Thao tác</th>
+                    <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -2972,12 +3025,12 @@ const LecturerThesesPage = () => {
                     return (
                       <tr key={item._id} className="hover:bg-slate-50/80 transition">
                         {/* 1. STT */}
-                        <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                        <td className="py-3 px-2 text-center text-slate-400 font-mono font-semibold">
                           {index + 1}
                         </td>
 
                         {/* 2. Tên đề tài KLTN */}
-                        <td className="py-3.5 px-4 max-w-sm">
+                        <td className="py-3 px-3 max-w-sm">
                           <button
                             type="button"
                             onClick={() => handleOpenDetail(item)}
@@ -2996,8 +3049,8 @@ const LecturerThesesPage = () => {
                         </td>
 
                         {/* 3. Sinh viên */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="flex flex-col gap-1.5 min-w-[170px]">
+                        <td className="py-3 px-3 whitespace-nowrap">
+                          <div className="flex flex-col gap-1.5 min-w-[140px]">
                             <div className="flex items-center gap-1.5">
                               <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                 SV1
@@ -3026,14 +3079,14 @@ const LecturerThesesPage = () => {
                         </td>
 
                         {/* 4. GV Hướng Dẫn */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td className="py-3 px-3 whitespace-nowrap">
                           <div className="font-semibold text-slate-800">
                             {formatLecturerDisplay(item.supervisorId)}
                           </div>
                         </td>
 
                         {/* 5. GVPB 1 */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td className="py-3 px-3 whitespace-nowrap">
                           {getReviewer1Display(item) !== 'Chưa phân công' ? (
                             <span className="font-semibold text-slate-800">
                               {getReviewer1Display(item)}
@@ -3044,7 +3097,7 @@ const LecturerThesesPage = () => {
                         </td>
 
                         {/* 6. GVPB 2 */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td className="py-3 px-3 whitespace-nowrap">
                           {getReviewer2Display(item) !== 'Chưa phân công' ? (
                             <span className="font-semibold text-slate-800">
                               {getReviewer2Display(item)}
@@ -3055,7 +3108,7 @@ const LecturerThesesPage = () => {
                         </td>
 
                         {/* 7. Hội đồng */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
+                        <td className="py-3 px-3 whitespace-nowrap">
                           {assignedCouncil ? (
                             <button
                               type="button"
@@ -3089,27 +3142,27 @@ const LecturerThesesPage = () => {
                         </td>
 
                         {/* 8. Điểm GVHD */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                        <td className="py-3 px-2 whitespace-nowrap text-center">
                           {renderSupervisorScore(item)}
                         </td>
 
                         {/* 9. Điểm phản biện kín */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                        <td className="py-3 px-2 whitespace-nowrap text-center">
                           {renderCombinedReviewerScore(item)}
                         </td>
 
                         {/* 10. Điểm phản biện hội đồng */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                        <td className="py-3 px-2 whitespace-nowrap text-center">
                           {renderCouncilScore(item)}
                         </td>
 
                         {/* 11. Tổng điểm */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-center">
+                        <td className="py-3 px-2 whitespace-nowrap text-center">
                           {renderFinalScore(item)}
                         </td>
 
                         {/* 12. Thao tác */}
-                        <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                        <td className="py-3 px-3 whitespace-nowrap text-right">
                           <div className="flex items-center justify-end gap-1.5">
                             {/* Chi tiết button */}
                             <button

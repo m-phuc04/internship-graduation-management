@@ -161,15 +161,31 @@ const NotificationDropdown = () => {
     }
 
     if (role === 'LECTURER') {
-      // 1. Phân công phản biện khóa luận (GVPB 1, GVPB 2, PB kín) -> Luôn nhảy vào Phản biện khóa luận
+      // 1. Phân công phản biện khóa luận (GVPB 1, GVPB 2, PB kín) -> Luôn nhảy vào Phản biện khóa luận và tự động mở bảng tương ứng
       if (
+        titleLower.includes('phản biện 1') ||
+        messageLower.includes('phản biện 1') ||
+        titleLower.includes('gvpb 1') ||
+        messageLower.includes('gvpb 1') ||
+        targetLink?.includes('tab=reviewer1')
+      ) {
+        targetLink = '/lecturer/theses?tab=review&open=reviewer1';
+      } else if (
+        titleLower.includes('phản biện 2') ||
+        messageLower.includes('phản biện 2') ||
+        titleLower.includes('gvpb 2') ||
+        messageLower.includes('gvpb 2') ||
+        targetLink?.includes('tab=reviewer2')
+      ) {
+        targetLink = '/lecturer/theses?tab=review&open=reviewer2';
+      } else if (
         titleLower.includes('phản biện') ||
         messageLower.includes('phản biện') ||
         item.type === 'THESIS_REVIEW' ||
         targetLink?.includes('tab=review') ||
         targetLink?.includes('tab=reviewer')
       ) {
-        targetLink = '/lecturer/theses?tab=review';
+        targetLink = '/lecturer/theses?tab=review&open=all';
       }
       // 2. Hội đồng bảo vệ (Phòng hội đồng bảo vệ)
       else if (
