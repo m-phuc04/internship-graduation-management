@@ -253,6 +253,15 @@ const LecturerThesisEvaluationDetailPage = () => {
     thesis?.status === 'COMPLETED'
   );
 
+  const isAssignedRev1 = Boolean(
+    thesis?.reviewer1Id ||
+    (Array.isArray(thesis?.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+  );
+  const isAssignedRev2 = Boolean(
+    thesis?.reviewer2Id ||
+    (Array.isArray(thesis?.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+  );
+
   const hasSupervisorGraded = Boolean(
     thesis?.scores?.supervisorScore != null || thesis?.scores?.student1SupervisorScore != null
   );
@@ -263,7 +272,10 @@ const LecturerThesisEvaluationDetailPage = () => {
   const hasReviewer2Graded = Boolean(
     thesis?.scores?.reviewer2Score != null || thesis?.scores?.student1Reviewer2Score != null
   );
-  const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+  const hasReviewersGraded =
+    (isAssignedRev1 ? hasReviewer1Graded : true) &&
+    (isAssignedRev2 ? hasReviewer2Graded : true) &&
+    (hasReviewer1Graded || hasReviewer2Graded || thesis?.scores?.reviewerScore != null);
 
   const isPastTerm = thesis?.academicTermId?.status === 'CLOSED';
 
@@ -275,7 +287,7 @@ const LecturerThesisEvaluationDetailPage = () => {
     !hasSupervisorGraded;
 
   const isCouncilLockedByReviewers =
-    activeRoleTab === 'COUNCIL' && !hasBothReviewersGraded;
+    activeRoleTab === 'COUNCIL' && !hasReviewersGraded;
 
   const isStageLocked =
     isPastTerm ||

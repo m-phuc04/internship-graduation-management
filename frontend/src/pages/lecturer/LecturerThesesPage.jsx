@@ -623,6 +623,29 @@ const LecturerThesesPage = () => {
     return null;
   }, [councils, thesisCouncilMap]);
 
+  const formatCouncilTime = (c) => {
+    if (!c) return '';
+    if (c.reportStartTime && c.reportEndTime) return `${c.reportStartTime} - ${c.reportEndTime}`;
+    if (c.reportTime) return c.reportTime;
+    if (c.reportStartTime) return c.reportStartTime;
+    if (c.defenseStartTime && c.defenseEndTime) return `${c.defenseStartTime} - ${c.defenseEndTime}`;
+    if (c.defenseTime) return c.defenseTime;
+    if (c.timeSlot) return c.timeSlot;
+    if (c.time) return c.time;
+    return '';
+  };
+
+  const formatCouncilDate = (c) => {
+    if (!c) return '';
+    const d = c.reportDate || c.defenseDate || c.date;
+    if (!d) return '';
+    try {
+      return new Date(d).toLocaleDateString('vi-VN');
+    } catch (e) {
+      return String(d);
+    }
+  };
+
   const cleanTitle = (str) =>
     (str || '')
       .toLowerCase()
@@ -956,6 +979,15 @@ const LecturerThesesPage = () => {
       item.status === 'COMPLETED'
     );
 
+    const isAssignedRev1 = Boolean(
+      item.reviewer1Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const isAssignedRev2 = Boolean(
+      item.reviewer2Id ||
+      (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+
     const hasSupervisorGraded = Boolean(
       item.scores?.supervisorScore != null || item.scores?.student1SupervisorScore != null
     );
@@ -966,7 +998,10 @@ const LecturerThesesPage = () => {
     const hasReviewer2Graded = Boolean(
       item.scores?.reviewer2Score != null || item.scores?.student1Reviewer2Score != null
     );
-    const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+    const hasReviewersGraded =
+      (isAssignedRev1 ? hasReviewer1Graded : true) &&
+      (isAssignedRev2 ? hasReviewer2Graded : true) &&
+      (hasReviewer1Graded || hasReviewer2Graded || item.scores?.reviewerScore != null);
 
     if (role === 'SUPERVISOR' || role === 'GVHD') {
       if (isPBKAssigned) {
@@ -1008,10 +1043,10 @@ const LecturerThesesPage = () => {
     }
 
     if (role === 'COUNCIL' || role === 'HOIDONG') {
-      if (!hasBothReviewersGraded) {
+      if (!hasReviewersGraded) {
         return {
           canGrade: false,
-          reason: 'Chưa thể chấm điểm hội đồng do các giảng viên phản biện chưa hoàn tất chấm điểm.',
+          reason: 'Chưa thể chấm điểm hội đồng do các giảng viên phản biện được phân công chưa hoàn tất chấm điểm.',
         };
       }
       return {
@@ -2294,6 +2329,14 @@ const LecturerThesesPage = () => {
                           P.{c.room}
                         </span>
                       )}
+                      {formatCouncilTime(c) && (
+                        <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono flex items-center gap-0.5 ${
+                          isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+                        }`}>
+                          <Clock className="w-2.5 h-2.5" />
+                          {formatCouncilTime(c)}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -2323,6 +2366,12 @@ const LecturerThesesPage = () => {
                           <Calendar className="w-3.5 h-3.5" />
                           {effectiveActiveCouncil.reportDate ? new Date(effectiveActiveCouncil.reportDate).toLocaleDateString('vi-VN') : 'Lịch theo thông báo khoa'}
                         </span>
+                        {formatCouncilTime(effectiveActiveCouncil) && (
+                          <span className="flex items-center gap-1 text-slate-700 font-mono font-bold bg-white px-2 py-0.5 rounded-md border border-blue-200 shadow-2xs">
+                            <Clock className="w-3.5 h-3.5 text-[#123891]" />
+                            {formatCouncilTime(effectiveActiveCouncil)}
+                          </span>
+                        )}
                         <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase bg-blue-100/80 text-[#102d7d] border border-blue-200">
                           {effectiveActiveCouncil.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral / Hội đồng'}
                         </span>
@@ -2514,14 +2563,37 @@ const LecturerThesesPage = () => {
                                   )}
                                 </td>
                                 <td className="py-3.5 px-4 whitespace-nowrap">
-                                  <div className="font-semibold text-slate-800">
-                                    {effectiveActiveCouncil?.name || getAssignedCouncil(item)?.name || 'Hội đồng KLTN'}
-                                  </div>
-                                  {(effectiveActiveCouncil?.room || getAssignedCouncil(item)?.room) && (
-                                    <span className="text-[10px] font-mono text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded mt-0.5 inline-block border border-blue-100 font-semibold">
-                                      Phòng: {effectiveActiveCouncil?.room || getAssignedCouncil(item)?.room}
-                                    </span>
-                                  )}
+                                  {(() => {
+                                    const councilObj = effectiveActiveCouncil || getAssignedCouncil(item) || item?.councilId;
+                                    const timeStr = formatCouncilTime(councilObj);
+                                    const dateStr = formatCouncilDate(councilObj);
+                                    return (
+                                      <div className="space-y-0.5">
+                                        <div className="font-semibold text-slate-800">
+                                          {councilObj?.name || 'Hội đồng KLTN'}
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                                          {councilObj?.room && (
+                                            <span className="text-[10px] font-mono text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 font-semibold inline-flex items-center gap-0.5">
+                                              Phòng: {councilObj.room}
+                                            </span>
+                                          )}
+                                          {timeStr && (
+                                            <span className="text-[10px] font-mono text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-medium inline-flex items-center gap-1">
+                                              <Clock className="w-2.5 h-2.5 text-[#123891]" />
+                                              {timeStr}
+                                            </span>
+                                          )}
+                                          {!timeStr && dateStr && (
+                                            <span className="text-[10px] font-mono text-slate-500 bg-slate-50 px-1.5 py-0.5 rounded border border-slate-200 inline-flex items-center gap-0.5">
+                                              <Calendar className="w-2.5 h-2.5 text-slate-400" />
+                                              {dateStr}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })()}
                                 </td>
                                 <td className={`py-3.5 px-4 whitespace-nowrap text-center ${isLec1Me ? 'bg-blue-50/30 font-bold' : ''}`}>
                                   {renderCouncilLecturerScore(item, 0)}
@@ -3126,10 +3198,10 @@ const LecturerThesesPage = () => {
                                     Phòng: {assignedCouncil.room}
                                   </div>
                                 )}
-                                {assignedCouncil.reportTime && (
+                                {formatCouncilTime(assignedCouncil) && (
                                   <div className="text-[10px] text-slate-600 font-mono flex items-center gap-1 mt-0.5">
                                     <Clock className="w-3 h-3 text-[#123891]" />
-                                    <span>{assignedCouncil.reportTime}</span>
+                                    <span>{formatCouncilTime(assignedCouncil)}</span>
                                   </div>
                                 )}
                               </div>

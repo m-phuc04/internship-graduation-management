@@ -1749,6 +1749,15 @@ const getThesesForLecturerRole = async (
       t.status === "COMPLETED"
     );
     const isCompletedOrRejected = ["COMPLETED", "REJECTED"].includes(t.status);
+    const isAssignedRev1 = Boolean(
+      t.reviewer1Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const isAssignedRev2 = Boolean(
+      t.reviewer2Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+
     const hasSupervisorGraded = Boolean(
       t.scores?.supervisorScore != null || t.scores?.student1SupervisorScore != null
     );
@@ -1758,7 +1767,10 @@ const getThesesForLecturerRole = async (
     const hasReviewer2Graded = Boolean(
       t.scores?.reviewer2Score != null || t.scores?.student1Reviewer2Score != null
     );
-    const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+    const hasReviewersGraded =
+      (isAssignedRev1 ? hasReviewer1Graded : true) &&
+      (isAssignedRev2 ? hasReviewer2Graded : true) &&
+      (hasReviewer1Graded || hasReviewer2Graded || t.scores?.reviewerScore != null);
 
     return {
       ...t,
@@ -1768,11 +1780,12 @@ const getThesesForLecturerRole = async (
       isReviewer2,
       isPBKAssigned,
       hasSupervisorGraded,
-      hasBothReviewersGraded,
+      hasBothReviewersGraded: hasReviewersGraded,
+      hasReviewersGraded,
       canGradeSupervisor: isSupervisor && !isCompletedOrRejected && !isPBKAssigned,
       canGradeReviewer1: isReviewer1 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
       canGradeReviewer2: isReviewer2 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
-      canGradeCouncil: !isCompletedOrRejected && hasBothReviewersGraded,
+      canGradeCouncil: !isCompletedOrRejected && hasReviewersGraded,
     };
   });
 
@@ -1853,6 +1866,15 @@ const getThesesForLecturerRole = async (
       t.status === "COMPLETED"
     );
     const isCompletedOrRejected = ["COMPLETED", "REJECTED"].includes(t.status);
+    const isAssignedRev1 = Boolean(
+      t.reviewer1Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const isAssignedRev2 = Boolean(
+      t.reviewer2Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+
     const hasSupervisorGraded = Boolean(
       t.scores?.supervisorScore != null || t.scores?.student1SupervisorScore != null
     );
@@ -1862,7 +1884,10 @@ const getThesesForLecturerRole = async (
     const hasReviewer2Graded = Boolean(
       t.scores?.reviewer2Score != null || t.scores?.student1Reviewer2Score != null
     );
-    const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+    const hasReviewersGraded =
+      (isAssignedRev1 ? hasReviewer1Graded : true) &&
+      (isAssignedRev2 ? hasReviewer2Graded : true) &&
+      (hasReviewer1Graded || hasReviewer2Graded || t.scores?.reviewerScore != null);
 
     return {
       ...t,
@@ -1872,11 +1897,12 @@ const getThesesForLecturerRole = async (
       isReviewer2,
       isPBKAssigned,
       hasSupervisorGraded,
-      hasBothReviewersGraded,
+      hasBothReviewersGraded: hasReviewersGraded,
+      hasReviewersGraded,
       canGradeSupervisor: isSupervisor && !isCompletedOrRejected && !isPBKAssigned,
       canGradeReviewer1: isReviewer1 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
       canGradeReviewer2: isReviewer2 && !isCompletedOrRejected && isPBKAssigned && hasSupervisorGraded,
-      canGradeCouncil: !isCompletedOrRejected && hasBothReviewersGraded,
+      canGradeCouncil: !isCompletedOrRejected && hasReviewersGraded,
     };
   });
 
@@ -2029,6 +2055,15 @@ const gradeThesisByLecturer = async (
     thesis.status === "ASSIGNED_REVIEWERS" ||
     thesis.status === "DEFENSE"
   );
+  const isAssignedRev1 = Boolean(
+    thesis.reviewer1Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+  );
+  const isAssignedRev2 = Boolean(
+    thesis.reviewer2Id ||
+    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+  );
+
   const hasSupervisorGraded = Boolean(
     thesis.scores?.supervisorScore != null || thesis.scores?.student1SupervisorScore != null
   );
@@ -2038,7 +2073,10 @@ const gradeThesisByLecturer = async (
   const hasReviewer2Graded = Boolean(
     thesis.scores?.reviewer2Score != null || thesis.scores?.student1Reviewer2Score != null
   );
-  const hasBothReviewersGraded = hasReviewer1Graded && hasReviewer2Graded;
+  const hasReviewersGraded =
+    (isAssignedRev1 ? hasReviewer1Graded : true) &&
+    (isAssignedRev2 ? hasReviewer2Graded : true) &&
+    (hasReviewer1Graded || hasReviewer2Graded || thesis.scores?.reviewerScore != null);
 
   if (activeRole === "SUPERVISOR" || activeRole === "GVHD") {
     if (isPBKAssigned) {
@@ -2192,9 +2230,9 @@ const gradeThesisByLecturer = async (
     activeRole === "HOIDONG" ||
     activeRole === "GVPB_HOIDONG"
   ) {
-    if (!hasBothReviewersGraded) {
+    if (!hasReviewersGraded) {
       throw new AppError(
-        "Chưa thể chấm điểm hội đồng do các giảng viên phản biện chưa hoàn tất chấm điểm.",
+        "Chưa thể chấm điểm hội đồng do các giảng viên phản biện được phân công chưa hoàn tất chấm điểm.",
         400,
       );
     }
