@@ -54,6 +54,7 @@ const notificationSchema = new mongoose.Schema(
         "Internship",
         "InternshipReport",
         "Thesis",
+        "ThesisTopic",
         "ThesisProgress",
         "AIAnalysis",
         "Evaluation",

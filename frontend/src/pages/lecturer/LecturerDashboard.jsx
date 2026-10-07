@@ -95,10 +95,10 @@ const LecturerDashboard = () => {
         <button
           type="button"
           onClick={fetchDashboard}
-          className="self-start md:self-auto inline-flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 transition shadow-2xs cursor-pointer"
+          className="self-start md:self-auto p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition shadow-2xs cursor-pointer"
+          title="Làm mới"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Làm mới</span>
+          <RefreshCw className="w-4 h-4" />
         </button>
       </div>
 

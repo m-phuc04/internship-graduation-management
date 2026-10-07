@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
+import internshipApi from '../../api/internshipApi';
 import thesisProgressApi from '../../api/thesisProgressApi';
 import councilApi from '../../api/councilApi';
 import { useToast } from '../../context/ToastContext';
@@ -11,6 +12,7 @@ import SearchInput from '../../components/common/SearchInput';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import UserNameClickable from '../../components/common/UserNameClickable';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 
 import {
   Award,
@@ -32,18 +34,35 @@ import {
   Calendar,
   Check,
   X,
+  Edit2,
   Edit3,
   FileText,
   ExternalLink,
   Ban,
+  Trash2,
 } from 'lucide-react';
 
 const LecturerThesesPage = () => {
   const { user } = useAuth();
+  const [lecturerInfo, setLecturerInfo] = useState(null);
   const { showToast } = useToast();
   const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchLecturerProfile = async () => {
+      try {
+        const res = await internshipApi.getSupervised({ limit: 1 });
+        if (res.success && res.lecturer) {
+          setLecturerInfo(res.lecturer);
+        }
+      } catch (err) {
+        // Fallback silently to auth context user
+      }
+    };
+    fetchLecturerProfile();
+  }, []);
 
   // Read initial tab from search query
   const getInitialTab = () => {
@@ -63,10 +82,18 @@ const LecturerThesesPage = () => {
   const [createTopicModalOpen, setCreateTopicModalOpen] = useState(false);
   const [selectedTermForCreation, setSelectedTermForCreation] = useState('');
   const [batchTitleInput, setBatchTitleInput] = useState('');
-  const [batchMaxGroups, setBatchMaxGroups] = useState(1);
   const [batchDescription, setBatchDescription] = useState('');
   const [createTopicLoading, setCreateTopicLoading] = useState(false);
   const [selectedTopicDetail, setSelectedTopicDetail] = useState(null);
+
+  // Edit & Delete Topic States (Lecturer requests -> TBM approves)
+  const [editTopicModalOpen, setEditTopicModalOpen] = useState(false);
+  const [selectedTopicForEdit, setSelectedTopicForEdit] = useState(null);
+  const [editTopicTitle, setEditTopicTitle] = useState('');
+  const [editTopicDescription, setEditTopicDescription] = useState('');
+  const [confirmEditTopicDialogOpen, setConfirmEditTopicDialogOpen] = useState(false);
+  const [deleteTopicDialogOpen, setDeleteTopicDialogOpen] = useState(false);
+  const [selectedTopicForDelete, setSelectedTopicForDelete] = useState(null);
 
   // Approved topics for registration list
   const [approvedTopics, setApprovedTopics] = useState([]);
@@ -396,7 +423,6 @@ const LecturerThesesPage = () => {
     try {
       const res = await thesisApi.batchCreateTopics({
         topicListRaw: batchTitleInput.trim(),
-        defaultMaxGroups: Number(batchMaxGroups) || 1,
         defaultDescription: batchDescription.trim() || '',
         academicTermId: targetTermId,
       });
@@ -405,7 +431,6 @@ const LecturerThesesPage = () => {
         showToast(res.message || 'Tạo danh sách đề tài KLTN thành công!', 'success');
         setCreateTopicModalOpen(false);
         setBatchTitleInput('');
-        setBatchMaxGroups(1);
         setBatchDescription('');
         fetchMyTopics();
       }
@@ -413,6 +438,69 @@ const LecturerThesesPage = () => {
       showToast(err.message || 'Tạo đề tài thất bại', 'error');
     } finally {
       setCreateTopicLoading(false);
+    }
+  };
+
+  const handleOpenEditTopic = (topic) => {
+    setSelectedTopicForEdit(topic);
+    setEditTopicTitle(topic.title || '');
+    setEditTopicDescription(topic.description || '');
+    setEditTopicModalOpen(true);
+  };
+
+  const handleSubmitEditTopicForm = (e) => {
+    if (e) e.preventDefault();
+    if (!editTopicTitle.trim()) {
+      showToast('Vui lòng nhập tên đề tài', 'warning');
+      return;
+    }
+    setConfirmEditTopicDialogOpen(true);
+  };
+
+  const handleConfirmSaveEditTopic = async () => {
+    if (!selectedTopicForEdit) return;
+    try {
+      setActionLoading(true);
+      const res = await thesisApi.requestEditTopic(selectedTopicForEdit._id, {
+        title: editTopicTitle.trim(),
+        description: editTopicDescription.trim(),
+      });
+      if (res.success) {
+        showToast('Đã gửi yêu cầu chỉnh sửa đề tài đến Trưởng Bộ Môn để xét duyệt!', 'success');
+        setConfirmEditTopicDialogOpen(false);
+        setEditTopicModalOpen(false);
+        setSelectedTopicForEdit(null);
+        fetchMyTopics();
+      }
+    } catch (err) {
+      showToast(err.message || 'Gửi yêu cầu chỉnh sửa đề tài thất bại', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleOpenDeleteTopic = (topic) => {
+    setSelectedTopicForDelete(topic);
+    setDeleteTopicDialogOpen(true);
+  };
+
+  const handleConfirmDeleteTopic = async () => {
+    if (!selectedTopicForDelete) return;
+    try {
+      setActionLoading(true);
+      const res = await thesisApi.requestDeleteTopic(selectedTopicForDelete._id, {
+        reason: 'Giảng viên đề xuất yêu cầu xóa đề tài',
+      });
+      if (res.success) {
+        showToast('Đã gửi yêu cầu xóa đề tài đến Trưởng Bộ Môn để xét duyệt!', 'success');
+        setDeleteTopicDialogOpen(false);
+        setSelectedTopicForDelete(null);
+        fetchMyTopics();
+      }
+    } catch (err) {
+      showToast(err.message || 'Gửi yêu cầu xóa đề tài thất bại', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -1601,6 +1689,22 @@ const LecturerThesesPage = () => {
                   </span>
                 )}
               </div>
+              <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
+                <span>
+                  Giảng viên:{' '}
+                  <strong className="text-slate-800">
+                    {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
+                    {lecturerInfo?.userId?.fullName || user?.fullName}
+                  </strong>
+                </span>
+                <span>•</span>
+                <span>
+                  Mã GV:{' '}
+                  <strong className="font-mono text-[#102d7d]">
+                    {lecturerInfo?.lecturerCode || user?.username}
+                  </strong>
+                </span>
+              </div>
             </div>
           </div>
 
@@ -1626,10 +1730,10 @@ const LecturerThesesPage = () => {
                 fetchMyTopics();
                 fetchApprovedTopics();
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer"
+              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+              title="Làm mới"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Làm mới</span>
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -1759,17 +1863,11 @@ const LecturerThesesPage = () => {
             >
               {Array.isArray(terms) && terms.map((t) => (
                 <option key={t._id} value={t._id}>
-                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng (Lịch sử)'}
+                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
                 </option>
               ))}
             </select>
           </div>
-
-          {!isTopicsView && (
-            <div className="text-xs text-slate-500 font-medium">
-              Hiển thị <strong>{currentList.length}</strong> đề tài
-            </div>
-          )}
         </div>
       </div>
 
@@ -1805,17 +1903,17 @@ const LecturerThesesPage = () => {
                       <th className="py-3.5 px-4 text-center w-12">STT</th>
                       <th className="py-3.5 px-4 min-w-[240px]">Tên đề tài KLTN</th>
                       <th className="py-3.5 px-4 whitespace-nowrap">Học kỳ</th>
-                      <th className="py-3.5 px-4 text-center whitespace-nowrap">Số nhóm</th>
                       <th className="py-3.5 px-4 whitespace-nowrap text-center">Trạng thái duyệt</th>
                       <th className="py-3.5 px-4 min-w-[200px]">Mô tả / Phản hồi</th>
                       <th className="py-3.5 px-4 whitespace-nowrap text-center">Ngày tạo</th>
+                      <th className="py-3.5 px-4 whitespace-nowrap text-right">Thao tác</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredMyTopics.map((topic, idx) => {
-                      const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
-                      const maxCount = topic.maxGroups || 1;
                       const termName = topic.academicTermId?.name || currentTerm?.name || 'Học kỳ';
+                      const isPendingEdit = topic.editRequest?.status === 'PENDING';
+                      const isPendingDelete = topic.deleteRequest?.status === 'PENDING';
 
                       return (
                         <tr key={topic._id} className="hover:bg-slate-50/80 transition">
@@ -1833,39 +1931,66 @@ const LecturerThesesPage = () => {
                                 {topic.title}
                               </span>
                             </button>
+                            {isPendingEdit && (
+                              <div className="mt-1 text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 inline-flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-600" />
+                                <span>Đang yêu cầu đổi tên: <strong>"{topic.editRequest?.newTitle}"</strong> (Chờ TBM duyệt)</span>
+                              </div>
+                            )}
+                            {isPendingDelete && (
+                              <div className="mt-1 text-[11px] text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 inline-flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3 text-rose-600" />
+                                <span>Đang yêu cầu xóa đề tài (Chờ TBM duyệt)</span>
+                              </div>
+                            )}
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
                               {termName}
                             </span>
                           </td>
-                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold font-mono bg-slate-100 text-slate-700 border border-slate-200">
-                              {currentCount}/{maxCount} nhóm
-                            </span>
-                          </td>
                           <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                            {topic.status === 'APPROVED' ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <Check className="w-3.5 h-3.5" />
-                                <span>Đã duyệt</span>
-                              </span>
-                            ) : topic.status === 'REJECTED' ? (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-[#c5221f] border border-rose-200">
-                                <X className="w-3.5 h-3.5" />
-                                <span>Từ chối</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                <Clock className="w-3.5 h-3.5" />
-                                <span>Chờ TBM duyệt</span>
-                              </span>
-                            )}
+                            <div className="flex flex-col items-center gap-1">
+                              {topic.status === 'APPROVED' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Đã duyệt</span>
+                                </span>
+                              ) : topic.status === 'REJECTED' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-[#c5221f] border border-rose-200">
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Từ chối</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>Chờ TBM duyệt</span>
+                                </span>
+                              )}
+                              {isPendingEdit && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
+                                  Chờ duyệt sửa
+                                </span>
+                              )}
+                              {isPendingDelete && (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
+                                  Chờ duyệt xóa
+                                </span>
+                              )}
+                            </div>
                           </td>
                           <td className="py-3.5 px-4 max-w-xs text-slate-600">
                             {topic.status === 'REJECTED' && topic.rejectionReason ? (
                               <div className="text-rose-600 text-xs font-medium bg-rose-50 p-2 rounded-lg border border-rose-100">
                                 <strong>Lý do từ chối:</strong> {topic.rejectionReason}
+                              </div>
+                            ) : topic.editRequest?.status === 'REJECTED' && topic.editRequest?.rejectReason ? (
+                              <div className="text-amber-700 text-[11px] font-medium bg-amber-50 p-1.5 rounded-lg border border-amber-200">
+                                <strong>Yêu cầu sửa bị từ chối:</strong> {topic.editRequest.rejectReason}
+                              </div>
+                            ) : topic.deleteRequest?.status === 'REJECTED' && topic.deleteRequest?.rejectReason ? (
+                              <div className="text-rose-700 text-[11px] font-medium bg-rose-50 p-1.5 rounded-lg border border-rose-200">
+                                <strong>Yêu cầu xóa bị từ chối:</strong> {topic.deleteRequest.rejectReason}
                               </div>
                             ) : (
                               <span className="truncate block">{topic.description || <span className="italic text-slate-400">Không có mô tả</span>}</span>
@@ -1873,6 +1998,38 @@ const LecturerThesesPage = () => {
                           </td>
                           <td className="py-3.5 px-4 whitespace-nowrap text-center text-slate-500 font-mono text-[11px]">
                             {formatDate(topic.createdAt)}
+                          </td>
+                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTopicDetail(topic)}
+                                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                                title="Xem chi tiết đề tài"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenEditTopic(topic)}
+                                disabled={isPendingEdit || isPendingDelete}
+                                className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                title={isPendingEdit ? 'Đang chờ TBM duyệt yêu cầu sửa' : 'Chỉnh sửa đề tài'}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDeleteTopic(topic)}
+                                disabled={isPendingDelete || isPendingEdit}
+                                className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                title={isPendingDelete ? 'Đang chờ TBM duyệt yêu cầu xóa' : 'Xóa đề tài'}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -1886,7 +2043,7 @@ const LecturerThesesPage = () => {
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
             {loadingApprovedTopics ? (
               <div className="p-6">
-                <LoadingSkeleton rows={5} cols={7} />
+                <LoadingSkeleton rows={5} cols={6} />
               </div>
             ) : filteredApprovedTopics.length === 0 ? (
               <div className="p-12 text-center space-y-3">
@@ -1899,9 +2056,7 @@ const LecturerThesesPage = () => {
                 <p className="text-xs text-slate-400 max-w-md mx-auto">
                   {approvedTopics.length === 0
                     ? isActiveTerm
-                      ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
-                      : 'Học kỳ này chưa có đề tài nào được duyệt.'
-                    : 'Thử thay đổi từ khóa tìm kiếm.'}
+                    : 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'}
                 </p>
               </div>
             ) : (
@@ -1912,7 +2067,6 @@ const LecturerThesesPage = () => {
                       <th className="py-3.5 px-4 text-center w-12">STT</th>
                       <th className="py-3.5 px-4 min-w-[240px]">Tên đề tài KLTN</th>
                       <th className="py-3.5 px-4 min-w-[180px]">Giảng viên</th>
-                      <th className="py-3.5 px-4 text-center whitespace-nowrap">Số nhóm nhận</th>
                       <th className="py-3.5 px-4 min-w-[200px]">Mô tả tóm tắt</th>
                       <th className="py-3.5 px-4 whitespace-nowrap text-center">Ngày tạo</th>
                       <th className="py-3.5 px-4 whitespace-nowrap text-right">Trạng thái</th>
@@ -1952,17 +2106,6 @@ const LecturerThesesPage = () => {
                                 {lecturerCode}
                               </span>
                             )}
-                          </td>
-                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-extrabold font-mono border ${
-                                isLocked
-                                  ? 'bg-rose-50 text-[#c5221f] border-rose-200'
-                                  : 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              }`}
-                            >
-                              {currentCount}/{maxCount} nhóm
-                            </span>
                           </td>
                           <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
                             {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
@@ -3726,7 +3869,6 @@ const LecturerThesesPage = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-slate-900">Đề Xuất Danh Sách Đề Tài KLTN</h3>
-                  <p className="text-xs text-slate-500">Nhập nhiều đề tài cùng lúc để gửi Trưởng Bộ Môn xét duyệt</p>
                 </div>
               </div>
               <button
@@ -3752,54 +3894,28 @@ const LecturerThesesPage = () => {
                   rows={6}
                   value={batchTitleInput}
                   onChange={(e) => setBatchTitleInput(e.target.value)}
-                  placeholder={`Ví dụ:\nXây dựng hệ thống quản lý thực tập doanh nghiệp,\nXây dựng hệ thống quản lý khóa luận tốt nghiệp,\nỨng dụng Trí tuệ nhân tạo nhận diện biển số xe`}
+                  placeholder="Nhập tên đề tài"
                   required
                   className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
                 />
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Hệ thống sẽ tự động tách từng dòng hoặc theo dấu phẩy để tạo các đề tài độc lập.
-                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Học kỳ áp dụng <span className="text-rose-500">*</span>
-                  </label>
-                  <select
-                    value={selectedTermForCreation || currentTerm?._id || ''}
-                    onChange={(e) => setSelectedTermForCreation(e.target.value)}
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  >
-                    {Array.isArray(terms) && terms.map((t) => (
-                      <option key={t._id} value={t._id}>
-                        {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : ''}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    Đề tài sẽ được gán cố định cho học kỳ được chọn.
-                  </span>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    Số lượng nhóm tối đa nhận <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={batchMaxGroups}
-                    onChange={(e) => setBatchMaxGroups(e.target.value)}
-                    required
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  />
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    Khi số nhóm SV đăng ký đạt mức này, đề tài sẽ tự động đóng (FIFO).
-                  </span>
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Học kỳ áp dụng <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={selectedTermForCreation || currentTerm?._id || ''}
+                  onChange={(e) => setSelectedTermForCreation(e.target.value)}
+                  required
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  {Array.isArray(terms) && terms.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -3859,7 +3975,7 @@ const LecturerThesesPage = () => {
                   <h3 className="text-base font-bold text-slate-900">Chi Tiết Đề Tài Đề Xuất</h3>
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-xs font-bold text-slate-500">
-                      Số nhóm: {selectedTopicDetail.currentGroups}/{selectedTopicDetail.maxGroups}
+                      Trạng thái: {selectedTopicDetail.currentGroups > 0 ? 'Đã có nhóm đăng ký' : 'Chưa có nhóm đăng ký'}
                     </span>
                   </div>
                 </div>
@@ -4138,6 +4254,143 @@ const LecturerThesesPage = () => {
           </div>
         </div>
       )}
+
+      {/* Modal Chỉnh sửa Đề tài (GVHD) */}
+      {editTopicModalOpen && selectedTopicForEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold">
+                  <Edit2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">Chỉnh Sửa Đề Tài KLTN</h3>
+                  <p className="text-xs text-slate-500">
+                    Thay đổi thông tin đề tài sẽ được gửi đến Trưởng Bộ Môn để xét duyệt
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditTopicModalOpen(false);
+                  setSelectedTopicForEdit(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitEditTopicForm} className="space-y-4">
+              {/* Giảng viên & Học kỳ */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Giảng viên hướng dẫn</label>
+                  <div className="font-bold text-slate-900 text-xs mt-1 flex items-center gap-1.5">
+                    <User className="w-3.5 h-3.5 text-[#123891]" />
+                    <span>{user?.fullName} ({user?.username})</span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Học kỳ áp dụng</label>
+                  <div className="font-bold text-slate-900 text-xs mt-1">
+                    {selectedTopicForEdit.academicTermId?.name || currentTerm?.name || 'Học kỳ'}
+                  </div>
+                </div>
+              </div>
+
+              {/* Tên đề tài */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Tên đề tài KLTN <span className="text-rose-500">*</span>
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={editTopicTitle}
+                  onChange={(e) => setEditTopicTitle(e.target.value)}
+                  placeholder="Nhập tên đề tài khóa luận..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none"
+                />
+              </div>
+
+              {/* Mô tả đề tài */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                  Mô tả / Yêu cầu đề tài
+                </label>
+                <textarea
+                  rows={4}
+                  value={editTopicDescription}
+                  onChange={(e) => setEditTopicDescription(e.target.value)}
+                  placeholder="Mô tả tóm tắt nội dung, công nghệ, mục tiêu đề tài..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none"
+                />
+              </div>
+
+              <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl text-xs text-[#102d7d] flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
+                <span>
+                  Sau khi lưu, yêu cầu chỉnh sửa sẽ được chuyển đến <strong>Trưởng Bộ Môn</strong>. Sau khi Trưởng Bộ Môn phê duyệt, tên đề tài sẽ chính thức được cập nhật trên hệ thống.
+                </span>
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditTopicModalOpen(false);
+                    setSelectedTopicForEdit(null);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="submit"
+                  disabled={actionLoading || !editTopicTitle.trim()}
+                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Lưu thay đổi</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Save Edit Topic Dialog */}
+      <ConfirmDialog
+        isOpen={confirmEditTopicDialogOpen}
+        title="Xác nhận yêu cầu chỉnh sửa đề tài"
+        message={`Bạn có chắc chắn muốn gửi yêu cầu đổi tên đề tài thành "${editTopicTitle}" đến Trưởng Bộ Môn để xét duyệt không?`}
+        confirmText="Xác nhận"
+        cancelText="Hủy bỏ"
+        isDanger={false}
+        loading={actionLoading}
+        onConfirm={handleConfirmSaveEditTopic}
+        onClose={() => setConfirmEditTopicDialogOpen(false)}
+      />
+
+      {/* Confirm Delete Topic Dialog */}
+      <ConfirmDialog
+        isOpen={deleteTopicDialogOpen}
+        title="Xác nhận yêu cầu xóa đề tài"
+        message={`Bạn có chắc chắn muốn gửi yêu cầu xóa đề tài "${selectedTopicForDelete?.title}" đến Trưởng Bộ Môn để xét duyệt không?`}
+        confirmText="Xác nhận"
+        cancelText="Hủy bỏ"
+        isDanger={false}
+        loading={actionLoading}
+        onConfirm={handleConfirmDeleteTopic}
+        onClose={() => {
+          setDeleteTopicDialogOpen(false);
+          setSelectedTopicForDelete(null);
+        }}
+      />
     </div>
   );
 };

@@ -31,20 +31,22 @@ import {
   UserCheck,
   FileSpreadsheet,
   Download,
+  AlertCircle,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'PENDING', label: 'Chờ duyệt (PENDING)' },
-  { value: 'APPROVED', label: 'Đã duyệt (APPROVED)' },
-  { value: 'INTERNING', label: 'Đang thực tập (INTERNING)' },
-  { value: 'COMPLETED', label: 'Đã hoàn thành (COMPLETED)' },
-  { value: 'REJECTED', label: 'Đã từ chối (REJECTED)' },
-  { value: 'CANCELLED', label: 'Đã hủy (CANCELLED)' },
+  { value: 'PENDING', label: 'Chờ duyệt' },
+  { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'INTERNING', label: 'Đang thực tập' },
+  { value: 'COMPLETED', label: 'Đã hoàn thành' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
+  { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
 const InternshipManagement = () => {
-  const { currentTerm } = useAcademicTerm();
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
+  const isActiveTerm = currentTerm?.status === 'ACTIVE';
   const [internships, setInternships] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -139,13 +141,10 @@ const InternshipManagement = () => {
             <h1 className="text-xl font-bold text-slate-900">
               Quản lý Thực tập Doanh nghiệp (TTDN)
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Xét duyệt hồ sơ đăng ký thực tập của sinh viên, cấu hình mốc thời gian mở cổng và phân công GVHD
-            </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5 justify-end">
           {/* Configure Timeline Window Button */}
           <button
             type="button"
@@ -162,11 +161,10 @@ const InternshipManagement = () => {
 
           <button
             onClick={() => fetchInternships()}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl transition cursor-pointer"
+            className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
             title="Làm mới danh sách"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Làm mới</span>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
           <button
@@ -192,12 +190,32 @@ const InternshipManagement = () => {
             />
           </div>
 
+          {/* Academic Term Selector */}
+          <div>
+            <select
+              value={currentTerm?._id || ''}
+              onChange={(e) => {
+                if (setCurrentTerm && e.target.value) {
+                  setCurrentTerm(e.target.value);
+                }
+              }}
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+            >
+              {Array.isArray(terms) &&
+                terms.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
+                  </option>
+                ))}
+            </select>
+          </div>
+
           {/* Status Filter */}
           <div>
             <select
               value={status}
               onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
             >
               {STATUS_FILTERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -208,6 +226,19 @@ const InternshipManagement = () => {
           </div>
         </div>
       </div>
+
+      {/* Non-active Term Notification Banner */}
+      {!isActiveTerm && (
+        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+          <div className="flex-1">
+            <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
+            <span className="ml-1 text-amber-800">
+              Học kỳ này không ở trạng thái đang diễn ra.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">

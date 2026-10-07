@@ -229,7 +229,7 @@ const getSupervisedInternships = async (req, res, next) => {
 // ====================
 const getSupervisionDocument = async (req, res, next) => {
   try {
-    const { lecturerId, companyId } = req.query;
+    const { lecturerId, companyId, academicTermId } = req.query;
 
     const documentData =
       await internshipService.getSupervisionConfirmationDocument({
@@ -237,6 +237,7 @@ const getSupervisionDocument = async (req, res, next) => {
         userRole: req.user.role,
         lecturerId: lecturerId || null,
         companyId: companyId || null,
+        academicTermId: academicTermId || null,
       });
 
     res.status(200).json({

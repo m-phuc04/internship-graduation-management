@@ -328,9 +328,7 @@ const RegisterThesisPage = () => {
                     <th className="py-3.5 px-4 text-center w-12">STT</th>
                     <th className="py-3.5 px-4">Tên đề tài KLTN</th>
                     <th className="py-3.5 px-4">Giáo viên hướng dẫn</th>
-                    <th className="py-3.5 px-4 text-center">Số lượng nhóm</th>
                     <th className="py-3.5 px-4">Mô tả / Yêu cầu</th>
-                    <th className="py-3.5 px-4">Trạng thái</th>
                     <th className="py-3.5 px-4 text-right">Thao tác</th>
                   </tr>
                 </thead>
@@ -364,28 +362,10 @@ const RegisterThesisPage = () => {
                           </div>
                         </td>
 
-                        <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">
-                            {currentCount} / {maxCount}
-                          </span>
-                        </td>
-
                         <td className="py-3.5 px-4 max-w-xs">
                           <p className="text-slate-600 line-clamp-2 text-xs">
                             {topic.description || <span className="text-slate-400 italic">Không có mô tả</span>}
                           </p>
-                        </td>
-
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {isFull ? (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-100 text-rose-800">
-                              Đã đủ nhóm
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
-                              Còn {maxCount - currentCount} chỗ
-                            </span>
-                          )}
                         </td>
 
                         <td className="py-3.5 px-4 whitespace-nowrap text-right">
@@ -483,7 +463,7 @@ const RegisterThesisPage = () => {
                 </div>
               </div>
               <div className="text-blue-800 text-[11px] font-semibold">
-                Chỉ tiêu: {selectedTopicForRegistration.currentGroups || selectedTopicForRegistration.registeredGroups?.length || 0} / {selectedTopicForRegistration.maxGroups} nhóm
+                Hình thức: Đăng ký theo nhóm (1 hoặc 2 SV)
               </div>
             </div>
 

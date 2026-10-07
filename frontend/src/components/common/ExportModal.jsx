@@ -142,11 +142,11 @@ const ExportModal = ({
               <option value="">Tất cả trạng thái</option>
               {type === 'INTERNSHIP' ? (
                 <>
-                  <option value="PENDING">Chờ duyệt (PENDING)</option>
-                  <option value="APPROVED">Đã duyệt (APPROVED)</option>
-                  <option value="INTERNING">Đang thực tập (INTERNING)</option>
-                  <option value="COMPLETED">Hoàn thành (COMPLETED)</option>
-                  <option value="REJECTED">Bị từ chối (REJECTED)</option>
+                  <option value="PENDING">Chờ duyệt</option>
+                  <option value="APPROVED">Đã duyệt</option>
+                  <option value="INTERNING">Đang thực tập</option>
+                  <option value="COMPLETED">Hoàn thành</option>
+                  <option value="REJECTED">Bị từ chối</option>
                 </>
               ) : (
                 <>
@@ -155,7 +155,7 @@ const ExportModal = ({
                   <option value="ASSIGNED_REVIEWERS">Đã phân công PB</option>
                   <option value="IN_PROGRESS">Đang thực hiện</option>
                   <option value="GRADED">Đã có điểm</option>
-                  <option value="COMPLETED">Hoàn tất (COMPLETED)</option>
+                  <option value="COMPLETED">Hoàn tất</option>
                   <option value="REJECTED">Bị từ chối</option>
                 </>
               )}

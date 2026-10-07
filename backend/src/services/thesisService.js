@@ -2791,14 +2791,13 @@ const batchCreateTopicsByLecturer = async ({
       const title = (typeof item === "string" ? item : item.title || "").trim();
       if (!title) continue;
 
-      const maxGroups = Math.max(1, Number(item.maxGroups || defaultMaxGroups || 1));
       const desc = (typeof item === "object" ? item.description : "") || defaultDescription || null;
 
       topicDocs.push({
         title,
         supervisorId: lecturer._id,
         academicTermId: termId,
-        maxGroups,
+        maxGroups: 1,
         currentGroups: 0,
         description: desc,
         status: "PENDING",
@@ -2821,7 +2820,7 @@ const batchCreateTopicsByLecturer = async ({
         title,
         supervisorId: lecturer._id,
         academicTermId: termId,
-        maxGroups: Math.max(1, Number(defaultMaxGroups || 1)),
+        maxGroups: 1,
         currentGroups: 0,
         description: defaultDescription || null,
         status: "PENDING",
@@ -3047,6 +3046,546 @@ const rejectTopicByTbm = async (topicId, tbmUserId, reason = "") => {
   }
 
   return topic;
+};
+
+/**
+ * Cập nhật thông tin đề tài trực tiếp (TBM hoặc ADMIN)
+ */
+const updateTopic = async (topicId, userId, updateData = {}) => {
+  const topic = await ThesisTopic.findById(topicId);
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  if (updateData.title && updateData.title.trim()) {
+    topic.title = updateData.title.trim();
+  }
+  if (updateData.description !== undefined) {
+    topic.description = updateData.description ? updateData.description.trim() : null;
+  }
+  if (updateData.status && ["PENDING", "APPROVED", "REJECTED"].includes(updateData.status)) {
+    topic.status = updateData.status;
+  }
+
+  await topic.save();
+
+  // Đồng bộ tiêu đề sang Thesis nếu đã có nhóm sinh viên đăng ký
+  if (updateData.title && topic.registeredGroups && topic.registeredGroups.length > 0) {
+    const thesisIds = topic.registeredGroups.map((g) => g.thesisId).filter(Boolean);
+    if (thesisIds.length > 0) {
+      await Thesis.updateMany({ _id: { $in: thesisIds } }, { thesisTitle: topic.title });
+    }
+  }
+
+  return topic;
+};
+
+/**
+ * Giảng viên gửi yêu cầu chỉnh sửa đề tài đến TBM
+ */
+const requestEditTopicByLecturer = async (topicId, userId, { title, description }) => {
+  if (!title || !title.trim()) {
+    throw new AppError("Tên đề tài không được để trống", 400);
+  }
+
+  const lecturer = await Lecturer.findOne({ userId }).populate("userId");
+  const topic = await ThesisTopic.findById(topicId);
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  // Check ownership (if lecturer role)
+  if (lecturer && topic.supervisorId?.toString() !== lecturer._id.toString()) {
+    throw new AppError("Bạn không có quyền chỉnh sửa đề tài này", 403);
+  }
+
+  topic.editRequest = {
+    newTitle: title.trim(),
+    newDescription: description !== undefined ? (description ? description.trim() : null) : topic.description,
+    requestedAt: new Date(),
+    status: "PENDING",
+    rejectReason: null,
+    reviewedAt: null,
+    reviewedBy: null,
+  };
+
+  await topic.save();
+
+  // Gửi thông báo đến tất cả TBM
+  try {
+    const tbms = await User.find({ role: "TBM", isActive: true });
+    const lecName = lecturer?.userId?.fullName || lecturer?.lecturerCode || "Giảng viên";
+    for (const tbm of tbms) {
+      await notificationService.createNotification({
+        recipientId: tbm._id,
+        senderId: userId || null,
+        type: "THESIS",
+        title: "Yêu cầu chỉnh sửa đề tài KLTN",
+        message: `Giảng viên ${lecName} đã gửi yêu cầu chỉnh sửa đề tài "${topic.title}". Vui lòng xem xét và duyệt.`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/tbm/theses?tab=proposed",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on topic edit request:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * Giảng viên gửi yêu cầu xóa đề tài đến TBM
+ */
+const requestDeleteTopicByLecturer = async (topicId, userId, { reason = "" } = {}) => {
+  const lecturer = await Lecturer.findOne({ userId }).populate("userId");
+  const topic = await ThesisTopic.findById(topicId);
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  if (lecturer && topic.supervisorId?.toString() !== lecturer._id.toString()) {
+    throw new AppError("Bạn không có quyền xóa đề tài này", 403);
+  }
+
+  topic.deleteRequest = {
+    reason: reason?.trim() || "Giảng viên yêu cầu xóa đề tài",
+    requestedAt: new Date(),
+    status: "PENDING",
+    rejectReason: null,
+    reviewedAt: null,
+    reviewedBy: null,
+  };
+
+  await topic.save();
+
+  // Gửi thông báo đến tất cả TBM
+  try {
+    const tbms = await User.find({ role: "TBM", isActive: true });
+    const lecName = lecturer?.userId?.fullName || lecturer?.lecturerCode || "Giảng viên";
+    for (const tbm of tbms) {
+      await notificationService.createNotification({
+        recipientId: tbm._id,
+        senderId: userId || null,
+        type: "THESIS",
+        title: "Yêu cầu xóa đề tài KLTN",
+        message: `Giảng viên ${lecName} đã gửi yêu cầu xóa đề tài "${topic.title}". Vui lòng xem xét và duyệt.`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/tbm/theses?tab=proposed",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on topic delete request:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * TBM phê duyệt yêu cầu chỉnh sửa đề tài
+ */
+const approveEditTopicByTbm = async (topicId, tbmUserId) => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  if (!topic.editRequest || topic.editRequest.status !== "PENDING") {
+    throw new AppError("Đề tài không có yêu cầu chỉnh sửa đang chờ duyệt", 400);
+  }
+
+  const oldTitle = topic.title;
+  const newTitle = topic.editRequest.newTitle;
+  const newDesc = topic.editRequest.newDescription;
+
+  topic.title = newTitle;
+  if (newDesc !== undefined) {
+    topic.description = newDesc;
+  }
+
+  topic.editRequest.status = "APPROVED";
+  topic.editRequest.reviewedAt = new Date();
+  topic.editRequest.reviewedBy = tbmUserId || null;
+
+  await topic.save();
+
+  // Đồng bộ tiêu đề sang Thesis nếu đã có nhóm sinh viên đăng ký và thông báo cho sinh viên
+  if (topic.registeredGroups && topic.registeredGroups.length > 0) {
+    const thesisIds = topic.registeredGroups.map((g) => g.thesisId).filter(Boolean);
+    if (thesisIds.length > 0) {
+      await Thesis.updateMany({ _id: { $in: thesisIds } }, { thesisTitle: topic.title });
+
+      try {
+        const theses = await Thesis.find({ _id: { $in: thesisIds } })
+          .populate({ path: "studentId", populate: { path: "userId" } })
+          .populate({ path: "secondStudentId", populate: { path: "userId" } });
+
+        for (const th of theses) {
+          const s1UserId = th.studentId?.userId?._id || th.studentId?.userId;
+          if (s1UserId) {
+            await notificationService.createNotification({
+              recipientId: s1UserId,
+              senderId: tbmUserId || null,
+              type: "THESIS",
+              title: "Đề tài khóa luận đã được cập nhật",
+              message: `Đề tài khóa luận "${oldTitle}" của bạn đã được đổi tên thành "${newTitle}".`,
+              referenceId: th._id,
+              referenceModel: "Thesis",
+              link: "/student/thesis",
+            });
+          }
+          const s2UserId = th.secondStudentId?.userId?._id || th.secondStudentId?.userId;
+          if (s2UserId) {
+            await notificationService.createNotification({
+              recipientId: s2UserId,
+              senderId: tbmUserId || null,
+              type: "THESIS",
+              title: "Đề tài khóa luận đã được cập nhật",
+              message: `Đề tài khóa luận "${oldTitle}" của bạn đã được đổi tên thành "${newTitle}".`,
+              referenceId: th._id,
+              referenceModel: "Thesis",
+              link: "/student/thesis",
+            });
+          }
+        }
+      } catch (stErr) {
+        console.warn("Notification error to students on topic edit:", stErr.message);
+      }
+    }
+  }
+
+  // Gửi thông báo đến GVHD
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: tbmUserId || null,
+        type: "THESIS",
+        title: "Yêu cầu chỉnh sửa đề tài đã được duyệt",
+        message: `Yêu cầu đổi tên đề tài từ "${oldTitle}" thành "${newTitle}" của bạn đã được Trưởng Bộ Môn phê duyệt.`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on approve topic edit:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * TBM từ chối yêu cầu chỉnh sửa đề tài
+ */
+const rejectEditTopicByTbm = async (topicId, tbmUserId, reason = "") => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  if (!topic.editRequest || topic.editRequest.status !== "PENDING") {
+    throw new AppError("Đề tài không có yêu cầu chỉnh sửa đang chờ duyệt", 400);
+  }
+
+  topic.editRequest.status = "REJECTED";
+  topic.editRequest.rejectReason = reason?.trim() || "Chưa đạt yêu cầu";
+  topic.editRequest.reviewedAt = new Date();
+  topic.editRequest.reviewedBy = tbmUserId || null;
+
+  await topic.save();
+
+  // Gửi thông báo đến GVHD
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: tbmUserId || null,
+        type: "THESIS",
+        title: "Yêu cầu chỉnh sửa đề tài bị từ chối",
+        message: `Yêu cầu chỉnh sửa đề tài "${topic.title}" của bạn đã bị từ chối: ${topic.editRequest.rejectReason}`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on reject topic edit:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * TBM phê duyệt yêu cầu xóa đề tài
+ */
+const approveDeleteTopicByTbm = async (topicId, tbmUserId) => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  if (!topic.deleteRequest || topic.deleteRequest.status !== "PENDING") {
+    throw new AppError("Đề tài không có yêu cầu xóa đang chờ duyệt", 400);
+  }
+
+  const topicTitle = topic.title;
+
+  // Gửi thông báo đến GVHD trước khi xóa
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: tbmUserId || null,
+        type: "THESIS",
+        title: "Yêu cầu xóa đề tài đã được duyệt",
+        message: `Yêu cầu xóa đề tài "${topicTitle}" của bạn đã được Trưởng Bộ Môn phê duyệt. Đề tài đã được xóa khỏi hệ thống.`,
+        referenceId: null,
+        referenceModel: null,
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on approve topic delete:", err.message);
+  }
+
+  // Xóa các Thesis tạo từ topic này (nếu có), giải phóng trạng thái đăng ký của sinh viên và gửi thông báo
+  if (topic.registeredGroups && topic.registeredGroups.length > 0) {
+    const thesisIds = topic.registeredGroups.map((g) => g.thesisId).filter(Boolean);
+    if (thesisIds.length > 0) {
+      try {
+        const theses = await Thesis.find({ _id: { $in: thesisIds } })
+          .populate({ path: "studentId", populate: { path: "userId" } })
+          .populate({ path: "secondStudentId", populate: { path: "userId" } });
+
+        for (const th of theses) {
+          // Reset trạng thái đăng ký của SV1
+          if (th.studentId?._id) {
+            await Student.findByIdAndUpdate(th.studentId._id, { thesisRegistered: false });
+          }
+          const s1UserId = th.studentId?.userId?._id || th.studentId?.userId;
+          if (s1UserId) {
+            await notificationService.createNotification({
+              recipientId: s1UserId,
+              senderId: tbmUserId || null,
+              type: "THESIS",
+              title: "Đề tài khóa luận đã bị xóa",
+              message: `Đề tài "${topicTitle}" mà bạn đã đăng ký đã được xóa bởi Trưởng Bộ Môn. Vui lòng chọn và đăng ký đề tài khác.`,
+              referenceId: null,
+              referenceModel: null,
+              link: "/student/thesis/register",
+            });
+          }
+
+          // Reset trạng thái đăng ký của SV2 (nếu có)
+          if (th.secondStudentId?._id) {
+            await Student.findByIdAndUpdate(th.secondStudentId._id, { thesisRegistered: false });
+          }
+          const s2UserId = th.secondStudentId?.userId?._id || th.secondStudentId?.userId;
+          if (s2UserId) {
+            await notificationService.createNotification({
+              recipientId: s2UserId,
+              senderId: tbmUserId || null,
+              type: "THESIS",
+              title: "Đề tài khóa luận đã bị xóa",
+              message: `Đề tài "${topicTitle}" mà bạn đã đăng ký đã được xóa bởi Trưởng Bộ Môn. Vui lòng chọn và đăng ký đề tài khác.`,
+              referenceId: null,
+              referenceModel: null,
+              link: "/student/thesis/register",
+            });
+          }
+
+          await Thesis.findByIdAndDelete(th._id);
+        }
+      } catch (stErr) {
+        console.warn("Error handling students on topic delete approval:", stErr.message);
+      }
+    }
+  }
+
+  await ThesisTopic.findByIdAndDelete(topicId);
+
+  return { success: true, message: `Đã phê duyệt xóa đề tài "${topicTitle}" thành công` };
+};
+
+/**
+ * TBM từ chối yêu cầu xóa đề tài
+ */
+const rejectDeleteTopicByTbm = async (topicId, tbmUserId, reason = "") => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  if (!topic.deleteRequest || topic.deleteRequest.status !== "PENDING") {
+    throw new AppError("Đề tài không có yêu cầu xóa đang chờ duyệt", 400);
+  }
+
+  topic.deleteRequest.status = "REJECTED";
+  topic.deleteRequest.rejectReason = reason?.trim() || "Không đồng ý xóa đề tài";
+  topic.deleteRequest.reviewedAt = new Date();
+  topic.deleteRequest.reviewedBy = tbmUserId || null;
+
+  await topic.save();
+
+  // Gửi thông báo đến GVHD
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: tbmUserId || null,
+        type: "THESIS",
+        title: "Yêu cầu xóa đề tài bị từ chối",
+        message: `Yêu cầu xóa đề tài "${topic.title}" của bạn đã bị từ chối: ${topic.deleteRequest.rejectReason}`,
+        referenceId: topic._id,
+        referenceModel: "ThesisTopic",
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on reject topic delete:", err.message);
+  }
+
+  return topic;
+};
+
+/**
+ * Xóa đề tài trực tiếp (TBM hoặc GVHD) - Tự động gửi thông báo cho GVHD và SV
+ */
+const deleteTopic = async (topicId, userId) => {
+  const topic = await ThesisTopic.findById(topicId).populate({
+    path: "supervisorId",
+    populate: { path: "userId", select: "fullName email" },
+  });
+
+  if (!topic) {
+    throw new AppError("Không tìm thấy đề tài yêu cầu", 404);
+  }
+
+  const topicTitle = topic.title;
+
+  // Gửi thông báo cho Giảng viên hướng dẫn của đề tài
+  try {
+    let recipientUserId = topic.supervisorId?.userId?._id || topic.supervisorId?.userId;
+    if (!recipientUserId && topic.supervisorId) {
+      const lec = await Lecturer.findById(topic.supervisorId).select("userId");
+      recipientUserId = lec?.userId;
+    }
+
+    if (recipientUserId) {
+      await notificationService.createNotification({
+        recipientId: recipientUserId,
+        senderId: userId || null,
+        type: "THESIS",
+        title: "Đề tài KLTN đã bị xóa",
+        message: `Đề tài "${topicTitle}" của bạn đã bị xóa khỏi hệ thống.`,
+        referenceId: null,
+        referenceModel: null,
+        link: "/lecturer/theses?tab=topics",
+      });
+    }
+  } catch (err) {
+    console.warn("Notification error on topic deletion:", err.message);
+  }
+
+  // Xóa các Thesis tạo từ topic này (nếu có), giải phóng sinh viên và gửi thông báo
+  if (topic.registeredGroups && topic.registeredGroups.length > 0) {
+    const thesisIds = topic.registeredGroups.map((g) => g.thesisId).filter(Boolean);
+    if (thesisIds.length > 0) {
+      try {
+        const theses = await Thesis.find({ _id: { $in: thesisIds } })
+          .populate({ path: "studentId", populate: { path: "userId" } })
+          .populate({ path: "secondStudentId", populate: { path: "userId" } });
+
+        for (const th of theses) {
+          if (th.studentId?._id) {
+            await Student.findByIdAndUpdate(th.studentId._id, { thesisRegistered: false });
+          }
+          const s1UserId = th.studentId?.userId?._id || th.studentId?.userId;
+          if (s1UserId) {
+            await notificationService.createNotification({
+              recipientId: s1UserId,
+              senderId: userId || null,
+              type: "THESIS",
+              title: "Đề tài khóa luận đã bị xóa",
+              message: `Đề tài "${topicTitle}" mà bạn đã đăng ký đã bị xóa. Vui lòng chọn và đăng ký đề tài khác.`,
+              referenceId: null,
+              referenceModel: null,
+              link: "/student/thesis/register",
+            });
+          }
+
+          if (th.secondStudentId?._id) {
+            await Student.findByIdAndUpdate(th.secondStudentId._id, { thesisRegistered: false });
+          }
+          const s2UserId = th.secondStudentId?.userId?._id || th.secondStudentId?.userId;
+          if (s2UserId) {
+            await notificationService.createNotification({
+              recipientId: s2UserId,
+              senderId: userId || null,
+              type: "THESIS",
+              title: "Đề tài khóa luận đã bị xóa",
+              message: `Đề tài "${topicTitle}" mà bạn đã đăng ký đã bị xóa. Vui lòng chọn và đăng ký đề tài khác.`,
+              referenceId: null,
+              referenceModel: null,
+              link: "/student/thesis/register",
+            });
+          }
+
+          await Thesis.findByIdAndDelete(th._id);
+        }
+      } catch (stErr) {
+        console.warn("Error handling students on direct topic delete:", stErr.message);
+      }
+    }
+  }
+
+  await ThesisTopic.findByIdAndDelete(topicId);
+
+  return { success: true, message: `Đề tài "${topicTitle}" đã bị xóa thành công` };
 };
 
 /**
@@ -3421,7 +3960,7 @@ const registerTopicByStudent = async ({
           recipientId: supervisor.userId._id,
           type: "THESIS",
           title: "Sinh viên đăng ký đề tài KLTN - Cần duyệt",
-          message: `Sinh viên ${sv1Name} (${sv1Code}) vừa đăng ký đề tài "${updatedTopic.title}" (Nhóm ${groupOrder}/${updatedTopic.maxGroups}). Vui lòng vào duyệt đề tài.`,
+          message: `Sinh viên ${sv1Name} (${sv1Code}) vừa đăng ký đề tài "${updatedTopic.title}". Vui lòng vào duyệt đề tài.`,
           referenceId: thesis._id,
           referenceModel: "Thesis",
           link: "/lecturer/theses",
@@ -4635,6 +5174,14 @@ export default {
   getTopicsForTbm,
   approveTopicByTbm,
   rejectTopicByTbm,
+  updateTopic,
+  deleteTopic,
+  requestEditTopicByLecturer,
+  requestDeleteTopicByLecturer,
+  approveEditTopicByTbm,
+  rejectEditTopicByTbm,
+  approveDeleteTopicByTbm,
+  rejectDeleteTopicByTbm,
   getApprovedTopicsForStudent,
   registerTopicByStudent,
 };

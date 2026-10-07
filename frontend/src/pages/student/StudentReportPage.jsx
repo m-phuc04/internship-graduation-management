@@ -214,9 +214,6 @@ const StudentReportPage = () => {
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
             Nhật Ký Thực Tập
           </h1>
-          <p className="text-xs text-slate-500">
-            Quản lý và ghi nhật ký công việc thực tập theo từng tuần, tự động đồng bộ và nộp cho Giảng viên hướng dẫn
-          </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
@@ -233,9 +230,9 @@ const StudentReportPage = () => {
             <button
               type="button"
               onClick={() => setExportModalOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-sm transition cursor-pointer"
             >
-              <Printer className="w-4 h-4 text-blue-400" />
+              <Printer className="w-4 h-4 text-blue-200" />
               <span>Xuất nhật ký</span>
             </button>
           )}
@@ -244,7 +241,7 @@ const StudentReportPage = () => {
 
       {/* Internship Overview Summary Card */}
       {internship && (
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#0d2a75] to-slate-950 text-white shadow-md border border-blue-800/40 space-y-4">
+        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#123891] to-[#102d7d] text-white shadow-md border border-blue-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-blue-800/60">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-blue-300 font-bold">
@@ -353,7 +350,7 @@ const StudentReportPage = () => {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between gap-2 flex-wrap">
                       <div className="flex items-center gap-2">
-                        <span className="font-black text-xs px-2.5 py-1 rounded-xl bg-slate-900 text-white font-mono shadow-2xs">
+                        <span className="font-black text-xs px-2.5 py-1 rounded-xl bg-[#123891] text-white font-mono shadow-2xs">
                           TUẦN {week.weekNumber}
                         </span>
                         <div className="text-xs font-semibold text-slate-700 flex items-center gap-1 font-mono">

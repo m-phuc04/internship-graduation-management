@@ -736,10 +736,10 @@ const TbmThesisEvaluationManagement = () => {
                   fetchGradingPeriods();
                 }
               }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition cursor-pointer"
+              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+              title="Làm mới dữ liệu"
             >
-              <RefreshCw className="w-3.5 h-3.5" />
-              <span>Làm mới</span>
+              <RefreshCw className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -751,7 +751,7 @@ const TbmThesisEvaluationManagement = () => {
             onClick={() => setMainTab('EVALUATIONS')}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
               mainTab === 'EVALUATIONS'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
@@ -764,7 +764,7 @@ const TbmThesisEvaluationManagement = () => {
             onClick={() => setMainTab('CRITERIA')}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
               mainTab === 'CRITERIA'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
@@ -777,7 +777,7 @@ const TbmThesisEvaluationManagement = () => {
             onClick={() => setMainTab('GRADING_PERIODS')}
             className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition cursor-pointer ${
               mainTab === 'GRADING_PERIODS'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-500/20'
+                ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
@@ -791,28 +791,28 @@ const TbmThesisEvaluationManagement = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-5 border-t border-slate-100">
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
               <div className="text-[11px] text-slate-500 font-medium">Đủ điều kiện hội đồng</div>
-              <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">
+              <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.totalEligible}
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/80">
               <div className="text-[11px] text-amber-700 font-medium">Chờ chấm điểm</div>
-              <div className="text-lg font-bold text-amber-700 font-mono mt-0.5">
+              <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.pendingGradeCount}
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-emerald-50/80 border border-emerald-200/80">
               <div className="text-[11px] text-emerald-700 font-medium">Đã có điểm tổng kết</div>
-              <div className="text-lg font-bold text-emerald-700 font-mono mt-0.5">
+              <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.gradedCount}
               </div>
             </div>
 
             <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80">
-              <div className="text-[11px] text-[#102d7d] font-medium">Đã hoàn tất bảo vệ</div>
-              <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">
+              <div className="text-[11px] text-[#123891] font-medium">Đã hoàn tất bảo vệ</div>
+              <div className="text-lg font-bold text-[#123891] font-mono mt-0.5">
                 {computedStats.completedCount}
               </div>
             </div>
@@ -835,7 +835,7 @@ const TbmThesisEvaluationManagement = () => {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
               <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
                 {STATUS_OPTIONS.map((opt) => (
                   <button
@@ -1256,7 +1256,7 @@ const TbmThesisEvaluationManagement = () => {
                 title="Quét và đánh dấu FAIL cho sinh viên quá hạn"
               >
                 <ShieldAlert className="w-4 h-4 text-rose-600" />
-                <span>Xử lý sinh viên quá hạn (FAIL)</span>
+                <span>Xử lý sinh viên quá hạn</span>
               </button>
 
               <button
@@ -1651,9 +1651,9 @@ const TbmThesisEvaluationManagement = () => {
         isOpen={processFailDialogOpen}
         onClose={() => setProcessFailDialogOpen(false)}
         onConfirm={handleProcessExpiredTheses}
-        title="Xử lý sinh viên quá hạn đánh giá KLTN (FAIL)"
-        message="Hệ thống sẽ quét các đợt nhập điểm đã hết hạn trong học kỳ này và tự động chuyển trạng thái REJECTED (FAIL KLTN) cho tất cả các đề tài chưa đạt tiêu chí hoặc chưa có điểm GVHD. Các đề tài này sẽ bị dừng quy trình và không được phân công GV phản biện. Bạn có chắc chắn muốn thực hiện?"
-        confirmText="Xác nhận đánh dấu FAIL"
+        title="Xử lý sinh viên quá hạn đánh giá KLTN"
+        message="Hệ thống sẽ quét các đợt nhập điểm đã hết hạn trong học kỳ này và tự động chuyển trạng thái không đạt cho tất cả các đề tài chưa đạt tiêu chí hoặc chưa có điểm GVHD. Các đề tài này sẽ bị dừng quy trình và không được phân công GV phản biện. Bạn có chắc chắn muốn thực hiện?"
+        confirmText="Xác nhận đánh dấu không đạt"
         cancelText="Hủy bỏ"
         type="danger"
         loading={processingFail}
@@ -1667,8 +1667,8 @@ const TbmThesisEvaluationManagement = () => {
         onClose={() => setCompleteDialogOpen(false)}
         onConfirm={handleConfirmComplete}
         title="Xác nhận Nghiệm thu & Hoàn tất Đánh giá KLTN"
-        message={`Bạn có chắc chắn muốn nghiệm thu đề tài "${thesisToComplete?.thesisTitle}"? Đề tài sẽ chuyển sang trạng thái COMPLETED và khóa vĩnh viễn không thể chỉnh sửa điểm.`}
-        confirmText="Xác nhận nghiệm thu (COMPLETED)"
+        message={`Bạn có chắc chắn muốn nghiệm thu đề tài "${thesisToComplete?.thesisTitle}"? Đề tài sẽ chuyển sang trạng thái đã hoàn thành và khóa vĩnh viễn không thể chỉnh sửa điểm.`}
+        confirmText="Xác nhận nghiệm thu"
         cancelText="Hủy"
         type="primary"
         loading={actionLoading}

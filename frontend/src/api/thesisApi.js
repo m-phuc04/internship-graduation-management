@@ -160,6 +160,30 @@ export const thesisApi = {
   // TBM: Reject a topic
   rejectTopic: (id, data) => axiosClient.patch(`/theses/topics/${id}/reject`, data),
 
+  // TBM / GV: Update a topic
+  updateTopic: (id, data) => axiosClient.put(`/theses/topics/${id}`, data),
+
+  // TBM / GV: Delete a topic
+  deleteTopic: (id) => axiosClient.delete(`/theses/topics/${id}`),
+
+  // GV: Request Edit Topic
+  requestEditTopic: (id, data) => axiosClient.post(`/theses/topics/${id}/request-edit`, data),
+
+  // GV: Request Delete Topic
+  requestDeleteTopic: (id, data) => axiosClient.post(`/theses/topics/${id}/request-delete`, data),
+
+  // TBM: Approve Edit Topic
+  approveEditTopic: (id) => axiosClient.patch(`/theses/topics/${id}/approve-edit`),
+
+  // TBM: Reject Edit Topic
+  rejectEditTopic: (id, data) => axiosClient.patch(`/theses/topics/${id}/reject-edit`, data),
+
+  // TBM: Approve Delete Topic
+  approveDeleteTopic: (id) => axiosClient.patch(`/theses/topics/${id}/approve-delete`),
+
+  // TBM: Reject Delete Topic
+  rejectDeleteTopic: (id, data) => axiosClient.patch(`/theses/topics/${id}/reject-delete`, data),
+
   // SV: Get approved KLTN topics
   getApprovedTopics: (params) => axiosClient.get('/theses/topics/approved', { params }),
 

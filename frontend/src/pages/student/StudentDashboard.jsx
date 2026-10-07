@@ -274,7 +274,6 @@ const StudentDashboard = () => {
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-sm font-bold text-slate-900 truncate">Thực tập Doanh nghiệp (TTDN)</h2>
-                  <p className="text-[11px] text-slate-400 font-medium truncate hidden sm:block">Hồ sơ và quá trình thực tập tại doanh nghiệp</p>
                 </div>
               </div>
               <div className="shrink-0">
@@ -411,7 +410,6 @@ const StudentDashboard = () => {
                 </div>
                 <div className="min-w-0">
                   <h2 className="text-sm font-bold text-slate-900 truncate">Khóa luận Tốt nghiệp (KLTN)</h2>
-                  <p className="text-[11px] text-slate-400 font-medium truncate hidden sm:block">Đề tài nghiên cứu và đánh giá hội đồng</p>
                 </div>
               </div>
               <div className="shrink-0">

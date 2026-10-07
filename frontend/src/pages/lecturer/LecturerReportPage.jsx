@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import reportApi from '../../api/reportApi';
+import internshipApi from '../../api/internshipApi';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import SearchInput from '../../components/common/SearchInput';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -21,10 +23,10 @@ import {
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Chờ chấm (SUBMITTED)' },
-  { value: 'APPROVED', label: 'Đã duyệt (APPROVED)' },
-  { value: 'REJECTED', label: 'Yêu cầu sửa (REJECTED)' },
-  { value: 'REVIEWING', label: 'Đang xem xét (REVIEWING)' },
+  { value: 'SUBMITTED', label: 'Chờ chấm' },
+  { value: 'APPROVED', label: 'Đã duyệt' },
+  { value: 'REJECTED', label: 'Yêu cầu sửa' },
+  { value: 'REVIEWING', label: 'Đang xem xét' },
 ];
 
 const TYPE_OPTIONS = [
@@ -35,6 +37,8 @@ const TYPE_OPTIONS = [
 ];
 
 const LecturerReportPage = () => {
+  const { user } = useAuth();
+  const [lecturerInfo, setLecturerInfo] = useState(null);
   const [reports, setReports] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -50,6 +54,20 @@ const LecturerReportPage = () => {
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const fetchLecturerProfile = async () => {
+      try {
+        const res = await internshipApi.getSupervised({ limit: 1 });
+        if (res.success && res.lecturer) {
+          setLecturerInfo(res.lecturer);
+        }
+      } catch (err) {
+        // Fallback silently to auth context user
+      }
+    };
+    fetchLecturerProfile();
+  }, []);
 
   const fetchReports = useCallback(async () => {
     setLoading(true);
@@ -95,21 +113,36 @@ const LecturerReportPage = () => {
     <div className="space-y-6">
       {/* Header Banner */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-[#123891] font-semibold text-xs tracking-wider uppercase">
-            <BookOpen className="w-4 h-4" /> Đánh Giá & Chấm Điểm
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
+            <BookOpen className="w-7 h-7" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 mt-1">
-            Nhật Ký Thực Tập Sinh Viên Hướng Dẫn
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Xem xét tiến độ, chấm điểm và phản hồi nhật ký thực tập hàng tuần của sinh viên được phân công
-          </p>
+          <div>
+            <h1 className="text-xl font-bold text-slate-900 leading-tight">
+              Nhật Ký Thực Tập Sinh Viên Hướng Dẫn
+            </h1>
+            <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
+              <span>
+                Giảng viên:{' '}
+                <strong className="text-slate-800">
+                  {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
+                  {lecturerInfo?.userId?.fullName || user?.fullName}
+                </strong>
+              </span>
+              <span>•</span>
+              <span>
+                Mã GV:{' '}
+                <strong className="font-mono text-[#102d7d]">
+                  {lecturerInfo?.lecturerCode || user?.username}
+                </strong>
+              </span>
+            </div>
+          </div>
         </div>
 
         <button
           onClick={fetchReports}
-          className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition self-start sm:self-center"
+          className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer self-start sm:self-center"
           title="Làm mới danh sách"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
