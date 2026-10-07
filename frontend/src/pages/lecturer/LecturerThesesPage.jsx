@@ -2091,25 +2091,29 @@ const LecturerThesesPage = () => {
                                 <Eye className="w-4 h-4" />
                               </button>
 
-                              <button
-                                type="button"
-                                onClick={() => handleOpenEditTopic(topic)}
-                                disabled={isPendingEdit || isPendingDelete}
-                                className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                title={isPendingEdit ? 'Đang chờ TBM duyệt yêu cầu sửa' : 'Chỉnh sửa đề tài'}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
+                              {isActiveTerm && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditTopic(topic)}
+                                    disabled={isPendingEdit || isPendingDelete}
+                                    className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title={isPendingEdit ? 'Đang chờ TBM duyệt yêu cầu sửa' : 'Chỉnh sửa đề tài'}
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
 
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDeleteTopic(topic)}
-                                disabled={isPendingDelete || isPendingEdit}
-                                className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                title={isPendingDelete ? 'Đang chờ TBM duyệt yêu cầu xóa' : 'Xóa đề tài'}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDeleteTopic(topic)}
+                                    disabled={isPendingDelete || isPendingEdit}
+                                    className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title={isPendingDelete ? 'Đang chờ TBM duyệt yêu cầu xóa' : 'Xóa đề tài'}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </td>
                         </tr>
