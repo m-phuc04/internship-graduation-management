@@ -14,6 +14,8 @@ import EmptyState from '../../components/common/EmptyState';
 import UserNameClickable from '../../components/common/UserNameClickable';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 
+import getFileUrl from '../../utils/fileUrlHelper';
+
 import {
   Award,
   BookOpen,
@@ -40,6 +42,8 @@ import {
   ExternalLink,
   Ban,
   Trash2,
+  Download,
+  Paperclip,
 } from 'lucide-react';
 
 const LecturerThesesPage = () => {
@@ -136,6 +140,63 @@ const LecturerThesesPage = () => {
   const [targetThesis, setTargetThesis] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Student Diary / Progress Modal State
+  const [progressModalOpen, setProgressModalOpen] = useState(false);
+  const [progressData, setProgressData] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(false);
+  const [progressTargetThesis, setProgressTargetThesis] = useState(null);
+
+  const formatFileSize = (bytes) => {
+    if (!bytes || isNaN(bytes)) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  };
+
+  const isThesisGraded = (thesis) => {
+    if (!thesis) return false;
+    const sc = thesis.scores;
+    if (!sc) return false;
+    const hasVal = (v) => v !== null && v !== undefined && v !== '';
+    return Boolean(
+      hasVal(sc.student1SupervisorScore) ||
+      hasVal(sc.student2SupervisorScore) ||
+      hasVal(sc.supervisorScore) ||
+      hasVal(sc.student1Reviewer1Score) ||
+      hasVal(sc.student2Reviewer1Score) ||
+      hasVal(sc.reviewer1Score) ||
+      hasVal(sc.student1Reviewer2Score) ||
+      hasVal(sc.student2Reviewer2Score) ||
+      hasVal(sc.reviewer2Score) ||
+      hasVal(sc.finalScore) ||
+      hasVal(sc.student1FinalScore) ||
+      hasVal(sc.student2FinalScore) ||
+      (Array.isArray(sc.councilLecturerScores) &&
+        sc.councilLecturerScores.some(
+          (c) => hasVal(c.score) || hasVal(c.student1Score) || hasVal(c.student2Score)
+        ))
+    );
+  };
+
+  const handleOpenProgressModal = async (thesis) => {
+    if (!thesis?._id) return;
+    setProgressTargetThesis(thesis);
+    setProgressModalOpen(true);
+    setLoadingProgress(true);
+    setProgressData(null);
+    try {
+      const res = await thesisProgressApi.getByThesisId(thesis._id);
+      if (res.success) {
+        setProgressData(res.data);
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể tải nhật ký tiến độ khóa luận', 'error');
+    } finally {
+      setLoadingProgress(false);
+    }
+  };
 
   // Dedicated Grade Box Modal State
   const [gradeBoxOpen, setGradeBoxOpen] = useState(false);
@@ -1136,6 +1197,10 @@ const LecturerThesesPage = () => {
   };
 
   const handleOpenCancel = (thesis) => {
+    if (isThesisGraded(thesis)) {
+      showToast('Không thể hủy đề tài do đề tài đã có điểm đánh giá', 'warning');
+      return;
+    }
     setCancelThesisTarget(thesis);
     setCancelThesisReason('');
     setCancelModalOpen(true);
@@ -1143,11 +1208,15 @@ const LecturerThesesPage = () => {
 
   const handleConfirmCancel = async (e) => {
     if (e) e.preventDefault();
+    if (!cancelThesisTarget) return;
+    if (isThesisGraded(cancelThesisTarget)) {
+      showToast('Không thể hủy đề tài do đề tài đã có điểm đánh giá', 'warning');
+      return;
+    }
     if (!cancelThesisReason || !cancelThesisReason.trim()) {
       showToast('Vui lòng nhập lý do hủy đề tài', 'warning');
       return;
     }
-    if (!cancelThesisTarget) return;
 
     setActionLoading(true);
     try {
@@ -3067,25 +3136,24 @@ const LecturerThesesPage = () => {
 
                             {/* Hủy đề tài (GVHD) */}
                             {activeTab === 'SUPERVISOR' && item.status !== 'REJECTED' && item.status !== 'COMPLETED' && !isPendingApproval && (() => {
-                              const s1 = item.scores?.student1SupervisorScore ?? item.scores?.supervisorScore;
-                              const isSupervisorGraded = s1 !== null && s1 !== undefined && s1 !== '';
+                              const isGraded = isThesisGraded(item);
 
                               return (
                                 <button
                                   type="button"
-                                  disabled={isSupervisorGraded}
+                                  disabled={isGraded}
                                   onClick={() => {
-                                    if (isSupervisorGraded) return;
+                                    if (isGraded) return;
                                     handleOpenCancel(item);
                                   }}
                                   className={`inline-flex items-center gap-1 px-2.5 py-1.5 font-bold rounded-xl text-xs transition ${
-                                    isSupervisorGraded
+                                    isGraded
                                       ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
                                       : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 cursor-pointer'
                                   }`}
                                   title={
-                                    isSupervisorGraded
-                                      ? 'Không thể hủy đề tài do GVHD đã nhập điểm đánh giá'
+                                    isGraded
+                                      ? 'Không thể hủy đề tài do đề tài đã có điểm đánh giá'
                                       : 'Hủy đề tài và giải phóng đăng ký cho sinh viên'
                                   }
                                 >
@@ -3780,7 +3848,21 @@ const LecturerThesesPage = () => {
 
             {/* Actions inside Detail Modal */}
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
-              <div>
+              <div className="flex items-center gap-2">
+                {targetThesis.status !== 'REJECTED' &&
+                  targetThesis.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
+                  targetThesis.status !== 'PENDING_TBM_APPROVAL' && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenProgressModal(targetThesis)}
+                      className="px-3.5 py-2 text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-1.5 bg-blue-50 hover:bg-blue-100 text-[#102d7d] border border-blue-200 cursor-pointer"
+                      title="Xem nhật ký và tiến độ thực hiện của sinh viên"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-[#123891]" />
+                      <span>Nhật ký</span>
+                    </button>
+                  )}
+
                 {targetThesis.status === 'PENDING_SUPERVISOR_APPROVAL' && activeTab === 'SUPERVISOR' && (
                   <div className="flex items-center gap-2">
                     <button
@@ -4391,6 +4473,189 @@ const LecturerThesesPage = () => {
           setSelectedTopicForDelete(null);
         }}
       />
+
+      {/* Modal: Xem Nhật ký & Tiến độ Sinh viên */}
+      {progressModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-3xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold shrink-0">
+                  <BookOpen className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Nhật Ký & Tiến Độ Khóa Luận
+                  </h3>
+                  <p className="text-xs text-slate-500 line-clamp-1">
+                    {progressTargetThesis?.thesisTitle}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setProgressModalOpen(false)}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto pr-1 space-y-4">
+              {loadingProgress ? (
+                <div className="py-12 text-center text-slate-400">
+                  <LoadingSkeleton rows={4} cols={1} />
+                </div>
+              ) : (() => {
+                const progressList =
+                  progressData?.progressList ||
+                  progressData?.data ||
+                  (Array.isArray(progressData)
+                    ? progressData
+                    : progressData?.weeks?.map((w) => w.progress).filter(Boolean) || []);
+                const stats = progressData?.stats || {
+                  total: progressList.length,
+                  approved: progressList.filter((p) => p.status === 'APPROVED').length,
+                  avgPercentage: progressList[progressList.length - 1]?.completionPercentage || 0,
+                };
+
+                return (
+                  <>
+                    {/* Progress summary banner */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-center">
+                        <div className="text-[10.5px] font-bold text-[#102d7d] uppercase">Tổng nhật ký nộp</div>
+                        <div className="text-base font-extrabold text-[#123891] font-mono mt-0.5">
+                          {progressList.length}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-center">
+                        <div className="text-[10.5px] font-bold text-emerald-700 uppercase">GVHD Đã duyệt</div>
+                        <div className="text-base font-extrabold text-emerald-950 font-mono mt-0.5">
+                          {stats.approved || 0}
+                        </div>
+                      </div>
+                      <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-center">
+                        <div className="text-[10.5px] font-bold text-[#102d7d] uppercase">Tiến độ ước tính</div>
+                        <div className="text-base font-extrabold text-[#123891] font-mono mt-0.5">
+                          {stats.avgPercentage || 0}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {progressList.length === 0 ? (
+                      <div className="p-8 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-slate-500 space-y-2">
+                        <FileText className="w-10 h-10 text-slate-300 mx-auto" />
+                        <div className="font-bold text-slate-700 text-sm">Chưa có nhật ký nào</div>
+                        <p className="text-xs text-slate-400">
+                          Sinh viên chưa gửi nhật ký hoặc báo cáo tiến độ tuần nào trên hệ thống.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {progressList.map((rep, idx) => (
+                          <div
+                            key={rep._id || idx}
+                            className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs hover:border-blue-300 transition"
+                          >
+                            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-2.5">
+                              <div className="flex items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded-lg bg-blue-50 text-[#102d7d] font-bold text-xs font-mono">
+                                  Tuần {rep.weekNumber || idx + 1}
+                                </span>
+                                <strong className="text-slate-900 text-sm">{rep.title}</strong>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-lg text-xs font-bold border ${
+                                    rep.status === 'APPROVED'
+                                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                                      : rep.status === 'NEEDS_REVISION'
+                                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                                      : 'bg-blue-50 text-[#102d7d] border-blue-200'
+                                  }`}
+                                >
+                                  {rep.status === 'APPROVED'
+                                    ? 'GVHD đã duyệt'
+                                    : rep.status === 'NEEDS_REVISION'
+                                    ? 'Cần chỉnh sửa'
+                                    : 'Đã nộp'}
+                                </span>
+                                <span className="text-xs font-mono font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded-lg">
+                                  {rep.completionPercentage || 0}% Hoàn thành
+                                </span>
+                              </div>
+                            </div>
+
+                            {rep.description && (
+                              <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-line bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                {rep.description}
+                              </div>
+                            )}
+
+                            {/* File Attachment & Submission Details */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
+                              {rep.file && rep.file.fileUrl ? (
+                                <a
+                                  href={getFileUrl(rep.file.fileUrl)}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 transition"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  <span className="truncate max-w-[220px]">
+                                    {rep.file.originalName || rep.file.fileName || 'File báo cáo / tài liệu'}
+                                  </span>
+                                  <span className="text-[11px] text-blue-400 font-normal">
+                                    ({formatFileSize(rep.file.size)})
+                                  </span>
+                                </a>
+                              ) : (
+                                <span className="text-slate-400 italic text-xs">Không có file đính kèm</span>
+                              )}
+
+                              <div className="text-xs text-slate-400 flex items-center gap-3 font-mono">
+                                {rep.submittedAt && (
+                                  <span>Nộp: {new Date(rep.submittedAt).toLocaleDateString('vi-VN')}</span>
+                                )}
+                                {rep.lecturerScore !== null && rep.lecturerScore !== undefined && (
+                                  <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
+                                    Điểm GVHD: {rep.lecturerScore}/10
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Lecturer Comment if any */}
+                            {rep.lecturerComment && (
+                              <div className="text-xs bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/70 text-amber-900">
+                                <span className="font-bold text-amber-950">Nhận xét của GVHD:</span> {rep.lecturerComment}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setProgressModalOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

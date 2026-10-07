@@ -204,6 +204,90 @@ const StudentThesisProgressPage = () => {
       student?._id === thesis.secondStudentId ||
       user?.studentCode === thesis.secondStudentId?.studentCode);
 
+  // Strict Eligibility Check for creating/submitting diary
+  const eligibilityInfo = useMemo(() => {
+    if (!thesis) {
+      return {
+        eligible: false,
+        title: 'Bạn chưa có đề tài Khóa luận tốt nghiệp',
+        message: 'Hãy đăng ký đề tài KLTN để hệ thống thiết lập kế hoạch nhật ký theo tuần.',
+        actionLink: '/student/thesis/register',
+        actionText: 'Đăng ký đề tài Khóa luận',
+      };
+    }
+
+    // Case 2 SV: SV2 must accept
+    if (thesis.studentCount === 2 || thesis.secondStudentId) {
+      if (thesis.status === 'WAITING_FOR_STUDENT2_CONFIRMATION' || thesis.student2Status === 'PENDING') {
+        return {
+          eligible: false,
+          title: 'Nhóm chưa đủ điều kiện thực hiện nhật ký',
+          message: 'Sinh viên thứ hai trong nhóm chưa xác nhận tham gia đề tài. Sau khi SV2 xác nhận và đề tài được GVHD phê duyệt, bạn mới có thể tạo và gửi nhật ký.',
+          actionLink: '/student/thesis',
+          actionText: 'Xem hồ sơ đề tài',
+        };
+      }
+      if (thesis.student2Status === 'REJECTED') {
+        return {
+          eligible: false,
+          title: 'Sinh viên 2 đã từ chối tham gia nhóm',
+          message: 'Lời mời tham gia đề tài đã bị từ chối. Vui lòng cập nhật lại thông tin nhóm tại trang Hồ sơ khóa luận trước khi tiếp tục.',
+          actionLink: '/student/thesis',
+          actionText: 'Xem hồ sơ đề tài',
+        };
+      }
+    }
+
+    if (thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST') {
+      return {
+        eligible: false,
+        title: 'Chưa gửi yêu cầu đến Giảng viên hướng dẫn',
+        message: 'Nhóm đã hoàn tất thành viên nhưng chưa gửi yêu cầu đến GVHD. Vui lòng vào trang Hồ sơ khóa luận và nhấn "Gửi yêu cầu GVHD".',
+        actionLink: '/student/thesis',
+        actionText: 'Gửi yêu cầu GVHD',
+      };
+    }
+
+    if (
+      thesis.status === 'PENDING_SUPERVISOR_APPROVAL' ||
+      thesis.status === 'PENDING_SUPERVISOR_ACCEPTANCE' ||
+      thesis.status === 'PENDING_TBM_APPROVAL'
+    ) {
+      return {
+        eligible: false,
+        title: 'Đang chờ Giảng viên hướng dẫn phê duyệt đề tài',
+        message: 'Đề tài đã gửi đến GVHD và đang chờ phê duyệt. Bạn chỉ có thể tạo, chỉnh sửa và nộp nhật ký khóa luận sau khi GVHD chính thức chấp nhận hướng dẫn đề tài.',
+        actionLink: '/student/thesis',
+        actionText: 'Xem hồ sơ đề tài',
+      };
+    }
+
+    if (thesis.status === 'REJECTED') {
+      return {
+        eligible: false,
+        title: 'Đề tài đã bị từ chối hoặc hủy',
+        message: thesis.rejectionReason
+          ? `Lý do: "${thesis.rejectionReason}". Bạn không thể tạo hoặc gửi nhật ký cho đề tài này.`
+          : 'Đề tài đã bị từ chối hoặc hủy. Không thể thực hiện nhật ký khóa luận.',
+        actionLink: '/student/thesis',
+        actionText: 'Xem hồ sơ đề tài',
+      };
+    }
+
+    const ALLOWED = ['APPROVED', 'ASSIGNED_REVIEWERS', 'IN_PROGRESS', 'SUBMITTED', 'GRADED', 'COMPLETED'];
+    if (!ALLOWED.includes(thesis.status)) {
+      return {
+        eligible: false,
+        title: 'Đề tài chưa đủ điều kiện viết nhật ký',
+        message: `Đề tài đang ở trạng thái "${thesis.status}". Không thể tạo hoặc gửi nhật ký.`,
+        actionLink: '/student/thesis',
+        actionText: 'Xem hồ sơ đề tài',
+      };
+    }
+
+    return { eligible: true, title: null, message: null };
+  }, [thesis]);
+
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -242,6 +326,10 @@ const StudentThesisProgressPage = () => {
 
   // Open Write / Edit Modal for a specific week
   const handleOpenWriteModal = (weekObj) => {
+    if (!eligibilityInfo.eligible) {
+      showToast(eligibilityInfo.message || 'Đề tài chưa đủ điều kiện viết nhật ký', 'warning');
+      return;
+    }
     setCurrentWeek(weekObj);
     setFormError('');
 
@@ -277,6 +365,11 @@ const StudentThesisProgressPage = () => {
   // Submit / Save Diary
   const handleSaveDiary = async (statusToSet) => {
     setFormError('');
+
+    if (!eligibilityInfo.eligible) {
+      setFormError(eligibilityInfo.message || 'Đề tài chưa đủ điều kiện viết nhật ký');
+      return;
+    }
 
     if (!title.trim()) {
       setFormError('Vui lòng nhập tiêu đề nhật ký');
@@ -587,22 +680,26 @@ const StudentThesisProgressPage = () => {
         )}
       </div>
 
-      {/* No Thesis Notice */}
-      {!thesis ? (
-        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs">
-          <EmptyState
-            title="Bạn chưa có đề tài Khóa luận tốt nghiệp"
-            description="Hãy đăng ký đề tài KLTN và chờ Trưởng Bộ Môn phê duyệt để hệ thống tự động thiết lập nhật ký các tuần."
-          />
-          <div className="text-center mt-4">
-            <Link
-              to="/student/thesis/register"
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Đăng ký đề tài Khóa luận</span>
-            </Link>
+      {/* No Thesis or Not Eligible Notice */}
+      {!eligibilityInfo.eligible ? (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+            <AlertCircle className="w-8 h-8" />
           </div>
+          <div className="max-w-md mx-auto space-y-2">
+            <h3 className="text-base font-bold text-slate-900">{eligibilityInfo.title}</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">{eligibilityInfo.message}</p>
+          </div>
+          {eligibilityInfo.actionLink && (
+            <div className="pt-2">
+              <Link
+                to={eligibilityInfo.actionLink}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition"
+              >
+                <span>{eligibilityInfo.actionText}</span>
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         /* 2. List of Generated Weeks */

@@ -1468,9 +1468,29 @@ const supervisorCancelThesis = async (thesisId, requestingUser, { reason = null 
     throw new AppError("Đề tài này đã bị hủy / từ chối trước đó.", 400);
   }
 
-  const supervisorScoreVal = thesis.scores?.student1SupervisorScore ?? thesis.scores?.supervisorScore;
-  if (supervisorScoreVal !== null && supervisorScoreVal !== undefined && supervisorScoreVal !== '') {
-    throw new AppError("Không thể hủy đề tài do Giảng viên hướng dẫn đã nhập điểm đánh giá.", 400);
+  const hasVal = (v) => v !== null && v !== undefined && v !== '';
+  const sc = thesis.scores;
+  const isGraded =
+    sc &&
+    (hasVal(sc.student1SupervisorScore) ||
+      hasVal(sc.student2SupervisorScore) ||
+      hasVal(sc.supervisorScore) ||
+      hasVal(sc.student1Reviewer1Score) ||
+      hasVal(sc.student2Reviewer1Score) ||
+      hasVal(sc.reviewer1Score) ||
+      hasVal(sc.student1Reviewer2Score) ||
+      hasVal(sc.student2Reviewer2Score) ||
+      hasVal(sc.reviewer2Score) ||
+      hasVal(sc.finalScore) ||
+      hasVal(sc.student1FinalScore) ||
+      hasVal(sc.student2FinalScore) ||
+      (Array.isArray(sc.councilLecturerScores) &&
+        sc.councilLecturerScores.some(
+          (c) => hasVal(c.score) || hasVal(c.student1Score) || hasVal(c.student2Score)
+        )));
+
+  if (isGraded) {
+    throw new AppError("Không thể hủy đề tài do đề tài đã có điểm đánh giá.", 400);
   }
 
   const cancelReason = reason && reason.trim() ? reason.trim() : "Giảng viên hướng dẫn đã hủy đề tài";

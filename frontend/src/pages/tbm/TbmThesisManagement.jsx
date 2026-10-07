@@ -733,8 +733,37 @@ const TbmThesisManagement = () => {
     }
   };
 
+  const isThesisGraded = (thesis) => {
+    if (!thesis) return false;
+    const sc = thesis.scores;
+    if (!sc) return false;
+    const hasVal = (v) => v !== null && v !== undefined && v !== '';
+    return Boolean(
+      hasVal(sc.student1SupervisorScore) ||
+      hasVal(sc.student2SupervisorScore) ||
+      hasVal(sc.supervisorScore) ||
+      hasVal(sc.student1Reviewer1Score) ||
+      hasVal(sc.student2Reviewer1Score) ||
+      hasVal(sc.reviewer1Score) ||
+      hasVal(sc.student1Reviewer2Score) ||
+      hasVal(sc.student2Reviewer2Score) ||
+      hasVal(sc.reviewer2Score) ||
+      hasVal(sc.finalScore) ||
+      hasVal(sc.student1FinalScore) ||
+      hasVal(sc.student2FinalScore) ||
+      (Array.isArray(sc.councilLecturerScores) &&
+        sc.councilLecturerScores.some(
+          (c) => hasVal(c.score) || hasVal(c.student1Score) || hasVal(c.student2Score)
+        ))
+    );
+  };
+
   const handleCancelThesis = async () => {
     if (!selectedThesis) return;
+    if (isThesisGraded(selectedThesis)) {
+      showToast('Không thể hủy đề tài do đề tài đã có điểm đánh giá', 'error');
+      return;
+    }
     setActionLoading(true);
     try {
       const res = await thesisApi.cancel(selectedThesis._id, {
@@ -1846,20 +1875,29 @@ const TbmThesisManagement = () => {
                                   <Eye className="w-4 h-4" />
                                 </button>
 
-                                {item.status !== 'REJECTED' && item.status !== 'COMPLETED' && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedThesis(item);
-                                      setCancelReason('');
-                                      setCancelThesisConfirmOpen(true);
-                                    }}
-                                    className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                    title="Hủy đề tài KLTN"
-                                  >
-                                    <Ban className="w-4 h-4" />
-                                  </button>
-                                )}
+                                {item.status !== 'REJECTED' && item.status !== 'COMPLETED' && (() => {
+                                  const graded = isThesisGraded(item);
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled={graded}
+                                      onClick={() => {
+                                        if (graded) return;
+                                        setSelectedThesis(item);
+                                        setCancelReason('');
+                                        setCancelThesisConfirmOpen(true);
+                                      }}
+                                      className={`p-1.5 rounded-lg transition ${
+                                        graded
+                                          ? 'text-slate-300 cursor-not-allowed'
+                                          : 'text-rose-600 hover:bg-rose-50 cursor-pointer'
+                                      }`}
+                                      title={graded ? 'Không thể hủy đề tài do đề tài đã có điểm đánh giá' : 'Hủy đề tài KLTN'}
+                                    >
+                                      <Ban className="w-4 h-4" />
+                                    </button>
+                                  );
+                                })()}
                               </div>
                             </td>
                           </tr>
@@ -2055,20 +2093,29 @@ const TbmThesisManagement = () => {
                                 <Eye className="w-4 h-4" />
                               </button>
 
-                              {item.status !== 'REJECTED' && item.status !== 'COMPLETED' && (
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedThesis(item);
-                                    setCancelReason('');
-                                    setCancelThesisConfirmOpen(true);
-                                  }}
-                                  className="p-1.5 text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                  title="Hủy đề tài KLTN"
-                                >
-                                  <Ban className="w-4 h-4" />
-                                </button>
-                              )}
+                              {item.status !== 'REJECTED' && item.status !== 'COMPLETED' && (() => {
+                                const graded = isThesisGraded(item);
+                                return (
+                                  <button
+                                    type="button"
+                                    disabled={graded}
+                                    onClick={() => {
+                                      if (graded) return;
+                                      setSelectedThesis(item);
+                                      setCancelReason('');
+                                      setCancelThesisConfirmOpen(true);
+                                    }}
+                                    className={`p-1.5 rounded-lg transition ${
+                                      graded
+                                        ? 'text-slate-300 cursor-not-allowed'
+                                        : 'text-rose-600 hover:bg-rose-50 cursor-pointer'
+                                    }`}
+                                    title={graded ? 'Không thể hủy đề tài do đề tài đã có điểm đánh giá' : 'Hủy đề tài KLTN'}
+                                  >
+                                    <Ban className="w-4 h-4" />
+                                  </button>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>

@@ -7,6 +7,61 @@ import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 
 // ====================
+// Allowed Thesis Statuses For Progress / Diary
+// ====================
+const ALLOWED_THESIS_STATUSES_FOR_PROGRESS = [
+  "APPROVED",
+  "ASSIGNED_REVIEWERS",
+  "IN_PROGRESS",
+  "SUBMITTED",
+  "GRADED",
+  "COMPLETED",
+];
+
+const checkThesisEligibilityForProgress = (thesis, student) => {
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận hợp lệ đang thực hiện", 404);
+  }
+
+  // 1. Verify Student membership (SV1 or SV2)
+  const studentMongoId = student?._id?.toString() || student?.toString();
+  const isSV1 = (thesis.studentId?._id || thesis.studentId)?.toString() === studentMongoId;
+  const isSV2 =
+    thesis.secondStudentId &&
+    (thesis.secondStudentId._id || thesis.secondStudentId)?.toString() === studentMongoId;
+
+  if (!isSV1 && !isSV2) {
+    throw new AppError("Bạn không thuộc đề tài khóa luận này", 403);
+  }
+
+  // 2. If group of 2 students, SV2 MUST be ACCEPTED
+  if (thesis.studentCount === 2 || thesis.secondStudentId) {
+    if (thesis.status === "WAITING_FOR_STUDENT2_CONFIRMATION" || thesis.student2Status !== "ACCEPTED") {
+      throw new AppError("Sinh viên 2 chưa xác nhận tham gia nhóm đề tài. Không thể tạo hoặc gửi nhật ký.", 400);
+    }
+  }
+
+  // 3. Check supervisor request & approval
+  if (thesis.status === "WAITING_FOR_SUPERVISOR_REQUEST") {
+    throw new AppError("Nhóm chưa gửi yêu cầu đến Giảng viên hướng dẫn. Không thể tạo hoặc gửi nhật ký.", 400);
+  }
+
+  if (["PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE", "PENDING_TBM_APPROVAL"].includes(thesis.status)) {
+    throw new AppError("Giảng viên hướng dẫn chưa duyệt nhận hướng dẫn đề tài. Không thể tạo hoặc gửi nhật ký.", 400);
+  }
+
+  if (thesis.status === "REJECTED") {
+    throw new AppError("Đề tài đã bị từ chối hoặc hủy. Không thể tạo hoặc gửi nhật ký.", 400);
+  }
+
+  if (!ALLOWED_THESIS_STATUSES_FOR_PROGRESS.includes(thesis.status)) {
+    throw new AppError(`Đề tài đang ở trạng thái "${thesis.status}", chưa đủ điều kiện để tạo hoặc nộp nhật ký.`, 400);
+  }
+
+  return true;
+};
+
+// ====================
 // 1. Student Creates Thesis Progress / Diary (Weekly)
 // ====================
 const createProgress = async ({
@@ -44,38 +99,13 @@ const createProgress = async ({
     thesis = await Thesis.findOne({
       $or: [{ studentId: student._id }, { secondStudentId: student._id }],
       status: {
-        $in: [
-          "APPROVED",
-          "ASSIGNED_REVIEWERS",
-          "IN_PROGRESS",
-          "SUBMITTED",
-          "GRADED",
-        ],
+        $in: ALLOWED_THESIS_STATUSES_FOR_PROGRESS,
       },
     }).populate("studentId secondStudentId supervisorId academicTermId");
   }
 
-  if (!thesis) {
-    throw new AppError("Không tìm thấy đề tài khóa luận hợp lệ đang thực hiện", 404);
-  }
-
-  // 3. Verify Student belongs to this Thesis (SV1 or SV2)
-  const isSV1 = thesis.studentId?._id?.toString() === student._id.toString();
-  const isSV2 =
-    thesis.secondStudentId &&
-    thesis.secondStudentId._id?.toString() === student._id.toString();
-
-  if (!isSV1 && !isSV2) {
-    throw new AppError("Bạn không thuộc đề tài khóa luận này", 403);
-  }
-
-  // 4. Verify Thesis Status allows progress reports
-  if (["PENDING_SUPERVISOR_APPROVAL", "PENDING_TBM_APPROVAL", "REJECTED"].includes(thesis.status)) {
-    throw new AppError(
-      `Không thể nộp nhật ký tiến độ khi đề tài đang ở trạng thái "${thesis.status}"`,
-      400,
-    );
-  }
+  // 3. Strict Verification of Eligibility
+  checkThesisEligibilityForProgress(thesis, student);
 
   // 5. Validate Progress Type & Numbers
   let validWeek = null;
@@ -247,14 +277,7 @@ const updateProgress = async ({
   }
 
   const thesis = progress.thesisId;
-  const isSV1 = thesis.studentId?._id?.toString() === student._id.toString();
-  const isSV2 =
-    thesis.secondStudentId &&
-    thesis.secondStudentId._id?.toString() === student._id.toString();
-
-  if (!isSV1 && !isSV2) {
-    throw new AppError("Bạn không thuộc đề tài khóa luận này", 403);
-  }
+  checkThesisEligibilityForProgress(thesis, student);
 
   if (!["DRAFT", "NEEDS_REVISION", "REJECTED"].includes(progress.status)) {
     throw new AppError(
@@ -364,12 +387,7 @@ const confirmProgressByStudent2 = async (progressId, userId, { action, rejection
   }
 
   const thesis = progress.thesisId;
-  const isSV1 = thesis.studentId?._id?.toString() === student._id.toString();
-  const isSV2 = thesis.secondStudentId && thesis.secondStudentId._id?.toString() === student._id.toString();
-
-  if (!isSV1 && !isSV2) {
-    throw new AppError("Bạn không thuộc nhóm sinh viên thực hiện đề tài khóa luận này", 403);
-  }
+  checkThesisEligibilityForProgress(thesis, student);
 
   // A student cannot confirm their own progress submission
   const isAuthor = (progress.studentId?._id || progress.studentId)?.toString() === student._id.toString();
@@ -557,6 +575,31 @@ const getMyThesisProgress = async (userId) => {
   thesisObj.startDate = computedStartDate;
   thesisObj.endDate = computedEndDate;
 
+  // Check eligibility for creating/submitting progress
+  let canCreateProgress = true;
+  let eligibilityMessage = null;
+
+  if (thesis.studentCount === 2 || thesis.secondStudentId) {
+    if (thesis.status === "WAITING_FOR_STUDENT2_CONFIRMATION" || thesis.student2Status !== "ACCEPTED") {
+      canCreateProgress = false;
+      eligibilityMessage = "Nhóm chưa đủ điều kiện: Sinh viên 2 chưa xác nhận tham gia đề tài.";
+    }
+  }
+
+  if (thesis.status === "WAITING_FOR_SUPERVISOR_REQUEST") {
+    canCreateProgress = false;
+    eligibilityMessage = "Nhóm chưa gửi yêu cầu đến Giảng viên hướng dẫn.";
+  } else if (["PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE", "PENDING_TBM_APPROVAL"].includes(thesis.status)) {
+    canCreateProgress = false;
+    eligibilityMessage = "Đang chờ Giảng viên hướng dẫn phê duyệt đề tài.";
+  } else if (thesis.status === "REJECTED") {
+    canCreateProgress = false;
+    eligibilityMessage = "Đề tài đã bị từ chối hoặc hủy.";
+  } else if (!ALLOWED_THESIS_STATUSES_FOR_PROGRESS.includes(thesis.status)) {
+    canCreateProgress = false;
+    eligibilityMessage = `Đề tài đang ở trạng thái "${thesis.status}", chưa đủ điều kiện viết nhật ký.`;
+  }
+
   const progressList = await ThesisProgress.find({ thesisId: thesis._id })
     .sort({ weekNumber: 1, submittedAt: -1, createdAt: -1 })
     .populate({
@@ -579,19 +622,17 @@ const getMyThesisProgress = async (userId) => {
     }
   });
 
-  const maxUnlockedWeek = Math.max(1, highestReportedWeek + 1);
+  const maxUnlockedWeek = canCreateProgress ? Math.max(1, highestReportedWeek + 1) : highestReportedWeek;
 
   const allWeeks = rawWeeks.map((w) => {
     const foundProgress = progressList.find(
       (p) => p.progressType === "WEEKLY" && p.weekNumber === w.weekNumber,
     );
-    // Automatically unlock week when:
-    // 1. It is Week 1
-    // 2. Or real time reaches/passes the week's startDate
-    // 3. Or a report exists for this week
-    // 4. Or the week is within maxUnlockedWeek (next actionable sequential week)
-    const isTimeUnlocked = now >= new Date(w.startDate);
-    const isUnlocked = w.weekNumber === 1 || isTimeUnlocked || !!foundProgress || w.weekNumber <= maxUnlockedWeek;
+    const isTimeUnlocked = canCreateProgress && now >= new Date(w.startDate);
+    const isUnlocked = Boolean(
+      foundProgress ||
+      (canCreateProgress && (w.weekNumber === 1 || isTimeUnlocked || w.weekNumber <= maxUnlockedWeek))
+    );
     return {
       ...w,
       isUnlocked,
@@ -599,7 +640,7 @@ const getMyThesisProgress = async (userId) => {
     };
   });
 
-  // Display all currently unlocked weeks to the student
+  // Display unlocked weeks to the student
   const weeks = allWeeks.filter((w) => w.isUnlocked);
 
   const total = progressList.length;
@@ -618,6 +659,9 @@ const getMyThesisProgress = async (userId) => {
     thesis: thesisObj,
     weeks,
     allWeeks,
+    progressList,
+    canCreateProgress,
+    eligibilityMessage,
     stats: {
       total,
       approved,
@@ -656,14 +700,7 @@ const submitDraftProgress = async (progressId, userId) => {
   }
 
   const thesis = progress.thesisId;
-  const isSV1 = thesis.studentId?._id?.toString() === student._id.toString();
-  const isSV2 =
-    thesis.secondStudentId &&
-    thesis.secondStudentId._id?.toString() === student._id.toString();
-
-  if (!isSV1 && !isSV2) {
-    throw new AppError("Bạn không có quyền nộp nhật ký tiến độ này", 403);
-  }
+  checkThesisEligibilityForProgress(thesis, student);
 
   if (progress.status !== "DRAFT") {
     throw new AppError(`Nhật ký đang ở trạng thái "${progress.status}", không thể nộp lại`, 400);
@@ -719,7 +756,10 @@ const getSupervisedThesesProgress = async (userId, academicTermId = '') => {
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }
 
-  const query = { supervisorId: lecturer._id };
+  const query = {
+    supervisorId: lecturer._id,
+    status: { $in: ALLOWED_THESIS_STATUSES_FOR_PROGRESS },
+  };
   if (academicTermId && academicTermId !== 'ALL') {
     query.academicTermId = academicTermId;
   }
@@ -828,6 +868,10 @@ const reviewProgress = async (
     throw new AppError("Không tìm thấy đề tài tương ứng với nhật ký này", 404);
   }
 
+  if (!ALLOWED_THESIS_STATUSES_FOR_PROGRESS.includes(thesis.status)) {
+    throw new AppError(`Đề tài đang ở trạng thái "${thesis.status}", không thể đánh giá nhật ký`, 400);
+  }
+
   const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
   if (term && term.status === "CLOSED") {
     throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Giảng viên chỉ được xem lại nhật ký, không thể chỉnh sửa nhận xét hoặc điểm đánh giá.", 400);
@@ -905,6 +949,18 @@ const reviewProgress = async (
 // 8. Get Progress By Thesis ID (Detail lookup)
 // ====================
 const getProgressByThesis = async (thesisId, requestingUser) => {
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  // If caller is LECTURER, do not return progress if thesis hasn't been approved yet
+  if (requestingUser?.role === "LECTURER") {
+    if (["WAITING_FOR_STUDENT2_CONFIRMATION", "WAITING_FOR_SUPERVISOR_REQUEST", "PENDING_SUPERVISOR_APPROVAL", "PENDING_SUPERVISOR_ACCEPTANCE", "PENDING_TBM_APPROVAL"].includes(thesis.status)) {
+      return [];
+    }
+  }
+
   const query = { thesisId };
   if (requestingUser?.role === "LECTURER") {
     query.status = { $in: ["SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"] };

@@ -369,17 +369,53 @@ const TbmThesisDetailModal = ({
           </button>
 
           <div className="flex items-center gap-2">
-            {!isCompleted && thesis.status !== 'REJECTED' && (
-              <button
-                type="button"
-                onClick={() => (onCancelThesis ? onCancelThesis(thesis) : onReject(thesis))}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 transition cursor-pointer"
-                title="Hủy đề tài và giải phóng đăng ký cho sinh viên"
-              >
-                <Ban className="w-3.5 h-3.5" />
-                <span>Hủy đề tài</span>
-              </button>
-            )}
+            {!isCompleted && thesis.status !== 'REJECTED' && (() => {
+              const sc = thesis.scores;
+              const hasVal = (v) => v !== null && v !== undefined && v !== '';
+              const isGraded =
+                sc &&
+                (hasVal(sc.student1SupervisorScore) ||
+                  hasVal(sc.student2SupervisorScore) ||
+                  hasVal(sc.supervisorScore) ||
+                  hasVal(sc.student1Reviewer1Score) ||
+                  hasVal(sc.student2Reviewer1Score) ||
+                  hasVal(sc.reviewer1Score) ||
+                  hasVal(sc.student1Reviewer2Score) ||
+                  hasVal(sc.student2Reviewer2Score) ||
+                  hasVal(sc.reviewer2Score) ||
+                  hasVal(sc.finalScore) ||
+                  hasVal(sc.student1FinalScore) ||
+                  hasVal(sc.student2FinalScore) ||
+                  (Array.isArray(sc.councilLecturerScores) &&
+                    sc.councilLecturerScores.some(
+                      (c) => hasVal(c.score) || hasVal(c.student1Score) || hasVal(c.student2Score)
+                    )));
+
+              return (
+                <button
+                  type="button"
+                  disabled={isGraded}
+                  onClick={() => {
+                    if (isGraded) return;
+                    if (onCancelThesis) onCancelThesis(thesis);
+                    else onReject(thesis);
+                  }}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-2 font-bold rounded-xl border transition ${
+                    isGraded
+                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                      : 'bg-rose-50 hover:bg-rose-100 text-rose-700 border-rose-200 cursor-pointer'
+                  }`}
+                  title={
+                    isGraded
+                      ? 'Không thể hủy đề tài do đề tài đã có điểm đánh giá'
+                      : 'Hủy đề tài và giải phóng đăng ký cho sinh viên'
+                  }
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  <span>Hủy đề tài</span>
+                </button>
+              );
+            })()}
 
             {!isCompleted && !isPending && thesis.status !== 'REJECTED' && (
               <button

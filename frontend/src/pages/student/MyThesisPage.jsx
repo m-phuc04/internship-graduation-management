@@ -508,7 +508,9 @@ const MyThesisPage = () => {
 
   const hasReviewers = Boolean(reviewer1 || reviewer2);
 
-  const councilFormat = assignedCouncil?.type === 'ORAL' ? 'Oral' : 'Poster';
+  const councilFormat = assignedCouncil
+    ? (assignedCouncil.type === 'ORAL' ? ' - Oral' : ' - Poster')
+    : '';
   const councilLecturers = assignedCouncil?.lecturers || [];
   const councilScores = Array.isArray(thesis?.scores?.councilLecturerScores)
     ? thesis.scores.councilLecturerScores
@@ -571,7 +573,7 @@ const MyThesisPage = () => {
       isPublished: isReviewerPublished,
     });
 
-    // 4. GV Hội đồng 1 - (Loại hội đồng oral/poster) (tên)
+    // 4. GV Hội đồng 1 - (Loại hội đồng oral/poster nếu đã phân công) (tên)
     const hđ1 = councilLecturers[0];
     const hđ1ScoreObj = councilScores[0];
     const hđ1Title = hđ1?.academicTitle || hđ1ScoreObj?.lecturerId?.academicTitle || '';
@@ -586,12 +588,12 @@ const MyThesisPage = () => {
 
     evaluators.push({
       num: 4,
-      title: `4. GV Hội đồng 1 - ${councilFormat} (${hđ1Name})`,
+      title: `4. GV Hội đồng 1${councilFormat} (${hđ1Name})`,
       comment: hđ1Comment,
       isPublished: isCouncilPublished,
     });
 
-    // 5. GV Hội đồng 2 - (Loại hội đồng oral/poster) (tên)
+    // 5. GV Hội đồng 2 - (Loại hội đồng oral/poster nếu đã phân công) (tên)
     const hđ2 = councilLecturers[1];
     const hđ2ScoreObj = councilScores[1];
     const hđ2Title = hđ2?.academicTitle || hđ2ScoreObj?.lecturerId?.academicTitle || '';
@@ -606,7 +608,7 @@ const MyThesisPage = () => {
 
     evaluators.push({
       num: 5,
-      title: `5. GV Hội đồng 2 - ${councilFormat} (${hđ2Name})`,
+      title: `5. GV Hội đồng 2${councilFormat} (${hđ2Name})`,
       comment: hđ2Comment,
       isPublished: isCouncilPublished,
     });
