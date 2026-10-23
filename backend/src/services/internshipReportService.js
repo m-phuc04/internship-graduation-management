@@ -230,8 +230,8 @@ const updateReport = async ({
   if (title !== undefined) report.title = title.trim();
   if (content !== undefined) report.content = content;
   if (file !== undefined && file !== null) report.file = file;
-  if (weekStartDate) report.weekStartDate = new Date(weekStartDate);
-  if (weekEndDate) report.weekEndDate = new Date(weekEndDate);
+  if (weekStartDate !== undefined) report.weekStartDate = weekStartDate ? new Date(weekStartDate) : null;
+  if (weekEndDate !== undefined) report.weekEndDate = weekEndDate ? new Date(weekEndDate) : null;
 
   const hasStudent2 = !!internship.secondStudentId;
 

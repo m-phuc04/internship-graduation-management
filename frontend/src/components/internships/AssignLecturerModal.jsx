@@ -38,14 +38,14 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
 
   const handleAssign = async () => {
     if (!selectedLecturerId) {
-      setError('Vui lòng chọn giảng viên hướng dẫn');
+      setError('Vui lòng chọn Giảng viên Giám sát');
       return;
     }
 
     setSubmitting(true);
     try {
       await internshipApi.assignLecturer(internship._id, selectedLecturerId);
-      showToast('Phân công giảng viên hướng dẫn thành công!', 'success');
+      showToast('Phân công Giảng viên Giám sát thành công!', 'success');
       setError('');
       onAssigned();
       onClose();
@@ -62,7 +62,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Phân công Giảng viên Hướng dẫn (GVHD)"
+      title="Phân công Giảng viên Giám sát (GVGS)"
       maxWidth="max-w-lg"
     >
       <div className="space-y-4 text-xs">
@@ -76,7 +76,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
           </div>
           {internship.lecturerId && (
             <div className="text-[#102d7d] pt-1">
-              GVHD hiện tại: <strong>{internship.lecturerId?.academicTitle} {internship.lecturerId?.userId?.fullName}</strong>
+              GVGS hiện tại: <strong>{internship.lecturerId?.academicTitle} {internship.lecturerId?.userId?.fullName}</strong>
             </div>
           )}
         </div>
@@ -84,7 +84,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
         {/* Lecturer Selector */}
         <div>
           <label className="block font-semibold text-slate-700 mb-1.5">
-            Chọn Giảng viên hướng dẫn <span className="text-rose-500">*</span>
+            Chọn Giảng viên Giám sát <span className="text-rose-500">*</span>
           </label>
           <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
             {loading ? (

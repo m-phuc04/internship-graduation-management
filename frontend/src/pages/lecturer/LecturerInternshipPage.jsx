@@ -1,3 +1,4 @@
+import LecturerInternshipGradingModal from '../../components/lecturers/LecturerInternshipGradingModal';
 import React, { useState, useEffect, useCallback } from 'react';
 import internshipApi from '../../api/internshipApi';
 import evaluationApi from '../../api/evaluationApi';
@@ -31,6 +32,40 @@ import {
 } from 'lucide-react';
 
 const LecturerInternshipPage = () => {
+  // Check if grading window is open for Giảng viên Giám sát
+  const isGradingWindowOpen = (item) => {
+    const term = item?.academicTermId || currentTerm;
+    const cfg = term?.internship || {};
+    const startRaw = cfg.gradingStart;
+    const endRaw = cfg.gradingEnd;
+
+    if (!startRaw && !endRaw) {
+      return true; // Not constrained
+    }
+
+    const now = new Date();
+    if (startRaw) {
+      const start = new Date(startRaw);
+      start.setHours(0, 0, 0, 0);
+      if (now < start) return false;
+    }
+    if (endRaw) {
+      const end = new Date(endRaw);
+      end.setHours(23, 59, 59, 999);
+      if (now > end) return false;
+    }
+    return true;
+  };
+
+  const handleOpenGrading = (item) => {
+    if (!isGradingWindowOpen(item)) {
+      showToast('Chưa tới thời gian chấm điểm', 'error');
+      return;
+    }
+    setGradingTarget(item);
+    setGradingModalOpen(true);
+  };
+
   const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
   const isActiveTerm = currentTerm?.status === 'ACTIVE';
   const [internships, setInternships] = useState([]);
@@ -46,6 +81,8 @@ const LecturerInternshipPage = () => {
   // Modals
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [gradingModalOpen, setGradingModalOpen] = useState(false);
+  const [gradingTarget, setGradingTarget] = useState(null);
 
   // Accept, Reject & Complete Modals
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
@@ -108,7 +145,7 @@ const LecturerInternshipPage = () => {
     });
   };
 
-  // Open Document A: Giấy xác nhận hướng dẫn
+  // Open Document A: Giấy xác nhận giám sát
   const handleOpenConfirmationDoc = async () => {
     setLoadingDoc(true);
     try {
@@ -160,13 +197,13 @@ const LecturerInternshipPage = () => {
     try {
       const res = await internshipApi.supervisorAccept(targetInternship._id);
       if (res.success) {
-        showToast('Đã chấp nhận hướng dẫn sinh viên thực tập thành công!', 'success');
+        showToast('Đã tiếp nhận giám sát sinh viên thực tập thành công!', 'success');
         setAcceptModalOpen(false);
         setTargetInternship(null);
         fetchSupervisedStudents();
       }
     } catch (err) {
-      showToast(err.message || 'Không thể chấp nhận hướng dẫn thực tập', 'error');
+      showToast(err.message || 'Không thể chấp nhận giám sát thực tập', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -181,7 +218,7 @@ const LecturerInternshipPage = () => {
   const handleConfirmReject = async (e) => {
     e.preventDefault();
     if (!rejectReason || !rejectReason.trim()) {
-      showToast('Vui lòng nhập lý do từ chối hướng dẫn', 'warning');
+      showToast('Vui lòng nhập lý do từ chối giám sát', 'warning');
       return;
     }
     if (!targetInternship) return;
@@ -193,7 +230,7 @@ const LecturerInternshipPage = () => {
         rejectReason.trim(),
       );
       if (res.success) {
-        showToast('Đã từ chối hướng dẫn sinh viên thực tập', 'info');
+        showToast('Đã từ chối tiếp nhận giám sát sinh viên thực tập', 'info');
         setRejectModalOpen(false);
         setTargetInternship(null);
         setRejectReason('');
@@ -241,7 +278,7 @@ const LecturerInternshipPage = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  Sinh Viên Thực Tập Đang Hướng Dẫn
+                  Sinh Viên Thực Tập Đang Giám Sát
                 </h2>
               </div>
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
@@ -254,20 +291,20 @@ const LecturerInternshipPage = () => {
 
           {/* Action & Workload Stats Pill */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Button In Giấy xác nhận hướng dẫn */}
+            {/* Button In Giấy xác nhận giám sát */}
             <button
               onClick={handleOpenConfirmationDoc}
               disabled={loadingDoc || internships.length === 0}
               className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs shadow-sm shadow-blue-200 transition disabled:opacity-50"
-              title="Xuất & In Giấy xác nhận hướng dẫn thực tập"
+              title="Xuất & In Giấy xác nhận giám sát thực tập"
             >
               <Printer className="w-4 h-4" />
-              <span>In Giấy xác nhận hướng dẫn</span>
+              <span>In Giấy xác nhận giám sát</span>
             </button>
 
             <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-right">
               <div className="text-[11px] font-semibold text-[#102d7d] uppercase tracking-wider">
-                SV đang hướng dẫn
+                SV đang giám sát
               </div>
               <div className="text-lg font-extrabold text-[#123891] mt-0.5">
                 {stats?.activeCount || 0} <span className="text-xs font-semibold text-[#123891]">SV</span>
@@ -339,7 +376,7 @@ const LecturerInternshipPage = () => {
         ) : internships.length === 0 ? (
           <EmptyState
             title={isActiveTerm ? "Chưa có sinh viên thực tập được phân công" : "Không có sinh viên thực tập trong học kỳ này"}
-            description={isActiveTerm ? "Bạn hiện chưa có sinh viên thực tập nào được Trưởng Bộ Môn (TBM) phân công hướng dẫn." : "Không tìm thấy dữ liệu sinh viên thực tập hướng dẫn của học kỳ này."}
+            description={isActiveTerm ? "Bạn hiện chưa có sinh viên thực tập nào được Trưởng Bộ Môn (TBM) phân công giám sát." : "Không tìm thấy dữ liệu sinh viên thực tập giám sát của học kỳ này."}
           />
         ) : (
           <div className="overflow-x-auto">
@@ -424,37 +461,40 @@ const LecturerInternshipPage = () => {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* If evaluated: Complete or Print */}
-                        {item.evaluation?.score !== undefined && item.evaluation?.score !== null && (
-                          <>
-                            {isActiveTerm && item.status !== 'COMPLETED' && (
-                              <button
-                                onClick={() => handleOpenComplete(item)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition cursor-pointer"
-                                title="Xác nhận hoàn thành thực tập và khóa phiếu đánh giá"
-                              >
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>Hoàn thành</span>
-                              </button>
-                            )}
-
-                            <button
-                              onClick={() => handleOpenEvaluationDoc(item)}
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-xl transition cursor-pointer"
-                              title="In phiếu đánh giá thực tập này"
-                            >
-                              <Printer className="w-3.5 h-3.5" />
-                              <span>In phiếu</span>
-                            </button>
-                          </>
+                        {/* Nút Chấm điểm: chỉ hiển thị khi chưa có điểm */}
+                        {(!item.evaluation || item.evaluation?.score === undefined || item.evaluation?.score === null) && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenGrading(item)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition cursor-pointer shadow-xs"
+                            title="Chấm điểm thực tập cho sinh viên này"
+                          >
+                            <Award className="w-3.5 h-3.5" />
+                            <span>Chấm điểm</span>
+                          </button>
                         )}
 
+                        {/* If evaluated: In phiếu */}
+                        {item.evaluation?.score !== undefined && item.evaluation?.score !== null && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEvaluationDoc(item)}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                            title="In phiếu đánh giá thực tập này"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>In phiếu</span>
+                          </button>
+                        )}
+
+                        {/* Nút Chi tiết */}
                         <button
+                          type="button"
                           onClick={() => {
                             setSelectedInternship(item);
                             setDetailModalOpen(true);
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
                           title="Xem chi tiết hồ sơ"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -476,6 +516,16 @@ const LecturerInternshipPage = () => {
       </div>
 
       {/* Detail Modal */}
+      <LecturerInternshipGradingModal
+        isOpen={gradingModalOpen}
+        onClose={() => {
+          setGradingModalOpen(false);
+          setGradingTarget(null);
+        }}
+        internship={gradingTarget}
+        onGraded={fetchSupervisedStudents}
+      />
+
       <LecturerInternshipDetailModal
         isOpen={detailModalOpen}
         onClose={() => {
@@ -494,7 +544,7 @@ const LecturerInternshipPage = () => {
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Xác Nhận Hướng Dẫn Thực Tập</h3>
+                <h3 className="text-base font-bold text-slate-900">Tiếp Nhận Giám Sát Thực Tập</h3>
                 <p className="text-xs text-slate-500">Xác nhận tiếp nhận sinh viên thực tập doanh nghiệp</p>
               </div>
             </div>
@@ -523,7 +573,7 @@ const LecturerInternshipPage = () => {
             </div>
 
             <p className="text-xs text-slate-600">
-              Bạn có chắc chắn muốn nhận hướng dẫn sinh viên này không? Sau khi chấp nhận, hồ sơ sẽ chuyển sang trạng thái <strong>Đang thực tập</strong>.
+              Bạn có chắc chắn muốn tiếp nhận giám sát sinh viên này không? Sau khi chấp nhận, hồ sơ sẽ chuyển sang trạng thái <strong>Đang thực tập</strong>.
             </p>
 
             <div className="flex items-center justify-end gap-2 pt-2">
@@ -541,7 +591,7 @@ const LecturerInternshipPage = () => {
                 disabled={actionLoading}
                 className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition"
               >
-                {actionLoading ? 'Đang xử lý...' : 'Chấp nhận hướng dẫn'}
+                {actionLoading ? 'Đang xử lý...' : 'Tiếp nhận giám sát'}
               </button>
             </div>
           </div>
@@ -557,7 +607,7 @@ const LecturerInternshipPage = () => {
                 <Shield className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="text-base font-bold text-slate-900">Từ Chối Hướng Dẫn Thực Tập</h3>
+                <h3 className="text-base font-bold text-slate-900">Từ Chối Giám Sát Thực Tập</h3>
                 <p className="text-xs text-slate-500">Vui lòng cung cấp lý do từ chối cụ thể</p>
               </div>
             </div>
@@ -647,7 +697,7 @@ const LecturerInternshipPage = () => {
                 Lưu ý quan trọng
               </div>
               <p>
-                Sau khi GVHD xác nhận <strong>Hoàn thành</strong>, phiếu đánh giá sẽ chuyển sang trạng thái <strong>COMPLETED</strong> và bị <strong>KHÓA vĩnh viễn</strong>. Doanh nghiệp và người dùng sẽ không thể chỉnh sửa điểm/nhận xét nữa.
+                Sau khi GVGS xác nhận <strong>Hoàn thành</strong>, phiếu đánh giá sẽ chuyển sang trạng thái <strong>COMPLETED</strong> và bị <strong>KHÓA vĩnh viễn</strong>. Doanh nghiệp và người dùng sẽ không thể chỉnh sửa điểm/nhận xét nữa.
               </p>
             </div>
 
@@ -680,7 +730,7 @@ const LecturerInternshipPage = () => {
         onClose={() => setDocModalOpen(false)}
         title={
           docType === 'CONFIRMATION'
-            ? 'Giấy Xác Nhận Hướng Dẫn Thực Tập Doanh Nghiệp'
+            ? 'Giấy Xác Nhận Giám Sát Thực Tập Doanh Nghiệp'
             : 'Phiếu Đánh Giá Kết Quả Thực Tập Doanh Nghiệp'
         }
       >

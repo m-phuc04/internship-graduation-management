@@ -36,15 +36,13 @@ const mapInternshipStatus = (status) => {
     case "PENDING":
       return "Chờ duyệt";
     case "PENDING_SUPERVISOR_ACCEPTANCE":
-      return "Đã phân công GVHD";
+      return "Đã phân công GVGS";
     case "APPROVED":
       return "Đã duyệt";
     case "INTERNING":
       return "Đang thực tập";
     case "COMPLETED":
       return "Hoàn thành";
-    case "REJECTED":
-      return "Bị từ chối";
     case "CANCELLED":
       return "Đã hủy";
     default:
@@ -225,7 +223,7 @@ const exportInternships = async ({
     { header: "Ngày bắt đầu", key: "startDate", width: 14 },
     { header: "Ngày kết thúc", key: "endDate", width: 14 },
     { header: "GV hướng dẫn", key: "lecturerName", width: 24 },
-    { header: "Mã GVHD", key: "lecturerCode", width: 14 },
+    { header: "Mã GVGS", key: "lecturerCode", width: 14 },
     { header: "Trạng thái hồ sơ", key: "status", width: 18 },
     { header: "Trạng thái thực tập", key: "internshipStatus", width: 20 },
     { header: "Điểm TTDN", key: "score", width: 12 },

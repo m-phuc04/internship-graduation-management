@@ -90,19 +90,6 @@ const InternshipDetailModal = ({
           </div>
         </div>
 
-        {/* Rejection Alert if Rejected */}
-        {internship.status === 'REJECTED' && internship.rejectionReason && (
-          <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs">
-            <div className="font-bold flex items-center gap-1.5 mb-1">
-              <XCircle className="w-4 h-4 text-rose-600" />
-              Lý do từ chối hồ sơ:
-            </div>
-            <p className="text-rose-800 leading-relaxed pl-5">
-              {internship.rejectionReason}
-            </p>
-          </div>
-        )}
-
         {/* 2-Column Info Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
           {/* Section 1: Student Details */}
@@ -221,7 +208,7 @@ const InternshipDetailModal = ({
               </div>
 
               <div className="pt-2 border-t border-slate-100">
-                <span className="text-slate-400 block mb-0.5">Giảng viên hướng dẫn (GVHD):</span>
+                <span className="text-slate-400 block mb-0.5">Giảng viên Giám sát (GVGS):</span>
                 {internship.lecturerId ? (
                   <div>
                     <span className="font-bold text-[#102d7d]">
@@ -233,7 +220,7 @@ const InternshipDetailModal = ({
                   </div>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/60">
-                    <Clock className="w-3 h-3 text-amber-600" /> Chưa phân công GVHD
+                    <Clock className="w-3 h-3 text-amber-600" /> Chưa phân công GVGS
                   </span>
                 )}
               </div>
@@ -286,7 +273,7 @@ const InternshipDetailModal = ({
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer"
               >
                 <BookOpen className="w-3.5 h-3.5" />
-                <span>{internship.lecturerId ? 'Đổi GVHD' : 'Phân công GVHD'}</span>
+                <span>{internship.lecturerId ? 'Đổi GVGS' : 'Phân công GVGS'}</span>
               </button>
             )}
 

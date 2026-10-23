@@ -1,3 +1,4 @@
+import evaluationController from "../controllers/evaluationController.js";
 import express from "express";
 import internshipController from "../controllers/internshipController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
@@ -121,6 +122,17 @@ router.patch(
 );
 
 // Lecturer / TBM / Admin: Complete internship and permanently lock evaluation
+// Lecturer (GVGS): Grade Internship
+router.post(
+  "/:id/grade",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  (req, res, next) => {
+    req.body.internshipId = req.params.id;
+    return evaluationController.gradeInternship(req, res, next);
+  },
+);
+
 router.patch(
   "/:id/complete",
   authMiddleware,

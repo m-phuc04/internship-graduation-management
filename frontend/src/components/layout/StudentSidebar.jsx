@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   GraduationCap,
+  FileText,
   Briefcase,
   BookOpen,
   LayoutDashboard,
@@ -48,6 +49,12 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
 
   // Submenu items data
   const internshipSubItems = [
+    {
+      to: '/student/internship/documents',
+      label: 'Tài liệu thực tập',
+      icon: FileText,
+      active: location.pathname === '/student/internship/documents',
+    },
     {
       to: '/student/internship/register',
       label: 'Đăng ký thực tập',

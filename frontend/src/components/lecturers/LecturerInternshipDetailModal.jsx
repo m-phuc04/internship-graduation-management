@@ -207,7 +207,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-slate-500 text-[11px]">
           <Info className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
           <span>
-            Thông tin hồ sơ và quyết định phê duyệt do Trưởng Bộ Môn (TBM) điều phối. Giảng viên hướng dẫn có nhiệm vụ theo dõi tiến độ, phản hồi và hỗ trợ sinh viên hoàn thành kỳ thực tập.
+            Thông tin hồ sơ và quyết định phê duyệt do Trưởng Bộ Môn (TBM) điều phối. Giảng viên Giám sát có nhiệm vụ theo dõi tiến độ, phản hồi và hỗ trợ sinh viên hoàn thành kỳ thực tập.
           </span>
         </div>
 

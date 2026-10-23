@@ -3,6 +3,7 @@ import { NavLink, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   GraduationCap,
+  FileText,
   Users,
   Building2,
   BookOpen,
@@ -40,6 +41,12 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
 
   // 2. Dành cho TBM: Nhóm Nghiệp Vụ Bộ Môn (Đầy đủ các mục nghiệp vụ chính)
   const tbmBusinessItems = [
+    {
+      to: '/tbm/internship-documents',
+      label: 'Quản lí Tài liệu thực tập',
+      icon: FileText,
+      badge: 'TL',
+    },
     {
       to: '/tbm/internships',
       label: 'Quản lý Thực tập',

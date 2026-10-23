@@ -97,20 +97,6 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
       link: "/student/internship/register",
       priority: "NORMAL",
     });
-  } else if (internship.status === "REJECTED") {
-    pendingActions.push({
-      type: "RE_REGISTER_INTERNSHIP",
-      title: "Hồ sơ thực tập bị từ chối",
-      description: "Hồ sơ thực tập của bạn đã bị từ chối. Vui lòng xem lý do và đăng ký lại hồ sơ.",
-      internshipId: internship._id,
-      companyName: internship.companyId?.name || internship.companyId?.companyName || "Doanh nghiệp",
-      status: "REJECTED",
-      rejectionReason: internship.rejectionReason?.trim() || null,
-      actionLabel: "Đăng ký lại",
-      actionUrl: "/student/internship/register",
-      link: "/student/internship/register",
-      priority: "HIGH",
-    });
   }
 
   if (!thesis) {

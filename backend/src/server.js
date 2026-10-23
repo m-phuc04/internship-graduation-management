@@ -12,6 +12,7 @@ import lecturerRoutes from "./routes/lecturerRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import internshipRoutes from "./routes/internshipRoutes.js";
 import internshipReportRoutes from "./routes/internshipReportRoutes.js";
+import internshipDocumentRoutes from "./routes/internshipDocumentRoutes.js";
 import evaluationRoutes from "./routes/evaluationRoutes.js";
 import thesisRoutes from "./routes/thesisRoutes.js";
 import thesisProgressRoutes from "./routes/thesisProgressRoutes.js";
@@ -64,6 +65,7 @@ app.use("/api/academic-terms", academicTermRoutes);
 // Internship, Reports & Evaluation Routes
 app.use("/api/internships", internshipRoutes);
 app.use("/api/internship-reports", internshipReportRoutes);
+app.use("/api/internship-documents", internshipDocumentRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/theses", thesisRoutes);
 app.use("/api/thesis-progress", thesisProgressRoutes);

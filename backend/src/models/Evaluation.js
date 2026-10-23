@@ -127,6 +127,22 @@ const evaluationSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    isScorePublished: {
+      type: Boolean,
+      default: false,
+    },
+
+    publishedAt: {
+      type: Date,
+      default: null,
+    },
+
+    publishedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
   },
   {
     timestamps: true,

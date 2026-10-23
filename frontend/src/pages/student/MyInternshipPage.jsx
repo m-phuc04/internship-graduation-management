@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import internshipApi from '../../api/internshipApi';
 import dashboardApi from '../../api/dashboardApi';
 import evaluationApi from '../../api/evaluationApi';
@@ -7,7 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
-import InternshipEvaluationDoc from '../../components/documents/InternshipEvaluationDoc';
+import InternshipConfirmationDoc from '../../components/documents/InternshipConfirmationDoc';
 import DocumentViewerModal from '../../components/documents/DocumentViewerModal';
 import {
   Briefcase,
@@ -21,19 +21,13 @@ import {
   Globe,
   Clock,
   AlertCircle,
-  PlusCircle,
-  Plus,
   CheckCircle2,
   ArrowRight,
   ShieldCheck,
   FileText,
   Printer,
   Award,
-  RotateCcw,
-  Copy,
-  Check,
 } from 'lucide-react';
-import evaluationRecreateService from '../../utils/evaluationRecreateService';
 
 const MyInternshipPage = () => {
   const { currentTerm } = useAcademicTerm();
@@ -42,15 +36,7 @@ const MyInternshipPage = () => {
   const [loading, setLoading] = useState(true);
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [evalData, setEvalData] = useState(null);
-  const [createLinkModalOpen, setCreateLinkModalOpen] = useState(false);
-  const [creatingLink, setCreatingLink] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [recreateModalOpen, setRecreateModalOpen] = useState(false);
-  const [recreateReason, setRecreateReason] = useState('');
-  const [submittingRecreate, setSubmittingRecreate] = useState(false);
-  const [recreateRequestState, setRecreateRequestState] = useState(null);
   const { showToast } = useToast();
-  const navigate = useNavigate();
 
   const fetchMyInternship = useCallback(async () => {
     setLoading(true);
@@ -60,7 +46,7 @@ const MyInternshipPage = () => {
         academicTermId: currentTerm?._id || '',
       });
 
-      // 2. If no internship found under currentTerm, fallback to fetching without term constraint
+      // 2. Fallback to fetching without term constraint
       if ((!res?.success || !res?.data?.internship) && currentTerm?._id) {
         const fallbackRes = await internshipApi.getMyInternship();
         if (fallbackRes?.success && fallbackRes?.data?.internship) {
@@ -68,7 +54,7 @@ const MyInternshipPage = () => {
         }
       }
 
-      // 3. Fallback to student dashboard API to guarantee sync across modules
+      // 3. Fallback to student dashboard API
       let resolvedInternship = res?.data?.internship || (res?.data?._id ? res.data : null);
       let resolvedStudent = res?.data?.student || resolvedInternship?.studentId;
 
@@ -99,16 +85,15 @@ const MyInternshipPage = () => {
         });
       }
 
-      // Fetch evaluation request state with fallback
+      // Fetch evaluation request / grading data
       try {
         let evalRes = await evaluationApi.getStudentEvaluationRequest({
           academicTermId: currentTerm?._id || '',
         });
 
-        // If currentTerm didn't return an evaluation or request, try without term constraint
-        if (!evalRes?.success || !evalRes?.data?.hasInternship || (!evalRes?.data?.request && !evalRes?.data?.evaluation)) {
+        if (!evalRes?.success || !evalRes?.data?.hasInternship || !evalRes?.data?.evaluation) {
           const evalFallback = await evaluationApi.getStudentEvaluationRequest();
-          if (evalFallback?.success && (evalFallback.data?.hasInternship || evalFallback.data?.evaluation || evalFallback.data?.request)) {
+          if (evalFallback?.success && (evalFallback.data?.hasInternship || evalFallback.data?.evaluation)) {
             evalRes = evalFallback;
           }
         }
@@ -120,110 +105,11 @@ const MyInternshipPage = () => {
         // Safe ignore
       }
     } catch (err) {
-      showToast(err.message || 'Không thể tải thông tin hồ sơ thực tập', 'error');
+      showToast(err.message || 'Không thể tải thông tin thực tập của bạn', 'error');
     } finally {
       setLoading(false);
     }
   }, [currentTerm?._id, showToast]);
-
-  const handleCreateEvaluationLink = async () => {
-    setCreatingLink(true);
-    try {
-      const termId = internship?.academicTermId?._id || internship?.academicTermId || currentTerm?._id || '';
-      const res = await evaluationApi.createStudentEvaluationLink({
-        academicTermId: termId,
-      });
-
-      if (res?.success) {
-        evaluationRecreateService.clearDeletedEvaluation(rawInternship?._id || internship?._id);
-        showToast(res.message || 'Tạo link đánh giá thành công!', 'success');
-        setCreateLinkModalOpen(false);
-        await fetchMyInternship();
-      }
-    } catch (err) {
-      showToast(err.response?.data?.message || err.message || 'Không thể tạo link đánh giá', 'error');
-    } finally {
-      setCreatingLink(false);
-    }
-  };
-
-  const handleCopyLink = (link) => {
-    navigator.clipboard.writeText(link);
-    setCopied(true);
-    showToast('Đã sao chép link đánh giá vào clipboard.', 'success');
-    setTimeout(() => setCopied(false), 3000);
-  };
-
-  const syncRecreateRequest = useCallback(() => {
-    const reqObj = evalData?.request;
-    if (reqObj) {
-      if (reqObj.recreateStatus && reqObj.recreateStatus !== 'NONE') {
-        setRecreateRequestState({
-          status: reqObj.recreateStatus,
-          reason: reqObj.recreateReason,
-          rejectReason: reqObj.recreateRejectReason,
-        });
-      } else if (reqObj.allowRecreate === true) {
-        setRecreateRequestState({
-          status: 'APPROVED',
-          reason: reqObj.recreateReason,
-          rejectReason: reqObj.recreateRejectReason,
-        });
-      } else {
-        setRecreateRequestState(null);
-      }
-    } else {
-      setRecreateRequestState(null);
-    }
-  }, [evalData]);
-
-  useEffect(() => {
-    syncRecreateRequest();
-  }, [syncRecreateRequest]);
-
-  const handleSendRecreateRequest = async (e) => {
-    e?.preventDefault();
-    if (!recreateReason || !recreateReason.trim()) {
-      showToast('Vui lòng nhập lý do yêu cầu tạo lại link đánh giá.', 'error');
-      return;
-    }
-
-    setSubmittingRecreate(true);
-    try {
-      const res = await evaluationApi.studentRequestRecreateLink({
-        reason: recreateReason.trim(),
-      });
-
-      if (res?.success || res?.status === 200 || !res?.error) {
-        setRecreateRequestState({
-          status: 'PENDING',
-          reason: recreateReason.trim(),
-        });
-        const intern = rawInternship;
-        evaluationRecreateService.createRequest({
-          internshipId: intern?._id,
-          studentId: student?._id,
-          studentCode: student?.studentCode,
-          studentName: student?.userId?.fullName,
-          className: student?.className,
-          companyName: intern?.companyId?.name || intern?.companyId?.companyName || 'Doanh nghiệp',
-          position: intern?.position,
-          termName: currentTerm?.termName || 'Học kỳ hiện tại',
-          score: activeEvaluation?.score,
-          evaluationDate: activeEvaluation?.submittedAt || activeRequest?.submittedAt || new Date().toISOString(),
-          reason: recreateReason.trim(),
-        });
-        setRecreateModalOpen(false);
-        setRecreateReason('');
-        showToast('Đã gửi yêu cầu tạo lại link đánh giá tới Trưởng Bộ Môn.', 'success');
-        fetchMyInternship();
-      }
-    } catch (err) {
-      showToast(err.message || 'Không thể gửi yêu cầu', 'error');
-    } finally {
-      setSubmittingRecreate(false);
-    }
-  };
 
   useEffect(() => {
     fetchMyInternship();
@@ -254,27 +140,43 @@ const MyInternshipPage = () => {
   const rawInternship = data?.internship !== undefined ? data.internship : (data?._id ? data : null);
   const student = data?.student || rawInternship?.studentId;
   const internship = rawInternship;
-  
+
   const isRejected = internship?.status === 'REJECTED';
   const hasActiveInternship = Boolean(
     internship && !isRejected && internship.status !== 'INACTIVE'
   );
   const canRegisterNew = !hasActiveInternship;
 
-  const internId = rawInternship?._id || internship?._id;
-  const isDeleted = evaluationRecreateService.isEvaluationDeleted(internId);
-
-  // Resolve evaluation data from all available sources
-  let activeEvaluation = evalData?.evaluation ||
+  // Active evaluation data
+  const activeEvaluation = evalData?.evaluation ||
     (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
 
-  if (activeEvaluation && (activeEvaluation.status === 'SUBMITTED' || activeEvaluation.status === 'CONFIRMED' || activeEvaluation.score !== undefined)) {
-    if (isDeleted) {
-      evaluationRecreateService.clearDeletedEvaluation(internId);
-    }
-  } else if (isDeleted) {
-    activeEvaluation = null;
-  }
+  const isScorePublished = Boolean(
+    evalData?.isScorePublished ?? internship?.isScorePublished ?? activeEvaluation?.isScorePublished
+  );
+
+  const rawHasScore = Boolean(
+    (activeEvaluation?.score !== undefined && activeEvaluation?.score !== null && !isNaN(activeEvaluation?.score)) ||
+    (internship?.finalScore !== undefined && internship?.finalScore !== null) ||
+    (internship?.score !== undefined && internship?.score !== null)
+  );
+
+  // Student ONLY sees score if isScorePublished is true!
+  const hasPublishedScore = Boolean(isScorePublished && rawHasScore);
+
+  // Lecturer has graded, but TBM has not published yet
+  const isGradedPendingPublish = Boolean(
+    !isScorePublished && (
+      evalData?.hasGraded ||
+      activeEvaluation?.hasGraded ||
+      rawHasScore ||
+      internship?.status === 'COMPLETED' ||
+      activeEvaluation?.status === 'SUBMITTED' ||
+      activeEvaluation?.status === 'CONFIRMED'
+    )
+  );
+
+  const finalScoreValue = activeEvaluation?.score ?? internship?.finalScore ?? internship?.score;
 
   const isCompleted = Boolean(
     internship?.status === 'COMPLETED' ||
@@ -282,502 +184,265 @@ const MyInternshipPage = () => {
     activeEvaluation?.status === 'COMPLETED'
   );
 
-  const reqObj = evalData?.request;
-  const isEvaluationDeletedByTbm = Boolean(
-    !isCompleted &&
-    !activeEvaluation &&
-    (
-      evalData?.isEvaluationDeletedByTbm ||
-      isDeleted ||
-      (reqObj?.status === 'SUBMITTED' && !activeEvaluation)
-    )
-  );
+  // Time window for grading
+  const termInternshipCfg = evalData?.term?.internship || currentTerm?.internship || {};
+  const gradingStartRaw = termInternshipCfg.gradingStart;
+  const gradingEndRaw = termInternshipCfg.gradingEnd;
 
-  const activeRequest = isDeleted ? null : evalData?.request;
-  const isPendingEvaluation = Boolean(
-    !isEvaluationDeletedByTbm &&
-    activeRequest?.status === 'PENDING' &&
-    Boolean(activeRequest?.token)
-  );
-  const isEvaluated = Boolean(
-    !isEvaluationDeletedByTbm &&
-    !isPendingEvaluation && (
-      (activeEvaluation && (activeEvaluation.status === 'SUBMITTED' || activeEvaluation.status === 'CONFIRMED' || activeEvaluation.score !== undefined)) ||
-      (activeRequest?.status === 'SUBMITTED' && activeEvaluation) ||
-      isCompleted
-    )
-  );
-
-  const canCreateNewLink = Boolean(
-    !isCompleted && (
-      recreateRequestState?.status === 'APPROVED' ||
-      reqObj?.recreateStatus === 'APPROVED' ||
-      reqObj?.allowRecreate === true
-    )
-  );
-  const isRecreatePending = Boolean(
-    !isCompleted && (
-      recreateRequestState?.status === 'PENDING' ||
-      reqObj?.recreateStatus === 'PENDING'
-    ) && !canCreateNewLink
-  );
-  const isRecreateRejected = Boolean(
-    !isCompleted && (
-      recreateRequestState?.status === 'REJECTED' ||
-      reqObj?.recreateStatus === 'REJECTED'
-    ) && !canCreateNewLink && !isRecreatePending
-  );
-
-  // Evaluation time window computation
-  const startRaw =
-    evalData?.startDate ||
-    evalData?.term?.internship?.evaluationStartDate ||
-    evalData?.term?.internship?.evaluationStart ||
-    evalData?.term?.internship?.reportStart ||
-    internship?.academicTermId?.internship?.evaluationStartDate ||
-    internship?.academicTermId?.internship?.evaluationStart ||
-    internship?.academicTermId?.internship?.reportStart ||
-    currentTerm?.internship?.evaluationStartDate ||
-    currentTerm?.internship?.evaluationStart ||
-    currentTerm?.internship?.reportStart;
-
-  const endRaw =
-    evalData?.endDate ||
-    evalData?.term?.internship?.evaluationEndDate ||
-    evalData?.term?.internship?.evaluationEnd ||
-    evalData?.term?.internship?.reportDeadline ||
-    internship?.academicTermId?.internship?.evaluationEndDate ||
-    internship?.academicTermId?.internship?.evaluationEnd ||
-    internship?.academicTermId?.internship?.reportDeadline ||
-    currentTerm?.internship?.evaluationEndDate ||
-    currentTerm?.internship?.evaluationEnd ||
-    currentTerm?.internship?.reportDeadline;
+  const gradingStartDate = gradingStartRaw ? new Date(gradingStartRaw) : null;
+  const gradingEndDate = gradingEndRaw ? new Date(gradingEndRaw) : null;
 
   const now = new Date();
-  let evalStartDate = null;
-  if (startRaw) {
-    evalStartDate = new Date(startRaw);
-    evalStartDate.setHours(0, 0, 0, 0);
-  }
+  const isGradingNotOpen = Boolean(gradingStartDate && now < gradingStartDate);
+  const isGradingExpired = Boolean(gradingEndDate && now > new Date(gradingEndDate.getTime() + 24 * 60 * 60 * 1000 - 1));
 
-  let evalEndDate = null;
-  if (endRaw) {
-    evalEndDate = new Date(endRaw);
-    if (
-      evalEndDate.getHours() === 0 &&
-      evalEndDate.getMinutes() === 0 &&
-      evalEndDate.getSeconds() === 0 &&
-      evalEndDate.getMilliseconds() === 0
-    ) {
-      evalEndDate = new Date(evalEndDate.getTime() + 24 * 60 * 60 * 1000 - 1);
-    } else {
-      evalEndDate.setHours(23, 59, 59, 999);
-    }
-  }
-
-  const isEvalWindowNotOpen = Boolean(evalStartDate && now < evalStartDate);
-  const isEvalWindowExpired = Boolean(evalEndDate && now > evalEndDate);
-
-  const hasValidScore = Boolean(
-    isEvaluated &&
-    activeEvaluation?.score !== undefined &&
-    activeEvaluation?.score !== null &&
-    !isNaN(activeEvaluation?.score)
-  );
-
-  // Core Result Rule:
-  // - Has valid score -> PASS (preserved even after expiration)
-  // - Expired and no valid score -> FAIL
-  const isPass = hasValidScore;
-  const isFail = !hasValidScore && isEvalWindowExpired;
-
-  // If no internship registered yet
-  if (!internship) {
-    return (
-      <div className="space-y-6">
-        {/* Welcome & Student Info Banner */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 text-[#102d7d] font-bold text-xl flex items-center justify-center shadow-2xs shrink-0">
-              {student?.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
-            </div>
-            <div>
-              <h2 className="text-lg font-bold text-slate-900 leading-tight">
-                Xin chào, {student?.userId?.fullName || 'Sinh viên'}!
-              </h2>
-              <div className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2">
-                <span>MSSV: <strong>{student?.studentCode || '—'}</strong></span>
-                <span>•</span>
-                <span>Lớp: <strong>{student?.className || '—'}</strong></span>
-                <span>•</span>
-                <span>GPA: <strong>{student?.gpa !== undefined ? Number(student.gpa).toFixed(2) : '—'}</strong></span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
-              Chưa có hồ sơ thực tập
-            </span>
-          </div>
-        </div>
-
-        {/* Empty State Card */}
-        <div className="p-12 bg-white rounded-3xl border border-slate-200/80 shadow-2xs text-center flex flex-col items-center">
-          <div className="w-20 h-20 rounded-3xl bg-blue-50 border border-blue-100 text-[#123891] flex items-center justify-center mb-5 shadow-sm">
-            <Briefcase className="w-10 h-10" />
-          </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">
-            Bạn chưa đăng ký hồ sơ Thực tập Doanh nghiệp
-          </h3>
-          <p className="text-sm text-slate-500 max-w-md mb-8 leading-relaxed">
-            Hãy nộp đơn đăng ký thực tập để được Trưởng Bộ Môn xét duyệt và phân công Giảng viên hướng dẫn trong kỳ này.
-          </p>
-
-          <Link
-            to="/student/internship/register"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-sm font-semibold rounded-2xl shadow-lg shadow-blue-200 transition duration-200"
-          >
-            <PlusCircle className="w-5 h-5" />
-            <span>Đăng ký thực tập ngay</span>
-            <ArrowRight className="w-4 h-4 ml-1" />
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  // Format dates
-  const formatDate = (d) => {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('vi-VN', {
+  const formatDate = (dateString) => {
+    if (!dateString) return '—';
+    return new Date(dateString).toLocaleDateString('vi-VN', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
     });
   };
 
-  const getDurationInWeeks = (start, end) => {
-    if (!start || !end) return null;
-    const diff = new Date(end) - new Date(start);
-    const weeks = Math.round(diff / (1000 * 60 * 60 * 24 * 7));
-    return weeks > 0 ? weeks : 1;
+  const hasAssignedLecturer = Boolean(
+    internship?.lecturerId ||
+    internship?.supervisorId ||
+    (typeof internship?.lecturerId === 'object' && internship?.lecturerId?._id)
+  );
+
+  const lecturerObj =
+    typeof internship?.lecturerId === 'object'
+      ? internship.lecturerId
+      : typeof internship?.supervisorId === 'object'
+      ? internship.supervisorId
+      : null;
+
+  const lecturerName =
+    lecturerObj?.userId?.fullName ||
+    lecturerObj?.fullName ||
+    internship?.lecturerName ||
+    'Chưa phân công';
+
+  const docData = {
+    lecturer: {
+      fullName: lecturerName,
+      academicTitle: lecturerObj?.academicTitle || 'ThS',
+      lecturerCode: lecturerObj?.lecturerCode || '—',
+      faculty: 'Khoa Công Nghệ Thông Tin',
+      email: lecturerObj?.userId?.email || lecturerObj?.email || '—',
+    },
+    company: {
+      name: internship?.companyId?.companyName || internship?.companyId?.name || 'Doanh nghiệp tiếp nhận',
+      address: internship?.companyId?.address || '—',
+      contactPerson: internship?.companyId?.contactPerson || 'Bộ phận Nhân sự / Tuyển dụng',
+    },
+    startDate: internship?.startDate,
+    endDate: internship?.endDate,
+    totalWeeks: 10,
+    totalStudents: 1,
+    students: student
+      ? [
+          {
+            studentCode: student.studentCode,
+            fullName: student.userId?.fullName || 'Sinh viên',
+            className: student.className || 'DHKTPM18A',
+            position: internship?.position || 'Thực tập sinh',
+          },
+        ]
+      : [],
   };
 
-  const durationWeeks = getDurationInWeeks(internship.startDate, internship.endDate);
+  if (!hasActiveInternship) {
+    return (
+      <div className="space-y-6">
+        <div className="p-8 sm:p-12 rounded-3xl bg-white border border-slate-200/80 shadow-2xs text-center flex flex-col items-center justify-center">
+          <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#123891] flex items-center justify-center mb-4">
+            <Briefcase className="w-8 h-8" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-800 mb-2">
+            Bạn chưa đăng ký hồ sơ Thực tập Doanh nghiệp
+          </h3>
+          <p className="text-sm text-slate-500 max-w-md mb-8 leading-relaxed">
+            Hãy nộp đơn đăng ký thực tập để được Trưởng Bộ Môn xét duyệt và phân công Giảng viên Giám sát trong kỳ này.
+          </p>
+
+          <Link
+            to="/student/register-internship"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-sm rounded-2xl shadow-sm transition"
+          >
+            <span>Đăng ký Thực tập ngay</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Top Banner with Status */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
-              <Briefcase className="w-7 h-7" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  {internship.position}
-                </h2>
-                <StatusBadge status={internship.status} size="md" />
-              </div>
-              <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
-                <span>Doanh nghiệp: <strong className="text-slate-800">{internship.companyId?.name || internship.companyId?.companyName || '—'}</strong></span>
-                <span>•</span>
-                <span>Mã hồ sơ: <strong className="font-mono text-[#123891]">{internship._id}</strong></span>
-              </div>
-            </div>
+      {/* Top Banner Card */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+        <div className="flex items-start sm:items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
+            <Briefcase className="w-7 h-7" />
           </div>
-
-          {/* Action button if rejected/completed or info banner */}
-          <div className="flex items-center gap-2">
-            {isEvaluated && (
-              <button
-                onClick={() => setDocModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
-                title="In phiếu đánh giá kết quả thực tập từ Doanh nghiệp"
-              >
-                <Printer className="w-4 h-4" />
-                <span>In Phiếu đánh giá</span>
-              </button>
-            )}
-
-            {canRegisterNew ? (
-              <Link
-                to="/student/internship/register"
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Đăng ký hồ sơ mới</span>
-              </Link>
-            ) : (
-              <div className="px-3.5 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-600 text-xs font-medium flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                <span>Hồ sơ đang ở trạng thái hoạt động</span>
-              </div>
-            )}
+          <div className="space-y-1">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                Hồ Sơ Thực Tập Doanh Nghiệp
+              </h1>
+              <StatusBadge status={internship.status} size="md" />
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 flex items-center gap-2">
+              <span>Học kỳ: <strong>{internship.academicTermId?.termName || internship.academicTermId?.code || currentTerm?.termName || 'Học kỳ hiện tại'}</strong></span>
+              <span>•</span>
+              <span>Vị trí: <strong className="text-slate-700">{internship.position || 'Thực tập sinh'}</strong></span>
+            </p>
           </div>
         </div>
 
-        {/* Status explanation alert - Only rendered when there is actual explanation content */}
-        {(() => {
-          let content = null;
-          let isDanger = false;
-
-          if (internship.status === 'PENDING') {
-            content = (
-              <span>
-                Hồ sơ của bạn đã được tiếp nhận và đang ở trạng thái <strong>Chờ xét duyệt</strong>. Trưởng Bộ Môn (TBM) sẽ kiểm tra thông tin và phân công Giảng viên hướng dẫn.
-              </span>
-            );
-          } else if (internship.status === 'APPROVED') {
-            content = (
-              <span>
-                Hồ sơ thực tập của bạn đã được <strong>PHÊ DUYỆT</strong> thành công. Vui lòng liên hệ Giảng viên hướng dẫn để bắt đầu quá trình thực tập.
-              </span>
-            );
-          } else if (internship.status === 'INTERNING') {
-            content = (
-              <span>
-                Bạn đang trong quá trình <strong>THỰC TẬP</strong> tại doanh nghiệp. Nhớ nộp báo cáo định kỳ đầy đủ.
-              </span>
-            );
-          } else if (internship.status === 'REJECTED') {
-            isDanger = true;
-            content = (
-              <div className="space-y-2">
-                <div className="font-bold text-rose-900 text-sm flex items-center gap-1.5">
-                  <span>Hồ sơ thực tập đã bị TỪ CHỐI</span>
-                </div>
-                <div className="p-3.5 bg-white rounded-xl border border-rose-200 text-rose-900 shadow-2xs">
-                  <span className="font-bold text-rose-800 block mb-1">Lý do từ chối:</span>
-                  <p className="text-slate-800 leading-relaxed whitespace-pre-wrap font-medium">
-                    {internship.rejectionReason?.trim() ||
-                      internship.rejectReason?.trim() ||
-                      internship.reason?.trim() ||
-                      'Chưa có thông tin lý do từ chối.'}
-                  </p>
-                </div>
-                <p className="text-[11.5px] text-rose-700">
-                  Bạn có thể nhấn nút <strong>"Đăng ký hồ sơ mới"</strong> ở trên để cập nhật thông tin và nộp lại hồ sơ.
-                </p>
-              </div>
-            );
-          } else if (internship.status === 'COMPLETED') {
-            content = (
-              <span>
-                Chúc mừng bạn đã <strong>HOÀN THÀNH</strong> kỳ thực tập doanh nghiệp!
-              </span>
-            );
-          }
-
-          if (!content) return null;
-
-          return (
-            <div
-              className={`mt-5 p-4 rounded-2xl border text-xs leading-relaxed flex items-start gap-3 ${
-                isDanger
-                  ? 'bg-rose-50/80 border-rose-200 text-rose-950'
-                  : 'bg-blue-50/60 border-blue-100 text-[#123891]'
-              }`}
+        {/* Action Button: Giấy xác nhận Giám sát */}
+        {hasAssignedLecturer && (
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setDocModalOpen(true)}
+              className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition inline-flex items-center gap-2 shadow-2xs cursor-pointer"
             >
-              <AlertCircle
-                className={`w-4 h-4 shrink-0 mt-0.5 ${
-                  isDanger ? 'text-rose-600' : 'text-[#123891]'
-                }`}
-              />
-              <div className="flex-1">{content}</div>
-            </div>
-          );
-        })()}
+              <Printer className="w-4 h-4 text-slate-500" />
+              <span>Xem Giấy Xác Nhận Giám Sát</span>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Main Details Grid */}
+      {/* Main Grid: Details */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Columns: Company & Internship Details */}
+        {/* Left Column (2 Cols): Student & Company Info */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Company Card */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+          {/* Section 1: Student & Position */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Building2 className="w-5 h-5 text-[#123891]" />
+              <UserCheck className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Thông tin Doanh nghiệp Thực tập
+                1. Thông tin sinh viên thực tập
               </h3>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-slate-400 block mb-0.5">Tên công ty / Doanh nghiệp</span>
-                <span className="font-bold text-slate-900 text-sm">{internship.companyId?.name || internship.companyId?.companyName || '—'}</span>
+                <span className="text-slate-400 block mb-0.5">Họ và tên:</span>
+                <strong className="text-slate-900 text-sm">{student?.userId?.fullName || 'Sinh viên'}</strong>
               </div>
-
               <div>
-                <span className="text-slate-400 block mb-0.5">Mã công ty (Code)</span>
-                <span className="font-mono font-bold text-[#123891] bg-blue-50 px-2 py-0.5 rounded-md">
-                  {internship.companyId?.code || 'Chưa đặt mã'}
-                </span>
+                <span className="text-slate-400 block mb-0.5">Mã số sinh viên (MSSV):</span>
+                <strong className="text-slate-900 font-mono text-sm">{student?.studentCode || '—'}</strong>
               </div>
-
-              <div className="sm:col-span-2">
-                <span className="text-slate-400 block mb-0.5">Địa chỉ thực tập</span>
-                <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                  <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
-                  <span>{internship.companyId?.address}</span>
-                </div>
+              <div>
+                <span className="text-slate-400 block mb-0.5">Lớp danh nghĩa:</span>
+                <span className="text-slate-700">{student?.className || '—'}</span>
               </div>
+              <div>
+                <span className="text-slate-400 block mb-0.5">Email liên hệ:</span>
+                <span className="text-slate-700 font-mono">{student?.userId?.email || '—'}</span>
+              </div>
+            </div>
 
-              {internship.companyId?.email && (
-                <div>
-                  <span className="text-slate-400 block mb-0.5">Email doanh nghiệp</span>
-                  <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                    <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{internship.companyId?.email}</span>
-                  </div>
-                </div>
-              )}
-
-              {internship.companyId?.phone && (
-                <div>
-                  <span className="text-slate-400 block mb-0.5">Hotline công ty</span>
-                  <div className="flex items-center gap-1.5 text-slate-700 font-medium">
-                    <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>{internship.companyId?.phone}</span>
-                  </div>
-                </div>
-              )}
-
-              {internship.companyId?.website && (
-                <div className="sm:col-span-2">
-                  <span className="text-slate-400 block mb-0.5">Website</span>
-                  <div className="flex items-center gap-1.5 text-[#123891] font-medium">
-                    <Globe className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <a href={internship.companyId?.website} target="_blank" rel="noreferrer" className="hover:underline">
-                      {internship.companyId?.website}
-                    </a>
-                  </div>
-                </div>
-              )}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 text-xs space-y-2">
+              <div className="font-bold text-slate-800 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#123891]" />
+                <span>Thời gian thực tập dự kiến:</span>
+              </div>
+              <div className="flex items-center gap-4 text-slate-600">
+                <span>Từ ngày: <strong>{formatDate(internship.startDate)}</strong></span>
+                <span>đến ngày: <strong>{formatDate(internship.endDate)}</strong></span>
+              </div>
             </div>
           </div>
 
-          {/* Internship Timeline & Position Card */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+          {/* Section 2: Company Information */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <Calendar className="w-5 h-5 text-[#123891]" />
+              <Building2 className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Vị trí & Thời gian Thực tập
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span className="text-slate-400 block mb-1">Vị trí thực tập</span>
-                <span className="font-bold text-slate-900 text-sm">{internship.position}</span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span className="text-slate-400 block mb-1">Ngày bắt đầu</span>
-                <span className="font-bold text-slate-900 text-sm">{formatDate(internship.startDate)}</span>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
-                <span className="text-slate-400 block mb-1">Ngày kết thúc</span>
-                <span className="font-bold text-slate-900 text-sm">{formatDate(internship.endDate)}</span>
-                {durationWeeks && (
-                  <span className="block text-[11px] text-[#123891] font-medium mt-0.5">
-                    (Khoảng {durationWeeks} tuần)
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {internship.registrationNote && (
-              <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 text-xs">
-                <span className="font-bold text-slate-700 block mb-1">Ghi chú đăng ký của sinh viên:</span>
-                <p className="text-slate-600 whitespace-pre-line leading-relaxed">
-                  {internship.registrationNote}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Right 1 Column: Mentors & Supervision Card */}
-        <div className="space-y-6">
-          {/* Company Mentor */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
-              <UserCheck className="w-5 h-5 text-[#123891]" />
-              <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Người hướng dẫn tại Doanh nghiệp
+                2. Doanh nghiệp tiếp nhận thực tập
               </h3>
             </div>
 
             <div className="space-y-3 text-xs">
-              <div>
-                <span className="text-slate-400 block mb-0.5">Họ tên Mentor / Người phụ trách</span>
-                <span className="font-bold text-slate-900 text-sm">
-                  {internship.mentorName || internship.companyId?.contactPerson || 'Chưa cập nhật'}
-                </span>
-                {internship.mentorPosition && (
-                  <span className="block text-[11px] text-slate-500 font-medium">
-                    {internship.mentorPosition}
-                  </span>
+              <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1">
+                <div className="text-base font-bold text-slate-900">
+                  {internship.companyId?.companyName || internship.companyId?.name || 'Doanh nghiệp tiếp nhận'}
+                </div>
+                {internship.companyId?.companyCode && (
+                  <div className="text-xs text-slate-500 font-mono">
+                    Mã DN: {internship.companyId.companyCode}
+                  </div>
                 )}
               </div>
 
-              <div>
-                <span className="text-slate-400 block mb-0.5">Email liên hệ</span>
-                <span className="font-medium text-slate-700">
-                  {internship.mentorEmail || internship.companyId?.contactEmail || '—'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-slate-400 block mb-0.5">Số điện thoại liên hệ</span>
-                <span className="font-medium text-slate-700 font-mono">
-                  {internship.mentorPhone || internship.companyId?.phone || '—'}
-                </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-slate-700">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+                  <span>{internship.companyId?.address || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Mail className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="font-mono">{internship.companyId?.email || '—'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span className="font-mono">{internship.companyId?.phone || '—'}</span>
+                </div>
+                {internship.companyId?.website && (
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-slate-400 shrink-0" />
+                    <a
+                      href={internship.companyId.website.startsWith('http') ? internship.companyId.website : `https://${internship.companyId.website}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[#123891] hover:underline truncate"
+                    >
+                      {internship.companyId.website}
+                    </a>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Academic Supervisor (GVHD) */}
+        {/* Right Column (1 Col): Supervisor Lecturer & Evaluation Outcome */}
+        <div className="space-y-6">
+          {/* Section 3: Giảng viên Giám sát (GVGS) */}
           <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <BookOpen className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                Giảng viên Hướng dẫn (GVHD)
+                Giảng viên Giám sát (GVGS)
               </h3>
             </div>
 
-            {internship.lecturerId ? (
-              <div className="space-y-3 text-xs">
-                <div className="p-3 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center justify-between">
+            {hasAssignedLecturer ? (
+              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3">
+                <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-[11px] text-slate-400 block mb-0.5">Giảng viên phụ trách</span>
-                    <span className="font-bold text-slate-900 text-sm">
-                      {internship.lecturerId?.academicTitle ? `${internship.lecturerId.academicTitle} ` : ''}
-                      {internship.lecturerId?.userId?.fullName}
+                    <span className="text-[11px] text-slate-500 uppercase tracking-wider block">Giảng viên Giám sát</span>
+                    <span className="text-sm font-bold text-slate-900">
+                      {lecturerObj?.academicTitle || 'ThS.'} {lecturerName}
                     </span>
                   </div>
-                  <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Đã phân công GVHD
-                  </span>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] text-slate-600 pt-1">
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Mã giảng viên</span>
-                    <span className="font-mono font-bold text-[#123891]">
-                      {internship.lecturerId?.lecturerCode}
-                    </span>
+                    Mã GV: <span className="font-mono font-bold text-slate-800">{lecturerObj?.lecturerCode || '—'}</span>
                   </div>
                   <div>
-                    <span className="text-slate-400 block mb-0.5">Email trao đổi</span>
-                    <span className="font-medium text-slate-700">
-                      {internship.lecturerId?.userId?.email}
-                    </span>
+                    Khoa: <span className="font-semibold text-slate-800">{lecturerObj?.faculty || 'Khoa CNTT'}</span>
+                  </div>
+                  <div className="sm:col-span-2">
+                    Email: <span className="font-mono text-[#102d7d]">{lecturerObj?.userId?.email || lecturerObj?.email || '—'}</span>
                   </div>
                 </div>
               </div>
@@ -785,62 +450,39 @@ const MyInternshipPage = () => {
               <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/20 text-[#123891] text-xs leading-relaxed">
                 <div className="font-bold mb-0.5 flex items-center gap-1.5 text-[#123891]">
                   <Clock className="w-4 h-4 text-[#123891]" />
-                  Chờ phân công GVHD
+                  Chờ phân công GVGS
                 </div>
                 <p className="text-slate-700">
-                  Trưởng Bộ Môn sẽ chỉ định Giảng viên hướng dẫn sau khi phê duyệt hồ sơ thực tập của bạn.
+                  Trưởng Bộ Môn sẽ chỉ định Giảng viên Giám sát sau khi phê duyệt hồ sơ thực tập của bạn.
                 </p>
               </div>
             )}
           </div>
 
-          {/* Evaluation Request & Company Evaluation Card */}
+          {/* Section 4: Evaluation Outcome by Giảng viên Giám sát */}
           <div id="evaluation-section" className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-[#123891]" />
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
-                  Đánh Giá Thực Tập Doanh Nghiệp
+                  Kết Quả Đánh Giá (GVGS)
                 </h3>
               </div>
-              {isPass ? (
+
+              {hasPublishedScore ? (
                 <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  <span>PASS (Đạt)</span>
+                  <span>ĐÃ CÔNG BỐ ĐIỂM</span>
                 </span>
-              ) : isFail ? (
-                <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1.5 shadow-2xs">
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                  <span>FAIL (Không đạt - Quá hạn)</span>
-                </span>
-              ) : isEvalWindowNotOpen ? (
+              ) : isGradingNotOpen ? (
                 <span className="text-[11px] font-bold px-3 py-1 rounded-lg bg-slate-100 text-slate-600 border border-slate-200 flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-slate-500" />
-                  <span>Chưa đến thời gian mở tạo link</span>
+                  <span>Chưa mở chấm điểm</span>
                 </span>
-              ) : isEvaluated ? (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                  Doanh nghiệp đã đánh giá
-                </span>
-              ) : isEvaluationDeletedByTbm ? (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
-                  Kết quả đã bị xóa bởi TBM
-                </span>
-              ) : isPendingEvaluation ? (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#123891]/10 text-[#123891] border border-[#123891]/30 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-[#123891]" />
-                  Đã tạo link — Chờ DN đánh giá
-                </span>
-              ) : (
-                <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600">
-                  {['PENDING_SUPERVISOR_ACCEPTANCE', 'APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status) ? 'Chưa tạo link' : 'Chưa đủ điều kiện'}
-                </span>
-              )}
+              ) : null}
             </div>
 
-            {/* Condition 1: Internship is PENDING / Awaiting approval */}
+            {/* Condition A: Internship PENDING */}
             {internship.status === 'PENDING' && (
               <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/20 text-[#123891] text-xs leading-relaxed space-y-1">
                 <div className="font-bold flex items-center gap-1.5 text-[#123891]">
@@ -848,291 +490,66 @@ const MyInternshipPage = () => {
                   Hồ sơ thực tập đang chờ xét duyệt
                 </div>
                 <p className="text-slate-700 leading-relaxed">
-                  Hồ sơ đăng ký thực tập của bạn đang ở trạng thái <strong className="text-[#123891]">Chờ Trưởng Bộ Môn xét duyệt</strong>. Bạn sẽ có thể tạo link đánh giá gửi Doanh nghiệp sau khi hồ sơ được phê duyệt chính thức.
+                  Hồ sơ đăng ký thực tập của bạn đang ở trạng thái <strong className="text-[#123891]">Chờ Trưởng Bộ Môn xét duyệt</strong>.
                 </p>
               </div>
             )}
 
-            {/* Condition 2: Internship is REJECTED */}
-            {internship.status === 'REJECTED' && (
-              <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200/80 text-rose-900 text-xs leading-relaxed space-y-1">
-                <div className="font-bold flex items-center gap-1.5">
-                  <AlertCircle className="w-4 h-4 text-rose-600" />
-                  Hồ sơ thực tập không được phê duyệt
+            {/* Condition B1: Has Published Score */}
+            {hasPublishedScore && (
+              <div className="space-y-4 text-xs">
+                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 text-emerald-950 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-sm">Kết quả đánh giá chính thức</h4>
+                      <p className="text-[11.5px] text-slate-500 mt-0.5">
+                        Giảng viên Giám sát: <strong>{lecturerName}</strong>
+                      </p>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-base font-extrabold text-emerald-700 bg-white px-3.5 py-1 rounded-xl border border-emerald-300 inline-flex items-baseline gap-1 shadow-2xs">
+                        <span className="text-lg">
+                          {Number(finalScoreValue) % 1 === 0 ? Number(finalScoreValue).toFixed(1) : finalScoreValue}
+                        </span>
+                        <span className="text-xs font-semibold text-emerald-800">/ 10 điểm</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Comments from GVGS */}
+                  {activeEvaluation?.comments && (
+                    <div className="p-3 rounded-xl bg-white/80 border border-emerald-200/60 text-slate-700 space-y-1">
+                      <div className="font-bold text-slate-800 text-[11px] uppercase">Nhận xét của Giảng viên:</div>
+                      <p className="italic leading-relaxed">{activeEvaluation.comments}</p>
+                    </div>
+                  )}
+
+
                 </div>
-                <p>
-                  Hồ sơ thực tập của bạn đã bị từ chối. Lý do: <em>{internship.rejectionReason || 'Chưa đạt yêu cầu'}</em>. Bạn không thể tạo link đánh giá cho đợt này.
-                </p>
               </div>
             )}
 
-            {/* Condition 3: Approved / Assigned GVHD / Interning / Completed */}
-            {['PENDING_SUPERVISOR_ACCEPTANCE', 'APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status) && (
-              <>
-                {/* Case 1: No Evaluation Request Created Yet */}
-                {!isEvaluated && !isPendingEvaluation && !isEvaluationDeletedByTbm && (
-                  <div className="py-2 text-center space-y-3">
-                    {/* Time Window Notification Alert */}
-                    {isFail ? (
-                      <div className="p-4 rounded-2xl bg-rose-50/90 border border-rose-200 text-left text-xs text-rose-950 space-y-2">
-                        <div className="font-bold flex items-center gap-1.5 text-rose-700">
-                          <AlertCircle className="w-4 h-4 text-rose-600" />
-                          <span>Đã hết thời gian tạo link đánh giá Thực tập Doanh nghiệp</span>
-                        </div>
-                        <p className="text-slate-700 leading-relaxed">
-                          Hạn chót tạo link đánh giá đã kết thúc vào ngày <strong>{evalEndDate ? evalEndDate.toLocaleDateString('vi-VN') : '—'}</strong>. Vì chưa có kết quả đánh giá hợp lệ từ Doanh nghiệp trước thời hạn, kết quả của bạn được ghi nhận là <strong className="text-rose-600 font-bold">KHÔNG ĐẠT (FAIL)</strong>.
-                        </p>
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            disabled
-                            className="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed inline-flex items-center gap-2"
-                          >
-                            <Lock className="w-4 h-4" />
-                            <span>Đã hết thời gian tạo link đánh giá</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : isEvalWindowNotOpen ? (
-                      <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-200 text-left text-xs text-blue-950 space-y-2">
-                        <div className="font-bold flex items-center gap-1.5 text-[#123891]">
-                          <Clock className="w-4 h-4 text-[#123891]" />
-                          <span>Chưa đến thời gian mở tạo link đánh giá Thực tập Doanh nghiệp</span>
-                        </div>
-                        <p className="text-slate-700 leading-relaxed">
-                          Cổng tạo link đánh giá sẽ mở từ ngày <strong>{evalStartDate ? evalStartDate.toLocaleDateString('vi-VN') : '—'}</strong> đến ngày <strong>{evalEndDate ? evalEndDate.toLocaleDateString('vi-VN') : '—'}</strong>. Vui lòng quay lại trong thời gian quy định.
-                        </p>
-                        <div className="pt-1">
-                          <button
-                            type="button"
-                            disabled
-                            className="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold text-xs rounded-xl cursor-not-allowed inline-flex items-center gap-2"
-                          >
-                            <Clock className="w-4 h-4" />
-                            <span>Chưa đến thời gian mở tạo link</span>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 text-left text-xs text-[#123891] space-y-1">
-                          <div className="font-bold">Quy trình đánh giá thực tập:</div>
-                          <div>1. Sinh viên nhấn nút <strong>[Tạo link đánh giá]</strong> để nhận liên kết đánh giá an toàn.</div>
-                          <div>2. Gửi liên kết cho Người phụ trách / Mentor tại Doanh nghiệp để họ điền phiếu online không cần đăng nhập.</div>
-                          <div>3. <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo 01 link duy nhất cho đợt thực tập này.</div>
-                          {evalEndDate && (
-                            <div className="text-[#123891] font-semibold pt-1">
-                              📅 Hạn chót tạo link & hoàn thành đánh giá: {evalEndDate.toLocaleDateString('vi-VN')}
-                            </div>
-                          )}
-                        </div>
+            {/* Condition C: Approved / Interning, awaiting lecturer grading */}
+            {internship.status !== 'PENDING' && !hasPublishedScore && (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-3">
+                <div className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4 text-[#123891]" />
+                  <span>Chờ Giảng viên Giám sát chấm điểm</span>
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  Đợt thực tập của bạn đang được Giảng viên Giám sát theo dõi. Giảng viên sẽ thực hiện chấm điểm và công bố kết quả tại đây.
+                </p>
 
-                        <div className="pt-2">
-                          <button
-                            type="button"
-                            onClick={() => setCreateLinkModalOpen(true)}
-                            className="px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-md shadow-blue-200 transition inline-flex items-center gap-2 cursor-pointer"
-                          >
-                            <PlusCircle className="w-4 h-4" />
-                            <span>Tạo Link Đánh Giá Cho Doanh Nghiệp</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Case 2: Link Created (Pending Submission) */}
-                {isPendingEvaluation && activeRequest?.token && (
-                  <div className="space-y-3 text-xs">
-                    {isFail && (
-                      <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 font-semibold flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                        <span>Đã hết thời hạn đánh giá ({evalEndDate ? evalEndDate.toLocaleDateString('vi-VN') : '—'}) mà chưa có điểm từ Doanh nghiệp. Kết quả: <strong>KHÔNG ĐẠT (FAIL)</strong>.</span>
-                      </div>
-                    )}
-
-                    <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/25 space-y-2.5 text-[#123891]">
-                      <div className="font-bold flex items-center gap-2 text-[#123891]">
-                        <Clock className="w-4 h-4 text-[#123891]" />
-                        <span>Link đánh giá thực tập của bạn đã sẵn sàng:</span>
-                      </div>
-
-                      <div className="flex items-center gap-2 bg-white p-2.5 rounded-xl border border-[#123891]/30">
-                        <input
-                          type="text"
-                          readOnly
-                          value={`${window.location.origin}/company-evaluation/${activeRequest.token}`}
-                          className="flex-1 bg-transparent font-mono text-xs text-slate-700 outline-none select-all"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleCopyLink(`${window.location.origin}/company-evaluation/${activeRequest.token}`)}
-                          className="p-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-lg transition shrink-0 cursor-pointer shadow-xs flex items-center justify-center"
-                          title={copied ? 'Đã sao chép link!' : 'Sao chép link'}
-                        >
-                          {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
-
-                      <div className="text-[11px] text-slate-600 space-y-0.5">
-                        <div>• Doanh nghiệp mở link để đánh giá trực tiếp mà <strong>không cần tài khoản / đăng nhập</strong>.</div>
-                        <div className="text-[#123891] font-medium pt-1">
-                          ⚠️ Mỗi sinh viên chỉ được tạo 1 link duy nhất. Nếu cần tạo lại link, vui lòng liên hệ Trưởng Bộ Môn.
-                        </div>
-                      </div>
+                {(gradingStartDate || gradingEndDate) && (
+                  <div className="p-3 rounded-xl bg-blue-50/60 border border-blue-100 text-[11px] text-[#123891] space-y-0.5">
+                    <div className="font-bold">Thời gian Giảng viên Giám sát chấm điểm:</div>
+                    <div>
+                      📅 {gradingStartDate ? formatDate(gradingStartDate) : 'Mở'} — {gradingEndDate ? formatDate(gradingEndDate) : 'Không giới hạn'}
                     </div>
                   </div>
                 )}
-
-                {/* Case 3: Submitted Evaluation (Clean View with Recreate Request Option) */}
-                {isEvaluated && (
-                  <div className="space-y-4 text-xs">
-                    <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 text-emerald-950 space-y-3 shadow-2xs">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold shrink-0">
-                            <CheckCircle2 className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Doanh nghiệp đã hoàn thành đánh giá thực tập</h4>
-                            <p className="text-[11px] text-slate-500">Phiếu đánh giá đã được gửi lên hệ thống và chuyển tới Trưởng Bộ Môn để xem xét.</p>
-                          </div>
-                        </div>
-
-                        {/* Điểm đánh giá / 10 điểm */}
-                        {activeEvaluation?.score !== undefined && activeEvaluation?.score !== null && (
-                          <div className="text-left sm:text-right shrink-0">
-                            <div className="text-sm sm:text-base font-extrabold text-emerald-700 bg-white/90 px-3.5 py-1.5 rounded-xl border border-emerald-300 inline-flex items-baseline gap-1 shadow-2xs">
-                              <span className="text-base sm:text-lg">{Number(activeEvaluation.score) % 1 === 0 ? Number(activeEvaluation.score) : activeEvaluation.score}</span>
-                              <span className="text-xs font-semibold text-emerald-800">/ 10 điểm</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Recreation Request Alert Boxes */}
-                      {isRecreatePending && (
-                        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 flex items-start gap-3 shadow-2xs">
-                          <div className="w-8 h-8 rounded-xl bg-amber-500 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                            <Clock className="w-4 h-4" />
-                          </div>
-                          <div className="space-y-1 min-w-0">
-                            <div className="font-bold text-amber-950 text-xs sm:text-sm">
-                              Yêu cầu tạo lại link đang chờ Trưởng Bộ Môn xét duyệt
-                            </div>
-                            <p className="text-slate-700 text-[11.5px]">
-                              Lý do yêu cầu: <em className="font-semibold text-slate-900">"{recreateRequestState?.reason || reqObj?.recreateReason || '—'}"</em>
-                            </p>
-                            <div className="text-[11px] text-amber-800 font-medium">
-                              • Bạn không thể gửi thêm yêu cầu mới khi đang có 1 yêu cầu ở trạng thái chờ duyệt.
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {canCreateNewLink && (
-                        <div className="p-4 rounded-2xl bg-emerald-100/70 border border-emerald-300 text-emerald-950 flex items-start gap-3 shadow-2xs">
-                          <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                            <CheckCircle2 className="w-4 h-4" />
-                          </div>
-                          <div className="space-y-0.5 min-w-0">
-                            <div className="font-bold text-emerald-950 text-xs sm:text-sm">
-                              Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link
-                            </div>
-                            <p className="text-slate-700 text-[11.5px] leading-relaxed">
-                              Bạn đã được cấp quyền tạo lại link đánh giá mới cho đợt thực tập này.
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {isRecreateRejected && (
-                        <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 flex items-start gap-3 shadow-2xs">
-                          <div className="w-8 h-8 rounded-xl bg-rose-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-2xs">
-                            <AlertCircle className="w-4 h-4" />
-                          </div>
-                          <div className="space-y-0.5 min-w-0">
-                            <div className="font-bold text-rose-950 text-xs sm:text-sm">
-                              Yêu cầu tạo lại link đã bị từ chối
-                            </div>
-                            <p className="text-slate-700 text-[11.5px] leading-relaxed">
-                              Lý do từ TBM: <em className="font-semibold text-rose-900">"{recreateRequestState?.rejectReason || reqObj?.recreateRejectReason || 'Chưa đủ điều kiện xét duyệt'}"</em>
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Action buttons */}
-                      <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                        {canCreateNewLink && (
-                          <button
-                            type="button"
-                            onClick={() => setCreateLinkModalOpen(true)}
-                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Tạo link mới ngay</span>
-                          </button>
-                        )}
-
-                        {isRecreateRejected && (
-                          <button
-                            type="button"
-                            onClick={() => setRecreateModalOpen(true)}
-                            className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                            <span>Gửi lại yêu cầu khác</span>
-                          </button>
-                        )}
-
-                        {!isCompleted && !isRecreatePending && !canCreateNewLink && !isRecreateRejected && (
-                          <button
-                            type="button"
-                            onClick={() => setRecreateModalOpen(true)}
-                            className="px-4 py-2.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-2xs cursor-pointer text-xs"
-                          >
-                            <RotateCcw className="w-4 h-4 text-slate-500" />
-                            <span>Yêu cầu tạo lại link đánh giá</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Case 4: Evaluation Deleted by TBM */}
-                {isEvaluationDeletedByTbm && (
-                  <div className="space-y-4 text-xs">
-                    <div className="p-4 rounded-2xl bg-rose-50/80 border border-rose-200/90 text-rose-950 space-y-3 shadow-2xs">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center font-bold shrink-0">
-                          <AlertCircle className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h4 className="font-bold text-slate-900 text-xs sm:text-sm">Kết quả đã bị xóa bởi TBM</h4>
-                          <p className="text-[11px] text-slate-600">Kết quả đánh giá trước đó đã được Trưởng Bộ môn xóa.</p>
-                        </div>
-                      </div>
-
-                      {/* Action button: Create new link immediately */}
-                      {!isCompleted && (
-                        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
-                          <button
-                            type="button"
-                            onClick={() => setCreateLinkModalOpen(true)}
-                            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl transition inline-flex items-center justify-center gap-2 shadow-xs cursor-pointer text-xs"
-                          >
-                            <Plus className="w-4 h-4" />
-                            <span>Tạo link đánh giá mới</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </>
+              </div>
             )}
           </div>
 
@@ -1152,135 +569,18 @@ const MyInternshipPage = () => {
         </div>
       </div>
 
-      {/* Confirmation Modal to Create Evaluation Link */}
-      {createLinkModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-slate-900 pb-3 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
-                <Award className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base">Xác nhận tạo link đánh giá</h3>
-                <p className="text-xs text-slate-500">Đánh giá kết quả Thực tập Doanh nghiệp (TTDN)</p>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Đợt thực tập tại:</span>
-                <strong className="text-slate-900 text-right">{internship?.companyId?.companyName || internship?.companyId?.name}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Sinh viên:</span>
-                <strong className="text-slate-900">{student?.userId?.fullName || 'Sinh viên'} ({student?.studentCode})</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Học kỳ:</span>
-                <strong className="text-[#102d7d]">{internship?.academicTermId?.termName || internship?.academicTermId?.code || currentTerm?.termName || currentTerm?.code || 'Học kỳ hiện tại'}</strong>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-[#123891]/5 text-[#123891] text-[11px] leading-relaxed border border-[#123891]/20">
-              <strong>Lưu ý:</strong> Mỗi sinh viên chỉ được tạo 01 link đánh giá cho 01 đợt thực tập. Vui lòng gửi link cho Người phụ trách / Mentor tại doanh nghiệp tiếp nhận.
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setCreateLinkModalOpen(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={creatingLink}
-                onClick={handleCreateEvaluationLink}
-                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
-              >
-                {creatingLink ? 'Đang tạo...' : 'Xác nhận tạo link'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Yêu Cầu Tạo Lại Link Đánh Giá */}
-      {recreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white max-w-lg w-full p-6 sm:p-7 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-slate-900 pb-3 border-b border-slate-100">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                <RotateCcw className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-base">Yêu cầu tạo lại link đánh giá</h3>
-                <p className="text-xs text-slate-500">Gửi yêu cầu tới Trưởng Bộ Môn để xin cấp quyền tạo lại link mới</p>
-              </div>
-            </div>
-
-            {/* Readonly Info */}
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2 text-slate-700">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Sinh viên:</span>
-                <strong className="text-slate-900">{student?.userId?.fullName || 'Sinh viên'}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">MSSV:</span>
-                <strong className="text-slate-900 font-mono">{student?.studentCode || '—'}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Doanh nghiệp:</span>
-                <strong className="text-slate-900">{internship.companyId?.name || internship.companyId?.companyName || 'TDSOUTH'}</strong>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Đợt thực tập:</span>
-                <strong className="text-slate-900">{internship.position || 'Thực tập sinh'}</strong>
-              </div>
-            </div>
-
-            {/* Textarea Reason */}
-            <div className="space-y-1.5 text-xs">
-              <label className="font-bold text-slate-800 flex items-center justify-between">
-                <span>Lý do yêu cầu tạo lại (*):</span>
-                <span className="text-[11px] text-slate-400 font-normal">Bắt buộc</span>
-              </label>
-              <textarea
-                rows={3}
-                value={recreateReason}
-                onChange={(e) => setRecreateReason(e.target.value)}
-                placeholder="Vui lòng nhập lý do cụ thể (Ví dụ: Doanh nghiệp gửi nhầm thông tin, thay đổi người đánh giá trực tiếp, v.v.)..."
-                className="w-full p-3 rounded-xl border border-slate-300 focus:border-[#123891] focus:ring-1 focus:ring-[#123891] outline-none text-xs text-slate-800 placeholder:text-slate-400 leading-relaxed"
-              />
-            </div>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  setRecreateModalOpen(false);
-                  setRecreateReason('');
-                }}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-              >
-                Hủy
-              </button>
-              <button
-                type="button"
-                disabled={submittingRecreate || !recreateReason.trim()}
-                onClick={handleSendRecreateRequest}
-                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 inline-flex items-center gap-2 cursor-pointer"
-              >
-                {submittingRecreate ? 'Đang gửi...' : 'Gửi yêu cầu'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Document Viewer Modal */}
+      {docModalOpen && (
+        <DocumentViewerModal
+          isOpen={docModalOpen}
+          onClose={() => setDocModalOpen(false)}
+          title="Giấy Xác Nhận Giám Sát Thực Tập Doanh Nghiệp"
+        >
+          <InternshipConfirmationDoc docData={docData} />
+        </DocumentViewerModal>
       )}
     </div>
   );
 };
 
 export default MyInternshipPage;
-

@@ -34,6 +34,10 @@ export const internshipApi = {
   complete: (id) =>
     axiosClient.patch(`/internships/${id}/complete`),
 
+  // Lecturer (GVGS) grades internship
+  grade: (id, data) =>
+    axiosClient.post('/evaluations/internship/grade', { ...data, internshipId: id }),
+
   // Student gets own internship profile & active status
   getMyInternship: (params) => axiosClient.get('/internships/my', { params }),
 

@@ -40,7 +40,6 @@ const STATUS_FILTERS = [
   { value: 'APPROVED', label: 'Đã duyệt' },
   { value: 'INTERNING', label: 'Đang thực tập' },
   { value: 'COMPLETED', label: 'Đã hoàn thành' },
-  { value: 'REJECTED', label: 'Đã từ chối' },
   { value: 'CANCELLED', label: 'Đã hủy' },
 ];
 
@@ -261,7 +260,7 @@ const InternshipManagement = () => {
                   <th className="py-3.5 px-4">Doanh nghiệp</th>
                   <th className="py-3.5 px-4">Vị trí thực tập</th>
                   <th className="py-3.5 px-4">Thời gian</th>
-                  <th className="py-3.5 px-4">Giảng viên HD</th>
+                  <th className="py-3.5 px-4">Giảng viên Giám sát</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
                   <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
                 </tr>
@@ -366,7 +365,7 @@ const InternshipManagement = () => {
                               setAssignModalOpen(true);
                             }}
                             className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                            title={item.lecturerId ? 'Đổi Giảng viên HD' : 'Phân công Giảng viên HD'}
+                            title={item.lecturerId ? 'Đổi Giảng viên Giám sát' : 'Phân công Giảng viên Giám sát'}
                           >
                             <BookOpen className="w-4 h-4" />
                           </button>

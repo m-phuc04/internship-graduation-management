@@ -73,7 +73,7 @@ const assignLecturer = async (req, res, next) => {
     if (!lecturerId) {
       return res.status(400).json({
         success: false,
-        message: "Vui lòng chọn giảng viên hướng dẫn",
+        message: "Vui lòng chọn Giảng viên Giám sát",
       });
     }
 
@@ -85,7 +85,7 @@ const assignLecturer = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: "Phân công giảng viên hướng dẫn thành công",
+      message: "Phân công Giảng viên Giám sát thành công",
       data: internship,
     });
   } catch (error) {

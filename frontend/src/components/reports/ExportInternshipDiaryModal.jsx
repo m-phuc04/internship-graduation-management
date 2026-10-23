@@ -120,7 +120,7 @@ const ExportInternshipDiaryModal = ({
                 <span>{internship.position || '—'}</span>
               </div>
               <div>
-                <strong>Giảng viên hướng dẫn:</strong>{' '}
+                <strong>Giảng viên Giám sát:</strong>{' '}
                 <span>{internship.lecturerId?.userId?.fullName || 'Chưa phân công'}</span>
               </div>
               <div>
@@ -160,7 +160,12 @@ const ExportInternshipDiaryModal = ({
                       TUẦN {week.weekNumber}
                     </div>
                     <div className="text-slate-600 font-mono text-[11px]">
-                      <strong>Thời gian:</strong> {formatDate(week.startDate)} — {formatDate(week.endDate)}
+                      <strong>Thời gian:</strong>{' '}
+                      {week.startDate && week.endDate
+                        ? `${formatDate(week.startDate)} — ${formatDate(week.endDate)}`
+                        : week.startDate
+                        ? formatDate(week.startDate)
+                        : '—'}
                     </div>
                   </div>
 
@@ -197,7 +202,7 @@ const ExportInternshipDiaryModal = ({
                         </div>
                         {report.lecturerScore !== null && report.lecturerScore !== undefined && (
                           <div className="font-bold text-[#123891]">
-                            Điểm GVHD: <span className="text-emerald-700 font-mono">{report.lecturerScore}/10</span>
+                            Điểm GVGS: <span className="text-emerald-700 font-mono">{report.lecturerScore}/10</span>
                             {report.lecturerComment && ` (${report.lecturerComment})`}
                           </div>
                         )}

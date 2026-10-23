@@ -33,46 +33,35 @@ import {
   ChevronRight,
 } from 'lucide-react';
 
+const DEFAULT_WEEKS_COUNT = 12;
+
 /**
- * Calculates weeks from startDate to endDate dynamically.
- * Week 1: startDate -> startDate + 6 days
- * Week 2: next day -> next day + 6 days
- * ...
- * Last week: clamped at endDate
+ * Creates 12 default weeks for internship.
+ * If internship start date is available, provides suggested 7-day ranges.
+ * Students can freely enter or adjust dates when writing/editing reports.
  */
-const calculateWeeks = (startDateStr, endDateStr) => {
-  if (!startDateStr || !endDateStr) return [];
-  const start = new Date(startDateStr);
-  const end = new Date(endDateStr);
-  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return [];
-
+const generateDefaultWeeks = (startDateStr) => {
   const weeks = [];
-  let currentStart = new Date(start);
-  let weekNum = 1;
+  const start = startDateStr ? new Date(startDateStr) : null;
+  const hasValidStart = start && !isNaN(start.getTime());
 
-  while (currentStart <= end) {
-    let currentEnd = new Date(currentStart);
-    currentEnd.setDate(currentEnd.getDate() + 6);
+  for (let i = 1; i <= DEFAULT_WEEKS_COUNT; i++) {
+    let defaultStart = null;
+    let defaultEnd = null;
 
-    // If currentEnd exceeds internship end date, clamp to endDate
-    if (currentEnd > end) {
-      currentEnd = new Date(end);
+    if (hasValidStart) {
+      defaultStart = new Date(start);
+      defaultStart.setDate(defaultStart.getDate() + (i - 1) * 7);
+
+      defaultEnd = new Date(defaultStart);
+      defaultEnd.setDate(defaultEnd.getDate() + 6);
     }
 
     weeks.push({
-      weekNumber: weekNum,
-      startDate: new Date(currentStart),
-      endDate: new Date(currentEnd),
+      weekNumber: i,
+      defaultStartDate: defaultStart,
+      defaultEndDate: defaultEnd,
     });
-
-    if (currentEnd.getTime() >= end.getTime()) {
-      break;
-    }
-
-    const nextStart = new Date(currentEnd);
-    nextStart.setDate(nextStart.getDate() + 1);
-    currentStart = nextStart;
-    weekNum++;
   }
 
   return weeks;
@@ -156,11 +145,10 @@ const StudentReportPage = () => {
 
   const hasStudent2 = !!internship?.secondStudentId;
 
-  // Calculate Weeks
+  // Always default to 12 weeks
   const weeks = useMemo(() => {
-    if (!internship?.startDate || !internship?.endDate) return [];
-    return calculateWeeks(internship.startDate, internship.endDate);
-  }, [internship?.startDate, internship?.endDate]);
+    return generateDefaultWeeks(internship?.startDate);
+  }, [internship?.startDate]);
 
   // Map existing reports by weekNumber
   const reportMap = useMemo(() => {
@@ -174,7 +162,7 @@ const StudentReportPage = () => {
   }, [reports]);
 
   // Statistics
-  const totalWeeks = weeks.length;
+  const totalWeeks = DEFAULT_WEEKS_COUNT;
   const completedWeeks = useMemo(() => {
     return Object.values(reportMap).filter(
       (r) => ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(r.status),
@@ -188,7 +176,11 @@ const StudentReportPage = () => {
     );
 
   const handleOpenCreateForWeek = (week, existing = null) => {
-    setTargetWeekForCreate(week);
+    setTargetWeekForCreate({
+      weekNumber: week.weekNumber,
+      startDate: existing?.weekStartDate || week.defaultStartDate || null,
+      endDate: existing?.weekEndDate || week.defaultEndDate || null,
+    });
     setEditingReport(existing);
     setCreateModalOpen(true);
   };
@@ -306,10 +298,10 @@ const StudentReportPage = () => {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#123891]" />
-            Danh Sách Nhật Ký Hàng Tuần ({weeks.length} Tuần)
+            Danh Sách Nhật Ký Hàng Tuần ({totalWeeks} Tuần)
           </h2>
-          <span className="text-xs text-slate-500">
-            Tự động chia theo thời gian thực tập ({formatDate(internship?.startDate)} — {formatDate(internship?.endDate)})
+          <span className="text-xs text-slate-500 font-medium">
+            Mặc định 12 tuần thực tập
           </span>
         </div>
 
@@ -330,6 +322,9 @@ const StudentReportPage = () => {
               const report = reportMap[week.weekNumber];
               const isSubmitted = !!report;
               const status = report ? report.status : 'NOT_SUBMITTED';
+
+              const displayStartDate = report?.weekStartDate || week.defaultStartDate;
+              const displayEndDate = report?.weekEndDate || week.defaultEndDate;
 
               return (
                 <div
@@ -355,7 +350,13 @@ const StudentReportPage = () => {
                         </span>
                         <div className="text-xs font-semibold text-slate-700 flex items-center gap-1 font-mono">
                           <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{formatDate(week.startDate)} — {formatDate(week.endDate)}</span>
+                          <span>
+                            {displayStartDate && displayEndDate
+                              ? `${formatDate(displayStartDate)} — ${formatDate(displayEndDate)}`
+                              : displayStartDate
+                              ? formatDate(displayStartDate)
+                              : 'Chưa cập nhật ngày'}
+                          </span>
                         </div>
                       </div>
 
@@ -385,18 +386,18 @@ const StudentReportPage = () => {
                       {(status === 'SUBMITTED' || status === 'REVIEWING') && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#102d7d] bg-blue-100/70 border border-blue-200 px-2.5 py-1 rounded-lg">
                           <CheckCircle2 className="w-3 h-3" />
-                          <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVHD' : 'Đã gửi GVHD'}</span>
+                          <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVGS' : 'Đã gửi GVGS'}</span>
                         </span>
                       )}
                       {status === 'APPROVED' && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-1 rounded-lg">
                           <Award className="w-3 h-3" />
-                          <span>GVHD đã chấm: {report.lecturerScore !== null ? `${report.lecturerScore}/10` : 'Đạt'}</span>
+                          <span>GVGS đã chấm: {report.lecturerScore !== null ? `${report.lecturerScore}/10` : 'Đạt'}</span>
                         </span>
                       )}
                       {status === 'REJECTED' && (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                          <span>GVHD yêu cầu sửa</span>
+                          <span>GVGS yêu cầu sửa</span>
                         </span>
                       )}
                     </div>
@@ -456,7 +457,7 @@ const StudentReportPage = () => {
                         </button>
                       )}
 
-                      {/* Case B: Draft, Needs Revision, or Rejected by GVHD */}
+                      {/* Case B: Draft, Needs Revision, or Rejected by GVGS */}
                       {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
                         <button
                           type="button"
@@ -546,7 +547,14 @@ const StudentReportPage = () => {
         onClose={() => setExportModalOpen(false)}
         student={student}
         internship={internship}
-        weeks={weeks}
+        weeks={weeks.map((w) => {
+          const r = reportMap[w.weekNumber];
+          return {
+            weekNumber: w.weekNumber,
+            startDate: r?.weekStartDate || w.defaultStartDate,
+            endDate: r?.weekEndDate || w.defaultEndDate,
+          };
+        })}
         reports={reports}
       />
     </div>

@@ -47,6 +47,40 @@ export const resolveAcademicTermForInternship = async (internship, explicitTermI
 // ====================
 // Helper: Validate TTDN Evaluation Window
 // ====================
+// ====================
+// Helper: Validate TTDN Grading Window for Giảng viên Giám sát
+// ====================
+export const validateInternshipGradingWindow = (term, checkDate = new Date()) => {
+  if (!term) {
+    throw new AppError("Không tìm thấy thông tin học kỳ để kiểm tra thời gian chấm điểm.", 400);
+  }
+  const internshipCfg = term.internship || {};
+  const startRaw = internshipCfg.gradingStart;
+  const endRaw = internshipCfg.gradingEnd;
+
+  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
+
+  if (startRaw) {
+    const start = new Date(startRaw);
+    start.setHours(0, 0, 0, 0);
+    if (now < start) {
+      const formattedDate = start.toLocaleDateString("vi-VN");
+      throw new AppError("Chưa tới thời gian chấm điểm", 400);
+    }
+  }
+
+  if (endRaw) {
+    let end = new Date(endRaw);
+    end.setHours(23, 59, 59, 999);
+    if (now > end) {
+      const formattedDate = end.toLocaleDateString("vi-VN");
+      throw new AppError("Chưa tới thời gian chấm điểm", 400);
+    }
+  }
+
+  return { allowed: true };
+};
+
 export const validateInternshipEvaluationWindow = (term, checkDate = new Date()) => {
   if (!term) {
     throw new AppError("Không tìm thấy thông tin học kỳ để kiểm tra thời gian tạo link đánh giá.", 400);
@@ -563,6 +597,8 @@ const getAllEvaluationsForTbm = async ({
       ...intern,
       evaluation: ev || null,
       evaluationStatus: ev ? ev.status : "UNASSESSED",
+      isScorePublished: Boolean(intern.isScorePublished || ev?.isScorePublished),
+      scorePublishedAt: intern.scorePublishedAt || ev?.publishedAt || null,
       evaluationResult: evalResult.result,
       isPass: evalResult.isPass,
       isFail: evalResult.isFail,
@@ -748,20 +784,53 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
 
   const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
 
+  const isScorePublished = Boolean(internship.isScorePublished || evaluation?.isScorePublished);
+  const hasLecturerGraded = Boolean(
+    evaluation &&
+    evaluation.score !== null &&
+    evaluation.score !== undefined &&
+    !isNaN(evaluation.score)
+  );
+
+  let sanitizedEvaluation = evaluation;
+  if (evaluation && !isScorePublished) {
+    sanitizedEvaluation = {
+      _id: evaluation._id,
+      status: evaluation.status,
+      isScorePublished: false,
+      hasGraded: true,
+      evaluatorRole: evaluation.evaluatorRole,
+      evaluatorInfo: evaluation.evaluatorInfo,
+      createdAt: evaluation.createdAt,
+    };
+  }
+
   const term = await resolveAcademicTermForInternship(internship, academicTermId);
 
-  const evalResult = computeInternshipEvaluationResult(internship, evaluation, term, new Date());
+  const evalResult = computeInternshipEvaluationResult(
+    internship,
+    isScorePublished ? evaluation : null,
+    term,
+    new Date()
+  );
 
   return {
     hasInternship: true,
-    internship,
+    internship: {
+      ...(internship.toObject ? internship.toObject() : internship),
+      isScorePublished,
+      finalScore: isScorePublished ? internship.finalScore : null,
+      score: isScorePublished ? internship.score : null,
+    },
     request,
-    evaluation,
+    evaluation: sanitizedEvaluation,
+    isScorePublished,
+    hasGraded: hasLecturerGraded,
     isEvaluationDeletedByTbm,
-    evaluationResult: evalResult.result,
-    isPass: evalResult.isPass,
-    isFail: evalResult.isFail,
-    hasValidScore: evalResult.hasValidScore,
+    evaluationResult: isScorePublished ? evalResult.result : (hasLecturerGraded ? "PENDING_PUBLISH" : evalResult.result),
+    isPass: isScorePublished ? evalResult.isPass : false,
+    isFail: isScorePublished ? evalResult.isFail : false,
+    hasValidScore: isScorePublished ? evalResult.hasValidScore : false,
     isExpired: evalResult.isExpired,
     isNotOpen: evalResult.isNotOpen,
     startDate: evalResult.startDate,
@@ -1401,7 +1470,249 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
   };
 };
 
+// ==========================================
+// Lecturer (Giảng viên Giám sát): Grade Internship
+// ==========================================
+const gradeInternshipByLecturer = async ({
+  internshipId,
+  lecturerUserId,
+  score,
+  comments,
+  criteria,
+}) => {
+  if (!internshipId) {
+    throw new AppError("Mã hồ sơ thực tập là bắt buộc", 400);
+  }
+
+  const numericScore = Number(score);
+  if (isNaN(numericScore) || numericScore < 0 || numericScore > 10) {
+    throw new AppError("Điểm đánh giá phải là số từ 0 đến 10", 400);
+  }
+
+  const lecturer = await Lecturer.findOne({ userId: lecturerUserId }).populate("userId");
+  if (!lecturer) {
+    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  }
+
+  const internship = await Internship.findById(internshipId)
+    .populate("studentId")
+    .populate("companyId");
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  // Ensure this lecturer is assigned as GVGS for this internship
+  if (!internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
+    throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
+  }
+
+  // Validate Grading Window for current academic term
+  const term = await resolveAcademicTermForInternship(internship);
+  validateInternshipGradingWindow(term, new Date());
+
+  // Find or create Evaluation record
+  let evaluation = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  const evaluatorInfo = {
+    name: lecturer.userId.fullName,
+    position: lecturer.academicTitle || "Giảng viên Giám sát",
+    email: lecturer.userId.email,
+    phone: lecturer.userId.phone,
+  };
+
+  const formattedCriteria = Array.isArray(criteria) && criteria.length > 0
+    ? criteria
+    : [
+        { name: "Ý thức kỷ luật & thái độ làm việc tại DN", score: Number((numericScore * 0.25).toFixed(2)) },
+        { name: "Kỹ năng chuyên môn & kết quả công việc", score: Number((numericScore * 0.45).toFixed(2)) },
+        { name: "Báo cáo thực tập & nhật ký công việc", score: Number((numericScore * 0.3).toFixed(2)) },
+      ];
+
+  if (evaluation) {
+    evaluation.score = numericScore;
+    evaluation.comments = comments ? comments.trim() : null;
+    evaluation.criteria = formattedCriteria;
+    evaluation.evaluatorId = lecturer.userId._id;
+    evaluation.evaluatorRole = "LECTURER";
+    evaluation.evaluatorInfo = evaluatorInfo;
+    await evaluation.save();
+  } else {
+    evaluation = await Evaluation.create({
+      evaluationType: "INTERNSHIP",
+      targetId: internship._id,
+      evaluatorId: lecturer.userId._id,
+      evaluatorRole: "LECTURER",
+      evaluatorInfo,
+      score: numericScore,
+      comments: comments ? comments.trim() : null,
+      criteria: formattedCriteria,
+    });
+  }
+
+  // Update internship status to COMPLETED and link evaluation
+  internship.status = "COMPLETED";
+  internship.evaluation = evaluation._id;
+  await internship.save();
+
+  // Scores remain unpublished until TBM publishes them
+  evaluation.isScorePublished = false;
+  await evaluation.save();
+
+  internship.isScorePublished = false;
+  await internship.save();
+
+  // Notify Student that lecturer graded (do NOT reveal score yet)
+  const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+  if (student?.userId?._id) {
+    await notificationService.createNotification({
+      recipientId: student.userId._id,
+      type: "INTERNSHIP",
+      title: "Giảng viên Giám sát đã hoàn thành chấm điểm",
+      message: `Giảng viên Giám sát ${lecturer.userId.fullName} đã hoàn thành đánh giá thực tập doanh nghiệp của bạn. Kết quả sẽ được Trưởng Bộ Môn công bố.`,
+      referenceId: internship._id,
+      referenceModel: "Internship",
+      link: "/student/internship",
+    });
+  }
+
+  return {
+    evaluation,
+    internship,
+  };
+};
+
+
+// ==========================================
+// TBM: Publish Single Internship Score
+// ==========================================
+const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
+  if (!internshipId) {
+    throw new AppError("Mã hồ sơ thực tập là bắt buộc", 400);
+  }
+
+  const internship = await Internship.findById(internshipId)
+    .populate("studentId")
+    .populate("companyId");
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  const evaluation = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (!evaluation || evaluation.score === null || evaluation.score === undefined || isNaN(evaluation.score)) {
+    throw new AppError("Hồ sơ này chưa có điểm đánh giá từ Giảng viên Giám sát, không thể công bố điểm.", 400);
+  }
+
+  const now = new Date();
+  evaluation.isScorePublished = true;
+  evaluation.publishedAt = now;
+  evaluation.publishedBy = tbmUserId;
+  await evaluation.save();
+
+  internship.isScorePublished = true;
+  internship.scorePublishedAt = now;
+  internship.scorePublishedBy = tbmUserId;
+  await internship.save();
+
+  // Send Notification to Student
+  const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+  if (student?.userId?._id) {
+    await notificationService.createNotification({
+      recipientId: student.userId._id,
+      type: "INTERNSHIP",
+      title: "Công bố điểm Thực tập Doanh nghiệp",
+      message: "Bạn đã có điểm Thực tập Doanh nghiệp",
+      referenceId: internship._id,
+      referenceModel: "Internship",
+      link: "/student/internship?view=evaluation",
+    });
+  }
+
+  return {
+    internship,
+    evaluation,
+  };
+};
+
+// ==========================================
+// TBM: Publish Bulk Internship Scores
+// ==========================================
+const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
+  if (!Array.isArray(internshipIds) || internshipIds.length === 0) {
+    throw new AppError("Vui lòng chọn ít nhất một hồ sơ thực tập để công bố điểm", 400);
+  }
+
+  const now = new Date();
+  let publishedCount = 0;
+  let skippedCount = 0;
+
+  for (const id of internshipIds) {
+    try {
+      const internship = await Internship.findById(id).populate("studentId");
+      if (!internship) {
+        skippedCount++;
+        continue;
+      }
+
+      const evaluation = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      });
+
+      if (!evaluation || evaluation.score === null || evaluation.score === undefined || isNaN(evaluation.score)) {
+        skippedCount++;
+        continue;
+      }
+
+      evaluation.isScorePublished = true;
+      evaluation.publishedAt = now;
+      evaluation.publishedBy = tbmUserId;
+      await evaluation.save();
+
+      internship.isScorePublished = true;
+      internship.scorePublishedAt = now;
+      internship.scorePublishedBy = tbmUserId;
+      await internship.save();
+
+      // Notify Student
+      const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+      if (student?.userId?._id) {
+        await notificationService.createNotification({
+          recipientId: student.userId._id,
+          type: "INTERNSHIP",
+          title: "Công bố điểm Thực tập Doanh nghiệp",
+          message: "Bạn đã có điểm Thực tập Doanh nghiệp",
+          referenceId: internship._id,
+          referenceModel: "Internship",
+          link: "/student/internship?view=evaluation",
+        });
+      }
+
+      publishedCount++;
+    } catch {
+      skippedCount++;
+    }
+  }
+
+  return {
+    publishedCount,
+    skippedCount,
+    totalRequested: internshipIds.length,
+  };
+};
+
 export default {
+  gradeInternshipByLecturer,
+  publishInternshipScore,
+  publishInternshipScoresBulk,
   getCompanyInternships,
   createOrUpdateEvaluation,
   getEvaluationById,

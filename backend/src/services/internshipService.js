@@ -108,19 +108,49 @@ const createInternship = async ({
       throw new AppError("Doanh nghiệp được chọn hiện đang tạm ngưng tiếp nhận thực tập", 400);
     }
   } else if (newCompany && newCompany.name && newCompany.address) {
-    const createdCompany = await Company.create({
-      name: newCompany.name.trim(),
-      code: newCompany.code ? newCompany.code.trim().toUpperCase() : undefined,
-      address: newCompany.address.trim(),
-      email: newCompany.email ? newCompany.email.trim().toLowerCase() : null,
-      phone: newCompany.phone ? newCompany.phone.trim() : null,
-      website: newCompany.website ? newCompany.website.trim() : null,
-      contactPerson: newCompany.contactPerson ? newCompany.contactPerson.trim() : (mentorName || null),
-      contactEmail: newCompany.contactEmail ? newCompany.contactEmail.trim().toLowerCase() : (mentorEmail || null),
-      description: newCompany.description ? newCompany.description.trim() : null,
-      status: "ACTIVE",
-    });
-    targetCompanyId = createdCompany._id;
+    let companyDoc = null;
+    if (newCompany.code && newCompany.code.trim()) {
+      companyDoc = await Company.findOne({
+        code: newCompany.code.trim().toUpperCase(),
+      });
+    }
+    if (!companyDoc && newCompany.name && newCompany.name.trim()) {
+      companyDoc = await Company.findOne({
+        name: { $regex: new RegExp("^" + newCompany.name.trim() + "$", "i") },
+      });
+    }
+
+    if (companyDoc) {
+      companyDoc.name = newCompany.name.trim();
+      companyDoc.address = newCompany.address.trim();
+      if (newCompany.code) companyDoc.code = newCompany.code.trim().toUpperCase();
+      if (newCompany.email) companyDoc.email = newCompany.email.trim().toLowerCase();
+      if (newCompany.phone) companyDoc.phone = newCompany.phone.trim();
+      if (newCompany.website) companyDoc.website = newCompany.website.trim();
+      if (newCompany.contactPerson || mentorName) {
+        companyDoc.contactPerson = newCompany.contactPerson?.trim() || mentorName || null;
+      }
+      if (newCompany.contactEmail || mentorEmail) {
+        companyDoc.contactEmail = newCompany.contactEmail?.trim().toLowerCase() || mentorEmail || null;
+      }
+      companyDoc.status = "ACTIVE";
+      await companyDoc.save();
+      targetCompanyId = companyDoc._id;
+    } else {
+      const createdCompany = await Company.create({
+        name: newCompany.name.trim(),
+        code: newCompany.code ? newCompany.code.trim().toUpperCase() : undefined,
+        address: newCompany.address.trim(),
+        email: newCompany.email ? newCompany.email.trim().toLowerCase() : null,
+        phone: newCompany.phone ? newCompany.phone.trim() : null,
+        website: newCompany.website ? newCompany.website.trim() : null,
+        contactPerson: newCompany.contactPerson ? newCompany.contactPerson.trim() : (mentorName || null),
+        contactEmail: newCompany.contactEmail ? newCompany.contactEmail.trim().toLowerCase() : (mentorEmail || null),
+        description: newCompany.description ? newCompany.description.trim() : null,
+        status: "ACTIVE",
+      });
+      targetCompanyId = createdCompany._id;
+    }
   } else {
     throw new AppError("Vui lòng chọn doanh nghiệp có sẵn hoặc nhập đầy đủ thông tin doanh nghiệp mới", 400);
   }
@@ -378,7 +408,7 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
       recipientId: lecturer.userId._id,
       type: "INTERNSHIP",
       title: "Sinh viên thực tập mới được phân công",
-      message: `Bạn được phân công hướng dẫn sinh viên thực tập tại: "${comp?.name || "Doanh nghiệp"}"`,
+      message: `Bạn được phân công giám sát sinh viên thực tập tại: "${comp?.name || "Doanh nghiệp"}"`,
       referenceId: internship._id,
       referenceModel: "Internship",
       link: "/lecturer/internships",
@@ -452,8 +482,8 @@ const approveInternship = async (internshipId, approvedBy, lecturerId) => {
       await notificationService.createNotification({
         recipientId: lecturer.userId._id,
         type: "INTERNSHIP",
-        title: "Phân công hướng dẫn thực tập",
-        message: `Bạn được phân công hướng dẫn sinh viên thực tập tại: "${comp?.name || "Doanh nghiệp"}"`,
+        title: "Phân công giám sát thực tập",
+        message: `Bạn được phân công giám sát sinh viên thực tập tại: "${comp?.name || "Doanh nghiệp"}"`,
         referenceId: internship._id,
         referenceModel: "Internship",
         link: "/lecturer/internships",
@@ -512,48 +542,49 @@ const rejectInternship = async (internshipId, rejectedBy, rejectionReason) => {
     throw new AppError(`Không thể từ chối hồ sơ đang ở trạng thái ${internship.status}`, 409);
   }
 
-  internship.status = "REJECTED";
-  internship.rejectionReason = rejectionReason ? rejectionReason.trim() : null;
-  internship.rejectedAt = new Date();
-  internship.approvedAt = null;
-  internship.approvedBy = rejectedBy;
-  await internship.save();
-
-  // Reset Student flag to allow new registration if rejected
+  // Get student and company details before deleting the internship
   const student = await Student.findById(internship.studentId).populate("userId");
+  const comp = await Company.findById(internship.companyId);
+
+  // Reset Student flag to allow new registration from scratch
   if (student) {
     student.internshipRegistered = false;
     await student.save();
   }
 
-  // Notify Student
-  const comp = await Company.findById(internship.companyId);
+  // Notify Student - inform reason and prompt re-registration
+  const reasonText = rejectionReason && rejectionReason.trim() ? `: ${rejectionReason.trim()}` : "";
   if (student?.userId?._id) {
     await notificationService.createNotification({
       recipientId: student.userId._id,
       type: "INTERNSHIP",
       title: "Hồ sơ thực tập đã bị từ chối",
-      message: `Hồ sơ thực tập của bạn tại "${comp?.name || "Doanh nghiệp"}" đã bị từ chối: ${rejectionReason ? rejectionReason.trim() : "Chưa đạt yêu cầu"}. Bạn có thể đăng ký lại.`,
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship",
+      message: `Hồ sơ đăng ký thực tập của bạn tại "${comp?.name || "Doanh nghiệp"}" đã bị từ chối${reasonText}. Vui lòng tiến hành đăng ký lại từ đầu.`,
+      referenceId: null,
+      referenceModel: null,
+      link: "/student/internship/register",
     });
   }
 
-  return await Internship.findById(internship._id)
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate("companyId")
-    .populate({
-      path: "lecturerId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate({
-      path: "approvedBy",
-      select: "fullName email",
-    });
+  const compId = internship.companyId;
+
+  // Completely delete the internship record - do not store any rejection history or reason in Database
+  await Internship.findByIdAndDelete(internshipId);
+
+  // If the company has no other active internships, delete it to keep database completely clean
+  if (compId) {
+    const otherCount = await Internship.countDocuments({ companyId: compId });
+    if (otherCount === 0) {
+      await Company.findByIdAndDelete(compId);
+    }
+  }
+
+  return {
+    deleted: true,
+    internshipId,
+    studentId: student?._id,
+    message: "Đã từ chối đơn đăng ký và thông báo cho sinh viên",
+  };
 };
 
 // ====================
@@ -593,7 +624,7 @@ const supervisorAcceptInternship = async (internshipId, requestingUser) => {
       recipientId: student.userId._id,
       type: "INTERNSHIP",
       title: "Giảng viên đã chấp nhận hướng dẫn thực tập",
-      message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã chấp nhận hướng dẫn hồ sơ thực tập của bạn.`,
+      message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã tiếp nhận giám sát hồ sơ thực tập của bạn.`,
       referenceId: internship._id,
       referenceModel: "Internship",
       link: "/student/internship",
@@ -636,17 +667,13 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
     throw new AppError(`Không thể từ chối hồ sơ đang ở trạng thái ${internship.status}`, 409);
   }
 
-  internship.status = "REJECTED";
-  internship.rejectionReason = reason.trim();
-  internship.rejectedAt = new Date();
-  await internship.save();
-
   // Reset student registration flag
   await Student.findByIdAndUpdate(internship.studentId._id || internship.studentId, {
     internshipRegistered: false,
   });
 
   const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+  const comp = await Company.findById(internship.companyId);
 
   // Notify Student
   if (student?.userId?._id) {
@@ -654,10 +681,10 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
       recipientId: student.userId._id,
       type: "INTERNSHIP",
       title: "Giảng viên đã từ chối hướng dẫn thực tập",
-      message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối hướng dẫn hồ sơ thực tập. Lý do: ${reason.trim()}`,
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship",
+      message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối tiếp nhận giám sát hồ sơ thực tập. Lý do: ${reason.trim()}. Vui lòng đăng ký lại hồ sơ.`,
+      referenceId: null,
+      referenceModel: null,
+      link: "/student/internship/register",
     });
   }
 
@@ -665,13 +692,20 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
   await notificationService.createNotificationForRole("TBM", {
     type: "INTERNSHIP",
     title: "Giảng viên đã từ chối hướng dẫn thực tập",
-    message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối hướng dẫn hồ sơ thực tập của sinh viên ${student?.userId?.fullName || "SV"}. Lý do: ${reason.trim()}`,
-    referenceId: internship._id,
-    referenceModel: "Internship",
+    message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối tiếp nhận giám sát hồ sơ thực tập của sinh viên ${student?.userId?.fullName || "SV"}. Lý do: ${reason.trim()}`,
+    referenceId: null,
+    referenceModel: null,
     link: "/tbm/internships",
   });
 
-  return internship;
+  // Delete internship record from database
+  await Internship.findByIdAndDelete(internshipId);
+
+  return {
+    deleted: true,
+    internshipId,
+    message: "Đã từ chối tiếp nhận hồ sơ thực tập",
+  };
 };
 
 // ====================
@@ -686,7 +720,7 @@ const completeInternship = async (internshipId, requestingUser) => {
   if (requestingUser.role === "LECTURER") {
     const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
     if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
-      throw new AppError("Bạn không phải là giảng viên hướng dẫn của hồ sơ này", 403);
+      throw new AppError("Bạn không phải là Giảng viên Giám sát của hồ sơ này", 403);
     }
   }
 
@@ -714,7 +748,7 @@ const completeInternship = async (internshipId, requestingUser) => {
       recipientId: student.userId._id,
       type: "INTERNSHIP",
       title: "Kỳ thực tập đã hoàn thành",
-      message: `Giảng viên hướng dẫn đã xác nhận hoàn thành kỳ thực tập của bạn. Điểm đánh giá: ${evaluation.score}/10.`,
+      message: `Giảng viên Giám sát đã xác nhận hoàn thành kỳ thực tập của bạn. Điểm đánh giá: ${evaluation.score}/10.`,
       referenceId: internship._id,
       referenceModel: "Internship",
       link: "/student/internship",
@@ -965,7 +999,7 @@ const getSupervisionConfirmationDocument = async ({
   }
 
   if (!targetLecturerId) {
-    throw new AppError("Giảng viên hướng dẫn là bắt buộc", 400);
+    throw new AppError("Giảng viên Giám sát là bắt buộc", 400);
   }
 
   const lecturer = await Lecturer.findById(targetLecturerId).populate({

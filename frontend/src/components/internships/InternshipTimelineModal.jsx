@@ -19,6 +19,7 @@ import {
   Lock,
   CalendarCheck,
   RotateCcw,
+  Award,
 } from 'lucide-react';
 
 const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
@@ -30,8 +31,8 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
   const [formData, setFormData] = useState({
     registrationStart: '',
     registrationEnd: '',
-    reportStart: '',
-    reportDeadline: '',
+    gradingStart: '',
+    gradingEnd: '',
   });
 
   const [submitting, setSubmitting] = useState(false);
@@ -41,19 +42,19 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
       setFormData({
         registrationStart: formatDateForInput(term.internship.registrationStart),
         registrationEnd: formatDateForInput(term.internship.registrationEnd),
-        reportStart: formatDateForInput(
-          term.internship.evaluationStartDate || term.internship.reportStart
+        gradingStart: formatDateForInput(
+          term.internship.gradingStart || term.internship.evaluationStartDate
         ),
-        reportDeadline: formatDateForInput(
-          term.internship.evaluationEndDate || term.internship.reportDeadline
+        gradingEnd: formatDateForInput(
+          term.internship.gradingEnd || term.internship.evaluationEndDate
         ),
       });
     } else {
       setFormData({
         registrationStart: '',
         registrationEnd: '',
-        reportStart: '',
-        reportDeadline: '',
+        gradingStart: '',
+        gradingEnd: '',
       });
     }
   }, [term, isOpen]);
@@ -65,7 +66,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     if (!formData.registrationStart && !formData.registrationEnd) {
       return {
         type: 'UNRESTRICTED',
-        label: 'Chưa giới hạn thời gian (Đang mở tự do)',
+        label: 'Chưa giới hạn thời gian đăng ký (Đang mở tự do)',
         badge: 'bg-slate-100 text-slate-700 border-slate-200',
         icon: Sparkles,
       };
@@ -106,7 +107,40 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     };
   };
 
+  // Calculate Grading Window Status
+  const getGradingStatus = () => {
+    if (!formData.gradingStart && !formData.gradingEnd) {
+      return {
+        label: 'Chưa cấu hình thời gian chấm điểm (Mở tự do)',
+        badge: 'bg-slate-100 text-slate-700',
+      };
+    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const start = parseLocalDate(formData.gradingStart);
+    const end = parseLocalDate(formData.gradingEnd);
+    if (end) end.setHours(23, 59, 59, 999);
+
+    if (start && now < start) {
+      return {
+        label: `Sắp mở chấm điểm (từ ${formatDateVN(start)})`,
+        badge: 'bg-amber-100 text-amber-800',
+      };
+    }
+    if (end && now > end) {
+      return {
+        label: `Đã hết hạn chấm điểm (hạn chót ${formatDateVN(end)})`,
+        badge: 'bg-rose-100 text-rose-800',
+      };
+    }
+    return {
+      label: `Đang mở chấm điểm (hạn chót ${end ? formatDateVN(end) : '—'})`,
+      badge: 'bg-emerald-100 text-emerald-800',
+    };
+  };
+
   const windowStatus = getWindowStatus();
+  const gradingStatus = getGradingStatus();
   const StatusIcon = windowStatus.icon;
 
   // Presets
@@ -115,16 +149,16 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     const end = new Date();
     end.setDate(today.getDate() + days);
 
-    const startReport = new Date();
-    startReport.setDate(today.getDate() + days + 30);
-    const endReport = new Date();
-    endReport.setDate(today.getDate() + days + 60);
+    const startGrading = new Date();
+    startGrading.setDate(today.getDate() + days + 30);
+    const endGrading = new Date();
+    endGrading.setDate(today.getDate() + days + 60);
 
     setFormData({
       registrationStart: formatDateForInput(today),
       registrationEnd: formatDateForInput(end),
-      reportStart: formatDateForInput(startReport),
-      reportDeadline: formatDateForInput(endReport),
+      gradingStart: formatDateForInput(startGrading),
+      gradingEnd: formatDateForInput(endGrading),
     });
   };
 
@@ -132,8 +166,8 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     setFormData({
       registrationStart: '',
       registrationEnd: '',
-      reportStart: '',
-      reportDeadline: '',
+      gradingStart: '',
+      gradingEnd: '',
     });
   };
 
@@ -151,9 +185,9 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
       }
     }
 
-    if (formData.reportStart && formData.reportDeadline) {
-      if (new Date(formData.reportDeadline) < new Date(formData.reportStart)) {
-        showToast('Hạn chót mở đánh giá & nộp báo cáo phải sau ngày bắt đầu', 'error');
+    if (formData.gradingStart && formData.gradingEnd) {
+      if (new Date(formData.gradingEnd) < new Date(formData.gradingStart)) {
+        showToast('Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm', 'error');
         return;
       }
     }
@@ -164,14 +198,12 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
         internship: {
           registrationStart: formData.registrationStart || null,
           registrationEnd: formData.registrationEnd || null,
-          reportStart: formData.reportStart || null,
-          reportDeadline: formData.reportDeadline || null,
-          evaluationStartDate: formData.reportStart || null,
-          evaluationEndDate: formData.reportDeadline || null,
+          gradingStart: formData.gradingStart || null,
+          gradingEnd: formData.gradingEnd || null,
         },
       });
 
-      showToast('Đã lưu cấu hình thời gian mở Thực tập Doanh nghiệp thành công!', 'success');
+      showToast('Đã lưu cấu hình thời gian Thực tập Doanh nghiệp thành công!', 'success');
       await refreshTerms();
       onClose();
     } catch (err) {
@@ -192,7 +224,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
             <div>
               <h3 className="font-bold text-sm leading-tight">
-                Cấu hình Mở Cổng Thực Tập Doanh Nghiệp (TTDN)
+                Cấu hình Mốc Thời Gian Thực Tập Doanh Nghiệp (TTDN)
               </h3>
               <p className="text-[11px] text-slate-400">
                 {term ? `${term.name} • ${term.code} (${term.academicYear})` : 'Học kỳ hiện tại'}
@@ -305,50 +337,58 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
           </div>
 
-          {/* 2. Evaluation Link Creation & Report Submission Window */}
+          {/* 2. Lecturer (GVGS) Grading Window */}
           <div className="space-y-3 pt-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
-              <Calendar className="w-4 h-4 text-blue-600" />
-              2. Thời gian mở tạo link đánh giá & nộp báo cáo TTDN
+            <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-emerald-600" />
+                2. Thời gian Giảng viên Giám sát chấm điểm TTDN
+              </div>
+              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md ${gradingStatus.badge}`}>
+                {gradingStatus.label}
+              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Bắt đầu mở tạo link & nộp báo cáo:
+                  Ngày bắt đầu mở chấm điểm:
                 </label>
                 <input
                   type="date"
-                  value={formData.reportStart}
-                  onChange={(e) => setFormData({ ...formData, reportStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                  value={formData.gradingStart}
+                  onChange={(e) => setFormData({ ...formData, gradingStart: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
                 />
-                {formData.reportStart && (
-                  <div className="text-[11px] font-semibold text-blue-700 mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
+                {formData.gradingStart && (
+                  <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
                     <span>📅</span>
-                    <span>{formatFullDateVN(formData.reportStart)} ({formatDateVN(formData.reportStart)})</span>
+                    <span>{formatFullDateVN(formData.gradingStart)} ({formatDateVN(formData.gradingStart)})</span>
                   </div>
                 )}
               </div>
 
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Hạn chót nộp báo cáo:
+                  Hạn chót chấm điểm:
                 </label>
                 <input
                   type="date"
-                  value={formData.reportDeadline}
-                  onChange={(e) => setFormData({ ...formData, reportDeadline: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                  value={formData.gradingEnd}
+                  onChange={(e) => setFormData({ ...formData, gradingEnd: e.target.value })}
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
                 />
-                {formData.reportDeadline && (
-                  <div className="text-[11px] font-semibold text-blue-700 mt-1 flex items-center gap-1 bg-blue-50/80 px-2 py-0.5 rounded-md">
+                {formData.gradingEnd && (
+                  <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
                     <span>📅</span>
-                    <span>{formatFullDateVN(formData.reportDeadline)} ({formatDateVN(formData.reportDeadline)})</span>
+                    <span>{formatFullDateVN(formData.gradingEnd)} ({formatDateVN(formData.gradingEnd)})</span>
                   </div>
                 )}
               </div>
             </div>
+            <p className="text-[11px] text-slate-500">
+              Trong khoảng thời gian này, Giảng viên Giám sát (GVGS) mới được phép thực hiện việc nhập và lưu điểm thực tập cho sinh viên.
+            </p>
           </div>
 
           {/* Footer Actions */}
@@ -385,4 +425,3 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
 };
 
 export default InternshipTimelineModal;
-
