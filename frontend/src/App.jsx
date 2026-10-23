@@ -24,11 +24,13 @@ import StudentManagement from './pages/tbm/StudentManagement';
 import LecturerManagement from './pages/tbm/LecturerManagement';
 import CompanyManagement from './pages/tbm/CompanyManagement';
 import InternshipManagement from './pages/tbm/InternshipManagement';
+import TbmInternshipDocumentsPage from './pages/tbm/TbmInternshipDocumentsPage';
 import TbmEvaluationManagement from './pages/tbm/TbmEvaluationManagement';
 import TbmThesisManagement from './pages/tbm/TbmThesisManagement';
 import TbmThesisEvaluationManagement from './pages/tbm/TbmThesisEvaluationManagement';
 import TbmDashboard from './pages/tbm/TbmDashboard';
 import MyInternshipPage from './pages/student/MyInternshipPage';
+import StudentInternshipDocumentsPage from './pages/student/StudentInternshipDocumentsPage';
 import RegisterInternshipPage from './pages/student/RegisterInternshipPage';
 import StudentReportPage from './pages/student/StudentReportPage';
 import MyThesisPage from './pages/student/MyThesisPage';
@@ -48,7 +50,6 @@ import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import HomePage from './pages/HomePage';
 
-import CompanyPublicEvaluationPage from './pages/public/CompanyPublicEvaluationPage';
 
 // Dynamic Profile Redirect Component
 const RoleBasedProfileRedirect = () => {
@@ -113,7 +114,6 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
-                <Route path="/company-evaluation/:token" element={<CompanyPublicEvaluationPage />} />
 
                 {/* Public / Other User Profile Routes */}
                 <Route
@@ -157,6 +157,7 @@ function App() {
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="lecturers" element={<LecturerManagement />} />
                 <Route path="companies" element={<CompanyManagement />} />
+                <Route path="internship-documents" element={<TbmInternshipDocumentsPage />} />
                 <Route path="internships" element={<InternshipManagement />} />
                 <Route path="evaluations" element={<TbmEvaluationManagement />} />
                 <Route path="theses" element={<TbmThesisManagement />} />
@@ -176,6 +177,7 @@ function App() {
             >
               <Route index element={<Navigate to="/student/dashboard" replace />} />
               <Route path="dashboard" element={<StudentDashboard />} />
+              <Route path="internship/documents" element={<StudentInternshipDocumentsPage />} />
               <Route path="internship" element={<MyInternshipPage />} />
               <Route path="internship/register" element={<RegisterInternshipPage />} />
               <Route path="reports" element={<StudentReportPage />} />

@@ -337,7 +337,71 @@ const tbmDeleteEvaluation = async (req, res, next) => {
   }
 };
 
+// Lecturer (GVGS): Grade Internship
+const gradeInternship = async (req, res, next) => {
+  try {
+    const { internshipId, score, comments, criteria } = req.body;
+    const lecturerUserId = req.user.userId;
+
+    const result = await evaluationService.gradeInternshipByLecturer({
+      internshipId: internshipId || req.params.id,
+      lecturerUserId,
+      score,
+      comments,
+      criteria,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Chấm điểm thực tập doanh nghiệp thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+// TBM: Publish Single Score
+const publishScore = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const result = await evaluationService.publishInternshipScore({
+      internshipId: id,
+      tbmUserId: req.user._id,
+    });
+    res.status(200).json({
+      success: true,
+      message: "Công bố điểm thực tập thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM: Publish Bulk Scores
+const publishScoresBulk = async (req, res, next) => {
+  try {
+    const { internshipIds } = req.body;
+    const result = await evaluationService.publishInternshipScoresBulk({
+      internshipIds,
+      tbmUserId: req.user._id,
+    });
+    res.status(200).json({
+      success: true,
+      message: `Đã công bố điểm cho ${result.publishedCount} sinh viên`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
+  gradeInternship,
+  publishScore,
+  publishScoresBulk,
   getCompanyInternships,
   createOrUpdateEvaluation,
   getEvaluationById,

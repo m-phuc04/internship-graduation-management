@@ -21,18 +21,11 @@ import {
 
 const RegisterInternshipPage = () => {
   const [profileData, setProfileData] = useState(null);
-  const [activeCompanies, setActiveCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form mode: 'existing' or 'new'
-  const [companyMode, setCompanyMode] = useState('existing');
-
   // Form inputs
   const [formData, setFormData] = useState({
-    // Existing company selection
-    companyId: '',
-
     // New company inputs
     newCompanyName: '',
     newCompanyCode: '',
@@ -61,31 +54,14 @@ const RegisterInternshipPage = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // Load student profile & active companies on mount
+  // Load student profile on mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [myRes, compRes] = await Promise.all([
-          internshipApi.getMyInternship(),
-          internshipApi.getActiveCompanies(),
-        ]);
-
+        const myRes = await internshipApi.getMyInternship();
         if (myRes.success) {
           setProfileData(myRes.data);
-        }
-
-        if (compRes.success && compRes.data?.length > 0) {
-          setActiveCompanies(compRes.data);
-          // Set first company as default
-          setFormData((prev) => ({
-            ...prev,
-            companyId: compRes.data[0]._id,
-            mentorName: compRes.data[0].contactPerson || '',
-            mentorPosition: 'Quản lý / Người phụ trách thực tập',
-            mentorEmail: compRes.data[0].contactEmail || compRes.data[0].email || '',
-            mentorPhone: compRes.data[0].phone || '',
-          }));
         }
       } catch (err) {
         showToast(err.message || 'Không thể tải thông tin đăng ký', 'error');
@@ -96,21 +72,6 @@ const RegisterInternshipPage = () => {
 
     fetchData();
   }, [showToast]);
-
-  // Handle Company Selection Change (Auto-fill mentor contact)
-  const handleCompanySelect = (e) => {
-    const compId = e.target.value;
-    const selected = activeCompanies.find((c) => c._id === compId);
-
-    setFormData((prev) => ({
-      ...prev,
-      companyId: compId,
-      mentorName: selected?.contactPerson || '',
-      mentorPosition: prev.mentorPosition || 'Quản lý / Người phụ trách thực tập',
-      mentorEmail: selected?.contactEmail || selected?.email || '',
-      mentorPhone: selected?.phone || '',
-    }));
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -123,17 +84,11 @@ const RegisterInternshipPage = () => {
   const validate = () => {
     const errs = {};
 
-    if (companyMode === 'existing') {
-      if (!formData.companyId) {
-        errs.companyId = 'Vui lòng chọn doanh nghiệp thực tập';
-      }
-    } else {
-      if (!formData.newCompanyName.trim()) {
-        errs.newCompanyName = 'Tên doanh nghiệp là bắt buộc';
-      }
-      if (!formData.newCompanyAddress.trim()) {
-        errs.newCompanyAddress = 'Địa chỉ doanh nghiệp là bắt buộc';
-      }
+    if (!formData.newCompanyName.trim()) {
+      errs.newCompanyName = 'Tên doanh nghiệp là bắt buộc';
+    }
+    if (!formData.newCompanyAddress.trim()) {
+      errs.newCompanyAddress = 'Địa chỉ doanh nghiệp là bắt buộc';
     }
 
     if (!formData.position.trim()) {
@@ -199,12 +154,7 @@ const RegisterInternshipPage = () => {
       mentorPosition: formData.mentorPosition.trim(),
       mentorEmail: formData.mentorEmail.trim().toLowerCase(),
       mentorPhone: formData.mentorPhone.trim(),
-    };
-
-    if (companyMode === 'existing') {
-      payload.companyId = formData.companyId;
-    } else {
-      payload.newCompany = {
+      newCompany: {
         name: formData.newCompanyName.trim(),
         code: formData.newCompanyCode.trim() || undefined,
         address: formData.newCompanyAddress.trim(),
@@ -213,13 +163,13 @@ const RegisterInternshipPage = () => {
         website: formData.newCompanyWebsite.trim() || undefined,
         contactPerson: formData.newCompanyContactPerson.trim() || undefined,
         contactEmail: formData.newCompanyContactEmail.trim() || undefined,
-      };
-    }
+      },
+    };
 
     try {
       const res = await internshipApi.register(payload);
       if (res.success) {
-        showToast('Đăng ký thực tập thành công! Hồ sơ đang ở trạng thái PENDING chờ xét duyệt.', 'success');
+        showToast('Đăng ký thực tập thành công! Hồ sơ đang chờ xét duyệt.', 'success');
         navigate('/student/internship');
       }
     } catch (err) {
@@ -250,7 +200,7 @@ const RegisterInternshipPage = () => {
           Bạn đang có hồ sơ thực tập hoạt động
         </h3>
         <p className="text-xs text-slate-500 leading-relaxed">
-          Bạn không thể tạo thêm hồ sơ mới trong lúc hồ sơ hiện tại chưa kết thúc hoặc chưa bị từ chối.
+          Bạn không thể tạo thêm hồ sơ mới trong lúc hồ sơ hiện tại chưa kết thúc.
         </p>
         <div className="pt-2">
           <Link
@@ -264,10 +214,6 @@ const RegisterInternshipPage = () => {
       </div>
     );
   }
-
-  const selectedExistingCompany = activeCompanies.find(
-    (c) => c._id === formData.companyId,
-  );
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -285,18 +231,13 @@ const RegisterInternshipPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* SECTION 1: Read-Only Student Info */}
+        {/* SECTION 1: Student Info */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              <Lock className="w-4 h-4 text-slate-400" />
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                1. Thông tin Sinh viên (Chỉ đọc từ hệ thống)
-              </h3>
-            </div>
-            <span className="text-[11px] font-semibold text-[#123891] bg-blue-50 px-2.5 py-0.5 rounded-full border border-blue-100">
-              Read-Only
-            </span>
+          <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
+            <Lock className="w-4 h-4 text-slate-400" />
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+              1. Thông tin Sinh viên
+            </h3>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
@@ -344,7 +285,7 @@ const RegisterInternshipPage = () => {
           </div>
         </div>
 
-        {/* SECTION 2: Company Selection / Entry */}
+        {/* SECTION 2: Company Info Entry (Default & Only View) */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
             <Building2 className="w-5 h-5 text-[#123891]" />
@@ -353,187 +294,101 @@ const RegisterInternshipPage = () => {
             </h3>
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="flex rounded-2xl bg-slate-100 p-1 max-w-md">
-            <button
-              type="button"
-              onClick={() => setCompanyMode('existing')}
-              className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${
-                companyMode === 'existing'
-                  ? 'bg-white text-[#102d7d] shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Chọn Doanh nghiệp có sẵn ({activeCompanies.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setCompanyMode('new')}
-              className={`flex-1 py-2 text-xs font-semibold rounded-xl transition ${
-                companyMode === 'new'
-                  ? 'bg-white text-[#102d7d] shadow-xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              + Nhập Doanh nghiệp mới
-            </button>
-          </div>
-
-          {/* Mode 1: Select Existing Company */}
-          {companyMode === 'existing' ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-                  Chọn Doanh nghiệp đối tác <span className="text-rose-500">*</span>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Tên Doanh nghiệp <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  name="companyId"
-                  value={formData.companyId}
-                  onChange={handleCompanySelect}
-                  className="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-2xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium"
-                >
-                  {activeCompanies.map((comp) => (
-                    <option key={comp._id} value={comp._id}>
-                      {comp.name} {comp.code ? `(${comp.code})` : ''} - {comp.address}
-                    </option>
-                  ))}
-                </select>
-                {errors.companyId && (
-                  <p className="text-xs text-rose-500 mt-1">{errors.companyId}</p>
+                <input
+                  type="text"
+                  name="newCompanyName"
+                  value={formData.newCompanyName}
+                  onChange={handleChange}
+                  placeholder="VD: Công ty TNHH Phần mềm ABC"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium"
+                />
+                {errors.newCompanyName && (
+                  <p className="text-xs text-rose-500 mt-1">{errors.newCompanyName}</p>
                 )}
-              </div>
-
-              {/* Auto-filled Company Details Display */}
-              {selectedExistingCompany && (
-                <div className="p-4 rounded-2xl bg-blue-50/40 border border-blue-100/80 space-y-2 text-xs">
-                  <div className="text-[11px] font-bold text-[#123891] uppercase tracking-wider mb-2">
-                    Thông tin tự động điền từ hệ thống:
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700">
-                    <div>
-                      <span className="text-slate-400 block">Địa chỉ trụ sở:</span>
-                      <strong className="text-slate-900">{selectedExistingCompany.address}</strong>
-                    </div>
-                    {selectedExistingCompany.email && (
-                      <div>
-                        <span className="text-slate-400 block">Email doanh nghiệp:</span>
-                        <strong>{selectedExistingCompany.email}</strong>
-                      </div>
-                    )}
-                    {selectedExistingCompany.phone && (
-                      <div>
-                        <span className="text-slate-400 block">Số điện thoại:</span>
-                        <strong>{selectedExistingCompany.phone}</strong>
-                      </div>
-                    )}
-                    {selectedExistingCompany.contactPerson && (
-                      <div>
-                        <span className="text-slate-400 block">Người phụ trách DN:</span>
-                        <strong>{selectedExistingCompany.contactPerson}</strong>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            /* Mode 2: Enter New Company */
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Tên Doanh nghiệp <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    name="newCompanyName"
-                    value={formData.newCompanyName}
-                    onChange={handleChange}
-                    placeholder="VD: Công ty TNHH Phần mềm ABC"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                  />
-                  {errors.newCompanyName && (
-                    <p className="text-xs text-rose-500 mt-1">{errors.newCompanyName}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Mã viết tắt (Nếu có)
-                  </label>
-                  <input
-                    type="text"
-                    name="newCompanyCode"
-                    value={formData.newCompanyCode}
-                    onChange={handleChange}
-                    placeholder="VD: ABC_SOFT"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition uppercase font-mono"
-                  />
-                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Địa chỉ thực tập <span className="text-rose-500">*</span>
+                  Mã viết tắt (Nếu có)
                 </label>
                 <input
                   type="text"
-                  name="newCompanyAddress"
-                  value={formData.newCompanyAddress}
+                  name="newCompanyCode"
+                  value={formData.newCompanyCode}
                   onChange={handleChange}
-                  placeholder="VD: 123 Nguyễn Văn Bảo, Phường 4, Gò Vấp, TP.HCM"
-                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                  placeholder="VD: ABC_SOFT"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition uppercase font-mono"
                 />
-                {errors.newCompanyAddress && (
-                  <p className="text-xs text-rose-500 mt-1">{errors.newCompanyAddress}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Email công ty
-                  </label>
-                  <input
-                    type="email"
-                    name="newCompanyEmail"
-                    value={formData.newCompanyEmail}
-                    onChange={handleChange}
-                    placeholder="hr@company.com"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Số điện thoại
-                  </label>
-                  <input
-                    type="text"
-                    name="newCompanyPhone"
-                    value={formData.newCompanyPhone}
-                    onChange={handleChange}
-                    placeholder="02812345678"
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Website
-                  </label>
-                  <input
-                    type="text"
-                    name="newCompanyWebsite"
-                    value={formData.newCompanyWebsite}
-                    onChange={handleChange}
-                    placeholder="https://..."
-                    className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                  />
-                </div>
               </div>
             </div>
-          )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Địa chỉ thực tập <span className="text-rose-500">*</span>
+              </label>
+              <input
+                type="text"
+                name="newCompanyAddress"
+                value={formData.newCompanyAddress}
+                onChange={handleChange}
+                placeholder="VD: 123 Nguyễn Văn Bảo, Phường 4, Gò Vấp, TP.HCM"
+                className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              />
+              {errors.newCompanyAddress && (
+                <p className="text-xs text-rose-500 mt-1">{errors.newCompanyAddress}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Email công ty
+                </label>
+                <input
+                  type="email"
+                  name="newCompanyEmail"
+                  value={formData.newCompanyEmail}
+                  onChange={handleChange}
+                  placeholder="hr@company.com"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Số điện thoại
+                </label>
+                <input
+                  type="text"
+                  name="newCompanyPhone"
+                  value={formData.newCompanyPhone}
+                  onChange={handleChange}
+                  placeholder="02812345678"
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Website
+                </label>
+                <input
+                  type="text"
+                  name="newCompanyWebsite"
+                  value={formData.newCompanyWebsite}
+                  onChange={handleChange}
+                  placeholder="https://..."
+                  className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* SECTION 3: Internship Position & Dates */}
@@ -690,7 +545,7 @@ const RegisterInternshipPage = () => {
           {/* Registration Note */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Ghi chú / Kế hoạch thực tập mong muốn
+              Ghi chú
             </label>
             <textarea
               name="registrationNote"
@@ -704,11 +559,7 @@ const RegisterInternshipPage = () => {
         </div>
 
         {/* Submit Actions */}
-        <div className="flex items-center justify-between p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-          <div className="text-xs text-slate-500">
-            Hồ sơ sau khi gửi sẽ có trạng thái <strong>PENDING</strong> chờ Trưởng Bộ Môn xét duyệt.
-          </div>
-
+        <div className="flex items-center justify-end p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <div className="flex items-center gap-3">
             <Link
               to="/student/internship"

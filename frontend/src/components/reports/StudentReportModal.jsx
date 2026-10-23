@@ -19,6 +19,16 @@ import {
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar'];
 
+const formatDateForInput = (d) => {
+  if (!d) return '';
+  const date = new Date(d);
+  if (isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const StudentReportModal = ({
   isOpen,
   onClose,
@@ -44,16 +54,16 @@ const StudentReportModal = ({
     if (isOpen) {
       if (editingReport) {
         setWeekNumber(editingReport.weekNumber || 1);
-        setWeekStartDate(editingReport.weekStartDate ? new Date(editingReport.weekStartDate).toISOString().split('T')[0] : '');
-        setWeekEndDate(editingReport.weekEndDate ? new Date(editingReport.weekEndDate).toISOString().split('T')[0] : '');
+        setWeekStartDate(formatDateForInput(editingReport.weekStartDate));
+        setWeekEndDate(formatDateForInput(editingReport.weekEndDate));
         setTitle(editingReport.title || `Nhật ký tuần ${editingReport.weekNumber || 1}`);
         setContent(editingReport.content || '');
         setExistingFile(editingReport.file || null);
         setSelectedFile(null);
       } else if (targetWeek) {
         setWeekNumber(targetWeek.weekNumber);
-        setWeekStartDate(targetWeek.startDate ? new Date(targetWeek.startDate).toISOString().split('T')[0] : '');
-        setWeekEndDate(targetWeek.endDate ? new Date(targetWeek.endDate).toISOString().split('T')[0] : '');
+        setWeekStartDate(formatDateForInput(targetWeek.startDate));
+        setWeekEndDate(formatDateForInput(targetWeek.endDate));
         setTitle(`Nhật ký tuần ${targetWeek.weekNumber}`);
         setContent('');
         setExistingFile(null);
@@ -133,6 +143,14 @@ const StudentReportModal = ({
       return;
     }
 
+    if (weekStartDate && weekEndDate) {
+      if (new Date(weekEndDate) < new Date(weekStartDate)) {
+        setError('Ngày kết thúc tuần phải sau hoặc bằng ngày bắt đầu tuần.');
+        showToast('Ngày kết thúc tuần phải sau hoặc bằng ngày bắt đầu tuần.', 'error');
+        return;
+      }
+    }
+
     setSubmitting(true);
 
     try {
@@ -156,7 +174,7 @@ const StudentReportModal = ({
             ? 'Đã lưu bản nháp nhật ký thành công!'
             : internship?.secondStudentId
             ? 'Cập nhật thành công! Nhật ký đã được gửi để Sinh viên 2 xác nhận.'
-            : 'Cập nhật và gửi nhật ký cho GVHD thành công!',
+            : 'Cập nhật và gửi nhật ký cho GVGS thành công!',
           'success',
         );
       } else {
@@ -211,29 +229,70 @@ const StudentReportModal = ({
             <div>
               <div className="font-bold">Quy trình xác nhận 2 sinh viên</div>
               <div className="text-[11px] text-blue-800 mt-0.5 leading-relaxed">
-                Sau khi bạn gửi nhật ký, hệ thống sẽ gửi thông báo cho <strong>Sinh viên 2 ({internship.secondStudentId?.userId?.fullName || 'SV2'})</strong> để kiểm tra và xác nhận. Khi SV2 đồng ý, nhật ký mới được chuyển tới Giảng viên hướng dẫn.
+                Sau khi bạn gửi nhật ký, hệ thống sẽ gửi thông báo cho <strong>Sinh viên 2 ({internship.secondStudentId?.userId?.fullName || 'SV2'})</strong> để kiểm tra và xác nhận. Khi SV2 đồng ý, nhật ký mới được chuyển tới Giảng viên Giám sát.
               </div>
             </div>
           </div>
         )}
 
-        {/* Week Info Banner */}
-        <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-2">
-            <span className="font-extrabold text-white bg-[#123891] px-2.5 py-1 rounded-lg">
-              Tuần #{weekNumber}
-            </span>
-            <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
-              <span>
-                {weekStartDate && weekEndDate
-                  ? `${formatDateDisplay(weekStartDate)} — ${formatDateDisplay(weekEndDate)}`
-                  : 'Thời gian theo tuần thực tập'}
+        {/* Week Info & Interactive Date Inputs */}
+        <div className="p-4 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200/70">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold text-white bg-[#123891] px-2.5 py-1 rounded-lg text-xs font-mono shadow-2xs">
+                Tuần #{weekNumber}
+              </span>
+              <span className="text-xs font-semibold text-slate-700">
+                Nhật ký thực tập định kỳ
               </span>
             </div>
+            <div className="text-[11px] text-slate-500 truncate max-w-xs">
+              <strong>Doanh nghiệp:</strong> {internship?.companyId?.name || '—'}
+            </div>
           </div>
-          <div className="text-[11px] text-slate-500 truncate max-w-xs">
-            <strong>Doanh nghiệp:</strong> {internship?.companyId?.name || '—'}
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#123891]" />
+                <span>Thời gian thực hiện Tuần {weekNumber}</span>
+              </label>
+              <span className="text-[11px] text-slate-400">Tự nhập hoặc chọn ngày</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Ngày bắt đầu tuần:
+                </label>
+                <input
+                  type="date"
+                  value={weekStartDate}
+                  onChange={(e) => setWeekStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                  Ngày kết thúc tuần:
+                </label>
+                <input
+                  type="date"
+                  value={weekEndDate}
+                  min={weekStartDate || undefined}
+                  onChange={(e) => setWeekEndDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                />
+              </div>
+            </div>
+
+            {weekStartDate && weekEndDate && (
+              <div className="text-[11px] text-[#123891] font-medium mt-2 flex items-center gap-1 bg-[#123891]/5 px-2.5 py-1 rounded-lg border border-[#123891]/10">
+                <span>📅 Khoảng thời gian:</span>
+                <strong>{formatDateDisplay(weekStartDate)} — {formatDateDisplay(weekEndDate)}</strong>
+              </div>
+            )}
           </div>
         </div>
 

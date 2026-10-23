@@ -80,7 +80,6 @@ const internshipSchema = new mongoose.Schema(
         "PENDING",
         "PENDING_SUPERVISOR_ACCEPTANCE",
         "APPROVED",
-        "REJECTED",
         "INTERNING",
         "COMPLETED",
         "CANCELLED",
@@ -136,6 +135,22 @@ const internshipSchema = new mongoose.Schema(
 
     completedAt: {
       type: Date,
+      default: null,
+    },
+
+    isScorePublished: {
+      type: Boolean,
+      default: false,
+    },
+
+    scorePublishedAt: {
+      type: Date,
+      default: null,
+    },
+
+    scorePublishedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       default: null,
     },
   },

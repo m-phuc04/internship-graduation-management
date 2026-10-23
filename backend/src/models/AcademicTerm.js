@@ -53,6 +53,8 @@ const academicTermSchema = new mongoose.Schema(
       registrationEnd: { type: Date, default: null },
       reportStart: { type: Date, default: null },
       reportDeadline: { type: Date, default: null },
+      gradingStart: { type: Date, default: null },
+      gradingEnd: { type: Date, default: null },
       evaluationStartDate: { type: Date, default: null },
       evaluationEndDate: { type: Date, default: null },
       evaluationStart: { type: Date, default: null },

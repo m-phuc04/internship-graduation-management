@@ -308,7 +308,7 @@ const StudentDashboard = () => {
 
                     <div className="pt-2 border-t border-slate-200/60 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2 text-[11px] text-slate-600">
                       <div className="min-w-0">
-                        <span className="text-slate-400">GVHD:</span>{' '}
+                        <span className="text-slate-400">GVGS:</span>{' '}
                         <strong className="text-slate-800 break-words">{internship.lecturerId?.userId?.fullName || 'Chưa phân công'}</strong>
                       </div>
                       <div className="sm:text-right min-w-0">

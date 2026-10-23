@@ -29,6 +29,14 @@ router.post(
 // 2. Lecturer Endpoints
 // ==========================================
 
+// Lecturer (GVGS): Grade Internship
+router.post(
+  "/internship/grade",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  evaluationController.gradeInternship,
+);
+
 // Lecturer: View evaluations of supervised students
 router.get(
   "/lecturer/supervised",
@@ -49,92 +57,21 @@ router.get(
   evaluationController.getAllEvaluationsForTbm,
 );
 
-// ==========================================
-// 5. Student Evaluation Link Endpoints
-// ==========================================
 
-// Student: Create or retrieve single evaluation link for current internship
+// TBM: Publish Single Score
 router.post(
-  "/student/create-link",
-  authMiddleware,
-  authorizeRoles("STUDENT"),
-  evaluationController.createStudentEvaluationLink,
-);
-
-// Student: Get my evaluation request and results
-router.get(
-  "/student/my-request",
-  authMiddleware,
-  authorizeRoles("STUDENT"),
-  evaluationController.getStudentEvaluationRequest,
-);
-
-// Student: Request Re-creating Evaluation Link
-router.post(
-  "/student/request-recreate",
-  authMiddleware,
-  authorizeRoles("STUDENT"),
-  evaluationController.studentRequestRecreateLink,
-);
-
-// ==========================================
-// 6. Public Evaluation Endpoints (No Auth / No Login Required)
-// ==========================================
-
-// Public: Get evaluation form metadata by secure token
-router.get(
-  "/public/:token",
-  evaluationController.getPublicEvaluationByToken,
-);
-
-// Public: Submit evaluation form by secure token
-router.post(
-  "/public/:token",
-  evaluationController.submitPublicEvaluation,
-);
-
-// ==========================================
-// 7. TBM Evaluation Request Management
-// ==========================================
-
-// TBM: Get all evaluation requests across university
-router.get(
-  "/tbm/requests",
+  "/tbm/publish/:id",
   authMiddleware,
   authorizeRoles("TBM", "ADMIN"),
-  evaluationController.tbmGetAllEvaluationRequests,
+  evaluationController.publishScore,
 );
 
-// TBM: Get all re-create evaluation link requests
-router.get(
-  "/tbm/recreate-requests",
-  authMiddleware,
-  authorizeRoles("TBM", "ADMIN"),
-  evaluationController.tbmGetRecreateRequests,
-);
-
-// TBM: Approve re-create evaluation link request
+// TBM: Publish Bulk Scores
 router.post(
-  "/tbm/approve-recreate/:id",
+  "/tbm/publish-bulk",
   authMiddleware,
   authorizeRoles("TBM", "ADMIN"),
-  evaluationController.tbmApproveRecreateRequest,
-);
-
-// TBM: Reject re-create evaluation link request
-router.post(
-  "/tbm/reject-recreate/:id",
-  authMiddleware,
-  authorizeRoles("TBM", "ADMIN"),
-  evaluationController.tbmRejectRecreateRequest,
-);
-
-// TBM: Reset request to allow student to re-create
-router.post(
-  "/tbm/reset-request/:id",
-  authMiddleware,
-  authorizeRoles("TBM", "ADMIN"),
-  evaluationController.tbmResetEvaluationRequest,
+  evaluationController.publishScoresBulk,
 );
 
 // TBM: Delete evaluation result
@@ -145,6 +82,22 @@ router.delete(
   evaluationController.tbmDeleteEvaluation,
 );
 
+// ==========================================
+// 4. Student Evaluation Status Endpoints
+// ==========================================
+
+// Student: Get my evaluation request and results
+router.get(
+  "/student/my-request",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  evaluationController.getStudentEvaluationRequest,
+);
+
+// ==========================================
+// 5. Shared Endpoints
+// ==========================================
+
 // Get evaluation by ID (Secured with role & ownership check)
 router.get(
   "/:id",
@@ -153,4 +106,3 @@ router.get(
 );
 
 export default router;
-

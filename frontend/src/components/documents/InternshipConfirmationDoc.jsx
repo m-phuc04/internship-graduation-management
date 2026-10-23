@@ -59,7 +59,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
       {/* Document Title */}
       <div className="text-center my-8">
         <h1 className="text-xl font-extrabold uppercase tracking-wide">
-          Giấy Xác Nhận Hướng Dẫn Thực Tập Doanh Nghiệp
+          Giấy Xác Nhận Giám Sát Thực Tập Doanh Nghiệp
         </h1>
         <div className="text-xs italic text-slate-700 mt-1">
           Học kỳ 1 — Năm học 2026 - 2027
@@ -70,13 +70,12 @@ const InternshipConfirmationDoc = ({ docData }) => {
       <div className="space-y-3 mb-6 text-xs leading-relaxed">
         <p>
           Khoa Công nghệ Thông tin — Trường Đại học Công nghiệp TP. Hồ Chí Minh
-          trân trọng xác nhận việc phân công Giảng viên hướng dẫn thực tập doanh
-          nghiệp (TTDN) với các thông tin chi tiết như sau:
+          trân trọng xác nhận việc phân công Giảng viên giám sát thực tập doanh nghiệp (TTDN) với các thông tin chi tiết như sau:
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 p-4 rounded-xl border border-slate-300 bg-slate-50/50 print:bg-transparent">
           <div>
-            Họ và tên Giảng viên:{' '}
+            Họ và tên Giảng viên Giám sát:{' '}
             <strong className="text-black">
               {lecturer?.academicTitle} {lecturer?.fullName}
             </strong>
@@ -184,7 +183,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
         </div>
 
         <div>
-          <div className="font-bold uppercase">Giảng Viên Hướng Dẫn</div>
+          <div className="font-bold uppercase">Giảng Viên Giám Sát</div>
           <div className="text-[11px] text-slate-600 italic">
             (Ký và ghi rõ họ tên)
           </div>

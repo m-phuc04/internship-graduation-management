@@ -16,7 +16,7 @@ const StatusBadge = ({
     WAITING_FOR_STUDENT2_CONFIRMATION: 'Chờ SV2 xác nhận',
     WAITING_FOR_SUPERVISOR_REQUEST: 'Chờ gửi yêu cầu GVHD',
     PENDING_SUPERVISOR_APPROVAL: 'Chờ GVHD duyệt',
-    PENDING_SUPERVISOR_ACCEPTANCE: 'Đã phân công GVHD',
+    PENDING_SUPERVISOR_ACCEPTANCE: 'Đã phân công GVGS',
     APPROVED: 'Đã phê duyệt',
     ASSIGNED_REVIEWERS: 'Đã phân công PB',
     IN_PROGRESS: 'Đang thực hiện',

@@ -10,9 +10,18 @@ const errorMiddleware = (err, req, res, next) => {
     statusCode = 409;
     errorCode = "DUPLICATE_KEY_ERROR";
     const field = Object.keys(err.keyPattern || err.keyValue || {})[0];
+    const isCompany = err.message?.includes("companies") || err.keyValue?.code?.length <= 10;
+    const isAcademicTerm = err.message?.includes("academicterms");
     if (field === "code") {
-      message = "Mã học kỳ đã tồn tại. Vui lòng sử dụng mã khác.";
-      errorCode = "ACADEMIC_TERM_CODE_EXISTS";
+      if (isCompany) {
+        message = "Mã doanh nghiệp đã tồn tại. Vui lòng sử dụng mã khác hoặc để trống.";
+        errorCode = "COMPANY_CODE_EXISTS";
+      } else if (isAcademicTerm) {
+        message = "Mã học kỳ đã tồn tại. Vui lòng sử dụng mã khác.";
+        errorCode = "ACADEMIC_TERM_CODE_EXISTS";
+      } else {
+        message = "Mã định danh đã tồn tại trên hệ thống.";
+      }
     } else {
       message = `Dữ liệu ${field ? `'${field}'` : ""} đã tồn tại trên hệ thống.`;
     }

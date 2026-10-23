@@ -80,7 +80,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
         {/* Optional Lecturer Selection */}
         <div>
           <label className="block font-semibold text-slate-700 mb-1.5">
-            Chỉ định Giảng viên Hướng dẫn (Tùy chọn)
+            Chỉ định Giảng viên Giám sát (Tùy chọn)
           </label>
           <select
             value={selectedLecturerId}
@@ -107,14 +107,9 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
             })}
           </select>
           <p className="text-[11px] text-slate-400 mt-1">
-            Bạn có thể chọn GVHD ngay bây giờ hoặc phân công sau trong danh sách hồ sơ.
+            Bạn có thể chọn GVGS ngay bây giờ hoặc phân công sau trong danh sách hồ sơ.
           </p>
         </div>
-
-        {/* Confirmation Prompt */}
-        <p className="text-slate-500 pt-1 leading-relaxed">
-          Hồ sơ sau khi phê duyệt sẽ chuyển sang trạng thái <strong>APPROVED</strong> và sinh viên sẽ được tiếp tục quá trình thực tập.
-        </p>
 
         {/* Action Buttons */}
         <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
@@ -136,7 +131,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
             ) : (
               <CheckCircle2 className="w-3.5 h-3.5" />
             )}
-            <span>Xác nhận Duyệt</span>
+            <span>Xác nhận</span>
           </button>
         </div>
       </div>

@@ -97,6 +97,15 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                         FAIL (Không đạt)
                       </span>
                     ) : null}
+                    {internship?.isScorePublished || ev?.isScorePublished ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        Đã công bố điểm
+                      </span>
+                    ) : ev?.score !== undefined && ev?.score !== null ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                        Chưa công bố điểm
+                      </span>
+                    ) : null}
                   </div>
                   <div className="text-xs text-slate-600 font-mono mt-0.5">
                     MSSV: <strong>{internship.studentId?.studentCode}</strong> • Lớp: <strong>{internship.studentId?.className}</strong> • Vị trí: <strong>{internship.position}</strong>
@@ -121,7 +130,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
 
             {!ev ? (
               <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
-                Sinh viên này chưa có phiếu đánh giá từ Doanh nghiệp tiếp nhận.
+                Sinh viên này chưa có kết quả đánh giá từ Giảng viên Giám sát.
               </div>
             ) : (
               <div className="space-y-4">
@@ -221,6 +230,39 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                     </div>
                   </div>
                 </div>
+
+                
+                {/* Tiêu chí chấm điểm từ GVGS */}
+                {ev.criteria && ev.criteria.length > 0 && (
+                  <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
+                    <div className="font-bold text-slate-900 uppercase text-[11px] pb-1 border-b border-slate-100 flex items-center gap-1.5">
+                      <Award className="w-4 h-4 text-[#123891]" />
+                      <span>Chi tiết tiêu chí chấm điểm (GVGS)</span>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-slate-100 text-[11px] text-slate-500 uppercase">
+                            <th className="py-2">Tiêu chí</th>
+                            <th className="py-2 text-center w-24">Tỷ lệ</th>
+                            <th className="py-2 text-center w-28">Điểm tối đa</th>
+                            <th className="py-2 text-right w-24">Điểm chấm</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {ev.criteria.map((c, i) => (
+                            <tr key={i}>
+                              <td className="py-2 font-medium text-slate-800">{c.name}</td>
+                              <td className="py-2 text-center text-slate-500">{c.weight ? `${c.weight}%` : '—'}</td>
+                              <td className="py-2 text-center text-slate-500 font-mono">{c.maxScore ?? 10}</td>
+                              <td className="py-2 text-right font-bold text-[#102d7d] font-mono">{c.score ?? '—'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* 5. Teamwork & Điểm số */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

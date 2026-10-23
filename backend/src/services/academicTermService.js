@@ -195,6 +195,11 @@ const createTerm = async (data, userId) => {
       throw new AppError("Hạn chót nộp báo cáo TTDN phải sau ngày bắt đầu nộp", 400, "INVALID_DATE_RANGE");
     }
   }
+  if (internship.gradingStart && internship.gradingEnd) {
+    if (new Date(internship.gradingEnd) < new Date(internship.gradingStart)) {
+      throw new AppError("Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm", 400, "INVALID_DATE_RANGE");
+    }
+  }
 
   // Validate KLTN milestone dates if provided
   if (thesis.registrationStart && thesis.registrationEnd) {
@@ -229,10 +234,10 @@ const createTerm = async (data, userId) => {
     internship: {
       registrationStart: internship.registrationStart ? new Date(internship.registrationStart) : null,
       registrationEnd: internship.registrationEnd ? new Date(internship.registrationEnd) : null,
-      reportStart: internship.reportStart ? new Date(internship.reportStart) : (internship.evaluationStartDate ? new Date(internship.evaluationStartDate) : null),
-      reportDeadline: internship.reportDeadline ? new Date(internship.reportDeadline) : (internship.evaluationEndDate ? new Date(internship.evaluationEndDate) : null),
-      evaluationStartDate: internship.evaluationStartDate ? new Date(internship.evaluationStartDate) : (internship.reportStart ? new Date(internship.reportStart) : null),
-      evaluationEndDate: internship.evaluationEndDate ? new Date(internship.evaluationEndDate) : (internship.reportDeadline ? new Date(internship.reportDeadline) : null),
+      reportStart: internship.reportStart ? new Date(internship.reportStart) : null,
+      reportDeadline: internship.reportDeadline ? new Date(internship.reportDeadline) : null,
+      gradingStart: internship.gradingStart ? new Date(internship.gradingStart) : null,
+      gradingEnd: internship.gradingEnd ? new Date(internship.gradingEnd) : null,
     },
     thesis: {
       registrationStart: thesis.registrationStart ? new Date(thesis.registrationStart) : null,
@@ -300,20 +305,25 @@ const updateTerm = async (id, data) => {
   }
 
   if (internship) {
+    if (internship.gradingStart && internship.gradingEnd) {
+      if (new Date(internship.gradingEnd) < new Date(internship.gradingStart)) {
+        throw new AppError("Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm", 400, "INVALID_DATE_RANGE");
+      }
+    }
     const rStart = internship.reportStart !== undefined
       ? (internship.reportStart ? new Date(internship.reportStart) : null)
-      : (internship.evaluationStartDate !== undefined ? (internship.evaluationStartDate ? new Date(internship.evaluationStartDate) : null) : term.internship?.reportStart);
+      : term.internship?.reportStart;
     const rEnd = internship.reportDeadline !== undefined
       ? (internship.reportDeadline ? new Date(internship.reportDeadline) : null)
-      : (internship.evaluationEndDate !== undefined ? (internship.evaluationEndDate ? new Date(internship.evaluationEndDate) : null) : term.internship?.reportDeadline);
+      : term.internship?.reportDeadline;
 
     term.internship = {
       registrationStart: internship.registrationStart !== undefined ? (internship.registrationStart ? new Date(internship.registrationStart) : null) : term.internship?.registrationStart,
       registrationEnd: internship.registrationEnd !== undefined ? (internship.registrationEnd ? new Date(internship.registrationEnd) : null) : term.internship?.registrationEnd,
       reportStart: rStart,
       reportDeadline: rEnd,
-      evaluationStartDate: rStart,
-      evaluationEndDate: rEnd,
+      gradingStart: internship.gradingStart !== undefined ? (internship.gradingStart ? new Date(internship.gradingStart) : null) : term.internship?.gradingStart,
+      gradingEnd: internship.gradingEnd !== undefined ? (internship.gradingEnd ? new Date(internship.gradingEnd) : null) : term.internship?.gradingEnd,
     };
   }
 

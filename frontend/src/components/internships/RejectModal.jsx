@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import internshipApi from '../../api/internshipApi';
 import { useToast } from '../../context/ToastContext';
-import { XCircle, AlertTriangle } from 'lucide-react';
+import { XCircle } from 'lucide-react';
 
 const RejectModal = ({ isOpen, onClose, internship, onRejected }) => {
   const [reason, setReason] = useState('');
@@ -63,17 +63,10 @@ const RejectModal = ({ isOpen, onClose, internship, onRejected }) => {
               setReason(e.target.value);
               if (error) setError('');
             }}
-            placeholder="Nhập lý do chi tiết để sinh viên biết và chỉnh sửa (VD: Doanh nghiệp không đủ điều kiện, thông tin người hướng dẫn chưa chính xác...)"
+            placeholder="Nhập lí do"
             className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500 transition resize-none"
           />
           {error && <p className="text-rose-500 mt-1">{error}</p>}
-        </div>
-
-        <div className="p-3 rounded-xl bg-slate-100 text-slate-600 text-[11px] leading-relaxed flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <span>
-            Hồ sơ sẽ chuyển sang trạng thái <strong>REJECTED</strong>. Trạng thái đăng ký của sinh viên sẽ được mở lại để nộp hồ sơ mới.
-          </span>
         </div>
 
         {/* Action Buttons */}
@@ -96,7 +89,7 @@ const RejectModal = ({ isOpen, onClose, internship, onRejected }) => {
             ) : (
               <XCircle className="w-3.5 h-3.5" />
             )}
-            <span>Xác nhận Từ chối</span>
+            <span>Xác nhận</span>
           </button>
         </div>
       </div>
