@@ -866,7 +866,7 @@ const getSupervisedInternships = async ({
 
   const activeQuery = {
     lecturerId: lecturer._id,
-    status: { $in: ["APPROVED", "INTERNING"] },
+    status: { $in: ["PENDING_SUPERVISOR_ACCEPTANCE", "APPROVED", "INTERNING", "COMPLETED"] },
   };
   if (academicTermId && academicTermId !== "ALL") {
     activeQuery.academicTermId = academicTermId;

@@ -7,6 +7,7 @@ import {
   formatFullDateVN,
   formatDateForInput,
   parseLocalDate,
+  getInternshipGradingWindowStatus,
 } from '../../utils/dateUtils';
 import {
   Calendar,
@@ -109,32 +110,39 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
 
   // Calculate Grading Window Status
   const getGradingStatus = () => {
-    if (!formData.gradingStart && !formData.gradingEnd) {
+    const status = getInternshipGradingWindowStatus({
+      internship: {
+        gradingStart: formData.gradingStart,
+        gradingEnd: formData.gradingEnd,
+      },
+    });
+
+    if (status.status === 'UNCONFIGURED') {
       return {
-        label: 'Chưa cấu hình thời gian chấm điểm (Mở tự do)',
+        label: 'Chưa cấu hình đủ ngày (Khóa chấm điểm)',
         badge: 'bg-slate-100 text-slate-700',
       };
     }
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const start = parseLocalDate(formData.gradingStart);
-    const end = parseLocalDate(formData.gradingEnd);
-    if (end) end.setHours(23, 59, 59, 999);
-
-    if (start && now < start) {
+    if (status.status === 'INVALID') {
       return {
-        label: `Sắp mở chấm điểm (từ ${formatDateVN(start)})`,
+        label: 'Cấu hình không hợp lệ (Khóa chấm điểm)',
+        badge: 'bg-rose-100 text-rose-800',
+      };
+    }
+    if (status.status === 'NOT_STARTED') {
+      return {
+        label: `Chưa đến ngày bắt đầu (từ ${formatDateVN(status.start)})`,
         badge: 'bg-amber-100 text-amber-800',
       };
     }
-    if (end && now > end) {
+    if (status.status === 'EXPIRED') {
       return {
-        label: `Đã hết hạn chấm điểm (hạn chót ${formatDateVN(end)})`,
+        label: `Đã hết hạn chấm điểm (hạn chót ${formatDateVN(status.end)})`,
         badge: 'bg-rose-100 text-rose-800',
       };
     }
     return {
-      label: `Đang mở chấm điểm (hạn chót ${end ? formatDateVN(end) : '—'})`,
+      label: `Đang mở chấm điểm (hạn chót ${formatDateVN(status.end)})`,
       badge: 'bg-emerald-100 text-emerald-800',
     };
   };
@@ -387,7 +395,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
               </div>
             </div>
             <p className="text-[11px] text-slate-500">
-              Trong khoảng thời gian này, Giảng viên Giám sát (GVGS) mới được phép thực hiện việc nhập và lưu điểm thực tập cho sinh viên.
+              Lưu ý: Nút <strong>Chấm điểm</strong> của Giảng viên Giám sát (GVGS) chỉ hoạt động khi TBM đã cấu hình đủ cả ngày bắt đầu lẫn hạn chót và thời điểm hiện tại nằm trong khoảng thời gian này. Nếu chưa cấu hình đủ, chưa đến hạn hoặc đã quá hạn, nút Chấm điểm sẽ tự động bị khóa màu xám và không thể thao tác.
             </p>
           </div>
 

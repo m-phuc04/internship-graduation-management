@@ -193,7 +193,7 @@ const LecturerReportPage = () => {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
-            <LoadingSkeleton rows={5} cols={6} />
+            <LoadingSkeleton rows={5} cols={5} />
           </div>
         ) : reports.length === 0 ? (
           <EmptyState
@@ -209,7 +209,6 @@ const LecturerReportPage = () => {
                   <th className="py-3.5 px-4 whitespace-nowrap w-28">Loại / Tuần</th>
                   <th className="py-3.5 px-4 min-w-[220px]">Tiêu đề nhật ký</th>
                   <th className="py-3.5 px-4 whitespace-nowrap w-44">Thời gian nộp</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap w-36">Điểm đã chấm</th>
                   <th className="py-3.5 px-4 pr-6 whitespace-nowrap w-36">Trạng thái</th>
                 </tr>
               </thead>
@@ -277,18 +276,6 @@ const LecturerReportPage = () => {
                       )}
                     </td>
 
-                    {/* Score */}
-                    <td className="py-3.5 px-4 whitespace-nowrap text-xs font-bold">
-                      {report.lecturerScore !== null ? (
-                        <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                          {report.lecturerScore} / 10
-                        </span>
-                      ) : (
-                        <span className="text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[11px]">
-                          Chưa chấm
-                        </span>
-                      )}
-                    </td>
 
                     {/* Status */}
                     <td className="py-3.5 px-4 pr-6 whitespace-nowrap">

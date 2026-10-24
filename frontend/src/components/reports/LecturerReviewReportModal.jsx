@@ -15,7 +15,6 @@ import {
 import getFileUrl from '../../utils/fileUrlHelper';
 
 const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
-  const [score, setScore] = useState('');
   const [comment, setComment] = useState('');
   const [status, setStatus] = useState('APPROVED');
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +24,6 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
 
   useEffect(() => {
     if (report) {
-      setScore(report.lecturerScore !== null && report.lecturerScore !== undefined ? report.lecturerScore : '');
       setComment(report.lecturerComment || '');
       setStatus(report.status === 'REJECTED' ? 'REJECTED' : 'APPROVED');
       setError('');
@@ -33,17 +31,11 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
   }, [report]);
 
   const handleReview = async () => {
-    if (score !== '' && (Number(score) < 0 || Number(score) > 10)) {
-      setError('Điểm đánh giá phải từ 0 đến 10');
-      return;
-    }
-
     setSubmitting(true);
     setError('');
 
     try {
       await reportApi.review(report._id, {
-        lecturerScore: score !== '' ? Number(score) : null,
         lecturerComment: comment.trim() || null,
         status,
       });
@@ -178,39 +170,20 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Status Option */}
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Kết quả đánh giá <span className="text-rose-500">*</span>
-              </label>
-              <select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-              >
-                <option value="APPROVED">Duyệt & Đạt yêu cầu (APPROVED)</option>
-                <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
-                <option value="REJECTED">Yêu cầu chỉnh sửa lại (REJECTED)</option>
-              </select>
-            </div>
-
-            {/* Score */}
-            <div>
-              <label className="block font-semibold text-slate-700 mb-1">
-                Điểm số (Thang điểm 10)
-              </label>
-              <input
-                type="number"
-                step="0.1"
-                min="0"
-                max="10"
-                value={score}
-                onChange={(e) => setScore(e.target.value)}
-                placeholder="VD: 8.5"
-                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-              />
-            </div>
+          {/* Status Option */}
+          <div>
+            <label className="block font-semibold text-slate-700 mb-1">
+              Kết quả đánh giá <span className="text-rose-500">*</span>
+            </label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+            >
+              <option value="APPROVED">Duyệt & Đạt yêu cầu (APPROVED)</option>
+              <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
+              <option value="REJECTED">Yêu cầu chỉnh sửa lại (REJECTED)</option>
+            </select>
           </div>
 
           {/* Comment */}

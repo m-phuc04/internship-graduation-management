@@ -58,24 +58,60 @@ export const validateInternshipGradingWindow = (term, checkDate = new Date()) =>
   const startRaw = internshipCfg.gradingStart;
   const endRaw = internshipCfg.gradingEnd;
 
-  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
-
-  if (startRaw) {
-    const start = new Date(startRaw);
-    start.setHours(0, 0, 0, 0);
-    if (now < start) {
-      const formattedDate = start.toLocaleDateString("vi-VN");
-      throw new AppError("Chưa tới thời gian chấm điểm", 400);
-    }
+  // 1. TBM chưa cấu hình đủ ngày bắt đầu và hạn chót
+  if (!startRaw || !endRaw) {
+    throw new AppError("TBM chưa cấu hình thời gian chấm điểm", 400);
   }
 
-  if (endRaw) {
-    let end = new Date(endRaw);
-    end.setHours(23, 59, 59, 999);
-    if (now > end) {
-      const formattedDate = end.toLocaleDateString("vi-VN");
-      throw new AppError("Chưa tới thời gian chấm điểm", 400);
+  const extractDateStr = (raw) => {
+    if (!raw) return null;
+    if (typeof raw === "string") {
+      const match = raw.match(/^\d{4}-\d{2}-\d{2}/);
+      if (match) return match[0];
     }
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return null;
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+  };
+
+  const startDateStr = extractDateStr(startRaw);
+  const endDateStr = extractDateStr(endRaw);
+
+  if (!startDateStr || !endDateStr) {
+    throw new AppError("Cấu hình thời gian chấm điểm không hợp lệ", 400);
+  }
+
+  const start = new Date(`${startDateStr}T00:00:00+07:00`);
+  const end = new Date(`${endDateStr}T23:59:59.999+07:00`);
+
+  // 2. Cấu hình ngày không hợp lệ hoặc ngày bắt đầu sau hạn chót
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    throw new AppError("Cấu hình thời gian chấm điểm không hợp lệ", 400);
+  }
+
+  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
+
+  const formatDateStr = (d) =>
+    new Intl.DateTimeFormat("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Ho_Chi_Minh",
+    }).format(d);
+
+  // 3. Chưa đến ngày bắt đầu
+  if (now.getTime() < start.getTime()) {
+    throw new AppError(`Chưa đến thời gian chấm điểm (Mở từ ngày ${formatDateStr(start)})`, 400);
+  }
+
+  // 4. Đã quá hạn chấm điểm
+  if (now.getTime() > end.getTime()) {
+    throw new AppError(`Đã hết hạn chấm điểm (Hạn chót: ${formatDateStr(end)})`, 400);
   }
 
   return { allowed: true };

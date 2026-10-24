@@ -4,6 +4,7 @@ import internshipApi from '../../api/internshipApi';
 import evaluationApi from '../../api/evaluationApi';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
+import { getInternshipGradingWindowStatus } from '../../utils/dateUtils';
 import SearchInput from '../../components/common/SearchInput';
 import StatusBadge from '../../components/common/StatusBadge';
 import Pagination from '../../components/common/Pagination';
@@ -24,7 +25,6 @@ import {
   Eye,
   RefreshCw,
   Award,
-  Printer,
   FileSpreadsheet,
   FileText,
   CheckCircle2,
@@ -33,41 +33,27 @@ import {
 } from 'lucide-react';
 
 const LecturerInternshipPage = () => {
-  // Check if grading window is open for Giảng viên Giám sát
-  const isGradingWindowOpen = (item) => {
-    const term = item?.academicTermId || currentTerm;
-    const cfg = term?.internship || {};
-    const startRaw = cfg.gradingStart;
-    const endRaw = cfg.gradingEnd;
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
 
-    if (!startRaw && !endRaw) {
-      return true; // Not constrained
-    }
-
-    const now = new Date();
-    if (startRaw) {
-      const start = new Date(startRaw);
-      start.setHours(0, 0, 0, 0);
-      if (now < start) return false;
-    }
-    if (endRaw) {
-      const end = new Date(endRaw);
-      end.setHours(23, 59, 59, 999);
-      if (now > end) return false;
-    }
-    return true;
+  // Check grading window status for Giảng viên Giám sát based on TBM configuration
+  const getGradingWindowStatus = (item) => {
+    const term =
+      item?.academicTermId && (item.academicTermId.internship !== undefined || item.academicTermId.name)
+        ? item.academicTermId
+        : currentTerm;
+    return getInternshipGradingWindowStatus(term);
   };
 
   const handleOpenGrading = (item) => {
-    if (!isGradingWindowOpen(item)) {
-      showToast('Chưa tới thời gian chấm điểm', 'error');
+    const windowStatus = getGradingWindowStatus(item);
+    if (!windowStatus.allowed) {
+      showToast(windowStatus.reason, 'error');
       return;
     }
     setGradingTarget(item);
     setGradingModalOpen(true);
   };
 
-  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
   const isActiveTerm = currentTerm?.status === 'ACTIVE';
   const [internships, setInternships] = useState([]);
   const [stats, setStats] = useState(null);
@@ -197,24 +183,6 @@ const LecturerInternshipPage = () => {
     }
   };
 
-  // Open Document B: Phiếu đánh giá thực tập
-  const handleOpenEvaluationDoc = async (intern) => {
-    setLoadingDoc(true);
-    try {
-      // Fetch full details
-      const res = await internshipApi.getById(intern._id);
-      if (res.success) {
-        // Also check evaluation
-        setEvaluationDocData(res.data);
-        setDocType('EVALUATION');
-        setDocModalOpen(true);
-      }
-    } catch (err) {
-      showToast(err.message || 'Không thể tải dữ liệu phiếu đánh giá', 'error');
-    } finally {
-      setLoadingDoc(false);
-    }
-  };
 
   const handleOpenAccept = (intern) => {
     setTargetInternship(intern);
@@ -321,7 +289,7 @@ const LecturerInternshipPage = () => {
 
           {/* Action & Workload Stats Pill */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Button Xuất Excel danh sách sinh viên */}
+            {/* Button Xuất danh sách sinh viên */}
             <button
               onClick={handleExportExcel}
               disabled={exporting || loading || internships.length === 0}
@@ -329,7 +297,7 @@ const LecturerInternshipPage = () => {
               title="Xuất danh sách sinh viên thực tập ra file Excel (.xlsx)"
             >
               <FileSpreadsheet className={`w-4 h-4 ${exporting ? 'animate-spin' : ''}`} />
-              <span>{exporting ? 'Đang xuất Excel...' : 'Xuất Excel'}</span>
+              <span>{exporting ? 'Đang xuất danh sách...' : 'Xuất danh sách'}</span>
             </button>
 
             <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-right">
@@ -337,7 +305,7 @@ const LecturerInternshipPage = () => {
                 SV đang giám sát
               </div>
               <div className="text-lg font-extrabold text-[#123891] mt-0.5">
-                {stats?.activeCount || 0} <span className="text-xs font-semibold text-[#123891]">SV</span>
+                {stats?.totalAssigned ?? pagination?.total ?? stats?.activeCount ?? internships.length ?? 0} <span className="text-xs font-semibold text-[#123891]">SV</span>
               </div>
             </div>
 
@@ -492,30 +460,30 @@ const LecturerInternshipPage = () => {
                     >
                       <div className="flex items-center justify-end gap-1.5">
                         {/* Nút Chấm điểm: chỉ hiển thị khi chưa có điểm */}
-                        {(!item.evaluation || item.evaluation?.score === undefined || item.evaluation?.score === null) && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenGrading(item)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition cursor-pointer shadow-xs"
-                            title="Chấm điểm thực tập cho sinh viên này"
-                          >
-                            <Award className="w-3.5 h-3.5" />
-                            <span>Chấm điểm</span>
-                          </button>
-                        )}
+                        {(!item.evaluation || item.evaluation?.score === undefined || item.evaluation?.score === null) && (() => {
+                          const windowStatus = getGradingWindowStatus(item);
+                          return (
+                            <button
+                              type="button"
+                              disabled={!windowStatus.allowed}
+                              onClick={() => {
+                                if (windowStatus.allowed) {
+                                  handleOpenGrading(item);
+                                }
+                              }}
+                              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${
+                                windowStatus.allowed
+                                  ? 'text-white bg-[#123891] hover:bg-[#102d7d] cursor-pointer'
+                                  : 'text-slate-400 bg-slate-100 hover:bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
+                              }`}
+                              title={windowStatus.allowed ? 'Chấm điểm thực tập cho sinh viên này' : windowStatus.reason}
+                            >
+                              <Award className="w-3.5 h-3.5" />
+                              <span>Chấm điểm</span>
+                            </button>
+                          );
+                        })()}
 
-                        {/* If evaluated: In phiếu */}
-                        {item.evaluation?.score !== undefined && item.evaluation?.score !== null && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenEvaluationDoc(item)}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
-                            title="In phiếu đánh giá thực tập này"
-                          >
-                            <Printer className="w-3.5 h-3.5" />
-                            <span>In phiếu</span>
-                          </button>
-                        )}
 
                         {/* Nút Chi tiết */}
                         <button

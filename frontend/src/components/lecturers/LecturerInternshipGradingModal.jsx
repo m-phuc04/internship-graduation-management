@@ -3,7 +3,7 @@ import Modal from '../common/Modal';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import internshipApi from '../../api/internshipApi';
-import { formatDateVN } from '../../utils/dateUtils';
+import { formatDateVN, getInternshipGradingWindowStatus } from '../../utils/dateUtils';
 import {
   Award,
   Calendar,
@@ -27,25 +27,13 @@ const LecturerInternshipGradingModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Determine grading window status
-  const internshipTerm = internship?.academicTermId || currentTerm;
-  const gradingStartRaw = internshipTerm?.internship?.gradingStart;
-  const gradingEndRaw = internshipTerm?.internship?.gradingEnd;
+  // Determine grading window status according to TBM timeline configuration
+  const internshipTerm =
+    internship?.academicTermId && (internship.academicTermId.internship !== undefined || internship.academicTermId.name)
+      ? internship.academicTermId
+      : currentTerm;
 
-  const isGradingAllowed = () => {
-    if (!gradingStartRaw && !gradingEndRaw) {
-      return true;
-    }
-    const now = new Date();
-    const start = gradingStartRaw ? new Date(gradingStartRaw) : null;
-    if (start) start.setHours(0, 0, 0, 0);
-    const end = gradingEndRaw ? new Date(gradingEndRaw) : null;
-    if (end) end.setHours(23, 59, 59, 999);
-
-    if (start && now < start) return false;
-    if (end && now > end) return false;
-    return true;
-  };
+  const windowStatus = getInternshipGradingWindowStatus(internshipTerm);
 
   // Populate existing evaluation if present
   useEffect(() => {
@@ -62,8 +50,8 @@ const LecturerInternshipGradingModal = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!isGradingAllowed()) {
-      showToast('Chưa tới thời gian chấm điểm', 'error');
+    if (!windowStatus.allowed) {
+      showToast(windowStatus.reason, 'error');
       return;
     }
 
@@ -125,6 +113,14 @@ const LecturerInternshipGradingModal = ({
           </div>
         </div>
 
+        {/* Lock Warning Banner if window is not allowed */}
+        {!windowStatus.allowed && (
+          <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center gap-2.5 text-xs font-semibold">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{windowStatus.reason}</span>
+          </div>
+        )}
+
         {/* Score & Comments Section */}
         <div className="space-y-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
           <div>
@@ -145,9 +141,9 @@ const LecturerInternshipGradingModal = ({
                 setScore(e.target.value);
                 if (error) setError('');
               }}
-              disabled={submitting}
+              disabled={submitting || !windowStatus.allowed}
               placeholder="Nhập điểm số (Ví dụ: 8.5)..."
-              className="w-full px-4 py-2.5 text-sm font-bold bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              className="w-full px-4 py-2.5 text-sm font-bold bg-slate-50 border border-slate-300 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition disabled:bg-slate-100 disabled:cursor-not-allowed"
               autoFocus
             />
             {error && <p className="text-rose-500 text-xs font-semibold mt-1">{error}</p>}
@@ -162,9 +158,9 @@ const LecturerInternshipGradingModal = ({
               rows={3}
               value={comments}
               onChange={(e) => setComments(e.target.value)}
-              disabled={submitting}
+              disabled={submitting || !windowStatus.allowed}
               placeholder="Nhập nhận xét về tinh thần làm việc, kết quả thực tập và tiến độ của sinh viên (tùy chọn)..."
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none leading-relaxed"
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none leading-relaxed disabled:bg-slate-100 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -180,8 +176,13 @@ const LecturerInternshipGradingModal = ({
           </button>
           <button
             type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-1.5 px-6 py-2.5 font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 cursor-pointer"
+            disabled={submitting || !windowStatus.allowed}
+            className={`inline-flex items-center gap-1.5 px-6 py-2.5 font-bold rounded-xl transition ${
+              windowStatus.allowed
+                ? 'text-white bg-[#123891] hover:bg-[#102d7d] shadow-sm shadow-blue-200 cursor-pointer disabled:opacity-50'
+                : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
+            }`}
+            title={windowStatus.allowed ? 'Xác nhận chấm điểm' : windowStatus.reason}
           >
             {submitting ? (
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

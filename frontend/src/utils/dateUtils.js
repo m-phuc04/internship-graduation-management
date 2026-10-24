@@ -159,3 +159,117 @@ export const isCouncilReportTimeExpired = (council) => {
   return false;
 };
 
+/**
+ * Check GVGS grading window status for an AcademicTerm
+ * Rules:
+ * - TBM chưa cấu hình đủ ngày bắt đầu và hạn chót: allowed = false, reason = "TBM chưa cấu hình thời gian chấm điểm"
+ * - Cấu hình thời gian không hợp lệ (start > end or invalid dates): allowed = false, reason = "Cấu hình thời gian chấm điểm không hợp lệ"
+ * - Chưa đến ngày bắt đầu (00:00:00 Asia/Ho_Chi_Minh): allowed = false, reason = "Chưa đến thời gian chấm điểm (Mở từ ngày DD/MM/YYYY)"
+ * - Đã quá hạn chấm điểm (23:59:59.999 Asia/Ho_Chi_Minh): allowed = false, reason = "Đã hết hạn chấm điểm (Hạn chót: DD/MM/YYYY)"
+ * - Trong thời gian cho phép: allowed = true, reason = "Đang trong thời gian chấm điểm"
+ *
+ * @param {Object} term - AcademicTerm object or internship cfg
+ * @param {Date} [checkDate=new Date()]
+ * @returns {{ allowed: boolean, reason: string, status: 'UNCONFIGURED'|'INVALID'|'NOT_STARTED'|'EXPIRED'|'OPEN', start: Date|null, end: Date|null }}
+ */
+export const getInternshipGradingWindowStatus = (term, checkDate = new Date()) => {
+  const internshipCfg = term?.internship || (term?.gradingStart !== undefined || term?.gradingEnd !== undefined ? term : {});
+  const startRaw = internshipCfg?.gradingStart;
+  const endRaw = internshipCfg?.gradingEnd;
+
+  // 1. TBM chưa cấu hình đủ ngày bắt đầu và hạn chót
+  if (!startRaw || !endRaw) {
+    return {
+      allowed: false,
+      status: 'UNCONFIGURED',
+      reason: 'TBM chưa cấu hình thời gian chấm điểm',
+      start: null,
+      end: null,
+    };
+  }
+
+  const extractDateStr = (raw) => {
+    if (!raw) return null;
+    if (typeof raw === 'string') {
+      const match = raw.match(/^\d{4}-\d{2}-\d{2}/);
+      if (match) return match[0];
+    }
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return null;
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(d);
+  };
+
+  const startDateStr = extractDateStr(startRaw);
+  const endDateStr = extractDateStr(endRaw);
+
+  if (!startDateStr || !endDateStr) {
+    return {
+      allowed: false,
+      status: 'INVALID',
+      reason: 'Cấu hình thời gian chấm điểm không hợp lệ',
+      start: null,
+      end: null,
+    };
+  }
+
+  const start = new Date(`${startDateStr}T00:00:00+07:00`);
+  const end = new Date(`${endDateStr}T23:59:59.999+07:00`);
+
+  // 2. Cấu hình ngày không hợp lệ hoặc ngày bắt đầu sau hạn chót
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
+    return {
+      allowed: false,
+      status: 'INVALID',
+      reason: 'Cấu hình thời gian chấm điểm không hợp lệ',
+      start: null,
+      end: null,
+    };
+  }
+
+  const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
+
+  const formatDateStr = (d) =>
+    new Intl.DateTimeFormat('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      timeZone: 'Asia/Ho_Chi_Minh',
+    }).format(d);
+
+  // 3. Chưa đến ngày bắt đầu
+  if (now.getTime() < start.getTime()) {
+    return {
+      allowed: false,
+      status: 'NOT_STARTED',
+      reason: `Chưa đến thời gian chấm điểm (Mở từ ngày ${formatDateStr(start)})`,
+      start,
+      end,
+    };
+  }
+
+  // 4. Đã quá hạn chấm điểm
+  if (now.getTime() > end.getTime()) {
+    return {
+      allowed: false,
+      status: 'EXPIRED',
+      reason: `Đã hết hạn chấm điểm (Hạn chót: ${formatDateStr(end)})`,
+      start,
+      end,
+    };
+  }
+
+  // 5. Trong thời gian cho phép
+  return {
+    allowed: true,
+    status: 'OPEN',
+    reason: `Đang trong thời gian chấm điểm (Hạn chót: ${formatDateStr(end)})`,
+    start,
+    end,
+  };
+};
+
