@@ -34,19 +34,21 @@ const formatScore = (score) => {
 const mapInternshipStatus = (status) => {
   switch (status) {
     case "PENDING":
-      return "Chờ duyệt";
+      return "Chờ phê duyệt";
     case "PENDING_SUPERVISOR_ACCEPTANCE":
-      return "Đã phân công GVGS";
+      return "Chờ GVGS tiếp nhận";
     case "APPROVED":
-      return "Đã duyệt";
+      return "Đã phê duyệt";
     case "INTERNING":
       return "Đang thực tập";
     case "COMPLETED":
       return "Hoàn thành";
     case "CANCELLED":
       return "Đã hủy";
+    case "REJECTED":
+      return "Đã từ chối";
     default:
-      return status || "-";
+      return status || "";
   }
 };
 
@@ -115,8 +117,13 @@ const exportInternships = async ({
   }
 
   // 4. Filter by Lecturer
+  let lecturerInfo = null;
   if (lecturerId && lecturerId !== "ALL") {
     query.lecturerId = lecturerId;
+    lecturerInfo = await Lecturer.findById(lecturerId).populate({
+      path: "userId",
+      select: "fullName email phone",
+    }).lean();
   }
 
   // 5. Filter by Search (MSSV, Student Name, Company Name)
@@ -140,9 +147,8 @@ const exportInternships = async ({
       { position: searchRegex },
     ];
 
-    if (query.status) {
-      query.$and = [{ status: query.status }, { $or: searchOr }];
-      delete query.status;
+    if (query.$and) {
+      query.$and.push({ $or: searchOr });
     } else {
       query.$or = searchOr;
     }
@@ -163,6 +169,18 @@ const exportInternships = async ({
     .populate("academicTermId")
     .lean();
 
+  const termCode = termInfo?.code ? termInfo.code.replace(/[^a-zA-Z0-9_-]/g, "_") : "HocKy";
+  const filename = `Danh_sach_sinh_vien_thuc_tap_${termCode}.xlsx`;
+
+  if (!internships || internships.length === 0) {
+    return {
+      buffer: null,
+      filename,
+      totalRecords: 0,
+      termCode,
+    };
+  }
+
   // Fetch evaluations for final scores
   const internshipIds = internships.map((i) => i._id);
   const evaluations = await Evaluation.find({
@@ -180,29 +198,55 @@ const exportInternships = async ({
   workbook.creator = "Hệ thống Quản lý Thực tập & Khóa luận Tốt nghiệp";
   workbook.created = new Date();
 
-  const worksheet = workbook.addWorksheet("Danh Sách TTDN", {
+  const worksheet = workbook.addWorksheet("Danh Sách SV Thực Tập", {
     views: [{ showGridLines: true, state: "frozen", ySplit: 5 }],
   });
 
-  const termCode = termInfo?.code || "TOAN_BO";
   const termName = termInfo ? `${termInfo.name} - Năm học ${termInfo.academicYear}` : "Tất cả học kỳ";
 
+  // Table Column Headers (Row 5)
+  const columns = [
+    { header: "STT", key: "stt", width: 8 },
+    { header: "MSSV", key: "studentCode", width: 14 },
+    { header: "Họ và tên sinh viên", key: "fullName", width: 26 },
+    { header: "Lớp", key: "className", width: 14 },
+    { header: "Số điện thoại sinh viên", key: "phone", width: 18 },
+    { header: "Doanh nghiệp tiếp nhận", key: "companyName", width: 32 },
+    { header: "Địa chỉ doanh nghiệp", key: "companyAddress", width: 36 },
+    { header: "Vị trí thực tập", key: "position", width: 24 },
+    { header: "Điểm đánh giá", key: "score", width: 14 },
+    { header: "Trạng thái thực tập", key: "internshipStatus", width: 22 },
+  ];
+
+  if (!lecturerId || lecturerId === "ALL") {
+    columns.push({ header: "Giảng viên giám sát", key: "lecturerName", width: 26 });
+  }
+
+  const lastColLetter = String.fromCharCode(65 + columns.length - 1);
+
   // 1. Header Information
-  worksheet.mergeCells("A1:Q1");
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
   const titleCell1 = worksheet.getCell("A1");
   titleCell1.value = "TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM - KHOA CÔNG NGHỆ THÔNG TIN";
   titleCell1.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF334155" } };
   titleCell1.alignment = { horizontal: "center", vertical: "middle" };
 
-  worksheet.mergeCells("A2:Q2");
+  worksheet.mergeCells(`A2:${lastColLetter}2`);
   const titleCell2 = worksheet.getCell("A2");
   titleCell2.value = "DANH SÁCH SINH VIÊN THỰC TẬP DOANH NGHIỆP (TTDN)";
   titleCell2.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF1E3A8A" } };
   titleCell2.alignment = { horizontal: "center", vertical: "middle" };
 
-  worksheet.mergeCells("A3:Q3");
+  worksheet.mergeCells(`A3:${lastColLetter}3`);
   const titleCell3 = worksheet.getCell("A3");
-  titleCell3.value = `Học kỳ: ${termName}  |  Ngày xuất báo cáo: ${formatDate(new Date())}  |  Tổng số: ${internships.length} sinh viên`;
+  let lecturerDisplayName = lecturerInfo?.userId?.fullName || "";
+  if (lecturerInfo?.academicTitle && !lecturerDisplayName.startsWith(lecturerInfo.academicTitle)) {
+    lecturerDisplayName = `${lecturerInfo.academicTitle} ${lecturerDisplayName}`;
+  }
+  const lecturerSubtitle = lecturerInfo
+    ? `  |  Giảng viên giám sát: ${lecturerDisplayName} (${lecturerInfo.lecturerCode})`
+    : "";
+  titleCell3.value = `Học kỳ: ${termName}${lecturerSubtitle}  |  Ngày xuất: ${formatDate(new Date())}  |  Tổng số: ${internships.length} sinh viên`;
   titleCell3.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF64748B" } };
   titleCell3.alignment = { horizontal: "center", vertical: "middle" };
 
@@ -210,26 +254,6 @@ const exportInternships = async ({
   worksheet.addRow([]);
 
   // 2. Table Column Headers (Row 5)
-  const columns = [
-    { header: "STT", key: "stt", width: 8 },
-    { header: "MSSV", key: "studentCode", width: 14 },
-    { header: "Họ và tên", key: "fullName", width: 26 },
-    { header: "Lớp", key: "className", width: 14 },
-    { header: "Email", key: "email", width: 28 },
-    { header: "Số điện thoại", key: "phone", width: 16 },
-    { header: "Doanh nghiệp", key: "companyName", width: 30 },
-    { header: "Mã DN", key: "companyCode", width: 14 },
-    { header: "Vị trí thực tập", key: "position", width: 22 },
-    { header: "Ngày bắt đầu", key: "startDate", width: 14 },
-    { header: "Ngày kết thúc", key: "endDate", width: 14 },
-    { header: "GV hướng dẫn", key: "lecturerName", width: 24 },
-    { header: "Mã GVGS", key: "lecturerCode", width: 14 },
-    { header: "Trạng thái hồ sơ", key: "status", width: 18 },
-    { header: "Trạng thái thực tập", key: "internshipStatus", width: 20 },
-    { header: "Điểm TTDN", key: "score", width: 12 },
-    { header: "Ngày đăng ký", key: "createdAt", width: 14 },
-  ];
-
   worksheet.getRow(5).values = columns.map((c) => c.header);
   worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
 
@@ -255,47 +279,51 @@ const exportInternships = async ({
   // 3. Populate Data Rows
   internships.forEach((item, index) => {
     const studentUser = item.studentId?.userId;
-    const studentCode = item.studentId?.studentCode || "-";
-    const fullName = studentUser?.fullName || "-";
-    const className = item.studentId?.className || "-";
-    const email = studentUser?.email || "-";
-    const phone = studentUser?.phone || "-";
+    const studentCode = item.studentId?.studentCode || "";
+    const fullName = studentUser?.fullName || "";
+    const className = item.studentId?.className || "";
+    const phone = studentUser?.phone || "";
 
     const company = item.companyId;
-    const companyName = company?.name || company?.companyName || "-";
-    const companyCode = company?.code || "-";
-    const position = item.position || "-";
+    const companyName = company?.name || company?.companyName || "";
+    const companyAddress = company?.address || "";
+    const position = item.position || "";
 
     const lecturerUser = item.lecturerId?.userId;
     const lecturerName = lecturerUser?.fullName
-      ? `${item.lecturerId?.academicTitle ? `${item.lecturerId.academicTitle}. ` : ""}${lecturerUser.fullName}`
+      ? `${item.lecturerId?.academicTitle ? `${item.lecturerId.academicTitle} ` : ""}${lecturerUser.fullName}`
       : "Chưa phân công";
-    const lecturerCode = item.lecturerId?.lecturerCode || "-";
 
     const statusText = mapInternshipStatus(item.status);
-    const ev = evalMap.get(item._id.toString());
-    const scoreVal = ev?.score !== undefined ? formatScore(ev.score) : "-";
 
-    const row = worksheet.addRow({
+    const ev = evalMap.get(item._id.toString());
+    let scoreVal = "";
+    if (ev?.score !== undefined && ev?.score !== null && !isNaN(ev.score)) {
+      scoreVal = Number(ev.score);
+    } else if (item.finalScore !== undefined && item.finalScore !== null && !isNaN(item.finalScore)) {
+      scoreVal = Number(item.finalScore);
+    } else if (item.score !== undefined && item.score !== null && !isNaN(item.score)) {
+      scoreVal = Number(item.score);
+    }
+
+    const rowData = {
       stt: index + 1,
       studentCode,
       fullName,
       className,
-      email,
       phone,
       companyName,
-      companyCode,
+      companyAddress,
       position,
-      startDate: formatDate(item.startDate),
-      endDate: formatDate(item.endDate),
-      lecturerName,
-      lecturerCode,
-      status: statusText,
-      internshipStatus: item.status === "COMPLETED" ? "Đã hoàn thành" : item.status === "INTERNING" ? "Đang làm việc" : "Chờ tiếp nhận",
       score: scoreVal,
-      createdAt: formatDate(item.createdAt),
-    });
+      internshipStatus: statusText,
+    };
 
+    if (!lecturerId || lecturerId === "ALL") {
+      rowData.lecturerName = lecturerName;
+    }
+
+    const row = worksheet.addRow(rowData);
     row.height = 22;
 
     // Apply borders and styling
@@ -308,8 +336,8 @@ const exportInternships = async ({
         right: { style: "thin", color: { argb: "FFE2E8F0" } },
       };
 
-      // Center specific columns: STT (1), MSSV (2), Class (4), Phone (6), CompanyCode (8), Dates (10, 11), LecturerCode (13), Score (16), CreatedAt (17)
-      if ([1, 2, 4, 6, 8, 10, 11, 13, 14, 15, 16, 17].includes(colNumber)) {
+      // Center specific columns: STT (1), MSSV (2), Class (4), Phone (5), Score (9), Status (10)
+      if ([1, 2, 4, 5, 9, 10].includes(colNumber)) {
         cell.alignment = { horizontal: "center", vertical: "middle" };
       } else {
         cell.alignment = { horizontal: "left", vertical: "middle" };
@@ -327,7 +355,6 @@ const exportInternships = async ({
   });
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const filename = `DanhSach_TTDN_${termCode}.xlsx`;
 
   return {
     buffer,

@@ -332,7 +332,7 @@ const getAvailableLecturers = async () => {
       });
 
       const remainingQuota = Math.max(0, lec.maxStudents - activeStudentsCount);
-      const canAssign = remainingQuota > 0;
+      const canAssign = lec.isAvailable !== false;
 
       return {
         _id: lec._id,
@@ -379,20 +379,6 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
 
   if (!lecturer.isAvailable) {
     throw new AppError("Giảng viên hiện đang ở trạng thái tạm ngưng nhận sinh viên", 400);
-  }
-
-  // Workload validation
-  const currentActiveCount = await Internship.countDocuments({
-    lecturerId: lecturer._id,
-    _id: { $ne: internship._id },
-    status: { $in: ["PENDING_SUPERVISOR_ACCEPTANCE", "APPROVED", "INTERNING"] },
-  });
-
-  if (currentActiveCount >= lecturer.maxStudents) {
-    throw new AppError(
-      `Giảng viên ${lecturer.userId?.fullName} đã đạt tối đa giới hạn chỉ tiêu hướng dẫn (${lecturer.maxStudents} SV)`,
-      400,
-    );
   }
 
   internship.lecturerId = lecturerId;
@@ -456,19 +442,6 @@ const approveInternship = async (internshipId, approvedBy, lecturerId) => {
     }
     if (!lecturer.isAvailable) {
       throw new AppError("Giảng viên hiện đang tạm ngưng nhận sinh viên", 400);
-    }
-
-    const currentCount = await Internship.countDocuments({
-      lecturerId: lecturer._id,
-      _id: { $ne: internship._id },
-      status: { $in: ["PENDING_SUPERVISOR_ACCEPTANCE", "APPROVED", "INTERNING"] },
-    });
-
-    if (currentCount >= lecturer.maxStudents) {
-      throw new AppError(
-        `Giảng viên ${lecturer.userId?.fullName} đã đạt tối đa chỉ tiêu tiếp nhận (${lecturer.maxStudents} SV)`,
-        400,
-      );
     }
 
     internship.lecturerId = lecturerId;

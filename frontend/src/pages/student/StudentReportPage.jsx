@@ -10,6 +10,7 @@ import StudentReportModal from '../../components/reports/StudentReportModal';
 import StudentReportDetailModal from '../../components/reports/StudentReportDetailModal';
 import Student2ConfirmModal from '../../components/reports/Student2ConfirmModal';
 import ExportInternshipDiaryModal from '../../components/reports/ExportInternshipDiaryModal';
+import getFileUrl from '../../utils/fileUrlHelper';
 
 import {
   BookOpen,
@@ -317,194 +318,229 @@ const StudentReportPage = () => {
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {weeks.map((week) => {
-              const report = reportMap[week.weekNumber];
-              const isSubmitted = !!report;
-              const status = report ? report.status : 'NOT_SUBMITTED';
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                  <tr className="border-b border-slate-200/80 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3.5 px-4 pl-6 text-center w-24">Tuần</th>
+                    <th className="py-3.5 px-4 w-48">Thời gian</th>
+                    <th className="py-3.5 px-4 min-w-[240px]">Nội dung</th>
+                    <th className="py-3.5 px-4 w-44">File đính kèm</th>
+                    <th className="py-3.5 px-4 w-48">Trạng thái</th>
+                    <th className="py-3.5 px-4 pr-6 text-right w-44">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {weeks.map((week) => {
+                    const report = reportMap[week.weekNumber];
+                    const status = report ? report.status : 'NOT_SUBMITTED';
 
-              const displayStartDate = report?.weekStartDate || week.defaultStartDate;
-              const displayEndDate = report?.weekEndDate || week.defaultEndDate;
+                    const displayStartDate = report?.weekStartDate || week.defaultStartDate;
+                    const displayEndDate = report?.weekEndDate || week.defaultEndDate;
 
-              return (
-                <div
-                  key={week.weekNumber}
-                  className={`p-5 rounded-3xl border transition-all shadow-2xs space-y-4 flex flex-col justify-between ${
-                    status === 'APPROVED'
-                      ? 'bg-emerald-50/40 border-emerald-200/80'
-                      : status === 'WAITING_STUDENT_2'
-                      ? 'bg-amber-50/40 border-amber-200/80'
-                      : status === 'NEEDS_REVISION'
-                      ? 'bg-rose-50/40 border-rose-200/80'
-                      : status === 'SUBMITTED' || status === 'REVIEWING'
-                      ? 'bg-blue-50/40 border-blue-200/80'
-                      : 'bg-white border-slate-200/80 hover:border-slate-300'
-                  }`}
-                >
-                  {/* Top: Week Header & Status */}
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-xs px-2.5 py-1 rounded-xl bg-[#123891] text-white font-mono shadow-2xs">
-                          TUẦN {week.weekNumber}
-                        </span>
-                        <div className="text-xs font-semibold text-slate-700 flex items-center gap-1 font-mono">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>
-                            {displayStartDate && displayEndDate
-                              ? `${formatDate(displayStartDate)} — ${formatDate(displayEndDate)}`
-                              : displayStartDate
-                              ? formatDate(displayStartDate)
-                              : 'Chưa cập nhật ngày'}
+                    const fileName = report?.file?.originalName || report?.file?.fileName;
+                    const fileUrl = report?.file?.fileUrl ? getFileUrl(report.file.fileUrl) : '';
+
+                    return (
+                      <tr
+                        key={week.weekNumber}
+                        className={`hover:bg-slate-50/80 transition-colors ${
+                          status === 'APPROVED'
+                            ? 'bg-emerald-50/20'
+                            : status === 'WAITING_STUDENT_2'
+                            ? 'bg-amber-50/20'
+                            : status === 'NEEDS_REVISION'
+                            ? 'bg-rose-50/20'
+                            : ''
+                        }`}
+                      >
+                        {/* 1. Tuần */}
+                        <td className="py-4 px-4 pl-6 text-center whitespace-nowrap">
+                          <span className="inline-flex items-center justify-center font-black text-xs px-2.5 py-1 rounded-xl bg-[#123891] text-white font-mono shadow-2xs">
+                            Tuần {week.weekNumber}
                           </span>
-                        </div>
-                      </div>
+                        </td>
 
-                      {/* Status Tag */}
-                      {status === 'NOT_SUBMITTED' && (
-                        <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                          Chưa nộp
-                        </span>
-                      )}
-                      {status === 'DRAFT' && (
-                        <span className="text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
-                          Bản nháp
-                        </span>
-                      )}
-                      {status === 'WAITING_STUDENT_2' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 px-2.5 py-1 rounded-lg">
-                          <Clock className="w-3 h-3" />
-                          <span>Chờ SV2 xác nhận</span>
-                        </span>
-                      )}
-                      {status === 'NEEDS_REVISION' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                          <AlertTriangle className="w-3 h-3" />
-                          <span>Cần chỉnh sửa</span>
-                        </span>
-                      )}
-                      {(status === 'SUBMITTED' || status === 'REVIEWING') && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#102d7d] bg-blue-100/70 border border-blue-200 px-2.5 py-1 rounded-lg">
-                          <CheckCircle2 className="w-3 h-3" />
-                          <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVGS' : 'Đã gửi GVGS'}</span>
-                        </span>
-                      )}
-                      {status === 'APPROVED' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                          <Award className="w-3 h-3" />
-                          <span>GVGS đã chấm: {report.lecturerScore !== null ? `${report.lecturerScore}/10` : 'Đạt'}</span>
-                        </span>
-                      )}
-                      {status === 'REJECTED' && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                          <span>GVGS yêu cầu sửa</span>
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Report Content Preview if exists */}
-                    {report ? (
-                      <div className="space-y-1.5 pt-1">
-                        <div className="font-bold text-slate-900 text-xs line-clamp-1">
-                          {report.title}
-                        </div>
-
-                        {report.content && (
-                          <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed bg-white/70 p-2.5 rounded-xl border border-slate-200/60">
-                            {report.content}
-                          </p>
-                        )}
-
-                        {report.file?.originalName && (
-                          <div className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 border border-blue-100 px-2.5 py-1 rounded-lg truncate max-w-full">
-                            <Paperclip className="w-3 h-3 shrink-0" />
-                            <span className="truncate">{report.file.originalName}</span>
+                        {/* 2. Thời gian */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 font-mono">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                            <span>
+                              {displayStartDate && displayEndDate
+                                ? `${formatDate(displayStartDate)} — ${formatDate(displayEndDate)}`
+                                : displayStartDate
+                                ? formatDate(displayStartDate)
+                                : 'Chưa cập nhật ngày'}
+                            </span>
                           </div>
-                        )}
+                          {report?.submittedAt && (
+                            <div className="text-[10px] text-slate-400 mt-1 font-mono">
+                              Nộp: {formatDate(report.submittedAt)}
+                            </div>
+                          )}
+                        </td>
 
-                        {/* Rejection Notice if Needs Revision */}
-                        {status === 'NEEDS_REVISION' && report.student2RejectedReason && (
-                          <div className="p-2.5 bg-rose-100/80 border border-rose-200 rounded-xl text-[11px] text-rose-900">
-                            <strong>Lý do SV2 từ chối:</strong> {report.student2RejectedReason}
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-[11px] text-slate-400 italic py-2">
-                        Chưa nộp nhật ký tuần này.
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bottom: Action Buttons */}
-                  <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between gap-2 flex-wrap">
-                    {/* Timestamp */}
-                    <div className="text-[10px] text-slate-400 font-mono">
-                      {report?.submittedAt ? `Nộp: ${formatDate(report.submittedAt)}` : ''}
-                    </div>
-
-                    {/* Actions depending on state */}
-                    <div className="flex items-center gap-2">
-                      {/* Case A: Not submitted yet */}
-                      {!report && isReady && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenCreateForWeek(week)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Viết báo cáo</span>
-                        </button>
-                      )}
-
-                      {/* Case B: Draft, Needs Revision, or Rejected by GVGS */}
-                      {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenCreateForWeek(week, report)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>{report.status === 'REJECTED' ? 'Viết lại báo cáo' : 'Chỉnh sửa báo cáo'}</span>
-                        </button>
-                      )}
-
-                      {/* Case C: Waiting for SV2 */}
-                      {report && report.status === 'WAITING_STUDENT_2' && (
-                        <>
-                          {isSV2 ? (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenConfirm(report)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                            >
-                              <ShieldCheck className="w-3.5 h-3.5" />
-                              <span>Kiểm tra & Xác nhận</span>
-                            </button>
+                        {/* 3. Nội dung */}
+                        <td className="py-4 px-4">
+                          {report ? (
+                            <div className="space-y-1 max-w-md">
+                              <div className="font-bold text-slate-900 text-xs line-clamp-1" title={report.title}>
+                                {report.title}
+                              </div>
+                              {report.content ? (
+                                <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed" title={report.content}>
+                                  {report.content}
+                                </p>
+                              ) : null}
+                              {status === 'NEEDS_REVISION' && report.student2RejectedReason && (
+                                <div className="text-[10px] text-rose-700 bg-rose-50 border border-rose-200/70 px-2 py-0.5 rounded-md inline-block">
+                                  <strong>Lý do SV2 từ chối:</strong> {report.student2RejectedReason}
+                                </div>
+                              )}
+                            </div>
                           ) : (
-                            <span className="text-[11px] text-amber-700 font-semibold italic">
-                              Đang chờ SV2 xác nhận
+                            <span className="text-xs text-slate-400 italic">
+                              Chưa nộp nhật ký tuần này
                             </span>
                           )}
-                        </>
-                      )}
+                        </td>
 
-                      {/* Case D: View Details */}
-                      {report && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenDetail(report)}
-                          className="inline-flex items-center gap-1 px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-                        >
-                          <Eye className="w-3.5 h-3.5 text-slate-500" />
-                          <span>Xem chi tiết</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+                        {/* 4. File đính kèm */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          {fileName ? (
+                            fileUrl ? (
+                              <a
+                                href={fileUrl}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1.5 text-xs text-[#123891] hover:text-[#102d7d] hover:underline font-semibold max-w-[180px] group/file"
+                                title={`Xem/tải file: ${fileName}`}
+                              >
+                                <Paperclip className="w-3.5 h-3.5 text-blue-500 shrink-0 group-hover/file:scale-110 transition-transform" />
+                                <span className="truncate">{fileName}</span>
+                              </a>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 text-xs text-slate-600 max-w-[180px]" title={fileName}>
+                                <Paperclip className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{fileName}</span>
+                              </div>
+                            )
+                          ) : (
+                            <span className="text-slate-300 font-mono text-xs">—</span>
+                          )}
+                        </td>
+
+                        {/* 5. Trạng thái */}
+                        <td className="py-4 px-4 whitespace-nowrap">
+                          {status === 'NOT_SUBMITTED' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                              Chưa nộp
+                            </span>
+                          )}
+                          {status === 'DRAFT' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
+                              Bản nháp
+                            </span>
+                          )}
+                          {status === 'WAITING_STUDENT_2' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 px-2.5 py-1 rounded-lg">
+                              <Clock className="w-3 h-3" />
+                              <span>Chờ SV2 xác nhận</span>
+                            </span>
+                          )}
+                          {status === 'NEEDS_REVISION' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
+                              <AlertTriangle className="w-3 h-3" />
+                              <span>Cần chỉnh sửa</span>
+                            </span>
+                          )}
+                          {(status === 'SUBMITTED' || status === 'REVIEWING') && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#102d7d] bg-blue-100/70 border border-blue-200 px-2.5 py-1 rounded-lg">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVGS' : 'Đã gửi GVGS'}</span>
+                            </span>
+                          )}
+                          {status === 'APPROVED' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-1 rounded-lg">
+                              <Award className="w-3 h-3" />
+                              <span>GVGS đã chấm: {report.lecturerScore !== null ? `${report.lecturerScore}/10` : 'Đạt'}</span>
+                            </span>
+                          )}
+                          {status === 'REJECTED' && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
+                              <span>GVGS yêu cầu sửa</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* 6. Thao tác */}
+                        <td className="py-4 px-4 pr-6 text-right whitespace-nowrap">
+                          <div className="flex items-center justify-end gap-1.5">
+                            {/* Case A: Not submitted yet */}
+                            {!report && isReady && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCreateForWeek(week)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Viết báo cáo</span>
+                              </button>
+                            )}
+
+                            {/* Case B: Draft, Needs Revision, or Rejected by GVGS */}
+                            {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCreateForWeek(week, report)}
+                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>{report.status === 'REJECTED' ? 'Viết lại' : 'Chỉnh sửa'}</span>
+                              </button>
+                            )}
+
+                            {/* Case C: Waiting for SV2 */}
+                            {report && report.status === 'WAITING_STUDENT_2' && (
+                              <>
+                                {isSV2 ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenConfirm(report)}
+                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                  >
+                                    <ShieldCheck className="w-3.5 h-3.5" />
+                                    <span>Xác nhận</span>
+                                  </button>
+                                ) : (
+                                  <span className="text-[11px] text-amber-700 font-semibold italic">
+                                    Chờ SV2
+                                  </span>
+                                )}
+                              </>
+                            )}
+
+                            {/* Case D: View Details */}
+                            {report && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenDetail(report)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                                title="Xem chi tiết nhật ký"
+                              >
+                                <Eye className="w-3.5 h-3.5 text-slate-500" />
+                                <span>Chi tiết</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

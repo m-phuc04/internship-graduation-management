@@ -43,6 +43,10 @@ export const reportApi = {
   // Get report by ID
   getById: (id) => axiosClient.get(`/internship-reports/${id}`),
 
+  // Lecturer, TBM, Admin, Student: Get all weekly reports for a specific internship
+  getByInternshipId: (internshipId) =>
+    axiosClient.get(`/internship-reports/internship/${internshipId}`),
+
   // Lecturer / TBM reviews report
   review: (id, data) =>
     axiosClient.patch(`/internship-reports/${id}/review`, data),

@@ -233,9 +233,9 @@ const MyInternshipPage = () => {
       email: lecturerObj?.userId?.email || lecturerObj?.email || '—',
     },
     company: {
-      name: internship?.companyId?.companyName || internship?.companyId?.name || 'Doanh nghiệp tiếp nhận',
+      name: internship?.companyId?.name || internship?.companyId?.companyName || 'Doanh nghiệp tiếp nhận',
       address: internship?.companyId?.address || '—',
-      contactPerson: internship?.companyId?.contactPerson || 'Bộ phận Nhân sự / Tuyển dụng',
+      contactPerson: internship?.mentorName || internship?.companyId?.contactPerson || 'Bộ phận Nhân sự / Tuyển dụng',
     },
     startDate: internship?.startDate,
     endDate: internship?.endDate,
@@ -302,19 +302,6 @@ const MyInternshipPage = () => {
           </div>
         </div>
 
-        {/* Action Button: Giấy xác nhận Giám sát */}
-        {hasAssignedLecturer && (
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => setDocModalOpen(true)}
-              className="px-4 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-bold text-xs rounded-xl transition inline-flex items-center gap-2 shadow-2xs cursor-pointer"
-            >
-              <Printer className="w-4 h-4 text-slate-500" />
-              <span>Xem Giấy Xác Nhận Giám Sát</span>
-            </button>
-          </div>
-        )}
       </div>
 
       {/* Main Grid: Details */}
@@ -370,19 +357,19 @@ const MyInternshipPage = () => {
               </h3>
             </div>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-4 text-xs">
               <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-100 space-y-1">
                 <div className="text-base font-bold text-slate-900">
-                  {internship.companyId?.companyName || internship.companyId?.name || 'Doanh nghiệp tiếp nhận'}
+                  {internship.companyId?.name || internship.companyId?.companyName || 'Doanh nghiệp tiếp nhận'}
                 </div>
-                {internship.companyId?.companyCode && (
+                {(internship.companyId?.code || internship.companyId?.companyCode) && (
                   <div className="text-xs text-slate-500 font-mono">
-                    Mã DN: {internship.companyId.companyCode}
+                    Mã DN: {internship.companyId?.code || internship.companyId?.companyCode}
                   </div>
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 text-slate-700">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 text-slate-700">
                 <div className="flex items-start gap-2">
                   <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <span>{internship.companyId?.address || '—'}</span>
@@ -409,6 +396,68 @@ const MyInternshipPage = () => {
                   </div>
                 )}
               </div>
+
+              {/* Vị trí & Thời gian thực tập tiếp nhận */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+                <div className="font-bold text-slate-800 flex items-center gap-2">
+                  <Briefcase className="w-4 h-4 text-[#123891]" />
+                  <span>Vị trí &amp; Thời gian thực tập:</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700 pt-1">
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Vị trí thực tập:</span>
+                    <strong className="text-slate-900">{internship.position || '—'}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Thời gian thực tập:</span>
+                    <span className="text-slate-800">
+                      Từ <strong>{formatDate(internship.startDate)}</strong> đến <strong>{formatDate(internship.endDate)}</strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Thông tin người đánh giá tại Doanh nghiệp */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+                <div className="font-bold text-slate-800 flex items-center gap-2">
+                  <UserCheck className="w-4 h-4 text-[#123891]" />
+                  <span>Người đánh giá tại Doanh nghiệp:</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-slate-700 pt-1">
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Họ và tên:</span>
+                    <strong className="text-slate-900">
+                      {internship.mentorName || internship.companyId?.contactPerson || '—'}
+                    </strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Chức vụ / Bộ phận:</span>
+                    <span className="text-slate-800">{internship.mentorPosition || '—'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Email người đánh giá:</span>
+                    <span className="font-mono text-slate-800">
+                      {internship.mentorEmail || internship.companyId?.contactEmail || '—'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Số điện thoại:</span>
+                    <span className="font-mono text-slate-800">
+                      {internship.mentorPhone || '—'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Ghi chú đăng ký (nếu có) */}
+              {internship.registrationNote && (
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-1">
+                  <span className="text-slate-400 block mb-0.5 font-semibold">Ghi chú đăng ký:</span>
+                  <p className="text-slate-700 leading-relaxed italic">
+                    "{internship.registrationNote}"
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

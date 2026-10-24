@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
+import StudentInternshipDiaryModal from '../reports/StudentInternshipDiaryModal';
 import {
   Briefcase,
   Building2,
@@ -28,6 +29,8 @@ const InternshipDetailModal = ({
   onReject,
   onAssignLecturer,
 }) => {
+  const [diaryModalOpen, setDiaryModalOpen] = useState(false);
+
   if (!internship) return null;
 
   const formatDate = (d) => {
@@ -52,12 +55,13 @@ const InternshipDetailModal = ({
   );
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Chi tiết Hồ sơ Thực tập Doanh nghiệp"
-      maxWidth="max-w-3xl"
-    >
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Chi tiết Hồ sơ Thực tập Doanh nghiệp"
+        maxWidth="max-w-3xl"
+      >
       <div className="space-y-6">
         {/* Header Summary Banner */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -256,13 +260,25 @@ const InternshipDetailModal = ({
 
         {/* Footer Actions for TBM */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-          >
-            Đóng
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            >
+              Đóng
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setDiaryModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl transition cursor-pointer"
+              title="Xem chi tiết nhật ký thực tập của sinh viên"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-[#102d7d]" />
+              <span>Chi tiết nhật ký thực tập</span>
+            </button>
+          </div>
 
           <div className="flex items-center gap-2">
             {/* Assign Lecturer button - ONLY IF NOT COMPLETED */}
@@ -304,6 +320,14 @@ const InternshipDetailModal = ({
         </div>
       </div>
     </Modal>
+
+    {/* Student Weekly Diary Detail Modal */}
+    <StudentInternshipDiaryModal
+      isOpen={diaryModalOpen}
+      onClose={() => setDiaryModalOpen(false)}
+      internship={internship}
+    />
+  </>
   );
 };
 

@@ -1,5 +1,6 @@
 import internshipService from "../services/internshipService.js";
 import exportService from "../services/exportService.js";
+import Lecturer from "../models/Lecturer.js";
 
 // ====================
 // Student Creates Internship Registration
@@ -297,15 +298,41 @@ const supervisorRejectInternship = async (req, res, next) => {
 // ====================
 const exportInternships = async (req, res, next) => {
   try {
-    const { academicTermId, status, search, companyId, lecturerId } = req.query;
+    const { academicTermId, status, search, companyId, lecturerId, scope } = req.query;
 
-    const { buffer, filename } = await exportService.exportInternships({
+    let targetLecturerId = lecturerId;
+
+    // Security & Scope: If caller is a LECTURER, strictly restrict to their own supervised students
+    if (req.user.role === "LECTURER") {
+      const lecturer = await Lecturer.findOne({ userId: req.user.userId });
+      if (!lecturer) {
+        return res.status(404).json({
+          success: false,
+          message: "Không tìm thấy thông tin giảng viên của tài khoản này",
+        });
+      }
+      targetLecturerId = lecturer._id.toString();
+    } else if (scope === "SUPERVISED" || lecturerId === "ME") {
+      const lecturer = await Lecturer.findOne({ userId: req.user.userId });
+      if (lecturer) {
+        targetLecturerId = lecturer._id.toString();
+      }
+    }
+
+    const { buffer, filename, totalRecords } = await exportService.exportInternships({
       academicTermId: academicTermId || "",
       status: status || "",
       search: search || "",
       companyId: companyId || "",
-      lecturerId: lecturerId || "",
+      lecturerId: targetLecturerId || "",
     });
+
+    if (totalRecords === 0 || !buffer) {
+      return res.status(400).json({
+        success: false,
+        message: "Không có dữ liệu sinh viên thực tập để xuất file Excel",
+      });
+    }
 
     res.setHeader(
       "Content-Type",

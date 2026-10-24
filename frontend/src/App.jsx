@@ -238,7 +238,6 @@ function App() {
               <Route path="academic-terms" element={<AcademicTermManagement />} />
               <Route path="students" element={<StudentManagement />} />
               <Route path="lecturers" element={<LecturerManagement />} />
-              <Route path="companies" element={<CompanyManagement />} />
               <Route path="news" element={<LecturerNewsManagement />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>

@@ -72,6 +72,13 @@ router.get(
 // 4. Shared Detail & Review Endpoints
 // ==========================================
 
+// Get all weekly reports for a specific internship (Secured with role & ownership check)
+router.get(
+  "/internship/:internshipId",
+  authMiddleware,
+  internshipReportController.getReportsByInternshipId,
+);
+
 // Get report by ID (Secured with role & ownership check)
 router.get(
   "/:id",

@@ -45,14 +45,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
           <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Users className="w-4 h-4 text-[#123891]" /> Tải Hướng dẫn & Đánh giá
           </h5>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <div className="text-xs text-slate-500 mb-0.5">Số lượng tối đa</div>
-              <div className="text-sm font-bold text-slate-900">
-                {lecturer.maxSupervisedStudents ?? lecturer.maxStudents ?? 5} SV
-              </div>
-            </div>
-
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
               <div className="text-xs text-slate-500 mb-0.5">Hướng dẫn TTDN</div>
               <div className="text-sm font-bold text-[#123891]">

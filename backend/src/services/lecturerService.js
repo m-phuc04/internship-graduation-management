@@ -18,9 +18,10 @@ const getAllLecturers = async ({
 }) => {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
   const limitNum = Math.max(1, parseInt(limit, 10) || 10);
-  const skip = (pageNum - 1) * limitNum;
 
-  const lecturerQuery = {};
+  const lecturerQuery = {
+    lecturerCode: { $ne: "99999999" },
+  };
 
   if (isAvailable !== undefined && isAvailable !== "") {
     lecturerQuery.isAvailable = isAvailable === "true" || isAvailable === true;
@@ -31,24 +32,67 @@ const getAllLecturers = async ({
   }
 
   if (search && search.trim() !== "") {
-    const searchRegex = new RegExp(search.trim(), "i");
+    const rawSearch = search.trim();
+    // Escape regex special characters
+    const escapedSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const searchRegex = new RegExp(escapedSearch, "i");
 
-    const matchedUsers = await User.find({
-      role: "LECTURER",
-      $or: [{ fullName: searchRegex }, { email: searchRegex }],
-    }).select("_id");
+    // Also strip academic title prefix if present (e.g. "TS. Tạ Duy Công Chiến" -> "Tạ Duy Công Chiến")
+    const strippedSearch = rawSearch
+      .replace(/^(TS|ThS|PGS\.TS|GS\.TS|NCS|ThS\. NCS|TS\.|ThS\.|PGS\.|GS\.)\s+/i, "")
+      .trim();
+    const strippedRegex =
+      strippedSearch && strippedSearch !== rawSearch
+        ? new RegExp(strippedSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i")
+        : null;
 
+    // Match linked User records (allow both LECTURER and TBM roles, e.g. TS. Tạ Duy Công Chiến)
+    const userOrConditions = [
+      { fullName: searchRegex },
+      { email: searchRegex },
+      { code: searchRegex },
+      { phone: searchRegex },
+    ];
+    if (strippedRegex) {
+      userOrConditions.push({ fullName: strippedRegex });
+    }
+
+    const userQuery = {
+      role: { $in: ["LECTURER", "TBM"] },
+      $or: userOrConditions,
+    };
+    if (isActive !== undefined && isActive !== "") {
+      userQuery.isActive = isActive === "true" || isActive === true;
+    }
+
+    const matchedUsers = await User.find(userQuery).select("_id");
     const matchedUserIds = matchedUsers.map((u) => u._id);
 
-    lecturerQuery.$or = [
+    const lecturerOrConditions = [
       { lecturerCode: searchRegex },
       { specialization: searchRegex },
       { academicTitle: searchRegex },
       { userId: { $in: matchedUserIds } },
     ];
+    if (strippedRegex) {
+      lecturerOrConditions.push({ specialization: strippedRegex });
+      lecturerOrConditions.push({ academicTitle: strippedRegex });
+      lecturerOrConditions.push({ lecturerCode: strippedRegex });
+    }
+
+    lecturerQuery.$or = lecturerOrConditions;
   }
 
-  const [allLecturers, total, allActivePermissions] = await Promise.all([
+  // 1. Count total matching documents FIRST across the entire dataset
+  const total = await Lecturer.countDocuments(lecturerQuery);
+  const totalPages = Math.ceil(total / limitNum) || 1;
+
+  // 2. Adjust effective page: If requested page exceeds totalPages (e.g. searching while user was on page 2),
+  // automatically reset to page 1 so the matching results are immediately returned!
+  const effectivePage = pageNum > totalPages ? 1 : pageNum;
+  const skip = (effectivePage - 1) * limitNum;
+
+  const [allLecturers, allActivePermissions] = await Promise.all([
     Lecturer.find(lecturerQuery)
       .populate({
         path: "userId",
@@ -58,7 +102,6 @@ const getAllLecturers = async ({
       .skip(skip)
       .limit(limitNum)
       .lean(),
-    Lecturer.countDocuments(lecturerQuery),
     Permission.find({ isActive: true }).select("userId permission").lean(),
   ]);
 
@@ -127,17 +170,15 @@ const getAllLecturers = async ({
     }),
   );
 
-  const totalPages = Math.ceil(total / limitNum) || 1;
-
   return {
     lecturers: lecturersWithCounts,
     pagination: {
       total,
-      page: pageNum,
+      page: effectivePage,
       limit: limitNum,
       totalPages,
-      hasNextPage: pageNum < totalPages,
-      hasPrevPage: pageNum > 1,
+      hasNextPage: effectivePage < totalPages,
+      hasPrevPage: effectivePage > 1,
     },
   };
 };

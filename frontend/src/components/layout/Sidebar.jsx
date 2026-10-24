@@ -5,7 +5,6 @@ import {
   GraduationCap,
   FileText,
   Users,
-  Building2,
   BookOpen,
   Briefcase,
   Award,
@@ -85,13 +84,11 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
       to: '/admin/permissions',
       label: 'Quản lý phân quyền',
       icon: KeyRound,
-      badge: 'ADMIN',
     },
     {
       to: '/admin/users',
       label: 'Quản lý người dùng',
       icon: Users,
-      badge: 'ADMIN',
     },
   ];
 
@@ -101,31 +98,21 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
       to: '/admin/academic-terms',
       label: 'Học kỳ & Năm học',
       icon: Calendar,
-      badge: 'MASTER',
     },
     {
       to: '/admin/students',
       label: 'Quản lý Sinh viên',
       icon: Users,
-      badge: 'MASTER',
     },
     {
       to: '/admin/lecturers',
       label: 'Quản lý Giảng viên',
       icon: BookOpen,
-      badge: 'MASTER',
-    },
-    {
-      to: '/admin/companies',
-      label: 'Quản lý Doanh nghiệp',
-      icon: Building2,
-      badge: 'MASTER',
     },
     {
       to: '/admin/news',
       label: 'Quản lý Bản tin',
       icon: Newspaper,
-      badge: 'MASTER',
     },
   ];
 
@@ -281,28 +268,15 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                      `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
                           ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                           : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span className="whitespace-nowrap truncate">{item.label}</span>
-                        </div>
-                        <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                          isActive
-                            ? 'bg-slate-950/15 text-slate-950'
-                            : 'bg-white/15 text-white'
-                        }`}>
-                          {item.badge}
-                        </span>
-                      </>
-                    )}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap truncate">{item.label}</span>
                   </NavLink>
                 );
               })}
@@ -321,28 +295,15 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                      `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
                           ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                           : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span className="whitespace-nowrap truncate">{item.label}</span>
-                        </div>
-                        <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                          isActive
-                            ? 'bg-slate-950/15 text-slate-950'
-                            : 'bg-white/15 text-white'
-                        }`}>
-                          {item.badge}
-                        </span>
-                      </>
-                    )}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap truncate">{item.label}</span>
                   </NavLink>
                 );
               })}

@@ -34,11 +34,11 @@ const testLogin = async () => {
 
     if (!isStPasswordValid) throw new Error("Mật khẩu sinh viên không đúng hash 11111111");
 
-    // 2. Check Trưởng Bộ Môn GV0001
-    console.log("\n2. Kiểm tra tài khoản Trưởng Bộ Môn: GV0001");
-    const tbmDoc = await Lecturer.findOne({ lecturerCode: "GV0001" }).populate("userId");
+    // 2. Check Trưởng Bộ Môn 20240001
+    console.log("\n2. Kiểm tra tài khoản Trưởng Bộ Môn: 20240001");
+    const tbmDoc = await Lecturer.findOne({ lecturerCode: "20240001" }).populate("userId");
     if (!tbmDoc || !tbmDoc.userId) {
-      throw new Error("Không tìm thấy Lecturer GV0001 hoặc thiếu User linked!");
+      throw new Error("Không tìm thấy Lecturer 20240001 hoặc thiếu User linked!");
     }
     const isTbmPasswordValid = await bcrypt.compare(TEST_PASSWORD, tbmDoc.userId.password);
     console.log(`  ✓ TBM tồn tại: ${tbmDoc.userId.fullName}`);
@@ -49,11 +49,11 @@ const testLogin = async () => {
 
     if (!isTbmPasswordValid) throw new Error("Mật khẩu TBM không đúng hash 11111111");
 
-    // 3. Check Giảng viên GV0002
-    console.log("\n3. Kiểm tra tài khoản Giảng viên: GV0002");
-    const gvDoc = await Lecturer.findOne({ lecturerCode: "GV0002" }).populate("userId");
+    // 3. Check Giảng viên 20240002
+    console.log("\n3. Kiểm tra tài khoản Giảng viên: 20240002");
+    const gvDoc = await Lecturer.findOne({ lecturerCode: "20240002" }).populate("userId");
     if (!gvDoc || !gvDoc.userId) {
-      throw new Error("Không tìm thấy Lecturer GV0002 hoặc thiếu User linked!");
+      throw new Error("Không tìm thấy Lecturer 20240002 hoặc thiếu User linked!");
     }
     const isGvPasswordValid = await bcrypt.compare(TEST_PASSWORD, gvDoc.userId.password);
     console.log(`  ✓ Giảng viên tồn tại: ${gvDoc.userId.fullName}`);
@@ -77,8 +77,8 @@ const testLogin = async () => {
     // 5. Verify all 12 lecturers exist
     console.log("\n5. Kiểm tra danh sách 12 giảng viên:");
     const expectedLecs = [
-      "GV0001", "GV0002", "GV0003", "GV0004", "GV0005", "GV0006",
-      "GV0007", "GV0008", "GV0009", "GV0010", "GV0011", "GV0012"
+      "20240001", "20240002", "20240003", "20240004", "20240005", "20240006",
+      "20240007", "20240008", "20240009", "20240010", "20240011", "20240012"
     ];
     for (const code of expectedLecs) {
       const l = await Lecturer.findOne({ lecturerCode: code }).populate("userId");

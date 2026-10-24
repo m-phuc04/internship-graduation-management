@@ -231,6 +231,27 @@ const reviewReport = async (req, res, next) => {
   }
 };
 
+// ====================
+// Get All Reports for an Internship
+// ====================
+const getReportsByInternshipId = async (req, res, next) => {
+  try {
+    const result = await internshipReportService.getReportsByInternshipId(
+      req.params.internshipId,
+      req.user,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy danh sách nhật ký thực tập thành công",
+      data: result.reports,
+      internship: result.internship,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createReport,
   updateReport,
@@ -240,4 +261,6 @@ export default {
   getAllReportsForTbm,
   getReportById,
   reviewReport,
+  getReportsByInternshipId,
 };
+

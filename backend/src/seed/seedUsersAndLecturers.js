@@ -191,7 +191,7 @@ const seedUsersAndLecturers = async () => {
     const sampleLecturers = [
       {
         userCode: "20240001",
-        lecturerCode: "GV0001",
+        lecturerCode: "20240001",
         academicTitle: "TS.",
         fullName: "Tạ Duy Công Chiến",
         displayTitle: "TS. Tạ Duy Công Chiến",
@@ -202,7 +202,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240002",
-        lecturerCode: "GV0002",
+        lecturerCode: "20240002",
         academicTitle: "TS.",
         fullName: "Trần Thị Minh Khoa",
         displayTitle: "TS. Trần Thị Minh Khoa",
@@ -213,7 +213,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240003",
-        lecturerCode: "GV0003",
+        lecturerCode: "20240003",
         academicTitle: "ThS.",
         fullName: "Hoàng Đình Hạnh",
         displayTitle: "ThS. Hoàng Đình Hạnh",
@@ -224,9 +224,9 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240004",
-        lecturerCode: "GV0004",
+        lecturerCode: "20240004",
         academicTitle: "TS.",
-        fullName: "Lê Thị Thúy",
+        fullName: "Lê Thị Thủy",
         displayTitle: "TS. Lê Thị Thủy",
         email: "gv0004@iuh.edu.vn",
         phone: "0908000004",
@@ -235,7 +235,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240005",
-        lecturerCode: "GV0005",
+        lecturerCode: "20240005",
         academicTitle: "ThS. NCS.",
         fullName: "Võ Công Minh",
         displayTitle: "ThS. NCS. Võ Công Minh",
@@ -246,7 +246,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240006",
-        lecturerCode: "GV0006",
+        lecturerCode: "20240006",
         academicTitle: "ThS. NCS.",
         fullName: "Nguyễn Thành Thái",
         displayTitle: "ThS. Nguyễn Thành Thái",
@@ -257,7 +257,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240007",
-        lecturerCode: "GV0007",
+        lecturerCode: "20240007",
         academicTitle: "ThS.",
         fullName: "Nguyễn Văn Quang",
         displayTitle: "ThS. Nguyễn Văn Quang",
@@ -268,7 +268,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240008",
-        lecturerCode: "GV0008",
+        lecturerCode: "20240008",
         academicTitle: "ThS.",
         fullName: "Nguyễn Xuân Lô",
         displayTitle: "ThS. Nguyễn Xuân Lô",
@@ -279,7 +279,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240009",
-        lecturerCode: "GV0009",
+        lecturerCode: "20240009",
         academicTitle: "ThS.",
         fullName: "Phạm Thái Khanh",
         displayTitle: "ThS. Phạm Thái Khanh",
@@ -290,7 +290,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240010",
-        lecturerCode: "GV0010",
+        lecturerCode: "20240010",
         academicTitle: "ThS.",
         fullName: "Trương Bá Phúc",
         displayTitle: "ThS. Trương Bá Phúc",
@@ -301,7 +301,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240011",
-        lecturerCode: "GV0011",
+        lecturerCode: "20240011",
         academicTitle: "TS.",
         fullName: "Đặng Thanh Bình",
         displayTitle: "TS. Đặng Thanh Bình",
@@ -312,7 +312,7 @@ const seedUsersAndLecturers = async () => {
       },
       {
         userCode: "20240012",
-        lecturerCode: "GV0012",
+        lecturerCode: "20240012",
         academicTitle: "ThS.",
         fullName: "Đỗ Hà Phương",
         displayTitle: "ThS. Đỗ Hà Phương",
@@ -325,7 +325,6 @@ const seedUsersAndLecturers = async () => {
 
     for (const lecData of sampleLecturers) {
       try {
-        let existingLecturer = await Lecturer.findOne({ lecturerCode: lecData.lecturerCode });
         let existingUser = await User.findOne({
           $or: [
             { code: lecData.userCode },
@@ -333,8 +332,6 @@ const seedUsersAndLecturers = async () => {
             { email: lecData.email },
           ],
         });
-
-        const isNew = !existingLecturer || !existingUser;
 
         // Create or update User with 8-digit userCode
         if (!existingUser) {
@@ -356,6 +353,15 @@ const seedUsersAndLecturers = async () => {
           await existingUser.save();
         }
 
+        let existingLecturer = await Lecturer.findOne({
+          $or: [
+            { lecturerCode: lecData.lecturerCode },
+            ...(existingUser ? [{ userId: existingUser._id }] : []),
+          ],
+        });
+
+        const isNew = !existingLecturer;
+
         // Create or update Lecturer profile
         if (!existingLecturer) {
           existingLecturer = await Lecturer.create({
@@ -373,6 +379,7 @@ const seedUsersAndLecturers = async () => {
           createdLecturersCount++;
         } else {
           existingLecturer.userId = existingUser._id;
+          existingLecturer.lecturerCode = lecData.lecturerCode;
           existingLecturer.academicTitle = lecData.academicTitle;
           existingLecturer.specialization = lecData.specialization;
           existingLecturer.isActive = true;
@@ -434,8 +441,13 @@ const seedUsersAndLecturers = async () => {
       const targetCount = topicTargetCounts.get(key);
 
       try {
-        // Tìm giảng viên theo lecturerCode
-        const lecturer = await Lecturer.findOne({ lecturerCode: item.lecturerCode }).populate("userId");
+        // Tìm giảng viên theo lecturerCode (hỗ trợ cả mã cũ và mã mới 8 chữ số)
+        const lecturer = await Lecturer.findOne({
+          $or: [
+            { lecturerCode: item.lecturerCode },
+            { lecturerCode: item.lecturerCode.replace(/^GV00/i, "202400") },
+          ],
+        }).populate("userId");
         if (!lecturer) {
           console.error(`✗ Không tìm thấy giảng viên ${item.supervisorName} (${item.lecturerCode})`);
           errorsCount++;

@@ -798,6 +798,86 @@ const reviewReport = async (
     });
 };
 
+// ====================
+// Get All Reports for a Specific Internship with Role Verification
+// ====================
+const getReportsByInternshipId = async (internshipId, requestingUser) => {
+  const internship = await Internship.findById(internshipId)
+    .populate("companyId")
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "lecturerId",
+      populate: { path: "userId", select: "fullName email phone" },
+    });
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  // Permission check
+  if (requestingUser) {
+    if (requestingUser.role === "STUDENT") {
+      const student = await Student.findOne({ userId: requestingUser.userId });
+      const isSV1 = internship.studentId?._id?.toString() === student?._id?.toString();
+      const isSV2 = internship.secondStudentId?._id?.toString() === student?._id?.toString();
+
+      if (!student || (!isSV1 && !isSV2)) {
+        throw new AppError("Bạn không có quyền xem nhật ký của sinh viên khác", 403);
+      }
+    } else if (requestingUser.role === "LECTURER") {
+      const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
+      const internLecturerId = internship.lecturerId?._id?.toString();
+
+      if (!lecturer || internLecturerId !== lecturer._id.toString()) {
+        throw new AppError(
+          "Bạn không có quyền xem nhật ký của sinh viên do giảng viên khác hướng dẫn",
+          403,
+        );
+      }
+    } else if (!["TBM", "ADMIN"].includes(requestingUser.role)) {
+      throw new AppError("Bạn không có quyền truy cập nhật ký thực tập này", 403);
+    }
+  }
+
+  const query = { internshipId };
+  if (requestingUser && requestingUser.role === "LECTURER") {
+    query.status = {
+      $in: [
+        "SUBMITTED",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "WAITING_STUDENT_2",
+        "NEEDS_REVISION",
+      ],
+    };
+  }
+
+  const reports = await InternshipReport.find(query)
+    .sort({ weekNumber: 1, createdAt: 1 })
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .lean();
+
+  return {
+    internship,
+    reports,
+  };
+};
+
 export default {
   createReport,
   updateReport,
@@ -807,4 +887,6 @@ export default {
   getAllReportsForTbm,
   getReportById,
   reviewReport,
+  getReportsByInternshipId,
 };
+

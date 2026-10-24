@@ -13,7 +13,6 @@ import LecturerReviewReportModal from '../../components/reports/LecturerReviewRe
 import {
   BookOpen,
   FileText,
-  Award,
   CheckCircle2,
   RefreshCw,
   Eye,
@@ -206,13 +205,12 @@ const LecturerReportPage = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 pl-6">Sinh viên</th>
-                  <th className="py-3.5 px-4">Loại / Tuần</th>
-                  <th className="py-3.5 px-4">Tiêu đề nhật ký</th>
-                  <th className="py-3.5 px-4">Thời gian nộp</th>
-                  <th className="py-3.5 px-4">Điểm đã chấm</th>
-                  <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4 pl-6 min-w-[200px]">Sinh viên</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap w-28">Loại / Tuần</th>
+                  <th className="py-3.5 px-4 min-w-[220px]">Tiêu đề nhật ký</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap w-44">Thời gian nộp</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap w-36">Điểm đã chấm</th>
+                  <th className="py-3.5 px-4 pr-6 whitespace-nowrap w-36">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -241,7 +239,7 @@ const LecturerReportPage = () => {
                     </td>
 
                     {/* Report Type */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
                         {report.reportType === 'WEEKLY'
                           ? `Tuần ${report.weekNumber}`
@@ -252,8 +250,8 @@ const LecturerReportPage = () => {
                     </td>
 
                     {/* Title */}
-                    <td className="py-3.5 px-4 max-w-xs">
-                      <div className="font-semibold text-slate-900 text-xs truncate">
+                    <td className="py-3.5 px-4">
+                      <div className="font-semibold text-slate-900 text-xs truncate max-w-sm">
                         {report.title}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
@@ -270,7 +268,7 @@ const LecturerReportPage = () => {
                     </td>
 
                     {/* Submitted At */}
-                    <td className="py-3.5 px-4 text-xs text-slate-600">
+                    <td className="py-3.5 px-4 whitespace-nowrap text-xs text-slate-600">
                       <div>{formatDate(report.submittedAt || report.createdAt)}</div>
                       {report.student2ConfirmedAt && (
                         <div className="text-[10px] text-emerald-600">
@@ -280,7 +278,7 @@ const LecturerReportPage = () => {
                     </td>
 
                     {/* Score */}
-                    <td className="py-3.5 px-4 text-xs font-bold">
+                    <td className="py-3.5 px-4 whitespace-nowrap text-xs font-bold">
                       {report.lecturerScore !== null ? (
                         <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                           {report.lecturerScore} / 10
@@ -293,25 +291,8 @@ const LecturerReportPage = () => {
                     </td>
 
                     {/* Status */}
-                    <td className="py-3.5 px-4">
+                    <td className="py-3.5 px-4 pr-6 whitespace-nowrap">
                       <StatusBadge status={report.status} size="sm" />
-                    </td>
-
-                    {/* Action */}
-                    <td
-                      className="py-3.5 px-4 pr-6 text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button
-                        onClick={() => {
-                          setSelectedReport(report);
-                          setReviewModalOpen(true);
-                        }}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
-                      >
-                        <Award className="w-3.5 h-3.5" />
-                        <span>Chấm điểm</span>
-                      </button>
                     </td>
                   </tr>
                 ))}

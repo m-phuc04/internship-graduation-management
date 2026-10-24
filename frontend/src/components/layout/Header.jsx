@@ -21,7 +21,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
     if (location.pathname.includes('/admin/users')) return 'Quản lý Người dùng';
     if (location.pathname.includes('/tbm/students') || location.pathname.includes('/admin/students')) return 'Quản lý Sinh viên';
     if (location.pathname.includes('/tbm/lecturers') || location.pathname.includes('/admin/lecturers')) return 'Quản lý Giảng viên';
-    if (location.pathname.includes('/tbm/companies') || location.pathname.includes('/admin/companies')) return 'Quản lý Doanh nghiệp';
+    if (location.pathname.includes('/tbm/companies')) return 'Quản lý Doanh nghiệp';
     if (location.pathname.includes('/tbm/internships') || location.pathname.includes('/admin/internships')) return 'Quản lý Thực tập';
     if (location.pathname.includes('/tbm/evaluations') || location.pathname.includes('/admin/evaluations')) return 'Đánh giá Thực tập';
     if (location.pathname.includes('/tbm/theses') || location.pathname.includes('/admin/theses')) return 'Quản lý Khóa luận';

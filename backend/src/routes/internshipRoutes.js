@@ -18,11 +18,11 @@ router.get(
   internshipController.getAllInternships,
 );
 
-// TBM & ADMIN: Export internships to Excel
+// Export internships to Excel (TBM, ADMIN, LECTURER)
 router.get(
   "/export",
   authMiddleware,
-  authorizeRoles("TBM", "ADMIN"),
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
   internshipController.exportInternships,
 );
 

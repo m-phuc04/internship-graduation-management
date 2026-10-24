@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
+import StudentInternshipDiaryModal from '../reports/StudentInternshipDiaryModal';
 import {
   GraduationCap,
   Building2,
@@ -12,9 +13,12 @@ import {
   Globe,
   FileText,
   Info,
+  BookOpen,
 } from 'lucide-react';
 
 const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
+  const [diaryModalOpen, setDiaryModalOpen] = useState(false);
+
   if (!internship) return null;
 
   const formatDate = (d) => {
@@ -39,12 +43,13 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
   );
 
   return (
-    <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      title="Chi tiết Hồ sơ Thực tập Sinh viên"
-      maxWidth="max-w-3xl"
-    >
+    <>
+      <Modal
+        isOpen={isOpen}
+        onClose={onClose}
+        title="Chi tiết Hồ sơ Thực tập Sinh viên"
+        maxWidth="max-w-3xl"
+      >
       <div className="space-y-6 text-xs">
         {/* Student Summary Card */}
         <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -212,17 +217,35 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end pt-3 border-t border-slate-100">
+        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <button
+            type="button"
+            onClick={() => setDiaryModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl transition cursor-pointer shadow-2xs"
+            title="Xem chi tiết nhật ký thực tập của sinh viên"
+          >
+            <BookOpen className="w-4 h-4 text-[#102d7d]" />
+            <span>Chi tiết nhật ký thực tập</span>
+          </button>
+
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
           >
             Đóng
           </button>
         </div>
       </div>
     </Modal>
+
+    {/* Student Weekly Diary Detail Modal */}
+    <StudentInternshipDiaryModal
+      isOpen={diaryModalOpen}
+      onClose={() => setDiaryModalOpen(false)}
+      internship={internship}
+    />
+  </>
   );
 };
 

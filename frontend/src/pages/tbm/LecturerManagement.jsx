@@ -24,7 +24,6 @@ import {
   ShieldAlert,
   UserCheck,
   UserX,
-  Sliders,
 } from 'lucide-react';
 
 const LecturerManagement = () => {
@@ -34,7 +33,6 @@ const LecturerManagement = () => {
 
   // Filter & Search states
   const [search, setSearch] = useState('');
-  const [isAvailable, setIsAvailable] = useState('');
   const [isActive, setIsActive] = useState('');
   const [page, setPage] = useState(1);
 
@@ -42,8 +40,6 @@ const LecturerManagement = () => {
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [selectedLecturer, setSelectedLecturer] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [capacityModalOpen, setCapacityModalOpen] = useState(false);
-  const [editCapacityVal, setEditCapacityVal] = useState(5);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -57,24 +53,31 @@ const LecturerManagement = () => {
         page,
         limit: 10,
         search,
-        isAvailable,
         isActive,
       });
 
       if (res.success) {
         setLecturers(res.data || []);
         setPagination(res.pagination || null);
+        if (res.pagination?.page && res.pagination.page !== page) {
+          setPage(res.pagination.page);
+        }
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải danh sách giảng viên', 'error');
     } finally {
       setLoading(false);
     }
-  }, [page, search, isAvailable, isActive, showToast]);
+  }, [page, search, isActive, showToast]);
 
   useEffect(() => {
     fetchLecturers();
   }, [fetchLecturers]);
+
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setPage(1);
+  };
 
   const handleFilterChange = (setter, val) => {
     setter(val);
@@ -96,38 +99,6 @@ const LecturerManagement = () => {
       fetchLecturers();
     } catch (err) {
       showToast(err.message || 'Thao tác không thành công', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Open Capacity Modal
-  const handleOpenCapacityModal = (lec) => {
-    setSelectedLecturer(lec);
-    setEditCapacityVal(lec.maxSupervisedStudents ?? lec.maxStudents ?? 10);
-    setCapacityModalOpen(true);
-  };
-
-  // Save Capacity
-  const handleSaveCapacity = async (e) => {
-    e.preventDefault();
-    if (!selectedLecturer) return;
-
-    const num = Number(editCapacityVal);
-    if (isNaN(num) || num < 1) {
-      showToast('Số lượng sinh viên phải lớn hơn 0', 'error');
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      await lecturerApi.updateMaxStudents(selectedLecturer._id, num);
-      showToast('Cập nhật số lượng sinh viên hướng dẫn tối đa thành công!', 'success');
-      setCapacityModalOpen(false);
-      setSelectedLecturer(null);
-      fetchLecturers();
-    } catch (err) {
-      showToast(err.message || 'Cập nhật số lượng thất bại.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -186,7 +157,7 @@ const LecturerManagement = () => {
               Quản lý Danh sách Giảng viên
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Quản lý hồ sơ giảng viên, phân công chuyên môn và chỉ tiêu hướng dẫn
+              Quản lý hồ sơ giảng viên và phân công chuyên môn
             </p>
           </div>
         </div>
@@ -216,14 +187,11 @@ const LecturerManagement = () => {
 
       {/* Filter / Search Bar */}
       <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div className="lg:col-span-2">
             <SearchInput
               value={search}
-              onChange={(val) => {
-                setSearch(val);
-                setPage(1);
-              }}
+              onChange={handleSearchChange}
               placeholder="Tìm theo tên giảng viên, mã GV, email, chuyên môn..."
             />
           </div>
@@ -239,18 +207,6 @@ const LecturerManagement = () => {
               <option value="false">Đã vô hiệu hóa</option>
             </select>
           </div>
-
-          <div>
-            <select
-              value={isAvailable}
-              onChange={(e) => handleFilterChange(setIsAvailable, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="">-- Tất cả chỉ tiêu tiếp nhận --</option>
-              <option value="true">Sẵn sàng nhận SV (Available)</option>
-              <option value="false">Tạm ngưng nhận (Unavailable)</option>
-            </select>
-          </div>
         </div>
       </div>
 
@@ -258,7 +214,7 @@ const LecturerManagement = () => {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
-            <LoadingSkeleton rows={5} cols={7} />
+            <LoadingSkeleton rows={5} cols={6} />
           </div>
         ) : lecturers.length === 0 ? (
           <EmptyState
@@ -278,9 +234,6 @@ const LecturerManagement = () => {
                   <th className="py-3.5 px-4 text-center w-14">STT</th>
                   <th className="py-3.5 px-4">Giảng viên</th>
                   <th className="py-3.5 px-4">Học vị</th>
-                  <th className="py-3.5 px-4 text-center">Đang nhận</th>
-                  <th className="py-3.5 px-4 text-center">Tối đa</th>
-                  <th className="py-3.5 px-4 text-center">Còn lại</th>
                   <th className="py-3.5 px-4 text-center">Tiếp nhận</th>
                   <th className="py-3.5 px-4 text-center">Trạng thái</th>
                   <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
@@ -289,9 +242,6 @@ const LecturerManagement = () => {
               <tbody className="divide-y divide-slate-100 text-sm">
                 {lecturers.map((lec, idx) => {
                   const isLecturerActive = lec.isActive !== false && lec.userId?.isActive !== false;
-                  const currentStudents = lec.currentSupervisedStudents || 0;
-                  const maxStudents = lec.maxSupervisedStudents ?? lec.maxStudents ?? 10;
-                  const remainingQuota = lec.remainingQuota ?? Math.max(0, maxStudents - currentStudents);
 
                   return (
                     <tr
@@ -318,37 +268,6 @@ const LecturerManagement = () => {
                       <td className="py-3.5 px-4 font-medium text-slate-800 text-xs">
                         <span className="px-2 py-0.5 bg-slate-100 rounded-md">
                           {lec.academicTitle || 'ThS.'}
-                        </span>
-                      </td>
-
-                      {/* Đang nhận */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60">
-                          {currentStudents} SV
-                        </span>
-                      </td>
-
-                      {/* Tối đa */}
-                      <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => handleOpenCapacityModal(lec)}
-                          className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-800 hover:bg-blue-100 hover:text-[#102d7d] transition cursor-pointer border border-slate-200"
-                          title="Click để chỉnh số lượng tối đa"
-                        >
-                          {maxStudents} SV ✎
-                        </button>
-                      </td>
-
-                      {/* Còn lại */}
-                      <td className="py-3.5 px-4 text-center">
-                        <span
-                          className={`text-xs font-bold px-2 py-0.5 rounded-md ${
-                            remainingQuota > 0
-                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200/60'
-                              : 'bg-rose-50 text-rose-700 border border-rose-200/60'
-                          }`}
-                        >
-                          {remainingQuota} SV
                         </span>
                       </td>
 
@@ -379,15 +298,6 @@ const LecturerManagement = () => {
                       {/* Actions */}
                       <td className="py-3.5 px-4 pr-6 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          {/* Quick Capacity Edit */}
-                          <button
-                            onClick={() => handleOpenCapacityModal(lec)}
-                            className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition"
-                            title="Chỉnh số lượng SV hướng dẫn"
-                          >
-                            <Sliders className="w-4 h-4" />
-                          </button>
-
                           <button
                             onClick={() => {
                               setSelectedLecturer(lec);
@@ -449,77 +359,6 @@ const LecturerManagement = () => {
           <Pagination pagination={pagination} onPageChange={setPage} />
         </div>
       </div>
-
-      {/* Quick Capacity Edit Modal */}
-      <Modal
-        isOpen={capacityModalOpen}
-        onClose={() => {
-          setCapacityModalOpen(false);
-          setSelectedLecturer(null);
-        }}
-        title="Chỉnh Số Lượng SV Hướng Dẫn"
-        subtitle={
-          selectedLecturer
-            ? `${selectedLecturer.academicTitle || 'ThS.'} ${selectedLecturer.userId?.fullName} (${selectedLecturer.lecturerCode})`
-            : ''
-        }
-        maxWidth="max-w-md"
-      >
-        <form onSubmit={handleSaveCapacity} className="space-y-4">
-          <div className="p-3.5 bg-blue-50/60 rounded-xl border border-blue-100 text-xs space-y-1.5">
-            <div className="flex justify-between font-medium text-slate-700">
-              <span>Số sinh viên đang hướng dẫn:</span>
-              <span className="font-bold text-[#102d7d]">
-                {selectedLecturer?.currentSupervisedStudents || 0} SV
-              </span>
-            </div>
-            <div className="flex justify-between font-medium text-slate-700">
-              <span>Còn lại dự kiến:</span>
-              <span className="font-bold text-emerald-700">
-                {Math.max(0, Number(editCapacityVal || 0) - (selectedLecturer?.currentSupervisedStudents || 0))} SV
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Số lượng sinh viên có thể nhận (Tối đa): <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="number"
-              min={selectedLecturer?.currentSupervisedStudents || 1}
-              max="50"
-              value={editCapacityVal}
-              onChange={(e) => setEditCapacityVal(e.target.value)}
-              className="w-full px-3.5 py-2 text-sm font-bold text-[#102d7d] bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-              required
-            />
-            <p className="text-[11px] text-slate-400 mt-1">
-              * Lưu ý: Không thể đặt số lượng thấp hơn số sinh viên đang được hướng dẫn ({selectedLecturer?.currentSupervisedStudents || 0} SV).
-            </p>
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => {
-                setCapacityModalOpen(false);
-                setSelectedLecturer(null);
-              }}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
-            >
-              Hủy
-            </button>
-            <button
-              type="submit"
-              disabled={actionLoading}
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition cursor-pointer disabled:opacity-50"
-            >
-              {actionLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Form Modal */}
       <LecturerFormModal

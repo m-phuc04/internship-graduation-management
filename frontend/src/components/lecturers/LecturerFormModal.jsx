@@ -18,7 +18,6 @@ const LecturerFormModal = ({
     lecturerCode: '',
     academicTitle: 'ThS.',
     specialization: '',
-    maxStudents: 10,
     isAvailable: true,
     isActive: true,
   });
@@ -35,7 +34,6 @@ const LecturerFormModal = ({
         lecturerCode: initialData.lecturerCode || '',
         academicTitle: initialData.academicTitle || 'ThS.',
         specialization: initialData.specialization || '',
-        maxStudents: initialData.maxSupervisedStudents ?? initialData.maxStudents ?? 5,
         isAvailable: initialData.isAvailable ?? true,
         isActive: initialData.userId?.isActive ?? true,
       });
@@ -48,7 +46,6 @@ const LecturerFormModal = ({
         lecturerCode: '',
         academicTitle: 'ThS.',
         specialization: '',
-        maxStudents: 5,
         isAvailable: true,
         isActive: true,
       });
@@ -83,12 +80,7 @@ const LecturerFormModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    const numMax = Number(formData.maxStudents) || 5;
-    onSubmit({
-      ...formData,
-      maxSupervisedStudents: numMax,
-      maxStudents: numMax,
-    });
+    onSubmit(formData);
   };
 
   return (
@@ -217,42 +209,25 @@ const LecturerFormModal = ({
           </div>
         </div>
 
-        {/* Max Students & Availability */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Số lượng SV hướng dẫn tối đa
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="50"
-              name="maxStudents"
-              value={formData.maxStudents}
-              onChange={handleChange}
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Trạng thái tiếp nhận SV
-            </label>
-            <select
-              name="isAvailable"
-              value={formData.isAvailable}
-              onChange={(e) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  isAvailable: e.target.value === 'true',
-                }))
-              }
-              className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="true">Sẵn sàng nhận SV (Available)</option>
-              <option value="false">Tạm ngưng tiếp nhận (Unavailable)</option>
-            </select>
-          </div>
+        {/* Availability */}
+        <div>
+          <label className="block text-xs font-semibold text-slate-700 mb-1">
+            Trạng thái tiếp nhận SV
+          </label>
+          <select
+            name="isAvailable"
+            value={formData.isAvailable}
+            onChange={(e) =>
+              setFormData((prev) => ({
+                ...prev,
+                isAvailable: e.target.value === 'true',
+              }))
+            }
+            className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+          >
+            <option value="true">Sẵn sàng nhận SV (Available)</option>
+            <option value="false">Tạm ngưng tiếp nhận (Unavailable)</option>
+          </select>
         </div>
 
         {/* Password (if create) / Account Active status (if edit) */}

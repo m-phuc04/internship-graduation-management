@@ -23,7 +23,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
   // Active Internship
   const internship = await Internship.findOne({ studentId: student._id, ...termFilter })
     .sort({ createdAt: -1 })
-    .populate("companyId", "name companyName code address email phone website")
+    .populate("companyId")
     .populate({
       path: "lecturerId",
       populate: { path: "userId", select: "fullName email phone" },

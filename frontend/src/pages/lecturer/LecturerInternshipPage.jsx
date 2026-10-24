@@ -25,6 +25,7 @@ import {
   RefreshCw,
   Award,
   Printer,
+  FileSpreadsheet,
   FileText,
   CheckCircle2,
   Shield,
@@ -145,25 +146,54 @@ const LecturerInternshipPage = () => {
     });
   };
 
-  // Open Document A: Giấy xác nhận giám sát
-  const handleOpenConfirmationDoc = async () => {
-    setLoadingDoc(true);
+  // Xuất danh sách sinh viên thực tập ra Excel
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportExcel = async () => {
+    if (!internships || internships.length === 0) {
+      showToast('Không có dữ liệu sinh viên thực tập để xuất file Excel', 'info');
+      return;
+    }
+
     try {
-      const res = await internshipApi.getSupervisionDocument({
+      setExporting(true);
+      const response = await internshipApi.exportExcel({
         academicTermId: currentTerm?._id || '',
+        search: search ? search.trim() : '',
+        scope: 'SUPERVISED',
       });
-      if (res.success) {
-        setConfirmationData(res.data);
-        setDocType('CONFIRMATION');
-        setDocModalOpen(true);
-      }
+
+      const blob = new Blob([response.data || response], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+
+      const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+      const filename = `Danh_sach_sinh_vien_thuc_tap_${termCode}.xlsx`;
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+
+      showToast('Xuất danh sách sinh viên thực tập thành công!', 'success');
     } catch (err) {
-      showToast(
-        err.message || 'Không thể tải dữ liệu giấy xác nhận hướng dẫn',
-        'error',
-      );
+      let msg = err.message || 'Không thể xuất danh sách sinh viên ra Excel';
+      if (err.data instanceof Blob) {
+        try {
+          const text = await err.data.text();
+          const parsed = JSON.parse(text);
+          if (parsed.message) msg = parsed.message;
+        } catch {
+          // ignore
+        }
+      }
+      showToast(msg, 'error');
     } finally {
-      setLoadingDoc(false);
+      setExporting(false);
     }
   };
 
@@ -291,15 +321,15 @@ const LecturerInternshipPage = () => {
 
           {/* Action & Workload Stats Pill */}
           <div className="flex flex-wrap items-center gap-3">
-            {/* Button In Giấy xác nhận giám sát */}
+            {/* Button Xuất Excel danh sách sinh viên */}
             <button
-              onClick={handleOpenConfirmationDoc}
-              disabled={loadingDoc || internships.length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs shadow-sm shadow-blue-200 transition disabled:opacity-50"
-              title="Xuất & In Giấy xác nhận giám sát thực tập"
+              onClick={handleExportExcel}
+              disabled={exporting || loading || internships.length === 0}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm shadow-emerald-600/20 transition disabled:opacity-50 cursor-pointer"
+              title="Xuất danh sách sinh viên thực tập ra file Excel (.xlsx)"
             >
-              <Printer className="w-4 h-4" />
-              <span>In Giấy xác nhận giám sát</span>
+              <FileSpreadsheet className={`w-4 h-4 ${exporting ? 'animate-spin' : ''}`} />
+              <span>{exporting ? 'Đang xuất Excel...' : 'Xuất Excel'}</span>
             </button>
 
             <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-right">
