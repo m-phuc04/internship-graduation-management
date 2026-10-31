@@ -280,7 +280,7 @@ const RegisterThesisPage = () => {
 
       {/* Existing Active Thesis Warning */}
       {existingThesis && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-3">
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-start gap-3 shadow-2xs">
           <ShieldAlert className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
           <div>
             <div className="font-bold text-sm">Bạn đã có đề tài khóa luận đang hoạt động!</div>
@@ -293,16 +293,17 @@ const RegisterThesisPage = () => {
 
       {/* APPROVED TOPICS LIST */}
       <div className="space-y-4">
-        {/* Search & Counter bar */}
-        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="w-full sm:w-96">
+        {/* Search & Filter Bar */}
+        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="w-full md:w-96">
             <SearchInput
               value={topicSearch}
               onChange={(val) => setTopicSearch(val)}
-              placeholder="Tìm tên đề tài, GVHD, mã GV..."
+              placeholder="Tìm tên đề tài, GVHD..."
             />
           </div>
-          <div className="text-xs text-slate-500 font-medium">
+
+          <div className="text-xs text-slate-500 font-medium whitespace-nowrap">
             Hiển thị <strong>{approvedTopics.length}</strong> đề tài có sẵn
           </div>
         </div>
@@ -329,7 +330,7 @@ const RegisterThesisPage = () => {
                     <th className="py-3.5 px-4">Tên đề tài KLTN</th>
                     <th className="py-3.5 px-4">Giáo viên hướng dẫn</th>
                     <th className="py-3.5 px-4">Mô tả / Yêu cầu</th>
-                    <th className="py-3.5 px-4 text-right">Thao tác</th>
+                    <th className="py-3.5 px-4 text-right"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -357,9 +358,7 @@ const RegisterThesisPage = () => {
                               topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                            Mã GV: {topic.supervisor?.lecturerCode || topic.supervisorId?.lecturerCode || '—'}
-                          </div>
+                          
                         </td>
 
                         <td className="py-3.5 px-4 max-w-xs">
@@ -404,6 +403,8 @@ const RegisterThesisPage = () => {
                               ? 'Đã khóa'
                               : isFull
                               ? 'Đã đủ nhóm'
+                              : existingThesis
+                              ? 'Đã có đề tài'
                               : 'Chọn đề tài'}
                           </button>
                         </td>
@@ -455,12 +456,7 @@ const RegisterThesisPage = () => {
                     )}
                   </strong>
                 </div>
-                <div>
-                  <span className="text-slate-400 block text-[10px]">Mã GV:</span>
-                  <strong className="font-mono text-[#102d7d] bg-white px-2 py-0.5 rounded border border-blue-200 inline-block mt-0.5">
-                    {selectedTopicForRegistration.supervisor?.lecturerCode || selectedTopicForRegistration.supervisorId?.lecturerCode || '—'}
-                  </strong>
-                </div>
+                
               </div>
               <div className="text-blue-800 text-[11px] font-semibold">
                 Hình thức: Đăng ký theo nhóm (1 hoặc 2 SV)

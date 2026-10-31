@@ -85,6 +85,7 @@ const createThesis = async ({
   objectives = null,
   expectedResults = null,
   academicTermId = null,
+  fields = [],
 }) => {
   // 1. Identify SV1
   let student1 = null;
@@ -1261,6 +1262,205 @@ const assignReviewers = async (
     });
 };
 
+// ==========================================
+// TBM: Auto Assign Reviewers By Field (Tự động phân công phản biện theo lĩnh vực)
+// ==========================================
+const autoAssignReviewersByField = async ({ academicTermId, tbmUserId }) => {
+  // 1. Tìm các đề tài trong học kỳ (hoặc toàn bộ đề tài đang hoạt động)
+  const query = {
+    status: { $nin: ["REJECTED", "COMPLETED"] },
+  };
+  if (academicTermId) {
+    query.academicTermId = academicTermId;
+  }
+
+  const allTheses = await Thesis.find(query);
+
+  // 2. Lọc các đề tài đủ điều kiện chấm phản biện kín:
+  // - Điểm GVHD >= 4.0
+  // - isCriteriaPassed !== false
+  const eligibleTheses = allTheses.filter((t) => {
+    if (t.isCriteriaPassed === false) return false;
+    const scoreHD = t.scores?.supervisorScore ?? t.scores?.student1SupervisorScore;
+    if (scoreHD === null || scoreHD === undefined || isNaN(scoreHD)) return false;
+    return Number(scoreHD) >= 4.0;
+  });
+
+  // 3. Lọc ra các đề tài chưa được phân công đủ 2 phản biện
+  const needAssignmentTheses = eligibleTheses.filter((t) => {
+    const hasPB1 = Boolean(
+      t.reviewer1Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+    );
+    const hasPB2 = Boolean(
+      t.reviewer2Id ||
+      (Array.isArray(t.reviewers) && t.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+    );
+    return !(hasPB1 && hasPB2);
+  });
+
+  // 4. Lấy danh sách tất cả giảng viên đang hoạt động
+  const lecturers = await Lecturer.find({ isActive: true }).populate("userId");
+  const activeLecturers = lecturers.filter((l) => l.userId && l.userId.isActive !== false);
+
+  // 5. Tính tải phản biện hiện tại của từng giảng viên (mỗi GV tối đa 5 đề tài)
+  const MAX_REVIEW_LOAD = 5;
+  const reviewLoadMap = new Map(); // lecturerId string -> count
+  for (const l of activeLecturers) {
+    reviewLoadMap.set(l._id.toString(), 0);
+  }
+
+  for (const t of allTheses) {
+    const r1 = t.reviewer1Id?.toString() ||
+      (Array.isArray(t.reviewers) && t.reviewers.find((r) => r.isPrivateReviewer)?.lecturerId?.toString());
+    const r2 = t.reviewer2Id?.toString() ||
+      (Array.isArray(t.reviewers) && t.reviewers.find((r) => r.isCouncilReviewer)?.lecturerId?.toString());
+
+    if (r1 && reviewLoadMap.has(r1)) {
+      reviewLoadMap.set(r1, reviewLoadMap.get(r1) + 1);
+    }
+    if (r2 && reviewLoadMap.has(r2) && r2 !== r1) {
+      reviewLoadMap.set(r2, reviewLoadMap.get(r2) + 1);
+    }
+  }
+
+  // Helper tính điểm khớp lĩnh vực giữa giảng viên và đề tài
+  const getMatchingScore = (lec, thesisFields = []) => {
+    if (!Array.isArray(thesisFields) || thesisFields.length === 0) return 0;
+    if (!Array.isArray(lec.fields) || lec.fields.length === 0) return 0;
+
+    const normalizedLecFields = lec.fields.map((f) => (typeof f === 'string' ? f.trim().toLowerCase() : ''));
+    let matches = 0;
+    for (const tf of thesisFields) {
+      if (tf && typeof tf === 'string' && normalizedLecFields.includes(tf.trim().toLowerCase())) {
+        matches++;
+      }
+    }
+    return matches;
+  };
+
+  let assignedThesesCount = 0;
+  let fullyAssignedThesesCount = 0;
+  let partiallyAssignedThesesCount = 0;
+  const assignmentDetails = [];
+
+  for (const thesis of needAssignmentTheses) {
+    const supIdStr = thesis.supervisorId?.toString();
+    const existingR1 = thesis.reviewer1Id?.toString() ||
+      (Array.isArray(thesis.reviewers) && thesis.reviewers.find((r) => r.isPrivateReviewer)?.lecturerId?.toString()) || null;
+    const existingR2 = thesis.reviewer2Id?.toString() ||
+      (Array.isArray(thesis.reviewers) && thesis.reviewers.find((r) => r.isCouncilReviewer)?.lecturerId?.toString()) || null;
+
+    let targetR1 = existingR1;
+    let targetR2 = existingR2;
+    let modified = false;
+
+    // Hàm chọn giảng viên tốt nhất phù hợp
+    const pickBestLecturer = (excludeIds = []) => {
+      // 1. Lọc các ứng viên thỏa mãn:
+      // - Không phải GVHD của đề tài (Chống xung đột lợi ích)
+      // - Không nằm trong danh sách đã chọn/đã gán của đề tài (Không trùng lặp)
+      // - Tải hiện tại < MAX_REVIEW_LOAD (5)
+      // - Có lĩnh vực chuyên môn khớp với đề tài
+      const candidates = activeLecturers.filter((lec) => {
+        const idStr = lec._id.toString();
+        if (idStr === supIdStr) return false;
+        if (excludeIds.includes(idStr)) return false;
+
+        const currentLoad = reviewLoadMap.get(idStr) || 0;
+        if (currentLoad >= MAX_REVIEW_LOAD) return false;
+
+        const matchScore = getMatchingScore(lec, thesis.fields);
+        return matchScore > 0;
+      });
+
+      // Nếu không có giảng viên có lĩnh vực khớp nhưng đề tài không có trường fields:
+      let pool = candidates;
+      if (pool.length === 0 && (!Array.isArray(thesis.fields) || thesis.fields.length === 0)) {
+        pool = activeLecturers.filter((lec) => {
+          const idStr = lec._id.toString();
+          if (idStr === supIdStr) return false;
+          if (excludeIds.includes(idStr)) return false;
+          const currentLoad = reviewLoadMap.get(idStr) || 0;
+          return currentLoad < MAX_REVIEW_LOAD;
+        });
+      }
+
+      if (pool.length === 0) return null;
+
+      // Sắp xếp:
+      // a) Giảng viên có ít tải phản biện nhất lên trước (cân bằng tải)
+      // b) Giảng viên có số lĩnh vực khớp nhiều nhất
+      pool.sort((a, b) => {
+        const loadA = reviewLoadMap.get(a._id.toString()) || 0;
+        const loadB = reviewLoadMap.get(b._id.toString()) || 0;
+        if (loadA !== loadB) return loadA - loadB;
+
+        const scoreA = getMatchingScore(a, thesis.fields);
+        const scoreB = getMatchingScore(b, thesis.fields);
+        return scoreB - scoreA;
+      });
+
+      return pool[0];
+    };
+
+    // Nếu thiếu GVPB 1
+    if (!targetR1) {
+      const best1 = pickBestLecturer([targetR2].filter(Boolean));
+      if (best1) {
+        targetR1 = best1._id.toString();
+        reviewLoadMap.set(targetR1, (reviewLoadMap.get(targetR1) || 0) + 1);
+        modified = true;
+      }
+    }
+
+    // Nếu thiếu GVPB 2
+    if (!targetR2) {
+      const best2 = pickBestLecturer([targetR1].filter(Boolean));
+      if (best2) {
+        targetR2 = best2._id.toString();
+        reviewLoadMap.set(targetR2, (reviewLoadMap.get(targetR2) || 0) + 1);
+        modified = true;
+      }
+    }
+
+    if (modified) {
+      await assignReviewers(thesis._id, {
+        reviewer1Id: targetR1,
+        reviewer2Id: targetR2,
+        tbmUserId,
+      });
+
+      assignedThesesCount++;
+      if (targetR1 && targetR2) {
+        fullyAssignedThesesCount++;
+      } else {
+        partiallyAssignedThesesCount++;
+      }
+
+      assignmentDetails.push({
+        thesisId: thesis._id,
+        thesisTitle: thesis.thesisTitle,
+        reviewer1Id: targetR1,
+        reviewer2Id: targetR2,
+      });
+    }
+  }
+
+  return {
+    totalEligible: eligibleTheses.length,
+    needAssignment: needAssignmentTheses.length,
+    assignedThesesCount,
+    fullyAssignedThesesCount,
+    partiallyAssignedThesesCount,
+    unassignedThesesCount: needAssignmentTheses.length - assignedThesesCount,
+    message: assignedThesesCount > 0
+      ? `Tự động phân công thành công cho ${assignedThesesCount} đề tài (${fullyAssignedThesesCount} đề tài đủ 2 phản biện).`
+      : "Không có đề tài nào được phân công thêm (có thể do đã đủ hoặc không tìm thấy GV có lĩnh vực phù hợp còn tải).",
+    assignmentDetails,
+  };
+};
+
 // ====================
 // 6. Lecturer Approves / Accepts Supervision of Thesis
 // ====================
@@ -1930,6 +2130,320 @@ const getThesesForLecturerRole = async (
     },
     totalCount: results.length,
   };
+};
+
+// ====================
+// Mark Student Fail Independently (KLTN)
+// ====================
+const markStudentFail = async (thesisId, { studentIndex, failReason, requestingUserId, userRole }) => {
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Không thể thay đổi trạng thái.", 400);
+  }
+
+  if (thesis.status === "COMPLETED") {
+    throw new AppError("Khóa luận đã hoàn thành và không thể thay đổi trạng thái.", 400);
+  }
+
+  let lecturer = null;
+  if (userRole !== "ADMIN") {
+    lecturer = await Lecturer.findOne({ userId: requestingUserId }).populate("userId");
+    if (!lecturer) {
+      lecturer = await Lecturer.findById(requestingUserId).populate("userId");
+    }
+  }
+
+  if (!thesis.scores) {
+    thesis.scores = {};
+  }
+
+  const isTwo = thesis.studentCount === 2 && thesis.secondStudentId;
+  const targetIndex = Number(studentIndex) === 2 ? 2 : 1;
+
+  if (targetIndex === 2 && !isTwo) {
+    throw new AppError("Đề tài này chỉ có 1 sinh viên, không thể đánh dấu rớt cho sinh viên 2", 400);
+  }
+
+  const reason = failReason || "Giảng viên đánh dấu không đạt (Rớt)";
+
+  if (targetIndex === 1) {
+    thesis.scores.isStudent1Failed = true;
+    thesis.scores.student1FailReason = reason;
+    thesis.scores.student1FailedBy = lecturer ? lecturer._id : null;
+    thesis.scores.student1FailedAt = new Date();
+
+    thesis.scores.student1SupervisorScore = 0;
+    thesis.scores.student1Reviewer1Score = 0;
+    thesis.scores.student1Reviewer2Score = 0;
+    thesis.scores.student1ReviewerScore = 0;
+    thesis.scores.student1CouncilScore = 0;
+    thesis.scores.student1FinalScore = 0;
+
+    if (Array.isArray(thesis.scores.councilLecturerScores)) {
+      thesis.scores.councilLecturerScores.forEach((c) => {
+        c.student1Score = 0;
+      });
+    }
+  } else {
+    thesis.scores.isStudent2Failed = true;
+    thesis.scores.student2FailReason = reason;
+    thesis.scores.student2FailedBy = lecturer ? lecturer._id : null;
+    thesis.scores.student2FailedAt = new Date();
+
+    thesis.scores.student2SupervisorScore = 0;
+    thesis.scores.student2Reviewer1Score = 0;
+    thesis.scores.student2Reviewer2Score = 0;
+    thesis.scores.student2ReviewerScore = 0;
+    thesis.scores.student2CouncilScore = 0;
+    thesis.scores.student2FinalScore = 0;
+
+    if (Array.isArray(thesis.scores.councilLecturerScores)) {
+      thesis.scores.councilLecturerScores.forEach((c) => {
+        c.student2Score = 0;
+      });
+    }
+  }
+
+  const s1Failed = Boolean(thesis.scores.isStudent1Failed);
+  const s2Failed = Boolean(thesis.scores.isStudent2Failed);
+
+  if (isTwo) {
+    if (s1Failed && !s2Failed) {
+      thesis.scores.supervisorScore = thesis.scores.student2SupervisorScore ?? null;
+      thesis.scores.reviewer1Score = thesis.scores.student2Reviewer1Score ?? null;
+      thesis.scores.reviewer2Score = thesis.scores.student2Reviewer2Score ?? null;
+      thesis.scores.reviewerScore = thesis.scores.student2ReviewerScore ?? null;
+      thesis.scores.councilScore = thesis.scores.student2CouncilScore ?? null;
+      thesis.scores.finalScore = thesis.scores.student2FinalScore ?? null;
+    } else if (s2Failed && !s1Failed) {
+      thesis.scores.supervisorScore = thesis.scores.student1SupervisorScore ?? null;
+      thesis.scores.reviewer1Score = thesis.scores.student1Reviewer1Score ?? null;
+      thesis.scores.reviewer2Score = thesis.scores.student1Reviewer2Score ?? null;
+      thesis.scores.reviewerScore = thesis.scores.student1ReviewerScore ?? null;
+      thesis.scores.councilScore = thesis.scores.student1CouncilScore ?? null;
+      thesis.scores.finalScore = thesis.scores.student1FinalScore ?? null;
+    } else if (s1Failed && s2Failed) {
+      thesis.scores.supervisorScore = 0;
+      thesis.scores.reviewer1Score = 0;
+      thesis.scores.reviewer2Score = 0;
+      thesis.scores.reviewerScore = 0;
+      thesis.scores.councilScore = 0;
+      thesis.scores.finalScore = 0;
+      thesis.status = "REJECTED";
+    }
+  } else {
+    if (s1Failed) {
+      thesis.scores.supervisorScore = 0;
+      thesis.scores.reviewer1Score = 0;
+      thesis.scores.reviewer2Score = 0;
+      thesis.scores.reviewerScore = 0;
+      thesis.scores.councilScore = 0;
+      thesis.scores.finalScore = 0;
+      thesis.status = "REJECTED";
+    }
+  }
+
+  thesis.markModified("scores");
+  await thesis.save();
+
+  return await Thesis.findById(thesis._id)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer1Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer2Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("councilId");
+};
+
+// ====================
+// Unmark Student Fail (Bỏ đánh rớt độc lập cho sinh viên KLTN)
+// ====================
+const unmarkStudentFail = async (thesisId, { studentIndex, requestingUserId, userRole }) => {
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) {
+    throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Không thể thay đổi trạng thái.", 400);
+  }
+
+  if (thesis.status === "COMPLETED") {
+    throw new AppError("Khóa luận đã hoàn thành và không thể thay đổi trạng thái.", 400);
+  }
+
+  if (!thesis.scores) {
+    thesis.scores = {};
+  }
+
+  const isTwo = thesis.studentCount === 2 && thesis.secondStudentId;
+  const targetIndex = Number(studentIndex) === 2 ? 2 : 1;
+
+  if (targetIndex === 2 && !isTwo) {
+    throw new AppError("Đề tài này chỉ có 1 sinh viên, không thể thao tác trên sinh viên 2", 400);
+  }
+
+  if (targetIndex === 1) {
+    thesis.scores.isStudent1Failed = false;
+    thesis.scores.student1FailReason = null;
+    thesis.scores.student1FailedBy = null;
+    thesis.scores.student1FailedAt = null;
+
+    thesis.scores.student1SupervisorScore = null;
+    thesis.scores.student1Reviewer1Score = null;
+    thesis.scores.student1Reviewer2Score = null;
+    thesis.scores.student1ReviewerScore = null;
+    thesis.scores.student1CouncilScore = null;
+    thesis.scores.student1FinalScore = null;
+
+    if (Array.isArray(thesis.scores.councilLecturerScores)) {
+      thesis.scores.councilLecturerScores.forEach((c) => {
+        if (c.student1Score === 0) {
+          c.student1Score = null;
+        }
+      });
+    }
+  } else {
+    thesis.scores.isStudent2Failed = false;
+    thesis.scores.student2FailReason = null;
+    thesis.scores.student2FailedBy = null;
+    thesis.scores.student2FailedAt = null;
+
+    thesis.scores.student2SupervisorScore = null;
+    thesis.scores.student2Reviewer1Score = null;
+    thesis.scores.student2Reviewer2Score = null;
+    thesis.scores.student2ReviewerScore = null;
+    thesis.scores.student2CouncilScore = null;
+    thesis.scores.student2FinalScore = null;
+
+    if (Array.isArray(thesis.scores.councilLecturerScores)) {
+      thesis.scores.councilLecturerScores.forEach((c) => {
+        if (c.student2Score === 0) {
+          c.student2Score = null;
+        }
+      });
+    }
+  }
+
+  // Restore thesis status if it was REJECTED
+  if (thesis.status === "REJECTED") {
+    if (thesis.councilId) {
+      thesis.status = "DEFENSE";
+    } else if (thesis.reviewer1Id || thesis.reviewer2Id || (Array.isArray(thesis.reviewers) && thesis.reviewers.length > 0)) {
+      thesis.status = "ASSIGNED_REVIEWERS";
+    } else {
+      thesis.status = "APPROVED";
+    }
+  }
+
+  // Recompute group scores
+  const s1Failed = Boolean(thesis.scores.isStudent1Failed);
+  const s2Failed = Boolean(thesis.scores.isStudent2Failed);
+
+  if (isTwo) {
+    if (!s1Failed && !s2Failed) {
+      const s1_sup = thesis.scores.student1SupervisorScore;
+      const s2_sup = thesis.scores.student2SupervisorScore;
+      if (s1_sup != null && s2_sup != null) {
+        thesis.scores.supervisorScore = Number(((s1_sup + s2_sup) / 2).toFixed(2));
+      } else {
+        thesis.scores.supervisorScore = s1_sup ?? s2_sup ?? null;
+      }
+
+      const s1_rev = thesis.scores.student1ReviewerScore;
+      const s2_rev = thesis.scores.student2ReviewerScore;
+      if (s1_rev != null && s2_rev != null) {
+        thesis.scores.reviewerScore = Number(((s1_rev + s2_rev) / 2).toFixed(2));
+      } else {
+        thesis.scores.reviewerScore = s1_rev ?? s2_rev ?? null;
+      }
+
+      const s1_coun = thesis.scores.student1CouncilScore;
+      const s2_coun = thesis.scores.student2CouncilScore;
+      if (s1_coun != null && s2_coun != null) {
+        thesis.scores.councilScore = Number(((s1_coun + s2_coun) / 2).toFixed(2));
+      } else {
+        thesis.scores.councilScore = s1_coun ?? s2_coun ?? null;
+      }
+
+      const s1_fin = thesis.scores.student1FinalScore;
+      const s2_fin = thesis.scores.student2FinalScore;
+      if (s1_fin != null && s2_fin != null) {
+        thesis.scores.finalScore = Number(((s1_fin + s2_fin) / 2).toFixed(2));
+        thesis.status = "GRADED";
+      } else {
+        thesis.scores.finalScore = null;
+      }
+    } else if (s1Failed && !s2Failed) {
+      thesis.scores.supervisorScore = thesis.scores.student2SupervisorScore ?? null;
+      thesis.scores.reviewer1Score = thesis.scores.student2Reviewer1Score ?? null;
+      thesis.scores.reviewer2Score = thesis.scores.student2Reviewer2Score ?? null;
+      thesis.scores.reviewerScore = thesis.scores.student2ReviewerScore ?? null;
+      thesis.scores.councilScore = thesis.scores.student2CouncilScore ?? null;
+      thesis.scores.finalScore = thesis.scores.student2FinalScore ?? null;
+    } else if (s2Failed && !s1Failed) {
+      thesis.scores.supervisorScore = thesis.scores.student1SupervisorScore ?? null;
+      thesis.scores.reviewer1Score = thesis.scores.student1Reviewer1Score ?? null;
+      thesis.scores.reviewer2Score = thesis.scores.student1Reviewer2Score ?? null;
+      thesis.scores.reviewerScore = thesis.scores.student1ReviewerScore ?? null;
+      thesis.scores.councilScore = thesis.scores.student1CouncilScore ?? null;
+      thesis.scores.finalScore = thesis.scores.student1FinalScore ?? null;
+    }
+  } else {
+    thesis.scores.supervisorScore = null;
+    thesis.scores.reviewer1Score = null;
+    thesis.scores.reviewer2Score = null;
+    thesis.scores.reviewerScore = null;
+    thesis.scores.councilScore = null;
+    thesis.scores.finalScore = null;
+  }
+
+  thesis.markModified("scores");
+  await thesis.save();
+
+  return await Thesis.findById(thesis._id)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer1Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "reviewer2Id",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("councilId");
 };
 
 // ====================
@@ -2647,10 +3161,10 @@ const toggleAllThesisScoresLock = async ({ academicTermId, roleType = "SUPERVISO
 // 1. Get Theses For Evaluation (AcademicTerm-aware)
 // ====================
 const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTermId = "" } = {}) => {
-  // All active theses with supervisor assigned, excluding REJECTED
+  // All active theses with supervisor assigned (including completed/rejected for evaluation records)
   const baseQuery = {
     supervisorId: { $ne: null },
-    status: { $ne: "REJECTED" },
+    status: { $nin: ["PENDING_SUPERVISOR_APPROVAL", "SUPERVISOR_REJECTED"] },
   };
 
   if (academicTermId && academicTermId !== "ALL") {
@@ -2876,6 +3390,7 @@ const batchCreateTopicsByLecturer = async ({
   defaultMaxGroups = 1,
   defaultDescription = "",
   academicTermId = null,
+  fields = [],
 }) => {
   const lecturer = await Lecturer.findOne({ userId }).populate("userId");
   if (!lecturer) {
@@ -2913,7 +3428,7 @@ const batchCreateTopicsByLecturer = async ({
         maxGroups: 1,
         currentGroups: 0,
         description: desc,
-        status: "PENDING",
+        fields: (typeof item === "object" && Array.isArray(item.fields)) ? item.fields : (Array.isArray(fields) ? fields : []), status: "PENDING",
       });
     }
   }
@@ -2936,6 +3451,7 @@ const batchCreateTopicsByLecturer = async ({
         maxGroups: 1,
         currentGroups: 0,
         description: defaultDescription || null,
+        fields: Array.isArray(fields) ? fields : [],
         status: "PENDING",
       });
     }
@@ -3824,6 +4340,7 @@ const getApprovedTopicsForStudent = async ({ academicTermId = null, search = "",
       _id: t._id,
       title: t.title,
       description: t.description,
+      fields: t.fields || [],
       maxGroups: t.maxGroups,
       currentGroups: t.currentGroups,
       isFull,
@@ -4022,6 +4539,7 @@ const registerTopicByStudent = async ({
     topicId: updatedTopic._id,
     status: initialStatus,
     description: updatedTopic.description,
+    fields: updatedTopic.fields || [],
     submittedAt: isPendingSv2 ? null : new Date(),
     startDate: topicTerm.startDate || null,
     endDate: topicTerm.endDate || null,
@@ -4943,6 +5461,20 @@ const cancelGroupParticipationByStudent2 = async (thesisId, userId) => {
     throw new AppError("Bạn không phải là thành viên thứ hai của đề tài này", 403);
   }
 
+  // Check if SV1 already sent request to supervisor
+  if (
+    [
+      "PENDING_SUPERVISOR_APPROVAL",
+      "PENDING_SUPERVISOR_ACCEPTANCE",
+      "PENDING_TBM_APPROVAL",
+    ].includes(thesis.status)
+  ) {
+    throw new AppError(
+      "Không thể hủy tham gia nhóm khi đề tài đã được gửi yêu cầu đến Giảng viên hướng dẫn.",
+      400
+    );
+  }
+
   // Check if supervisor already approved
   const NON_CANCELLABLE_STATUSES = [
     "APPROVED",
@@ -5251,12 +5783,15 @@ export default {
   rejectThesis,
   assignSupervisor,
   assignReviewers,
+  autoAssignReviewersByField,
   supervisorAcceptThesis,
   supervisorRejectThesis,
   supervisorCancelThesis,
   validateThesisRegistrationWindow,
   getThesesForLecturerRole,
   gradeThesisByLecturer,
+  markStudentFail,
+  unmarkStudentFail,
   evaluateCriteriaBySupervisor,
   toggleThesisScoreLock,
   toggleAllThesisScoresLock,

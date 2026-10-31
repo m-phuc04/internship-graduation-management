@@ -23,7 +23,6 @@ import {
   Building2,
   Calendar,
   Eye,
-  RefreshCw,
   Award,
   FileSpreadsheet,
   FileText,
@@ -281,8 +280,7 @@ const LecturerInternshipPage = () => {
               </div>
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
                 <span>Giảng viên: <strong className="text-slate-800">{lecturerInfo?.academicTitle} {lecturerInfo?.userId?.fullName}</strong></span>
-                <span>•</span>
-                <span>Mã GV: <strong className="font-mono text-[#102d7d]">{lecturerInfo?.lecturerCode}</strong></span>
+                
               </div>
             </div>
           </div>
@@ -308,21 +306,13 @@ const LecturerInternshipPage = () => {
                 {stats?.totalAssigned ?? pagination?.total ?? stats?.activeCount ?? internships.length ?? 0} <span className="text-xs font-semibold text-[#123891]">SV</span>
               </div>
             </div>
-
-            <button
-              onClick={fetchSupervisedStudents}
-              className="p-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-2xl transition"
-              title="Làm mới danh sách"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
           </div>
         </div>
       </div>
 
-      {/* Search Bar & Academic Term Selector */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="w-full sm:w-80">
+      {/* Search & Filter Bar */}
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="w-full md:w-96">
           <SearchInput
             value={search}
             onChange={handleSearchChange}
@@ -330,9 +320,8 @@ const LecturerInternshipPage = () => {
           />
         </div>
 
-        {/* Academic Term Selector */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
+        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+          <span className="text-xs font-semibold text-slate-500">Học kỳ:</span>
           <select
             value={currentTerm?._id || ''}
             onChange={(e) => {
@@ -340,7 +329,7 @@ const LecturerInternshipPage = () => {
                 setCurrentTerm(e.target.value);
               }
             }}
-            className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+            className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 transition cursor-pointer"
           >
             {Array.isArray(terms) &&
               terms.map((t) => (
@@ -351,19 +340,6 @@ const LecturerInternshipPage = () => {
           </select>
         </div>
       </div>
-
-      {/* Non-active Term Notification Banner */}
-      {!isActiveTerm && (
-        <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs">
-          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-          <div className="flex-1">
-            <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
-            <span className="ml-1 text-amber-800">
-              Học kỳ này không ở trạng thái đang diễn ra.
-            </span>
-          </div>
-        </div>
-      )}
 
       {/* Main Table */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
@@ -387,7 +363,7 @@ const LecturerInternshipPage = () => {
                   <th className="py-3.5 px-4">Vị trí thực tập</th>
                   <th className="py-3.5 px-4">Điểm ĐG</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4 pr-6 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">

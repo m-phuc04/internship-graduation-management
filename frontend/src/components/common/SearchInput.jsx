@@ -7,6 +7,7 @@ const SearchInput = ({
   placeholder = 'Tìm kiếm...',
   debounceTime = 300,
   className = '',
+  inputClassName = '',
 }) => {
   const [value, setValue] = useState(initialValue);
   const onChangeRef = useRef(onChange);
@@ -48,14 +49,14 @@ const SearchInput = ({
   }, [value, debounceTime]);
 
   return (
-    <div className={`relative flex items-center ${className}`}>
-      <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
+    <div className={`relative flex items-center group ${className}`}>
+      <Search className="w-4 h-4 text-slate-400 group-focus-within:text-[#123891] absolute left-3.5 pointer-events-none transition-colors" />
       <input
         type="text"
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition shadow-xs"
+        className={inputClassName || "w-full pl-10 pr-9 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition shadow-xs"}
       />
       {value && (
         <button

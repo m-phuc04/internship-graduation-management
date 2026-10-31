@@ -208,7 +208,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
             <span>•</span>
             <span className="font-bold text-[#102d7d]">
               GVHD: {thesis.supervisorId?.academicTitle ? `${thesis.supervisorId.academicTitle} ` : ''}
-              {thesis.supervisorId?.userId?.fullName} ({thesis.supervisorId?.lecturerCode})
+              {thesis.supervisorId?.userId?.fullName}
             </span>
           </div>
         </div>
@@ -272,7 +272,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               {availableReviewer1Lecturers.map((lec) => (
                 <option key={lec._id} value={lec._id}>
                   {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
-                  {lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                  {lec.userId?.fullName || 'Giảng viên'}
                 </option>
               ))}
             </select>
@@ -297,7 +297,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
                 {availableReviewer2Lecturers.map((lec) => (
                   <option key={lec._id} value={lec._id}>
                     {lec.academicTitle ? `${lec.academicTitle} ` : 'ThS. '}
-                    {lec.userId?.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                    {lec.userId?.fullName || 'Giảng viên'}
                   </option>
                 ))}
               </select>

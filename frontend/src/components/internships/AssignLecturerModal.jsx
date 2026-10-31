@@ -117,9 +117,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                       <div className="font-bold text-slate-900">
                         {displayName}
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono flex items-center gap-2 mt-0.5">
-                        <span className="font-semibold text-[#123891]">Mã GV: {lec.lecturerCode}</span>
-                      </div>
+                      
                     </div>
 
                     <div className="text-right shrink-0">

@@ -14,7 +14,6 @@ import {
   BookOpen,
   FileText,
   CheckCircle2,
-  RefreshCw,
   Eye,
   Filter,
   Paperclip,
@@ -128,64 +127,50 @@ const LecturerReportPage = () => {
                   {lecturerInfo?.userId?.fullName || user?.fullName}
                 </strong>
               </span>
-              <span>•</span>
-              <span>
-                Mã GV:{' '}
-                <strong className="font-mono text-[#102d7d]">
-                  {lecturerInfo?.lecturerCode || user?.username}
-                </strong>
-              </span>
+              
             </div>
           </div>
         </div>
-
-        <button
-          onClick={fetchReports}
-          className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer self-start sm:self-center"
-          title="Làm mới danh sách"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <div className="lg:col-span-2">
-            <SearchInput
-              value={search}
-              onChange={(val) => handleFilterChange(setSearch, val)}
-              placeholder="Tìm theo MSSV, Tên SV, Tiêu đề báo cáo..."
-            />
-          </div>
+      {/* 1. Hàng trên: Ô tìm kiếm độc lập hoàn toàn chiếm trọn chiều rộng */}
+      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
+        <SearchInput
+          value={search}
+          onChange={(val) => handleFilterChange(setSearch, val)}
+          placeholder="Tìm theo MSSV, Tên SV, Tiêu đề báo cáo..."
+          className="w-full"
+        />
+      </div>
 
-          <div>
-            <select
-              value={status}
-              onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              {STATUS_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* 2. Hàng dưới: Thanh công cụ lọc trạng thái và loại báo cáo tách rời ở hàng dưới */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <select
+            value={status}
+            onChange={(e) => handleFilterChange(setStatus, e.target.value)}
+            className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer shadow-2xs"
+          >
+            {STATUS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          <div>
-            <select
-              value={reportType}
-              onChange={(e) => handleFilterChange(setReportType, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              {TYPE_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <select
+            value={reportType}
+            onChange={(e) => handleFilterChange(setReportType, e.target.value)}
+            className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer shadow-2xs"
+          >
+            {TYPE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 

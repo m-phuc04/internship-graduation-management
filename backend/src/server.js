@@ -16,6 +16,7 @@ import internshipDocumentRoutes from "./routes/internshipDocumentRoutes.js";
 import evaluationRoutes from "./routes/evaluationRoutes.js";
 import thesisRoutes from "./routes/thesisRoutes.js";
 import thesisProgressRoutes from "./routes/thesisProgressRoutes.js";
+import thesisDocumentRoutes from "./routes/thesisDocumentRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
@@ -26,6 +27,7 @@ import academicTermService from "./services/academicTermService.js";
 import chatRoutes from "./routes/chatRoutes.js";
 import newsRoutes from "./routes/newsRoutes.js";
 import councilRoutes from "./routes/councilRoutes.js";
+import researchFieldRoutes from "./routes/researchFieldRoutes.js";
 import { initSocketServer } from "./socket/socketHandler.js";
 
 import path from "path";
@@ -69,6 +71,7 @@ app.use("/api/internship-documents", internshipDocumentRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/theses", thesisRoutes);
 app.use("/api/thesis-progress", thesisProgressRoutes);
+app.use("/api/thesis-documents", thesisDocumentRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/profile", profileRoutes);
@@ -77,6 +80,7 @@ app.use("/api/schedules", scheduleRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/councils", councilRoutes);
+app.use("/api/fields", researchFieldRoutes);
 
 // ====================
 // Health Check

@@ -166,9 +166,7 @@ const TbmThesisDetailModal = ({
               {thesis.supervisorId?.academicTitle ? `${thesis.supervisorId.academicTitle} ` : ''}
               {thesis.supervisorId?.userId?.fullName}
             </div>
-            <div className="text-slate-500 text-[11px] font-mono">
-              Mã GV: {thesis.supervisorId?.lecturerCode}
-            </div>
+            
             <div className="text-slate-500 text-[11px]">{thesis.supervisorId?.userId?.email}</div>
           </div>
 
@@ -200,7 +198,7 @@ const TbmThesisDetailModal = ({
                   return (
                     <div className="text-slate-900 font-medium">
                       {thesis.reviewer1Id.academicTitle ? `${thesis.reviewer1Id.academicTitle} ` : ''}
-                      {thesis.reviewer1Id.userId?.fullName || thesis.reviewer1Id.fullName} ({thesis.reviewer1Id.lecturerCode})
+                      {thesis.reviewer1Id.userId?.fullName || thesis.reviewer1Id.fullName}
                     </div>
                   );
                 }
@@ -216,7 +214,7 @@ const TbmThesisDetailModal = ({
                         const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
                         return (
                           <div key={i} className="text-slate-900 font-medium">
-                            {title}{lec.userId?.fullName || lec.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                            {title}{lec.userId?.fullName || lec.fullName || 'Giảng viên'}
                           </div>
                         );
                       })}
@@ -240,7 +238,7 @@ const TbmThesisDetailModal = ({
                   return (
                     <div className="text-slate-900 font-medium">
                       {thesis.reviewer2Id.academicTitle ? `${thesis.reviewer2Id.academicTitle} ` : ''}
-                      {thesis.reviewer2Id.userId?.fullName || thesis.reviewer2Id.fullName} ({thesis.reviewer2Id.lecturerCode})
+                      {thesis.reviewer2Id.userId?.fullName || thesis.reviewer2Id.fullName}
                     </div>
                   );
                 }
@@ -256,7 +254,7 @@ const TbmThesisDetailModal = ({
                         const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
                         return (
                           <div key={i} className="text-slate-900 font-medium">
-                            {title}{lec.userId?.fullName || lec.fullName || 'Giảng viên'} ({lec.lecturerCode})
+                            {title}{lec.userId?.fullName || lec.fullName || 'Giảng viên'}
                           </div>
                         );
                       })}

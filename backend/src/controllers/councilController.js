@@ -137,6 +137,48 @@ const clearAllCouncils = async (req, res, next) => {
   }
 };
 
+// ====================
+// Bulk Update Report Date
+// ====================
+const bulkUpdateReportDate = async (req, res, next) => {
+  try {
+    const { academicTermId, reportDate, reportStartTime, reportEndTime, reportTime } = req.body;
+    const result = await councilService.bulkUpdateReportDate(
+      { academicTermId, reportDate, reportStartTime, reportEndTime, reportTime },
+      req.user?.userId
+    );
+
+    res.status(200).json({
+      success: true,
+      message: result.message || "Cập nhật thời gian báo cáo thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Batch Assign Theses to Council
+// ====================
+const batchAssignTheses = async (req, res, next) => {
+  try {
+    const { councilId, thesisIds } = req.body;
+    const result = await councilService.batchAssignTheses(
+      { councilId, thesisIds },
+      req.user?.userId
+    );
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getCouncils,
   getCouncilById,
@@ -145,4 +187,6 @@ export default {
   deleteCouncil,
   assignCouncilToThesis,
   clearAllCouncils,
+  bulkUpdateReportDate,
+  batchAssignTheses,
 };

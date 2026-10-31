@@ -232,6 +232,14 @@ const NotificationDropdown = () => {
       ) {
         targetLink = '/lecturer/theses?tab=supervisor';
       }
+      // 6. Tài liệu khóa luận
+      else if (
+        titleLower.includes('đăng 1 tài liệu') ||
+        titleLower.includes('tài liệu khóa luận') ||
+        targetLink?.includes('/theses/documents')
+      ) {
+        targetLink = '/lecturer/theses/documents';
+      }
     }
 
     if (role === 'TBM') {
@@ -262,6 +270,13 @@ const NotificationDropdown = () => {
         targetLink.startsWith('/tbm/theses/progress')
       ) {
         targetLink = '/student/thesis/progress';
+      } else if (
+        titleLower.includes('đăng 1 tài liệu') ||
+        titleLower.includes('tài liệu khóa luận') ||
+        targetLink.startsWith('/student/thesis/documents') ||
+        targetLink.includes('/thesis/documents')
+      ) {
+        targetLink = '/student/thesis/documents';
       } else if (
         targetLink.startsWith('/lecturer/theses') ||
         targetLink.startsWith('/tbm/theses') ||

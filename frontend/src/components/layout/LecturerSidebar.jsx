@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   BookOpen,
+  FileText,
   Briefcase,
   GraduationCap,
   LayoutDashboard,
@@ -240,6 +241,16 @@ const LecturerSidebar = ({ onCloseMobile, onToggleCollapse }) => {
               >
                 <Users className="w-3.5 h-3.5 shrink-0" />
                 <span>Đề tài hướng dẫn</span>
+              </Link>
+
+              {/* Item: Tài liệu khóa luận */}
+              <Link
+                to="/lecturer/theses/documents"
+                onClick={onCloseMobile}
+                className={getSubLinkClass(location.pathname === '/lecturer/theses/documents')}
+              >
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span>Tài liệu khóa luận</span>
               </Link>
 
               {/* Item 3: Nhật ký khóa luận */}

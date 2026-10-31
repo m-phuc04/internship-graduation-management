@@ -95,6 +95,12 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
       active: isItemActive('/student/thesis'),
     },
     {
+      to: '/student/thesis/documents',
+      label: 'Tài liệu khóa luận',
+      icon: FileText,
+      active: location.pathname === '/student/thesis/documents',
+    },
+    {
       to: '/student/thesis/progress',
       label: 'Nhật ký khóa luận',
       icon: BookOpen,

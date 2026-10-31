@@ -484,9 +484,7 @@ const MyInternshipPage = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11.5px] text-slate-600 pt-1">
-                  <div>
-                    Mã GV: <span className="font-mono font-bold text-slate-800">{lecturerObj?.lecturerCode || '—'}</span>
-                  </div>
+                  
                   <div>
                     Khoa: <span className="font-semibold text-slate-800">{lecturerObj?.faculty || 'Khoa CNTT'}</span>
                   </div>

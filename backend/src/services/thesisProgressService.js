@@ -279,11 +279,9 @@ const updateProgress = async ({
   const thesis = progress.thesisId;
   checkThesisEligibilityForProgress(thesis, student);
 
-  if (!["DRAFT", "NEEDS_REVISION", "REJECTED"].includes(progress.status)) {
-    throw new AppError(
-      `Không thể chỉnh sửa nhật ký đang ở trạng thái "${progress.status}"`,
-      400,
-    );
+  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Không thể chỉnh sửa nhật ký.", 400);
   }
 
   if (title && title.trim()) progress.title = title.trim();
@@ -480,7 +478,9 @@ const confirmProgressByStudent2 = async (progressId, userId, { action, rejection
 const calculateWeeks = (startDate, endDate) => {
   if (!startDate || !endDate) return [];
   const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
   const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
   if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) {
     return [];
   }
@@ -492,6 +492,7 @@ const calculateWeeks = (startDate, endDate) => {
   while (currentStart < end) {
     const currentEnd = new Date(currentStart);
     currentEnd.setDate(currentEnd.getDate() + 6);
+    currentEnd.setHours(23, 59, 59, 999);
 
     const actualEnd = currentEnd > end ? new Date(end) : currentEnd;
 
@@ -504,6 +505,7 @@ const calculateWeeks = (startDate, endDate) => {
 
     const nextStart = new Date(currentStart);
     nextStart.setDate(nextStart.getDate() + 7);
+    nextStart.setHours(0, 0, 0, 0);
     currentStart = nextStart;
     weekNum++;
   }
@@ -629,20 +631,15 @@ const getMyThesisProgress = async (userId) => {
     const foundProgress = progressList.find(
       (p) => p.progressType === "WEEKLY" && p.weekNumber === w.weekNumber,
     );
-    const isTimeUnlocked = canCreateProgress && now >= new Date(w.startDate);
-    const isUnlocked = Boolean(
-      foundProgress ||
-      (canCreateProgress && (w.weekNumber === 1 || isTimeUnlocked || w.weekNumber <= maxUnlockedWeek))
-    );
     return {
       ...w,
-      isUnlocked,
+      isUnlocked: canCreateProgress,
       progress: foundProgress || null,
     };
   });
 
-  // Display unlocked weeks to the student
-  const weeks = allWeeks.filter((w) => w.isUnlocked);
+  // Display all weeks to the student
+  const weeks = canCreateProgress ? allWeeks : allWeeks.filter((w) => w.isUnlocked);
 
   const total = progressList.length;
   const approved = progressList.filter((p) => p.status === "APPROVED").length;
@@ -822,10 +819,13 @@ const getSupervisedThesesProgress = async (userId, academicTermId = '') => {
           return d;
         })();
 
+      const weeks = calculateWeeks(startDate, endDate);
+
       return {
         ...t,
         startDate,
         endDate,
+        weeks,
         progressReports,
         stats: {
           total: progressReports.length,
@@ -889,8 +889,9 @@ const reviewProgress = async (
     }
   }
 
+  const finalStatus = status || "APPROVED";
   // Validate Review Status
-  if (!["REVIEWING", "APPROVED", "REJECTED"].includes(status)) {
+  if (!["REVIEWING", "APPROVED", "REJECTED"].includes(finalStatus)) {
     throw new AppError("Trạng thái đánh giá phải là REVIEWING, APPROVED hoặc REJECTED", 400);
   }
 
@@ -908,7 +909,7 @@ const reviewProgress = async (
     progress.lecturerScore = numScore;
   }
 
-  progress.status = status;
+  progress.status = finalStatus;
   progress.lecturerComment = lecturerComment ? lecturerComment.trim() : null;
   progress.reviewedAt = new Date();
   await progress.save();

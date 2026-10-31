@@ -65,6 +65,11 @@ const thesisTopicSchema = new mongoose.Schema(
       index: true,
     },
 
+    fields: {
+      type: [String],
+      default: [],
+    },
+
     maxGroups: {
       type: Number,
       default: 1,

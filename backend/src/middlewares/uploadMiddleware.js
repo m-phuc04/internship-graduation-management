@@ -15,6 +15,10 @@ if (!fs.existsSync(thesisProgressDir)) {
 
 const internshipReportsDir = path.join(__dirname, "../../public/uploads/internship-reports");
 const internshipDocumentsDir = path.join(__dirname, "../../public/uploads/internship-documents");
+const thesisDocumentsDir = path.join(__dirname, "../../public/uploads/thesis-documents");
+if (!fs.existsSync(thesisDocumentsDir)) {
+  fs.mkdirSync(thesisDocumentsDir, { recursive: true });
+}
 if (!fs.existsSync(internshipDocumentsDir)) {
   fs.mkdirSync(internshipDocumentsDir, { recursive: true });
 }
@@ -43,6 +47,21 @@ const storageThesisProgress = multer.diskStorage({
 const storageInternshipDocuments = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, internshipDocumentsDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase();
+    const cleanBaseName = path
+      .basename(file.originalname, ext)
+      .replace(/[^a-zA-Z0-9_-]/g, "_");
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, `${cleanBaseName}-${uniqueSuffix}${ext}`);
+  },
+});
+
+// Storage for Thesis Documents
+const storageThesisDocuments = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, thesisDocumentsDir);
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -126,6 +145,14 @@ export const uploadInternshipReportFile = multer({
 
 export const uploadInternshipDocumentFile = multer({
   storage: storageInternshipDocuments,
+  limits: {
+    fileSize: 30 * 1024 * 1024, // 30MB max file size
+  },
+  fileFilter,
+});
+
+export const uploadThesisDocumentFile = multer({
+  storage: storageThesisDocuments,
   limits: {
     fileSize: 30 * 1024 * 1024, // 30MB max file size
   },

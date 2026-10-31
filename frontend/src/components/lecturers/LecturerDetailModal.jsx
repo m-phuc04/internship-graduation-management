@@ -11,7 +11,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
       isOpen={isOpen}
       onClose={onClose}
       title="Chi tiết Hồ sơ Giảng viên"
-      subtitle={`Mã GV: ${lecturer.lecturerCode} • Học vị: ${lecturer.academicTitle || 'ThS.'}`}
+      subtitle={`Học vị: ${lecturer.academicTitle || 'ThS.'}`}
       maxWidth="max-w-2xl"
     >
       <div className="space-y-6">
@@ -71,10 +71,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
 
         {/* Academic Profile Details */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
-          <div className="flex justify-between py-1 border-b border-slate-200/60">
-            <span className="text-slate-500">Mã giảng viên:</span>
-            <span className="font-bold text-slate-800 font-mono">{lecturer.lecturerCode}</span>
-          </div>
+          
           <div className="flex justify-between py-1 border-b border-slate-200/60">
             <span className="text-slate-500">Học hàm / Học vị:</span>
             <span className="font-semibold text-slate-800">{lecturer.academicTitle || 'Thạc sĩ'}</span>

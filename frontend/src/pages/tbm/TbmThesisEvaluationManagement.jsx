@@ -14,6 +14,7 @@ import {
   GraduationCap,
   Users,
   CheckCircle2,
+  RotateCcw,
   Clock,
   RefreshCw,
   Eye,
@@ -111,6 +112,35 @@ const TbmThesisEvaluationManagement = () => {
   const [processFailDialogOpen, setProcessFailDialogOpen] = useState(false);
   const [processingFail, setProcessingFail] = useState(false);
 
+  const [unfailDialogOpen, setUnfailDialogOpen] = useState(false);
+  const [unfailTarget, setUnfailTarget] = useState({ thesis: null, studentIndex: null, studentName: '' });
+  const [unfailing, setUnfailing] = useState(false);
+
+  const handleRequestUnfailStudent = (thesis, studentIndex, studentName) => {
+    setUnfailTarget({ thesis, studentIndex, studentName });
+    setUnfailDialogOpen(true);
+  };
+
+  const handleConfirmUnfailStudent = async () => {
+    if (!unfailTarget.thesis || !unfailTarget.studentIndex) return;
+    setUnfailing(true);
+    try {
+      const res = await thesisApi.unmarkStudentFail(unfailTarget.thesis._id, {
+        studentIndex: unfailTarget.studentIndex,
+      });
+      if (res.success) {
+        showToast(`Đã bỏ trạng thái rớt cho sinh viên ${unfailTarget.studentName} thành công!`, 'success');
+        setUnfailDialogOpen(false);
+        setUnfailTarget({ thesis: null, studentIndex: null, studentName: '' });
+        fetchEvaluations();
+      }
+    } catch (err) {
+      showToast(err.message || 'Thao tác bỏ đánh rớt thất bại', 'error');
+    } finally {
+      setUnfailing(false);
+    }
+  };
+
   // ==========================================
   // LOAD LOCAL STORAGE DATA (COUNCILS & PUBLISHED SCORES)
   // ==========================================
@@ -162,15 +192,28 @@ const TbmThesisEvaluationManagement = () => {
   // SCORE HELPER CALCULATION
   // ==========================================
   const getThesisScoreInfo = useCallback(
-    (item) => {
+    (item, studentIndex = 1) => {
       const s = item.scores || {};
-      const scoreHD =
-        s.supervisorScore !== null && s.supervisorScore !== undefined
-          ? s.supervisorScore
-          : s.student1SupervisorScore !== null && s.student1SupervisorScore !== undefined
-          ? s.student1SupervisorScore
-          : null;
 
+      // 1. GVHD (Supervisor) Score
+      let scoreHD = null;
+      if (studentIndex === 2) {
+        scoreHD =
+          s.student2SupervisorScore !== null && s.student2SupervisorScore !== undefined
+            ? s.student2SupervisorScore
+            : s.supervisorScore !== null && s.supervisorScore !== undefined
+            ? s.supervisorScore
+            : null;
+      } else {
+        scoreHD =
+          s.student1SupervisorScore !== null && s.student1SupervisorScore !== undefined
+            ? s.student1SupervisorScore
+            : s.supervisorScore !== null && s.supervisorScore !== undefined
+            ? s.supervisorScore
+            : null;
+      }
+
+      // 2. Reviewer (PB kín) Scores
       const isAssignedPB1 = Boolean(
         item.reviewer1Id ||
         (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
@@ -180,19 +223,38 @@ const TbmThesisEvaluationManagement = () => {
         (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
       );
 
-      const sPB1 =
-        s.reviewer1Score !== null && s.reviewer1Score !== undefined
-          ? s.reviewer1Score
-          : s.student1Reviewer1Score !== null && s.student1Reviewer1Score !== undefined
-          ? s.student1Reviewer1Score
-          : null;
+      let sPB1 = null;
+      let sPB2 = null;
 
-      const sPB2 =
-        s.reviewer2Score !== null && s.reviewer2Score !== undefined
-          ? s.reviewer2Score
-          : s.student1Reviewer2Score !== null && s.student1Reviewer2Score !== undefined
-          ? s.student1Reviewer2Score
-          : null;
+      if (studentIndex === 2) {
+        sPB1 =
+          s.student2Reviewer1Score !== null && s.student2Reviewer1Score !== undefined
+            ? s.student2Reviewer1Score
+            : s.reviewer1Score !== null && s.reviewer1Score !== undefined
+            ? s.reviewer1Score
+            : null;
+
+        sPB2 =
+          s.student2Reviewer2Score !== null && s.student2Reviewer2Score !== undefined
+            ? s.student2Reviewer2Score
+            : s.reviewer2Score !== null && s.reviewer2Score !== undefined
+            ? s.reviewer2Score
+            : null;
+      } else {
+        sPB1 =
+          s.student1Reviewer1Score !== null && s.student1Reviewer1Score !== undefined
+            ? s.student1Reviewer1Score
+            : s.reviewer1Score !== null && s.reviewer1Score !== undefined
+            ? s.reviewer1Score
+            : null;
+
+        sPB2 =
+          s.student1Reviewer2Score !== null && s.student1Reviewer2Score !== undefined
+            ? s.student1Reviewer2Score
+            : s.reviewer2Score !== null && s.reviewer2Score !== undefined
+            ? s.reviewer2Score
+            : null;
+      }
 
       const hasPB1 = sPB1 !== null && sPB1 !== undefined && !isNaN(sPB1);
       const hasPB2 = sPB2 !== null && sPB2 !== undefined && !isNaN(sPB2);
@@ -206,18 +268,38 @@ const TbmThesisEvaluationManagement = () => {
         if (hasPB1) scorePB = Number(Number(sPB1).toFixed(2));
       } else if (isAssignedPB2) {
         if (hasPB2) scorePB = Number(Number(sPB2).toFixed(2));
-      } else if (s.reviewerScore !== null && s.reviewerScore !== undefined && !isNaN(s.reviewerScore)) {
-        scorePB = Number(Number(s.reviewerScore).toFixed(2));
+      } else {
+        const directPB = studentIndex === 2 ? (s.student2ReviewerScore ?? s.reviewerScore) : (s.student1ReviewerScore ?? s.reviewerScore);
+        if (directPB !== null && directPB !== undefined && !isNaN(directPB)) {
+          scorePB = Number(Number(directPB).toFixed(2));
+        }
       }
 
-      // Lookup Council assignment
+      // 3. Council assignment & Individual Lecturer Scores
       const councilId = thesisCouncilMap ? thesisCouncilMap[item._id] : null;
       const assignedCouncil = councilId && councilsMap ? councilsMap[councilId] : null;
 
-      // Extract individual scores for GVHĐ 1 and GVHĐ 2
       const councilScores = Array.isArray(s.councilLecturerScores)
-        ? s.councilLecturerScores.filter((e) => e && (e.score !== null || e.student1Score !== null))
+        ? s.councilLecturerScores.filter((e) => {
+            if (!e) return false;
+            if (studentIndex === 2) {
+              return (e.student2Score !== null && e.student2Score !== undefined) || e.score !== null;
+            }
+            return (e.student1Score !== null && e.student1Score !== undefined) || e.score !== null;
+          })
         : [];
+
+      const getEntryScore = (entry) => {
+        if (!entry) return null;
+        if (studentIndex === 2) {
+          return entry.student2Score !== null && entry.student2Score !== undefined
+            ? entry.student2Score
+            : entry.score ?? null;
+        }
+        return entry.student1Score !== null && entry.student1Score !== undefined
+          ? entry.student1Score
+          : entry.score ?? null;
+      };
 
       let scoreGVHD1 = null;
       let scoreGVHD2 = null;
@@ -236,14 +318,14 @@ const TbmThesisEvaluationManagement = () => {
                  (lec2?.name && e.lecturerName && e.lecturerName.trim().toLowerCase() === lec2.name.trim().toLowerCase())
         ) || (councilScores.length > 1 ? councilScores[1] : null);
 
-        scoreGVHD1 = entry1 ? (entry1.score ?? entry1.student1Score ?? null) : null;
-        scoreGVHD2 = entry2 && entry2 !== entry1 ? (entry2.score ?? entry2.student1Score ?? null) : (councilScores.length > 1 ? (councilScores[1].score ?? councilScores[1].student1Score ?? null) : null);
+        scoreGVHD1 = getEntryScore(entry1);
+        scoreGVHD2 = entry2 && entry2 !== entry1 ? getEntryScore(entry2) : (councilScores.length > 1 ? getEntryScore(councilScores[1]) : null);
       } else {
-        scoreGVHD1 = councilScores.length > 0 ? (councilScores[0]?.score ?? councilScores[0]?.student1Score ?? null) : null;
-        scoreGVHD2 = councilScores.length > 1 ? (councilScores[1]?.score ?? councilScores[1]?.student1Score ?? null) : null;
+        scoreGVHD1 = councilScores.length > 0 ? getEntryScore(councilScores[0]) : null;
+        scoreGVHD2 = councilScores.length > 1 ? getEntryScore(councilScores[1]) : null;
       }
 
-      // STRICT RULE: Điểm Hội Đồng (20%) CHỈ TÍNH KHI CÓ ĐỦ CẢ 2 GIẢNG VIÊN HỘI ĐỒNG (GVHĐ 1 VÀ GVHĐ 2)!
+      // Điểm Hội Đồng (20%): Tính khi có đủ cả 2 giảng viên hội đồng
       let scoreCouncil = null;
       if (
         scoreGVHD1 !== null &&
@@ -255,11 +337,46 @@ const TbmThesisEvaluationManagement = () => {
       ) {
         scoreCouncil = Number(((Number(scoreGVHD1) + Number(scoreGVHD2)) / 2).toFixed(2));
       } else {
-        scoreCouncil = null;
+        const directCouncil = studentIndex === 2 ? (s.student2CouncilScore ?? s.councilScore) : (s.student1CouncilScore ?? s.councilScore);
+        if (directCouncil !== null && directCouncil !== undefined && !isNaN(directCouncil)) {
+          scoreCouncil = Number(Number(directCouncil).toFixed(2));
+        } else {
+          scoreCouncil = null;
+        }
       }
 
-      const hasHD = scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
-      const isHDFailed = hasHD && Number(scoreHD) < 4.0;
+      const isManuallyFailed = Boolean(studentIndex === 2 ? s.isStudent2Failed : s.isStudent1Failed);
+      const manualFailReason = (studentIndex === 2 ? s.student2FailReason : s.student1FailReason) || 'Đã đánh dấu rớt (FAIL)';
+
+      if (isManuallyFailed) {
+        return {
+          scoreHD: 0,
+          scorePB: 0,
+          scorePB1: 0,
+          scorePB2: 0,
+          scoreGVHD1: 0,
+          scoreGVHD2: 0,
+          scoreCouncil: 0,
+          finalScore: 0,
+          hasHD: true,
+          hasPB: true,
+          hasPB1: true,
+          hasPB2: true,
+          hasCouncil: true,
+          assignedCouncil,
+          hasTwoCouncilLecturers: Boolean(assignedCouncil?.lecturers?.length >= 2),
+          isHDFailed: true,
+          isPBFailed: true,
+          isCouncilFailed: true,
+          isFailed: true,
+          isPassed: false,
+          failReason: manualFailReason,
+          isManuallyFailed: true,
+        };
+      }
+
+      const hasHD = !isManuallyFailed && scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
+      const isHDFailed = !isManuallyFailed && hasHD && Number(scoreHD) < 4.0;
 
       const hasPB = scorePB !== null && scorePB !== undefined && !isNaN(scorePB);
       const isPBFailed = hasPB && Number(scorePB) === 0;
@@ -267,22 +384,20 @@ const TbmThesisEvaluationManagement = () => {
       const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
       const isCouncilFailed = hasCouncil && Number(scoreCouncil) === 0;
 
-      // STRICT RULE: Điểm Tổng Kết (100%) CHỈ ĐƯỢC TÍNH KHI ĐỦ TẤT CẢ CÁC CỘT ĐIỂM (GVHD 50%, PB kín 30%, Hội đồng 20%)!
-      // Chưa đủ tất cả cột điểm thì tuyệt đối KHÔNG được tính, chỉ để null (để trống)!
+      // 4. Điểm Tổng Kết (100%): GVHD (50%) + PB kín (30%) + Hội đồng (20%)
       let finalScore = null;
-      if (hasHD && hasPB && hasCouncil && !isHDFailed && !isPBFailed && !isCouncilFailed) {
+      const storedFinal = studentIndex === 2 ? s.student2FinalScore : s.student1FinalScore;
+      if (storedFinal !== null && storedFinal !== undefined && !isNaN(storedFinal)) {
+        finalScore = Number(Number(storedFinal).toFixed(2));
+      } else if (hasHD && hasPB && hasCouncil && !isHDFailed && !isPBFailed && !isCouncilFailed) {
         finalScore = Number(
           (Number(scoreHD) * 0.5 + Number(scorePB) * 0.3 + Number(scoreCouncil) * 0.2).toFixed(2)
         );
-      } else {
-        finalScore = null;
+      } else if (studentIndex === 1 && s.finalScore !== null && s.finalScore !== undefined && !isNaN(s.finalScore)) {
+        finalScore = Number(Number(s.finalScore).toFixed(2));
       }
 
-      // STRICT RULE CHO KẾT QUẢ ĐÁNH GIÁ:
-      // 1. Điểm GVHD < 4.0 -> FAIL ngay từ bước GVHD (Không tiếp tục quy trình)
-      // 2. Điểm PB kín = 0 -> FAIL ở bước PB kín (Không sang Hội đồng)
-      // 3. Điểm Hội đồng = 0 -> FAIL
-      // 4. Khi đủ 3 cột điểm và không có điểm liệt: finalScore >= 5.0 -> PASS, < 5.0 -> FAIL
+      // 5. Kết quả đánh giá
       let isFailed = false;
       let failReason = '';
       let isPassed = false;
@@ -305,21 +420,28 @@ const TbmThesisEvaluationManagement = () => {
         }
       }
 
+      if (isManuallyFailed) {
+        isFailed = true;
+        failReason = manualFailReason;
+        finalScore = 0;
+      }
+
       return {
-        scoreHD: hasHD ? Number(scoreHD) : null,
-        scorePB: hasPB ? Number(scorePB) : null,
-        scorePB1: hasPB ? Number(scorePB) : null,
-        scorePB2: hasPB2 ? Number(sPB2) : null,
-        scoreGVHD1: scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null,
-        scoreGVHD2: scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null,
-        scoreCouncil: hasCouncil ? Number(scoreCouncil) : null,
-        finalScore,
+        scoreHD: isManuallyFailed ? 0 : (hasHD ? Number(scoreHD) : null),
+        scorePB: isManuallyFailed ? 0 : (hasPB ? Number(scorePB) : null),
+        scorePB1: isManuallyFailed ? 0 : (hasPB1 ? Number(sPB1) : null),
+        scorePB2: isManuallyFailed ? 0 : (hasPB2 ? Number(sPB2) : null),
+        scoreGVHD1: isManuallyFailed ? 0 : (scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null),
+        scoreGVHD2: isManuallyFailed ? 0 : (scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null),
+        scoreCouncil: isManuallyFailed ? 0 : (hasCouncil ? Number(scoreCouncil) : null),
+        finalScore: isManuallyFailed ? 0 : finalScore,
         hasHD,
         hasPB,
         hasPB1: hasPB,
         hasPB2,
         hasCouncil,
         assignedCouncil,
+        hasTwoCouncilLecturers: Boolean(assignedCouncil?.lecturers?.length >= 2),
         isHDFailed,
         isPBFailed,
         isCouncilFailed,
@@ -462,7 +584,7 @@ const TbmThesisEvaluationManagement = () => {
     try {
       const res = await thesisApi.completeEvaluation(thesisToComplete._id);
       if (res.success) {
-        showToast('Đã hoàn tất đánh giá và nghiệm thu khóa luận tốt nghiệp!', 'success');
+        showToast('Đã hoàn tất đánh giá và xác nhận khóa luận tốt nghiệp!', 'success');
         setCompleteDialogOpen(false);
         setThesisToComplete(null);
         fetchEvaluations();
@@ -793,7 +915,7 @@ const TbmThesisEvaluationManagement = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-slate-900">
-                Đánh giá Khóa luận Tốt nghiệp (KLTN)
+                Quản lý Khóa luận Tốt nghiệp (KLTN)
               </h1>
             </div>
           </div>
@@ -899,9 +1021,9 @@ const TbmThesisEvaluationManagement = () => {
       {/* ========================================== */}
       {mainTab === 'EVALUATIONS' && (
         <div className="space-y-4">
-          {/* Search & Filter Bar */}
-          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="w-full md:w-96">
+          {/* Search Bar & Action */}
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+            <div className="w-full sm:w-96">
               <SearchInput
                 value={search}
                 onChange={(val) => setSearch(val)}
@@ -909,34 +1031,35 @@ const TbmThesisEvaluationManagement = () => {
               />
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
-              <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-2xl">
-                {STATUS_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    onClick={() => setStatusFilter(opt.value)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                      statusFilter === opt.value
-                        ? 'bg-white text-[#102d7d] shadow-2xs font-bold'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+            {/* Nút Công bố điểm tất cả đề tài */}
+            <button
+              type="button"
+              onClick={handleOpenPublishAllModal}
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer shrink-0"
+              title="Công bố điểm hướng dẫn, phản biện, hội đồng đồng loạt cho các đề tài"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Công bố điểm tất cả đề tài</span>
+            </button>
+          </div>
 
-              {/* Nút Công bố điểm tất cả đề tài */}
-              <button
-                type="button"
-                onClick={handleOpenPublishAllModal}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer shrink-0"
-                title="Công bố điểm cho tất cả các đề tài khóa luận"
-              >
-                <Send className="w-3.5 h-3.5" />
-                <span>Công bố điểm tất cả đề tài</span>
-              </button>
+          {/* Cụm tab lọc trạng thái tách rời thành một hàng riêng biệt */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex flex-wrap items-center gap-1 p-1 bg-slate-100 rounded-2xl border border-slate-200/80 text-xs shadow-2xs">
+              {STATUS_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setStatusFilter(opt.value)}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                    statusFilter === opt.value
+                      ? 'bg-white text-[#123891] shadow-xs font-bold'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60'
+                  }`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -966,18 +1089,159 @@ const TbmThesisEvaluationManagement = () => {
                       <th className="py-3.5 px-4">Bảng điểm thành phần</th>
                       <th className="py-3.5 px-4">Điểm Tổng Kết</th>
                       <th className="py-3.5 px-4 text-center">Kết quả</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
+                      <th className="py-3.5 px-4 text-right"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredTheses.map((item, idx) => {
-                      const scoreInfo = getThesisScoreInfo(item);
-                      const isFullyGraded = scoreInfo.finalScore !== null;
+                      const isGroup = item.studentCount === 2 && Boolean(item.secondStudentId);
+                      const scoreInfo1 = getThesisScoreInfo(item, 1);
+                      const scoreInfo2 = isGroup ? getThesisScoreInfo(item, 2) : null;
+                      const scoreInfo = scoreInfo1;
+
+                      const isFullyGraded = isGroup
+                        ? scoreInfo1.finalScore !== null && scoreInfo2?.finalScore !== null
+                        : scoreInfo.finalScore !== null;
                       const isCompleted = item.status === 'COMPLETED';
 
                       // Check if any score is currently published for this thesis
                       const pub = publishedScores[item._id] || {};
                       const hasAnyPublished = Object.values(pub).some(Boolean);
+
+                      // Helper function to render a single student's component scores
+                      const renderStudentComponentScores = (info, studentLabel, dotColor) => (
+                        <div className="space-y-0.5 text-[11px] py-0.5">
+                          {studentLabel && (
+                            <div className="text-[10px] font-sans font-bold text-slate-600 flex items-center gap-1 mb-0.5">
+                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />
+                              <span>{studentLabel}</span>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-slate-400 font-sans">GVHD (50%):</span>{' '}
+                            <strong
+                              className={
+                                info.hasHD
+                                  ? 'text-[#123891]'
+                                  : 'text-slate-400 font-normal font-sans'
+                              }
+                            >
+                              {info.hasHD ? info.scoreHD : '—'}
+                            </strong>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 font-sans">PB kín (30%):</span>{' '}
+                            <strong
+                              className={
+                                info.hasPB
+                                  ? 'text-[#123891]'
+                                  : 'text-slate-400 font-normal font-sans'
+                              }
+                            >
+                              {info.hasPB ? info.scorePB : '—'}
+                            </strong>
+                          </div>
+                          <div className="flex items-center gap-1 text-[10.5px]">
+                            <span className="text-slate-400 font-sans">GVHĐ 1:</span>{' '}
+                            <span className={info.scoreGVHD1 !== null ? 'text-slate-800 font-bold' : 'text-slate-400 font-sans'}>
+                              {info.scoreGVHD1 !== null ? info.scoreGVHD1 : '—'}
+                            </span>
+                            <span className="text-slate-300">|</span>
+                            <span className="text-slate-400 font-sans">GVHĐ 2:</span>{' '}
+                            <span className={info.scoreGVHD2 !== null ? 'text-slate-800 font-bold' : 'text-slate-400 font-sans'}>
+                              {info.scoreGVHD2 !== null ? info.scoreGVHD2 : '—'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-slate-400 font-sans">Điểm hội đồng (20%):</span>{' '}
+                            {info.hasCouncil ? (
+                              <strong className="text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
+                                {info.scoreCouncil}
+                              </strong>
+                            ) : info.hasTwoCouncilLecturers && (info.scoreGVHD1 !== null || info.scoreGVHD2 !== null) ? (
+                              <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-sans border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính trung bình">
+                                Chờ GV còn lại
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 font-normal font-sans">—</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+
+                      // Helper function to render a single student's final score
+                      const renderStudentFinalScore = (info, studentLabel, dotColor) => (
+                        <div className="flex flex-col py-0.5">
+                          {studentLabel && (
+                            <span className="text-[10px] font-sans font-bold text-slate-500 mb-0.5 flex items-center gap-1">
+                              <span className={`w-1.5 h-1.5 rounded-full ${dotColor} shrink-0`} />
+                              <span>{studentLabel}:</span>
+                            </span>
+                          )}
+                          {info.finalScore !== null ? (
+                            <div className="inline-flex items-baseline gap-1">
+                              <span
+                                className={`text-base font-extrabold font-mono ${
+                                  info.finalScore >= 5.0 ? 'text-emerald-600' : 'text-rose-600'
+                                }`}
+                              >
+                                {info.finalScore}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-normal">
+                                /10
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 font-normal font-sans text-xs">—</span>
+                          )}
+                        </div>
+                      );
+
+                      // Helper function to render a single student's result badge
+                      const renderStudentResult = (info, studentName, studentCode, studentLabel, studentIndex = 1) => (
+                        <div className="py-0.5 flex flex-col items-center gap-1">
+                          {studentLabel && (
+                            <span className="text-[10px] font-sans font-bold text-slate-500 mb-0.5">
+                              {studentLabel}:
+                            </span>
+                          )}
+                          {info.isFailed ? (
+                            <>
+                              <span
+                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
+                                title={`${studentName || 'Sinh viên'} (${studentCode || ''}): ${info.failReason}`}
+                              >
+                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                <span>FAIL (K.Đạt)</span>
+                              </span>
+                              {!isCompleted && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRequestUnfailStudent(item, studentIndex, studentName || `Sinh viên ${studentIndex}`)}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 transition cursor-pointer shadow-2xs hover:shadow-xs mt-0.5"
+                                  title={`Bỏ trạng thái rớt cho ${studentName || 'sinh viên'}`}
+                                >
+                                  <RotateCcw className="w-3 h-3 text-amber-600" />
+                                  <span>Bỏ đánh rớt</span>
+                                </button>
+                              )}
+                            </>
+                          ) : info.isPassed ? (
+                            <span
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              title={`${studentName || 'Sinh viên'} (${studentCode || ''}): Đạt yêu cầu`}
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                              <span>PASS (Đạt)</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
+                              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span>Chưa có điểm</span>
+                            </span>
+                          )}
+                        </div>
+                      );
 
                       return (
                         <tr key={item._id} className="hover:bg-slate-50/80 transition">
@@ -998,7 +1262,31 @@ const TbmThesisEvaluationManagement = () => {
 
                           {/* Students */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="space-y-1">
+                            {isGroup ? (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1.5 py-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+                                  <strong className="text-slate-900">
+                                    {item.studentId?.userId?.fullName}
+                                  </strong>
+                                  <span className="text-[11px] font-mono text-slate-400">
+                                    ({item.studentId?.studentCode})
+                                  </span>
+                                </div>
+
+                                <div className="border-t border-slate-100" />
+
+                                <div className="flex items-center gap-1.5 py-0.5">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 shrink-0" />
+                                  <strong className="text-slate-900">
+                                    {item.secondStudentId?.userId?.fullName}
+                                  </strong>
+                                  <span className="text-[11px] font-mono text-slate-400">
+                                    ({item.secondStudentId?.studentCode})
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
                               <div className="flex items-center gap-1.5">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
                                 <strong className="text-slate-900">
@@ -1008,18 +1296,7 @@ const TbmThesisEvaluationManagement = () => {
                                   ({item.studentId?.studentCode})
                                 </span>
                               </div>
-                              {item.studentCount === 2 && item.secondStudentId && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-[#123891]" />
-                                  <strong className="text-slate-900">
-                                    {item.secondStudentId?.userId?.fullName}
-                                  </strong>
-                                  <span className="text-[11px] font-mono text-slate-400">
-                                    ({item.secondStudentId?.studentCode})
-                                  </span>
-                                </div>
-                              )}
-                            </div>
+                            )}
                           </td>
 
                           {/* Condition Passed Badge */}
@@ -1075,99 +1352,81 @@ const TbmThesisEvaluationManagement = () => {
 
                           {/* Bảng điểm thành phần */}
                           <td className="py-3.5 px-4 whitespace-nowrap font-mono">
-                            <div className="space-y-0.5 text-[11px]">
-                              <div>
-                                <span className="text-slate-400 font-sans">GVHD (50%):</span>{' '}
-                                <strong
-                                  className={
-                                    scoreInfo.hasHD
-                                      ? 'text-[#123891]'
-                                      : 'text-slate-400 font-normal font-sans'
-                                  }
-                                >
-                                  {scoreInfo.hasHD ? scoreInfo.scoreHD : '—'}
-                                </strong>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 font-sans">PB kín (30%):</span>{' '}
-                                <strong
-                                  className={
-                                    scoreInfo.hasPB1
-                                      ? 'text-[#123891]'
-                                      : 'text-slate-400 font-normal font-sans'
-                                  }
-                                >
-                                  {scoreInfo.hasPB1 ? scoreInfo.scorePB1 : '—'}
-                                </strong>
-                              </div>
-                              <div className="flex items-center gap-1 text-[10.5px]">
-                                <span className="text-slate-400 font-sans">GVHĐ 1:</span>{' '}
-                                <span className={scoreInfo.scoreGVHD1 !== null ? 'text-slate-800 font-bold' : 'text-slate-400 font-sans'}>
-                                  {scoreInfo.scoreGVHD1 !== null ? scoreInfo.scoreGVHD1 : '—'}
-                                </span>
-                                <span className="text-slate-300">|</span>
-                                <span className="text-slate-400 font-sans">GVHĐ 2:</span>{' '}
-                                <span className={scoreInfo.scoreGVHD2 !== null ? 'text-slate-800 font-bold' : 'text-slate-400 font-sans'}>
-                                  {scoreInfo.scoreGVHD2 !== null ? scoreInfo.scoreGVHD2 : '—'}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-slate-400 font-sans">Điểm hội đồng (20%):</span>{' '}
-                                {scoreInfo.hasCouncil ? (
-                                  <strong className="text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
-                                    {scoreInfo.scoreCouncil}
-                                  </strong>
-                                ) : scoreInfo.hasTwoCouncilLecturers && (scoreInfo.scoreGVHD1 !== null || scoreInfo.scoreGVHD2 !== null) ? (
-                                  <span className="text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded text-[10px] font-sans border border-amber-200" title="Chờ giảng viên còn lại trong hội đồng chấm điểm để tính trung bình">
-                                    Chờ GV còn lại
-                                  </span>
-                                ) : (
-                                  <span className="text-slate-400 font-normal font-sans">—</span>
+                            {isGroup ? (
+                              <div className="space-y-2">
+                                {renderStudentComponentScores(
+                                  scoreInfo1,
+                                  `SV1: ${item.studentId?.userId?.fullName || 'Sinh viên 1'}`,
+                                  'bg-blue-600'
+                                )}
+                                <div className="border-t border-slate-100" />
+                                {renderStudentComponentScores(
+                                  scoreInfo2,
+                                  `SV2: ${item.secondStudentId?.userId?.fullName || 'Sinh viên 2'}`,
+                                  'bg-indigo-600'
                                 )}
                               </div>
-                            </div>
+                            ) : (
+                              renderStudentComponentScores(scoreInfo, null, 'bg-[#123891]')
+                            )}
                           </td>
 
                           {/* Final Score */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
-                            {scoreInfo.finalScore !== null ? (
-                              <div className="inline-flex flex-col">
-                                <span
-                                  className={`text-base font-extrabold font-mono ${
-                                    scoreInfo.finalScore >= 5.0 ? 'text-emerald-600' : 'text-rose-600'
-                                  }`}
-                                >
-                                  {scoreInfo.finalScore}
-                                </span>
-                                <span className="text-[10px] text-slate-400 font-normal">
-                                  Thang 10
-                                </span>
+                            {isGroup ? (
+                              <div className="space-y-2">
+                                {renderStudentFinalScore(scoreInfo1, 'SV1', 'bg-blue-600')}
+                                <div className="border-t border-slate-100" />
+                                {renderStudentFinalScore(scoreInfo2, 'SV2', 'bg-indigo-600')}
                               </div>
                             ) : (
-                              <span className="text-slate-400 font-normal font-sans text-sm">—</span>
+                              scoreInfo.finalScore !== null ? (
+                                <div className="inline-flex flex-col">
+                                  <span
+                                    className={`text-base font-extrabold font-mono ${
+                                      scoreInfo.finalScore >= 5.0 ? 'text-emerald-600' : 'text-rose-600'
+                                    }`}
+                                  >
+                                    {scoreInfo.finalScore}
+                                  </span>
+                                  <span className="text-[10px] text-slate-400 font-normal">
+                                    Thang 10
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 font-normal font-sans text-sm">—</span>
+                              )
                             )}
                           </td>
 
                           {/* Result (PASS / FAIL) */}
                           <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                            {scoreInfo.isFailed ? (
-                              <span
-                                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200"
-                                title={scoreInfo.failReason}
-                              >
-                                <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                                <span>FAIL (Không đạt)</span>
-                              </span>
-                            ) : scoreInfo.isPassed ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                                <span>PASS (Đạt)</span>
-                              </span>
+                            {isGroup ? (
+                              <div className="space-y-2 flex flex-col items-center">
+                                {renderStudentResult(
+                                  scoreInfo1,
+                                  item.studentId?.userId?.fullName,
+                                  item.studentId?.studentCode,
+                                  'SV1',
+                                  1
+                                )}
+                                <div className="border-t border-slate-100 w-full" />
+                                {renderStudentResult(
+                                  scoreInfo2,
+                                  item.secondStudentId?.userId?.fullName,
+                                  item.secondStudentId?.studentCode,
+                                  'SV2',
+                                  2
+                                )}
+                              </div>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
-                                <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                <span>Chưa có điểm</span>
-                              </span>
+                              renderStudentResult(
+                                scoreInfo,
+                                item.studentId?.userId?.fullName,
+                                item.studentId?.studentCode,
+                                null,
+                                1
+                              )
                             )}
                           </td>
 
@@ -1184,7 +1443,7 @@ const TbmThesisEvaluationManagement = () => {
                                 <Eye className="w-4 h-4" />
                               </button>
 
-{/* Nghiệm thu button */}
+{/* Xác nhận hoàn tất button */}
                               {!isCompleted && isFullyGraded && (
                                 <button
                                   type="button"
@@ -1193,10 +1452,10 @@ const TbmThesisEvaluationManagement = () => {
                                     setCompleteDialogOpen(true);
                                   }}
                                   className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition cursor-pointer"
-                                  title="Hoàn tất đánh giá (Nghiệm thu)"
+                                  title="Hoàn tất đánh giá (Xác nhận)"
                                 >
                                   <Check className="w-3.5 h-3.5" />
-                                  <span>Nghiệm thu</span>
+                                  <span>Xác nhận</span>
                                 </button>
                               )}
                             </div>
@@ -1259,7 +1518,7 @@ const TbmThesisEvaluationManagement = () => {
                       <th className="py-3.5 px-4">Mô tả / Ghi chú</th>
                       <th className="py-3.5 px-4">Tính chất</th>
                       <th className="py-3.5 px-4">Trạng thái</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
+                      <th className="py-3.5 px-4 text-right"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1394,7 +1653,7 @@ const TbmThesisEvaluationManagement = () => {
                       <th className="py-3.5 px-4">Thời gian kết thúc</th>
                       <th className="py-3.5 px-4">Phạm vi thông báo</th>
                       <th className="py-3.5 px-4">Trạng thái</th>
-                      <th className="py-3.5 px-4 text-right">Thao tác</th>
+                      <th className="py-3.5 px-4 text-right"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -1768,12 +2027,25 @@ const TbmThesisEvaluationManagement = () => {
         isOpen={completeDialogOpen}
         onClose={() => setCompleteDialogOpen(false)}
         onConfirm={handleConfirmComplete}
-        title="Xác nhận Nghiệm thu & Hoàn tất Đánh giá KLTN"
-        message={`Bạn có chắc chắn muốn nghiệm thu đề tài "${thesisToComplete?.thesisTitle}"? Đề tài sẽ chuyển sang trạng thái đã hoàn thành và khóa vĩnh viễn không thể chỉnh sửa điểm.`}
-        confirmText="Xác nhận nghiệm thu"
+        title="Xác nhận Hoàn tất Đánh giá KLTN"
+        message={`Bạn có chắc chắn muốn xác nhận đề tài "${thesisToComplete?.thesisTitle}"? Đề tài sẽ chuyển sang trạng thái đã hoàn thành và khóa vĩnh viễn không thể chỉnh sửa điểm.`}
+        confirmText="Xác nhận"
         cancelText="Hủy"
         type="primary"
         loading={actionLoading}
+      />
+
+      {/* DIALOG: CONFIRM UNMARK FAIL */}
+      <ConfirmDialog
+        isOpen={unfailDialogOpen}
+        onClose={() => setUnfailDialogOpen(false)}
+        onConfirm={handleConfirmUnfailStudent}
+        title="Xác nhận bỏ trạng thái rớt"
+        message={`Bạn có muốn bỏ trạng thái rớt cho sinh viên ${unfailTarget.studentName}? Sau khi xác nhận, sinh viên sẽ được đưa về trạng thái bình thường và cho phép giảng viên thực hiện chấm điểm lại.`}
+        confirmText="Xác nhận"
+        cancelText="Hủy bỏ"
+        type="warning"
+        loading={unfailing}
       />
 
       {/* ========================================== */}

@@ -7,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 import StatusBadge from '../../components/common/StatusBadge';
 import UserNameClickable from '../../components/common/UserNameClickable';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import {
   Award,
   CheckCircle2,
@@ -49,6 +50,45 @@ const LecturerThesisEvaluationDetailPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [savingCriteriaOnly, setSavingCriteriaOnly] = useState(false);
   const [error, setError] = useState('');
+  const [confirmFailDialog, setConfirmFailDialog] = useState({
+    isOpen: false,
+    studentIndex: null,
+    studentName: '',
+    loading: false,
+  });
+
+  const handleRequestFailStudent = (studentIndex, studentName) => {
+    setConfirmFailDialog({
+      isOpen: true,
+      studentIndex,
+      studentName,
+      loading: false,
+    });
+  };
+
+  const handleConfirmFailStudent = async () => {
+    if (!thesis?._id || !confirmFailDialog.studentIndex) return;
+    setConfirmFailDialog((prev) => ({ ...prev, loading: true }));
+    try {
+      const res = await thesisApi.markStudentFail(thesis._id, {
+        studentIndex: confirmFailDialog.studentIndex,
+        reason: 'Giảng viên đánh dấu không đạt (Rớt)',
+      });
+      if (res.success) {
+        showToast(`Đã đánh dấu rớt cho sinh viên ${confirmFailDialog.studentName}!`, 'success');
+        if (confirmFailDialog.studentIndex === 1) {
+          setStudent1Score('0');
+        } else {
+          setStudent2Score('0');
+        }
+        setConfirmFailDialog({ isOpen: false, studentIndex: null, studentName: '', loading: false });
+        fetchThesisData();
+      }
+    } catch (err) {
+      showToast(err.message || 'Đánh dấu rớt thất bại', 'error');
+      setConfirmFailDialog((prev) => ({ ...prev, loading: false }));
+    }
+  };
 
   // Progress Reports & Code State
   const [progressData, setProgressData] = useState(null);
@@ -211,23 +251,25 @@ const LecturerThesisEvaluationDetailPage = () => {
 
   const loadRoleData = (t, role) => {
     const isTwo = t?.studentCount === 2 && t?.secondStudentId;
+    const isSv1Failed = Boolean(t?.scores?.isStudent1Failed);
+    const isSv2Failed = Boolean(t?.scores?.isStudent2Failed);
     if (role === 'SUPERVISOR') {
       const s1 = t?.scores?.student1SupervisorScore ?? (!isTwo ? t?.scores?.supervisorScore : null);
       const s2 = t?.scores?.student2SupervisorScore;
-      setStudent1Score(s1 != null ? String(s1) : '');
-      setStudent2Score(s2 != null ? String(s2) : '');
+      setStudent1Score(isSv1Failed ? '0' : (s1 != null ? String(s1) : ''));
+      setStudent2Score(isSv2Failed ? '0' : (s2 != null ? String(s2) : ''));
       setComment(t?.supervisorComment || '');
     } else if (role === 'REVIEWER1') {
       const s1 = t?.scores?.student1Reviewer1Score ?? (!isTwo ? t?.scores?.reviewer1Score : null);
       const s2 = t?.scores?.student2Reviewer1Score;
-      setStudent1Score(s1 != null ? String(s1) : '');
-      setStudent2Score(s2 != null ? String(s2) : '');
+      setStudent1Score(isSv1Failed ? '0' : (s1 != null ? String(s1) : ''));
+      setStudent2Score(isSv2Failed ? '0' : (s2 != null ? String(s2) : ''));
       setComment(t?.reviewer1Comment || '');
     } else if (role === 'REVIEWER2') {
       const s1 = t?.scores?.student1Reviewer2Score ?? (!isTwo ? t?.scores?.reviewer2Score : null);
       const s2 = t?.scores?.student2Reviewer2Score;
-      setStudent1Score(s1 != null ? String(s1) : '');
-      setStudent2Score(s2 != null ? String(s2) : '');
+      setStudent1Score(isSv1Failed ? '0' : (s1 != null ? String(s1) : ''));
+      setStudent2Score(isSv2Failed ? '0' : (s2 != null ? String(s2) : ''));
       setComment(t?.reviewer2Comment || '');
     }
   };
@@ -411,30 +453,63 @@ const LecturerThesisEvaluationDetailPage = () => {
       }
     }
 
-    if (student1Score === '' && (!isTwoStudents || student2Score === '')) {
-      const msg = 'Vui lòng nhập điểm số đánh giá';
-      setError(msg);
-      showToast(msg, 'warning');
-      return;
+    const isSv1Failed = Boolean(thesis?.scores?.isStudent1Failed);
+    const isSv2Failed = Boolean(thesis?.scores?.isStudent2Failed);
+
+    let num1 = null;
+    if (isSv1Failed) {
+      num1 = 0;
+    } else {
+      if (student1Score === '') {
+        const msg = 'Vui lòng nhập điểm số đánh giá cho Sinh viên 1';
+        setError(msg);
+        showToast(msg, 'warning');
+        return;
+      }
+      num1 = Number(student1Score);
+      if (isNaN(num1) || num1 < 0 || num1 > 10) {
+        const msg = 'Điểm số Sinh viên 1 phải từ 0 đến 10';
+        setError(msg);
+        showToast(msg, 'warning');
+        return;
+      }
     }
 
-    const num1 = student1Score !== '' ? Number(student1Score) : null;
-    const num2 = isTwoStudents && student2Score !== '' ? Number(student2Score) : null;
-
-    if (num1 !== null && (isNaN(num1) || num1 < 0 || num1 > 10)) {
-      const msg = 'Điểm số Sinh viên 1 phải từ 0 đến 10';
-      setError(msg);
-      showToast(msg, 'warning');
-      return;
+    let num2 = null;
+    if (isTwoStudents) {
+      if (isSv2Failed) {
+        num2 = 0;
+      } else {
+        if (student2Score === '') {
+          const msg = 'Vui lòng nhập điểm số đánh giá cho Sinh viên 2';
+          setError(msg);
+          showToast(msg, 'warning');
+          return;
+        }
+        num2 = Number(student2Score);
+        if (isNaN(num2) || num2 < 0 || num2 > 10) {
+          const msg = 'Điểm số Sinh viên 2 phải từ 0 đến 10';
+          setError(msg);
+          showToast(msg, 'warning');
+          return;
+        }
+      }
     }
-    if (num2 !== null && (isNaN(num2) || num2 < 0 || num2 > 10)) {
-      const msg = 'Điểm số Sinh viên 2 phải từ 0 đến 10';
-      setError(msg);
-      showToast(msg, 'warning');
-      return;
-    }
 
-    const avg = num1 !== null && num2 !== null ? Number(((num1 + num2) / 2).toFixed(2)) : (num1 ?? num2);
+    let avg = 0;
+    if (isTwoStudents) {
+      if (isSv1Failed && !isSv2Failed) {
+        avg = num2;
+      } else if (isSv2Failed && !isSv1Failed) {
+        avg = num1;
+      } else if (isSv1Failed && isSv2Failed) {
+        avg = 0;
+      } else {
+        avg = num1 !== null && num2 !== null ? Number(((num1 + num2) / 2).toFixed(2)) : (num1 ?? num2 ?? 0);
+      }
+    } else {
+      avg = isSv1Failed ? 0 : num1;
+    }
 
     setSubmitting(true);
     try {
@@ -1116,60 +1191,83 @@ const LecturerThesisEvaluationDetailPage = () => {
 
               <div className={`grid ${isTwoStudents ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'} gap-4`}>
                 {/* Student 1 Box */}
-                <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-blue-300 transition space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#123891] text-xs flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full bg-[#123891]" />
-                      SV 1: {thesis.studentId?.userId?.fullName}
-                    </span>
-                    <span className="text-xs font-mono text-slate-400">
-                      {thesis.studentId?.studentCode}
-                    </span>
-                  </div>
+                {(() => {
+                  const isSv1Failed = Boolean(thesis?.scores?.isStudent1Failed);
+                  const isLocked1 = isFormLocked || isSv1Failed;
+                  return (
+                    <div className={`p-4 rounded-2xl border-2 transition space-y-3 ${isSv1Failed ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#123891] text-xs flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full ${isSv1Failed ? 'bg-rose-500' : 'bg-[#123891]'}`} />
+                          SV 1: {thesis.studentId?.userId?.fullName}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-400">
+                            {thesis.studentId?.studentCode}
+                          </span>
+                          {isSv1Failed ? (
+                            <span className="px-2 py-0.5 text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 rounded-lg">
+                              Đã đánh dấu rớt (0 điểm)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRequestFailStudent(1, thesis.studentId?.userId?.fullName || 'Sinh viên 1')}
+                              className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                              title="Đánh dấu rớt cho sinh viên 1"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Rớt</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="flex items-center gap-3">
-                    <input
-                      ref={input1Ref}
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="10"
-                      value={student1Score}
-                      onChange={(e) => {
-                        if (!isFormLocked) {
-                          setStudent1Score(e.target.value);
-                          setError('');
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          if (isTwoStudents && input2Ref.current) {
-                            input2Ref.current.focus();
-                            input2Ref.current.select();
-                          } else {
-                            commentRef.current?.focus();
-                          }
-                        }
-                      }}
-                      placeholder={isFormLocked ? '—' : '0.0'}
-                      disabled={submitting || isFormLocked}
-                      readOnly={isFormLocked}
-                      className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isFormLocked
-                          ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                          : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
-                        }`}
-                      required
-                    />
+                      <div className="flex items-center gap-3">
+                        <input
+                          ref={input1Ref}
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="10"
+                          value={isSv1Failed ? 0 : student1Score}
+                          onChange={(e) => {
+                            if (!isLocked1) {
+                              setStudent1Score(e.target.value);
+                              setError('');
+                            }
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (isTwoStudents && input2Ref.current) {
+                                input2Ref.current.focus();
+                                input2Ref.current.select();
+                              } else {
+                                commentRef.current?.focus();
+                              }
+                            }
+                          }}
+                          placeholder={isLocked1 ? (isSv1Failed ? '0' : '—') : '0.0'}
+                          disabled={submitting || isLocked1}
+                          readOnly={isLocked1}
+                          className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isLocked1
+                              ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
+                            }`}
+                          required={!isSv1Failed}
+                        />
                     <div className="text-xs text-slate-500">
                       Điểm số / 10
                       <span className="block text-[11px] text-slate-400 font-normal">
-                        {isFormLocked
-                          ? isCriteriaIncompleteForSupervisor
-                            ? 'Khóa: Chưa đạt đủ tiêu chí'
-                            : isPeriodClosed
-                              ? (gradingPeriodInfo.statusText || 'Khóa: Ngoài thời gian nhập điểm')
-                              : 'Không thể chỉnh sửa'
+                        {isLocked1
+                          ? isSv1Failed
+                            ? 'Đã bị đánh dấu rớt (FAIL)'
+                            : isCriteriaIncompleteForSupervisor
+                              ? 'Khóa: Chưa đạt đủ tiêu chí'
+                              : isPeriodClosed
+                                ? (gradingPeriodInfo.statusText || 'Khóa: Ngoài thời gian nhập điểm')
+                                : 'Không thể chỉnh sửa'
                           : isTwoStudents
                             ? 'Nhập điểm SV1 rồi ấn Enter qua SV2'
                             : 'Nhập điểm rồi ấn Enter'}
@@ -1177,67 +1275,92 @@ const LecturerThesisEvaluationDetailPage = () => {
                     </div>
                   </div>
                 </div>
+                  );
+                })()}
 
                 {/* Student 2 Box (if applicable) */}
-                {isTwoStudents && (
-                  <div className="p-4 rounded-2xl bg-white border-2 border-slate-200 hover:border-blue-300 transition space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-[#123891] text-xs flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#123891]" />
-                        SV 2: {thesis.secondStudentId?.userId?.fullName}
-                      </span>
-                      <span className="text-xs font-mono text-slate-400">
-                        {thesis.secondStudentId?.studentCode}
-                      </span>
-                    </div>
+                {isTwoStudents && (() => {
+                  const isSv2Failed = Boolean(thesis?.scores?.isStudent2Failed);
+                  const isLocked2 = isFormLocked || isSv2Failed;
+                  return (
+                    <div className={`p-4 rounded-2xl border-2 transition space-y-3 ${isSv2Failed ? 'bg-rose-50/50 border-rose-200' : 'bg-white border-slate-200 hover:border-blue-300'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-[#123891] text-xs flex items-center gap-2">
+                          <span className={`w-2.5 h-2.5 rounded-full ${isSv2Failed ? 'bg-rose-500' : 'bg-[#123891]'}`} />
+                          SV 2: {thesis.secondStudentId?.userId?.fullName}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-mono text-slate-400">
+                            {thesis.secondStudentId?.studentCode}
+                          </span>
+                          {isSv2Failed ? (
+                            <span className="px-2 py-0.5 text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 rounded-lg">
+                              Đã đánh dấu rớt (0 điểm)
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleRequestFailStudent(2, thesis.secondStudentId?.userId?.fullName || 'Sinh viên 2')}
+                              className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                              title="Đánh dấu rớt cho sinh viên 2"
+                            >
+                              <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                              <span>Rớt</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
 
-                    <div className="flex items-center gap-3">
-                      <input
-                        ref={input2Ref}
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="10"
-                        value={student2Score}
-                        onChange={(e) => {
-                          if (!isFormLocked) {
-                            setStudent2Score(e.target.value);
-                            setError('');
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (commentRef.current) {
-                              commentRef.current.focus();
-                            } else {
-                              handleSubmit(e);
+                      <div className="flex items-center gap-3">
+                        <input
+                          ref={input2Ref}
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="10"
+                          value={isSv2Failed ? 0 : student2Score}
+                          onChange={(e) => {
+                            if (!isLocked2) {
+                              setStudent2Score(e.target.value);
+                              setError('');
                             }
-                          }
-                        }}
-                        placeholder={isFormLocked ? '—' : '0.0'}
-                        disabled={submitting || isFormLocked}
-                        readOnly={isFormLocked}
-                        className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isFormLocked
-                            ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                            : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
-                          }`}
-                      />
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              if (commentRef.current) {
+                                commentRef.current.focus();
+                              } else {
+                                handleSubmit(e);
+                              }
+                            }
+                          }}
+                          placeholder={isLocked2 ? (isSv2Failed ? '0' : '—') : '0.0'}
+                          disabled={submitting || isLocked2}
+                          readOnly={isLocked2}
+                          className={`w-24 h-14 text-center border-2 rounded-2xl text-xl font-mono font-extrabold transition ${isLocked2
+                              ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+                              : 'bg-blue-50/40 border-blue-200 text-[#123891] focus:bg-white focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-[#123891]'
+                            }`}
+                        />
                       <div className="text-xs text-slate-500">
                         Điểm số / 10
                         <span className="block text-[11px] text-slate-400 font-normal">
-                          {isFormLocked
-                            ? isCriteriaIncompleteForSupervisor
-                              ? 'Khóa: Chưa đạt đủ tiêu chí'
-                              : isPeriodClosed
-                                ? (gradingPeriodInfo.statusText || 'Khóa: Ngoài thời gian nhập điểm')
-                                : 'Không thể chỉnh sửa'
+                          {isLocked2
+                            ? isSv2Failed
+                              ? 'Đã bị đánh dấu rớt (FAIL)'
+                              : isCriteriaIncompleteForSupervisor
+                                ? 'Khóa: Chưa đạt đủ tiêu chí'
+                                : isPeriodClosed
+                                  ? (gradingPeriodInfo.statusText || 'Khóa: Ngoài thời gian nhập điểm')
+                                  : 'Không thể chỉnh sửa'
                             : 'Nhập điểm SV2 rồi ấn Enter để lưu'}
                         </span>
                       </div>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
 
@@ -1378,6 +1501,19 @@ const LecturerThesisEvaluationDetailPage = () => {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modal: Mark Student Fail */}
+      <ConfirmDialog
+        isOpen={confirmFailDialog.isOpen}
+        title="Xác nhận đánh dấu rớt sinh viên"
+        message={`Bạn có chắc chắn muốn đánh dấu rớt cho sinh viên ${confirmFailDialog.studentName}? Thao tác này sẽ tự động gán 0 điểm và khóa chấm điểm của sinh viên này.`}
+        confirmText="Xác nhận rớt"
+        cancelText="Hủy bỏ"
+        isDanger={true}
+        loading={confirmFailDialog.loading}
+        onConfirm={handleConfirmFailStudent}
+        onClose={() => setConfirmFailDialog({ isOpen: false, studentIndex: null, studentName: '', loading: false })}
+      />
     </div>
   );
 };

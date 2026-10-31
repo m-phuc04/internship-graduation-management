@@ -439,6 +439,133 @@ const clearAllCouncils = async ({ academicTermId } = {}) => {
   return { message: "Đã xóa toàn bộ dữ liệu phòng hội đồng thành công" };
 };
 
+// ====================
+// 8. Bulk Update Report Date for All Councils
+// ====================
+const bulkUpdateReportDate = async (
+  { academicTermId, reportDate, reportStartTime, reportEndTime, reportTime },
+  userId
+) => {
+  if (!reportDate) {
+    throw new AppError("Ngày báo cáo là bắt buộc", 400);
+  }
+
+  const query = {};
+  if (
+    academicTermId &&
+    academicTermId !== "ALL" &&
+    academicTermId !== "default" &&
+    mongoose.Types.ObjectId.isValid(academicTermId)
+  ) {
+    query.academicTermId = academicTermId;
+  }
+
+  const dateObj = new Date(reportDate);
+  if (isNaN(dateObj.getTime())) {
+    throw new AppError("Định dạng ngày báo cáo không hợp lệ", 400);
+  }
+
+  const parts = typeof reportDate === "string" ? reportDate.split("-") : [];
+  const datePartVN =
+    parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : "";
+
+  const councils = await Council.find(query);
+  for (const c of councils) {
+    c.reportDate = dateObj;
+    if (reportStartTime) c.reportStartTime = reportStartTime;
+    if (reportEndTime) c.reportEndTime = reportEndTime;
+
+    let sTime = reportStartTime || c.reportStartTime || "08:00";
+    let eTime = reportEndTime || c.reportEndTime || "11:30";
+    if (reportTime) {
+      c.reportTime = reportTime;
+    } else if (datePartVN) {
+      c.reportTime = `${sTime} - ${eTime}, ${datePartVN}`;
+    }
+    await c.save();
+  }
+
+  return getCouncils({ academicTermId });
+};
+
+// ====================
+// 9. Batch Assign Theses to Council (Max 5 theses rule)
+// ====================
+const batchAssignTheses = async ({ councilId, thesisIds = [] }, userId) => {
+  if (!mongoose.Types.ObjectId.isValid(councilId)) {
+    throw new AppError("ID phòng hội đồng không hợp lệ", 400);
+  }
+
+  const council = await Council.findById(councilId);
+  if (!council) {
+    throw new AppError("Không tìm thấy phòng hội đồng", 404);
+  }
+
+  if (isCouncilReportTimeExpired(council)) {
+    throw new AppError(
+      "Phòng hội đồng đã kết thúc thời gian báo cáo, không thể thay đổi phân công",
+      400
+    );
+  }
+
+  // Ràng buộc 1: Giới hạn tối đa 5 đề tài / phòng
+  if (thesisIds.length > 5) {
+    throw new AppError(
+      "Mỗi phòng hội đồng chỉ được phép chứa tối đa 5 đề tài!",
+      400
+    );
+  }
+
+  // 1. Unassign all theses currently assigned to this council that are not in the new thesisIds list
+  await Thesis.updateMany(
+    { councilId: council._id, _id: { $nin: thesisIds } },
+    { $set: { councilId: null } }
+  );
+
+  // 2. Validate and assign each thesis in thesisIds
+  for (const tid of thesisIds) {
+    if (!mongoose.Types.ObjectId.isValid(tid)) continue;
+    const thesis = await Thesis.findById(tid);
+    if (!thesis) continue;
+
+    // Ràng buộc 2: Khớp hình thức báo cáo
+    // (Oral room chỉ gán đề tài Oral, Poster room chỉ gán đề tài Poster)
+    // Sẽ được validate từ frontend map và kiểm tra nếu có reportFormat trên thesis
+
+    // Ràng buộc 3: Kiểm tra xung đột lợi ích (GVHD không được là thành viên hội đồng)
+    const supId = String(thesis.supervisorId);
+    const hasConflict = (council.lecturers || []).some(
+      (l) => String(l.lecturerId) === supId
+    );
+    if (hasConflict) {
+      throw new AppError(
+        `Đề tài "${thesis.thesisTitle}" có GVHD là thành viên hội đồng ${council.name}, không thể phân công!`,
+        400
+      );
+    }
+
+    // Kiểm tra điểm đạt điều kiện
+    const scoreHD =
+      thesis.scores?.supervisorScore ?? thesis.scores?.student1SupervisorScore;
+    if (
+      scoreHD !== null &&
+      scoreHD !== undefined &&
+      !isNaN(scoreHD) &&
+      Number(scoreHD) < 4.0
+    ) {
+      throw new AppError(
+        `Đề tài "${thesis.thesisTitle}" có điểm GVHD < 4.0 (Không đạt), không thể phân công vào hội đồng.`,
+        400
+      );
+    }
+
+    thesis.councilId = council._id;
+    await thesis.save();
+  }
+
+  return { message: "Phân công đề tài vào hội đồng thành công" };
+};
+
 export default {
   getCouncils,
   getCouncilById,
@@ -447,4 +574,6 @@ export default {
   deleteCouncil,
   assignCouncilToThesis,
   clearAllCouncils,
+  bulkUpdateReportDate,
+  batchAssignTheses,
 };

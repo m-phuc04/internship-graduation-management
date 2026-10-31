@@ -34,6 +34,11 @@ const thesisSchema = new mongoose.Schema(
       default: 1,
     },
 
+    fields: {
+      type: [String],
+      default: [],
+    },
+
     thesisTitle: {
       type: String,
       required: [true, "Tên đề tài là bắt buộc"],
@@ -220,6 +225,14 @@ const thesisSchema = new mongoose.Schema(
       isSupervisorScoreLocked: { type: Boolean, default: false },
       isReviewer1ScoreLocked: { type: Boolean, default: false },
       isReviewer2ScoreLocked: { type: Boolean, default: false },
+      isStudent1Failed: { type: Boolean, default: false },
+      isStudent2Failed: { type: Boolean, default: false },
+      student1FailReason: { type: String, default: null },
+      student2FailReason: { type: String, default: null },
+      student1FailedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Lecturer", default: null },
+      student2FailedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Lecturer", default: null },
+      student1FailedAt: { type: Date, default: null },
+      student2FailedAt: { type: Date, default: null },
     },
 
     criteriaEvaluations: [

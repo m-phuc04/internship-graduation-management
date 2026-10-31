@@ -339,6 +339,22 @@ router.get(
   thesisController.getAssignedThesesForLecturer,
 );
 
+// Lecturer / TBM / Admin: Mark student fail independently (KLTN)
+router.patch(
+  "/:id/fail-student",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.markStudentFail,
+);
+
+// Lecturer / TBM / Admin: Unmark student fail (Bỏ đánh rớt)
+router.patch(
+  "/:id/unfail-student",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  thesisController.unmarkStudentFail,
+);
+
 // Lecturer / Admin: Grade thesis with strict role-based score isolation
 router.patch(
   "/:id/grade",
@@ -408,6 +424,14 @@ router.get(
   authMiddleware,
   authorizeRoles("TBM", "ADMIN"),
   thesisController.exportTheses,
+);
+
+// TBM: Auto Assign Reviewers By Field
+router.post(
+  "/auto-assign-reviewers",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  thesisController.autoAssignReviewersByField,
 );
 
 // TBM: Get all Theses with Search & Filter

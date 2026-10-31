@@ -4,6 +4,7 @@ import thesisApi from '../../api/thesisApi';
 import internshipApi from '../../api/internshipApi';
 import thesisProgressApi from '../../api/thesisProgressApi';
 import councilApi from '../../api/councilApi';
+import researchFieldApi from '../../api/researchFieldApi';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
@@ -100,6 +101,22 @@ const LecturerThesesPage = () => {
   const [batchDescription, setBatchDescription] = useState('');
   const [createTopicLoading, setCreateTopicLoading] = useState(false);
   const [selectedTopicDetail, setSelectedTopicDetail] = useState(null);
+  const [systemFields, setSystemFields] = useState([]);
+  const [selectedTopicFields, setSelectedTopicFields] = useState([]);
+
+  useEffect(() => {
+    const fetchSystemFields = async () => {
+      try {
+        const res = await researchFieldApi.getAllFields();
+        if (res.success && Array.isArray(res.data)) {
+          setSystemFields(res.data.map((f) => (typeof f === 'string' ? f : f.name)).filter(Boolean));
+        }
+      } catch (err) {
+        console.warn('Cannot load research fields:', err.message);
+      }
+    };
+    fetchSystemFields();
+  }, []);
 
   // Edit & Delete Topic States (Lecturer requests -> TBM approves)
   const [editTopicModalOpen, setEditTopicModalOpen] = useState(false);
@@ -227,6 +244,13 @@ const LecturerThesesPage = () => {
 
   // Dedicated Grade Box Modal State
   const [gradeBoxOpen, setGradeBoxOpen] = useState(false);
+  const [confirmFailDialog, setConfirmFailDialog] = useState({
+    isOpen: false,
+    thesis: null,
+    studentIndex: null,
+    studentName: '',
+    loading: false,
+  });
   const [gradeBoxThesis, setGradeBoxThesis] = useState(null);
   const [gradeBoxRole, setGradeBoxRole] = useState('SUPERVISOR'); // 'SUPERVISOR', 'REVIEWER1', 'REVIEWER2'
   const [gradeSv1, setGradeSv1] = useState('');
@@ -513,6 +537,7 @@ const LecturerThesesPage = () => {
         topicListRaw: batchTitleInput.trim(),
         defaultDescription: batchDescription.trim() || '',
         academicTermId: targetTermId,
+        fields: selectedTopicFields,
       });
 
       if (res.success) {
@@ -520,6 +545,7 @@ const LecturerThesesPage = () => {
         setCreateTopicModalOpen(false);
         setBatchTitleInput('');
         setBatchDescription('');
+        setSelectedTopicFields([]);
         fetchMyTopics();
       }
     } catch (err) {
@@ -1061,6 +1087,44 @@ const LecturerThesesPage = () => {
     };
   };
 
+  const handleRequestFailStudent = (thesis, studentIndex, studentName) => {
+    setConfirmFailDialog({
+      isOpen: true,
+      thesis,
+      studentIndex,
+      studentName,
+      loading: false,
+    });
+  };
+
+  const handleConfirmFailStudent = async () => {
+    if (!confirmFailDialog.thesis || !confirmFailDialog.studentIndex) return;
+    setConfirmFailDialog((prev) => ({ ...prev, loading: true }));
+    try {
+      const res = await thesisApi.markStudentFail(confirmFailDialog.thesis._id, {
+        studentIndex: confirmFailDialog.studentIndex,
+        reason: 'Giảng viên đánh dấu không đạt (Rớt)',
+      });
+      if (res.success) {
+        showToast(`Đã đánh dấu rớt cho sinh viên ${confirmFailDialog.studentName}!`, 'success');
+        if (gradeBoxThesis && gradeBoxThesis._id === confirmFailDialog.thesis._id) {
+          const updated = res.data || confirmFailDialog.thesis;
+          setGradeBoxThesis(updated);
+          if (confirmFailDialog.studentIndex === 1) {
+            setGradeSv1('0');
+          } else {
+            setGradeSv2('0');
+          }
+        }
+        setConfirmFailDialog({ isOpen: false, thesis: null, studentIndex: null, studentName: '', loading: false });
+        fetchAssignedTheses(true);
+      }
+    } catch (err) {
+      showToast(err.message || 'Đánh dấu rớt thất bại', 'error');
+      setConfirmFailDialog((prev) => ({ ...prev, loading: false }));
+    }
+  };
+
   // Open Grade Box Modal
   const handleOpenGradeBox = (thesis, targetRole = null) => {
     const role =
@@ -1136,8 +1200,10 @@ const LecturerThesesPage = () => {
       c = myEntry?.comment || '';
     }
 
-    setGradeSv1(s1 !== '' && s1 !== null && s1 !== undefined ? String(s1) : '');
-    setGradeSv2(s2 !== '' && s2 !== null && s2 !== undefined ? String(s2) : '');
+    const isSv1Failed = Boolean(thesis.scores?.isStudent1Failed);
+    const isSv2Failed = Boolean(thesis.scores?.isStudent2Failed);
+    setGradeSv1(isSv1Failed ? '0' : (s1 !== '' && s1 !== null && s1 !== undefined ? String(s1) : ''));
+    setGradeSv2(isSv2Failed ? '0' : (s2 !== '' && s2 !== null && s2 !== undefined ? String(s2) : ''));
     setGradeComment(c || '');
     setGradeBoxOpen(true);
   };
@@ -1151,33 +1217,55 @@ const LecturerThesesPage = () => {
     }
 
     const isTwo = gradeBoxThesis.studentCount === 2 && gradeBoxThesis.secondStudentId;
+    const isSv1Failed = Boolean(gradeBoxThesis.scores?.isStudent1Failed);
+    const isSv2Failed = Boolean(gradeBoxThesis.scores?.isStudent2Failed);
 
-    // Validation: SV1 score is strictly required
-    if (gradeSv1 === '' || gradeSv1 === null || gradeSv1 === undefined) {
-      showToast('Vui lòng nhập điểm cho Sinh viên 1 (SV1)!', 'warning');
-      return;
-    }
-    const val1 = Number(gradeSv1);
-    if (isNaN(val1) || val1 < 0 || val1 > 10) {
-      showToast('Điểm số SV1 phải là số hợp lệ từ 0 đến 10', 'warning');
-      return;
+    let val1 = null;
+    if (isSv1Failed) {
+      val1 = 0;
+    } else {
+      if (gradeSv1 === '' || gradeSv1 === null || gradeSv1 === undefined) {
+        showToast('Vui lòng nhập điểm cho Sinh viên 1 (SV1)!', 'warning');
+        return;
+      }
+      val1 = Number(gradeSv1);
+      if (isNaN(val1) || val1 < 0 || val1 > 10) {
+        showToast('Điểm số SV1 phải là số hợp lệ từ 0 đến 10', 'warning');
+        return;
+      }
     }
 
-    // Validation: SV2 score is strictly required if 2 students
     let val2 = null;
     if (isTwo) {
-      if (gradeSv2 === '' || gradeSv2 === null || gradeSv2 === undefined) {
-        showToast('Vui lòng nhập điểm cho Sinh viên 2 (SV2)!', 'warning');
-        return;
-      }
-      val2 = Number(gradeSv2);
-      if (isNaN(val2) || val2 < 0 || val2 > 10) {
-        showToast('Điểm số SV2 phải là số hợp lệ từ 0 đến 10', 'warning');
-        return;
+      if (isSv2Failed) {
+        val2 = 0;
+      } else {
+        if (gradeSv2 === '' || gradeSv2 === null || gradeSv2 === undefined) {
+          showToast('Vui lòng nhập điểm cho Sinh viên 2 (SV2)!', 'warning');
+          return;
+        }
+        val2 = Number(gradeSv2);
+        if (isNaN(val2) || val2 < 0 || val2 > 10) {
+          showToast('Điểm số SV2 phải là số hợp lệ từ 0 đến 10', 'warning');
+          return;
+        }
       }
     }
 
-    const avgScore = isTwo && val2 !== null ? Number(((val1 + val2) / 2).toFixed(2)) : val1;
+    let avgScore = 0;
+    if (isTwo) {
+      if (isSv1Failed && !isSv2Failed) {
+        avgScore = val2;
+      } else if (isSv2Failed && !isSv1Failed) {
+        avgScore = val1;
+      } else if (isSv1Failed && isSv2Failed) {
+        avgScore = 0;
+      } else {
+        avgScore = val1 !== null && val2 !== null ? Number(((val1 + val2) / 2).toFixed(2)) : (val1 ?? val2 ?? 0);
+      }
+    } else {
+      avgScore = isSv1Failed ? 0 : val1;
+    }
 
     setGradeSaving(true);
     try {
@@ -1756,7 +1844,8 @@ const LecturerThesesPage = () => {
       topic.title?.toLowerCase().includes(q) ||
       topic.description?.toLowerCase().includes(q) ||
       topic.supervisor?.fullName?.toLowerCase().includes(q) ||
-      topic.supervisor?.lecturerCode?.toLowerCase().includes(q)
+      topic.supervisor?.lecturerCode?.toLowerCase().includes(q) ||
+      (Array.isArray(topic.fields) && topic.fields.some((f) => f?.toLowerCase().includes(q)))
     );
   });
 
@@ -1766,144 +1855,74 @@ const LecturerThesesPage = () => {
     return (
       topic.title?.toLowerCase().includes(q) ||
       topic.description?.toLowerCase().includes(q) ||
-      topic.rejectionReason?.toLowerCase().includes(q)
+      topic.rejectionReason?.toLowerCase().includes(q) ||
+      (Array.isArray(topic.fields) && topic.fields.some((f) => f?.toLowerCase().includes(q)))
     );
   });
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div
-              className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${
-                isTopicsView
-                  ? 'bg-gradient-to-tr from-[#123891] to-[#1B4DA1] shadow-blue-200'
-                  : isReviewView
-                    ? 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
-                    : isEvaluationView
-                      ? 'bg-gradient-to-tr from-amber-500 to-[#123891] shadow-amber-200'
-                      : 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
-              }`}
-            >
-              {isTopicsView ? (
-                <BookOpen className="w-7 h-7" />
-              ) : isReviewView ? (
-                isCouncilTab ? <Award className="w-7 h-7" /> : <Shield className="w-7 h-7" />
-              ) : isEvaluationView ? (
-                <Award className="w-7 h-7" />
-              ) : (
-                <Users className="w-7 h-7" />
-              )}
+      {isTopicsView ? (
+        /* ========================================================================= */
+        /* KHỐI CARD DUY NHẤT: QUẢN LÝ ĐỀ XUẤT ĐỀ TÀI KHÓA LUẬN                     */
+        /* ========================================================================= */
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          {/* Header Card */}
+          <div className="p-6 pb-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-13 h-13 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white bg-gradient-to-tr from-[#123891] to-[#1B4DA1] shadow-blue-200">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                      Danh Sách Đề Tài Khóa Luận Tốt Nghiệp
+                    </h2>
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
+                    <span>
+                      Giảng viên:{' '}
+                      <strong className="text-slate-800">
+                        {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
+                        {lecturerInfo?.userId?.fullName || user?.fullName}
+                      </strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Mã GV:{' '}
+                      <strong className="font-mono text-[#102d7d]">
+                        {lecturerInfo?.lecturerCode || user?.username}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  {isTopicsView
-                    ? 'Danh Sách Đề Tài Khóa Luận Tốt Nghiệp'
-                    : isReviewView
-                      ? isCouncilTab
-                        ? 'Chấm Điểm Phản Biện Hội Đồng (20%)'
-                        : 'Chấm Điểm Phản Biện Khóa Luận (GVPB - 30%)'
-                      : isEvaluationView
-                        ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 50%)'
-                        : 'Đề tài hướng dẫn'}
-                </h2>
-                {!isTopicsView && (
-                  <span
-                    className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
-                      isReviewView
-                        ? isCouncilTab
-                          ? 'bg-blue-50 text-[#102d7d] border-blue-200'
-                          : 'bg-blue-50 text-[#102d7d] border-blue-200'
-                        : isEvaluationView
-                          ? 'bg-amber-50 text-amber-700 border-amber-200'
-                          : 'bg-blue-50 text-[#102d7d] border-blue-200'
-                    }`}
-                  >
-                    {isReviewView
-                      ? isCouncilTab
-                        ? 'PHẢN BIỆN HỘI ĐỒNG (20%)'
-                        : 'PHẢN BIỆN KÍN (GVPB 1 & GVPB 2 - 30%)'
-                      : isEvaluationView
-                        ? 'ĐÁNH GIÁ (50%)'
-                        : 'HƯỚNG DẪN (50%)'}
+
+            {/* Past/Non-active Term Notification Banner */}
+            {!isActiveTerm && (
+              <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs mt-4">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <div className="flex-1">
+                  <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
+                  <span className="ml-1 text-amber-800">
+                    Học kỳ này không ở trạng thái đang diễn ra.
                   </span>
-                )}
+                </div>
               </div>
-              <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
-                <span>
-                  Giảng viên:{' '}
-                  <strong className="text-slate-800">
-                    {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
-                    {lecturerInfo?.userId?.fullName || user?.fullName}
-                  </strong>
-                </span>
-                <span>•</span>
-                <span>
-                  Mã GV:{' '}
-                  <strong className="font-mono text-[#102d7d]">
-                    {lecturerInfo?.lecturerCode || user?.username}
-                  </strong>
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5">
-            {isTopicsView && isActiveTerm && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSelectedTermForCreation(currentTerm?._id || (terms && terms[0]?._id) || '');
-                  setCreateTopicModalOpen(true);
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition bg-blue-600 hover:bg-blue-700 text-white shadow-md shadow-blue-200 cursor-pointer"
-                title="Đề xuất đề tài KLTN"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span>+ Đề xuất đề tài KLTN</span>
-              </button>
             )}
-
-            <button
-              onClick={() => {
-                fetchAssignedTheses();
-                fetchMyTopics();
-                fetchApprovedTopics();
-              }}
-              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-              title="Làm mới"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
           </div>
-        </div>
 
-        {/* Past/Non-active Term Notification Banner */}
-        {!isActiveTerm && (
-          <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs mt-4">
-            <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
-            <div className="flex-1">
-              <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
-              <span className="ml-1 text-amber-800">
-                Học kỳ này không ở trạng thái đang diễn ra.
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Sub-Tabs for Topics View */}
-        {isTopicsView && (
-          <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2">
+          {/* Navigation Sub-Tabs */}
+          <div className="px-6 border-b border-slate-200 flex items-center gap-2">
             <button
               type="button"
               onClick={() => setTopicsSubTab('MY_PROPOSALS')}
               className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
                 topicsSubTab === 'MY_PROPOSALS'
-                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-xl'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl'
               }`}
             >
               <FileText className="w-4 h-4" />
@@ -1920,8 +1939,8 @@ const LecturerThesesPage = () => {
               onClick={() => setTopicsSubTab('APPROVED_BANK')}
               className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
                 topicsSubTab === 'APPROVED_BANK'
-                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-xl'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl'
               }`}
             >
               <BookOpen className="w-4 h-4" />
@@ -1933,357 +1952,470 @@ const LecturerThesesPage = () => {
               </span>
             </button>
           </div>
-        )}
 
-        {/* Navigation Tabs for Review Section */}
-        {isReviewView && (
-          <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2">
-            <button
-              type="button"
-              onClick={() => navigate('/lecturer/theses?tab=review')}
-              className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
-                !isCouncilTab
-                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
-              }`}
-            >
-              <Shield className="w-4 h-4" />
-              <span>Phản biện kín (GVPB 1 & GVPB 2)</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
-                !isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
-              }`}>
-                {filteredReviewer1Theses.length + filteredReviewer2Theses.length} đề tài
-              </span>
-            </button>
+          {/* Toolbar: Tìm kiếm, Học kỳ & Nút Đề xuất đề tài */}
+          <div className="p-4 sm:px-6 bg-slate-50/50 border-b border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="w-full sm:w-80 md:w-96">
+              <SearchInput
+                value={search}
+                onChange={(val) => setSearch(val)}
+                placeholder="Tìm tên đề tài, giảng viên, mô tả..."
+              />
+            </div>
 
-            <button
-              type="button"
-              onClick={() => navigate('/lecturer/theses?tab=council')}
-              className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
-                isCouncilTab
-                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
-              }`}
-            >
-              <Award className="w-4 h-4" />
-              <span>Phản biện Hội đồng</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
-                isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
-              }`}>
-                {councilTheses.length} đề tài
-              </span>
-            </button>
+            <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+              {/* Academic Term Selector */}
+              <select
+                value={currentTerm?._id || ''}
+                onChange={(e) => {
+                  if (setCurrentTerm && e.target.value) {
+                    setCurrentTerm(e.target.value);
+                  }
+                }}
+                className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+              >
+                {Array.isArray(terms) && terms.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
+                  </option>
+                ))}
+              </select>
+
+              {/* Nút Đề xuất đề tài */}
+              {isActiveTerm && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedTermForCreation(currentTerm?._id || (terms && terms[0]?._id) || '');
+                    setSelectedTopicFields([]);
+                    setCreateTopicModalOpen(true);
+                  }}
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-[#123891] hover:bg-[#102d7d] text-white shadow-xs hover:shadow cursor-pointer shrink-0"
+                  title="Đề xuất đề tài"
+                >
+                  <span>Đề xuất đề tài</span>
+                </button>
+              )}
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Action & Search Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="w-full sm:w-96">
-          <SearchInput
-            value={search}
-            onChange={(val) => setSearch(val)}
-            placeholder={
-              isTopicsView
-                ? 'Tìm tên đề tài, giảng viên, mô tả...'
-                : 'Tìm MSSV, Tên SV, Tên đề tài...'
-            }
-          />
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
-          {/* Academic Term Selector */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
-            <select
-              value={currentTerm?._id || ''}
-              onChange={(e) => {
-                if (setCurrentTerm && e.target.value) {
-                  setCurrentTerm(e.target.value);
-                }
-              }}
-              className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
-            >
-              {Array.isArray(terms) && terms.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Table Area */}
-      {isTopicsView ? (
-        topicsSubTab === 'MY_PROPOSALS' ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            {loadingMyTopics ? (
-              <div className="p-6">
-                <LoadingSkeleton rows={5} cols={7} />
-              </div>
-            ) : filteredMyTopics.length === 0 ? (
-              <div className="p-12 text-center space-y-3">
-                <BookOpen className="w-12 h-12 mx-auto text-slate-300" />
-                <div className="text-sm font-bold text-slate-700">
-                  {myTopics.length === 0
-                    ? 'Bạn chưa đề xuất đề tài nào trong học kỳ này'
-                    : 'Không tìm thấy đề tài phù hợp với từ khóa'}
+          {/* Table Area for Topics View */}
+          {topicsSubTab === 'MY_PROPOSALS' ? (
+            <div>
+              {loadingMyTopics ? (
+                <div className="p-6">
+                  <LoadingSkeleton rows={5} cols={7} />
                 </div>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  {myTopics.length === 0
-                    ? isActiveTerm
-                      ? 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
-                      : 'Học kỳ này không có đề tài đề xuất nào.'
-                    : 'Thử thay đổi từ khóa tìm kiếm để tìm đề tài mong muốn.'}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                      <th className="py-3.5 px-4 text-center w-12">STT</th>
-                      <th className="py-3.5 px-4 min-w-[240px]">Tên đề tài KLTN</th>
-                      <th className="py-3.5 px-4 whitespace-nowrap">Học kỳ</th>
-                      <th className="py-3.5 px-4 whitespace-nowrap text-center">Trạng thái duyệt</th>
-                      <th className="py-3.5 px-4 min-w-[200px]">Mô tả / Phản hồi</th>
-                      <th className="py-3.5 px-4 whitespace-nowrap text-center">Ngày tạo</th>
-                      <th className="py-3.5 px-4 whitespace-nowrap text-right">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredMyTopics.map((topic, idx) => {
-                      const termName = topic.academicTermId?.name || currentTerm?.name || 'Học kỳ';
-                      const isPendingEdit = topic.editRequest?.status === 'PENDING';
-                      const isPendingDelete = topic.deleteRequest?.status === 'PENDING';
+              ) : filteredMyTopics.length === 0 ? (
+                <div className="p-12 text-center space-y-3">
+                  <BookOpen className="w-12 h-12 mx-auto text-slate-300" />
+                  <div className="text-sm font-bold text-slate-700">
+                    {myTopics.length === 0
+                      ? 'Bạn chưa đề xuất đề tài nào trong học kỳ này'
+                      : 'Không tìm thấy đề tài phù hợp với từ khóa'}
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    {myTopics.length === 0
+                      ? isActiveTerm
+                        ? 'Bấm nút "Đề xuất đề tài" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'
+                        : 'Học kỳ này không có đề tài đề xuất nào.'
+                      : 'Thử thay đổi từ khóa tìm kiếm để tìm đề tài mong muốn.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                        <th className="py-3.5 px-4 text-center w-12">STT</th>
+                        <th className="py-3.5 px-4 min-w-[240px]">Tên đề tài KLTN</th>
+                        <th className="py-3.5 px-4 min-w-[140px]">Lĩnh vực</th>
+                        <th className="py-3.5 px-4 min-w-[180px]">Giảng viên</th>
+                        <th className="py-3.5 px-4 min-w-[200px]">Mô tả tóm tắt</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-center">Ngày tạo</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-right">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredMyTopics.map((topic, idx) => {
+                        const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+                        const maxCount = topic.maxGroups || 1;
+                        const isLocked = topic.isFull || currentCount >= maxCount || (topic.registeredGroups && topic.registeredGroups.length > 0);
+                        const lecturerName = topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName || (user?._id === topic.supervisorId ? user?.fullName : user?.fullName || '—');
+                        const lecturerCode = topic.supervisor?.lecturerCode || topic.supervisorId?.lecturerCode || user?.username;
 
-                      return (
-                        <tr key={topic._id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                            {idx + 1}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedTopicDetail(topic)}
-                              className="text-left group cursor-pointer"
-                              title="Bấm để xem chi tiết đề tài"
-                            >
-                              <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
-                                {topic.title}
-                              </span>
-                            </button>
-                            {isPendingEdit && (
-                              <div className="mt-1 text-[11px] text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 inline-flex items-center gap-1">
-                                <Clock className="w-3 h-3 text-amber-600" />
-                                <span>Đang yêu cầu đổi tên: <strong>"{topic.editRequest?.newTitle}"</strong> (Chờ TBM duyệt)</span>
-                              </div>
-                            )}
-                            {isPendingDelete && (
-                              <div className="mt-1 text-[11px] text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200 inline-flex items-center gap-1">
-                                <AlertCircle className="w-3 h-3 text-rose-600" />
-                                <span>Đang yêu cầu xóa đề tài (Chờ TBM duyệt)</span>
-                              </div>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
-                              {termName}
-                            </span>
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap text-center">
-                            <div className="flex flex-col items-center gap-1">
-                              {topic.status === 'APPROVED' ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Đã duyệt</span>
-                                </span>
-                              ) : topic.status === 'REJECTED' ? (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-[#c5221f] border border-rose-200">
-                                  <X className="w-3.5 h-3.5" />
-                                  <span>Từ chối</span>
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                                  <Clock className="w-3.5 h-3.5" />
-                                  <span>Chờ TBM duyệt</span>
-                                </span>
-                              )}
-                              {isPendingEdit && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
-                                  Chờ duyệt sửa
-                                </span>
-                              )}
-                              {isPendingDelete && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-rose-100 text-rose-800 border border-rose-300">
-                                  Chờ duyệt xóa
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="py-3.5 px-4 max-w-xs text-slate-600">
-                            {topic.status === 'REJECTED' && topic.rejectionReason ? (
-                              <div className="text-rose-600 text-xs font-medium bg-rose-50 p-2 rounded-lg border border-rose-100">
-                                <strong>Lý do từ chối:</strong> {topic.rejectionReason}
-                              </div>
-                            ) : topic.editRequest?.status === 'REJECTED' && topic.editRequest?.rejectReason ? (
-                              <div className="text-amber-700 text-[11px] font-medium bg-amber-50 p-1.5 rounded-lg border border-amber-200">
-                                <strong>Yêu cầu sửa bị từ chối:</strong> {topic.editRequest.rejectReason}
-                              </div>
-                            ) : topic.deleteRequest?.status === 'REJECTED' && topic.deleteRequest?.rejectReason ? (
-                              <div className="text-rose-700 text-[11px] font-medium bg-rose-50 p-1.5 rounded-lg border border-rose-200">
-                                <strong>Yêu cầu xóa bị từ chối:</strong> {topic.deleteRequest.rejectReason}
-                              </div>
-                            ) : (
-                              <span className="truncate block">{topic.description || <span className="italic text-slate-400">Không có mô tả</span>}</span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap text-center text-slate-500 font-mono text-[11px]">
-                            {formatDate(topic.createdAt)}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                            <div className="flex items-center justify-end gap-1.5">
+                        return (
+                          <tr key={topic._id} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3.5 px-4">
                               <button
                                 type="button"
                                 onClick={() => setSelectedTopicDetail(topic)}
-                                className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition cursor-pointer"
-                                title="Xem chi tiết đề tài"
+                                className="text-left group cursor-pointer"
+                                title="Bấm để xem chi tiết đề tài"
                               >
-                                <Eye className="w-4 h-4" />
+                                <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
+                                  {topic.title}
+                                </span>
                               </button>
-
-                              {isActiveTerm && (
-                                <>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenEditTopic(topic)}
-                                    disabled={isPendingEdit || isPendingDelete}
-                                    className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                    title={isPendingEdit ? 'Đang chờ TBM duyệt yêu cầu sửa' : 'Chỉnh sửa đề tài'}
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                  </button>
-
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenDeleteTopic(topic)}
-                                    disabled={isPendingDelete || isPendingEdit}
-                                    className="p-1.5 text-rose-600 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-                                    title={isPendingDelete ? 'Đang chờ TBM duyệt yêu cầu xóa' : 'Xóa đề tài'}
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </>
+                            </td>
+                            <td className="py-3.5 px-4 min-w-[140px]">
+                              {Array.isArray(topic.fields) && topic.fields.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                  {topic.fields.map((f, fIdx) => (
+                                    <span
+                                      key={fIdx}
+                                      className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    >
+                                      {f}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Chưa gắn lĩnh vực</span>
                               )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            {loadingApprovedTopics ? (
-              <div className="p-6">
-                <LoadingSkeleton rows={5} cols={6} />
-              </div>
-            ) : filteredApprovedTopics.length === 0 ? (
-              <div className="p-12 text-center space-y-3">
-                <BookOpen className="w-12 h-12 mx-auto text-slate-300" />
-                <div className="text-sm font-bold text-slate-700">
-                  {approvedTopics.length === 0
-                    ? 'Chưa có đề tài nào được duyệt trong học kỳ này'
-                    : 'Không tìm thấy đề tài phù hợp với bộ lọc'}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-slate-800">
+                                {lecturerName}
+                              </div>
+                              {lecturerCode && (
+                                <span className="text-slate-400 font-mono text-[11px]">
+                                  {lecturerCode}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
+                              {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center text-slate-500 font-mono text-[11px]">
+                              {formatDate(topic.createdAt)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                              {topic.status === 'PENDING' ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                  <span>Chờ duyệt</span>
+                                </span>
+                              ) : topic.status === 'REJECTED' ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]">
+                                  <span>Từ chối</span>
+                                </span>
+                              ) : isLocked ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]">
+                                  <span>Đã khóa</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span>Cho phép đăng ký</span>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
                 </div>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  {approvedTopics.length === 0
-                    ? isActiveTerm
-                    : 'Bấm nút "+ Đề xuất đề tài KLTN" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'}
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                      <th className="py-3.5 px-4 text-center w-12">STT</th>
-                      <th className="py-3.5 px-4 min-w-[240px]">Tên đề tài KLTN</th>
-                      <th className="py-3.5 px-4 min-w-[180px]">Giảng viên</th>
-                      <th className="py-3.5 px-4 min-w-[200px]">Mô tả tóm tắt</th>
-                      <th className="py-3.5 px-4 whitespace-nowrap text-center">Ngày tạo</th>
-                      <th className="py-3.5 px-4 whitespace-nowrap text-right">Trạng thái</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredApprovedTopics.map((topic, idx) => {
-                      const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
-                      const maxCount = topic.maxGroups || 1;
-                      const isLocked = topic.isFull || currentCount >= maxCount || (topic.registeredGroups && topic.registeredGroups.length > 0);
-                      const lecturerName = topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName || (user?._id === topic.supervisorId ? user?.fullName : '—');
-                      const lecturerCode = topic.supervisor?.lecturerCode || topic.supervisorId?.lecturerCode;
+              )}
+            </div>
+          ) : (
+            <div>
+              {loadingApprovedTopics ? (
+                <div className="p-6">
+                  <LoadingSkeleton rows={5} cols={7} />
+                </div>
+              ) : filteredApprovedTopics.length === 0 ? (
+                <div className="p-12 text-center space-y-3">
+                  <BookOpen className="w-12 h-12 mx-auto text-slate-300" />
+                  <div className="text-sm font-bold text-slate-700">
+                    {approvedTopics.length === 0
+                      ? 'Chưa có đề tài nào được duyệt trong học kỳ này'
+                      : 'Không tìm thấy đề tài phù hợp với bộ lọc'}
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-md mx-auto">
+                    {approvedTopics.length === 0
+                      ? isActiveTerm
+                      : 'Bấm nút "Đề xuất đề tài" ở trên để tạo đề tài mới gửi Trưởng Bộ Môn xét duyệt.'}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                        <th className="py-3.5 px-4 text-center w-12">STT</th>
+                        <th className="py-3.5 px-4 min-w-[240px]">Tên đề tài KLTN</th>
+                        <th className="py-3.5 px-4 min-w-[140px]">Lĩnh vực</th>
+                        <th className="py-3.5 px-4 min-w-[180px]">Giảng viên</th>
+                        <th className="py-3.5 px-4 min-w-[200px]">Mô tả tóm tắt</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-center">Ngày tạo</th>
+                        <th className="py-3.5 px-4 whitespace-nowrap text-right">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredApprovedTopics.map((topic, idx) => {
+                        const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+                        const maxCount = topic.maxGroups || 1;
+                        const isLocked = topic.isFull || currentCount >= maxCount || (topic.registeredGroups && topic.registeredGroups.length > 0);
+                        const lecturerName = topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName || (user?._id === topic.supervisorId ? user?.fullName : '—');
+                        const lecturerCode = topic.supervisor?.lecturerCode || topic.supervisorId?.lecturerCode;
 
-                      return (
-                        <tr key={topic._id} className="hover:bg-slate-50/80 transition">
-                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                            {idx + 1}
-                          </td>
-                          <td className="py-3.5 px-4">
-                            <button
-                              type="button"
-                              onClick={() => setSelectedTopicDetail(topic)}
-                              className="text-left group cursor-pointer"
-                              title="Bấm để xem chi tiết đề tài"
-                            >
-                              <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
-                                {topic.title}
-                              </span>
-                            </button>
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="font-semibold text-slate-800">
-                              {lecturerName}
-                            </div>
-                            {lecturerCode && (
-                              <span className="text-slate-400 font-mono text-[11px]">
-                                {lecturerCode}
-                              </span>
-                            )}
-                          </td>
-                          <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
-                            {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap text-center text-slate-500 font-mono text-[11px]">
-                            {formatDate(topic.createdAt)}
-                          </td>
-                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                            {isLocked ? (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]">
-                                <Lock className="w-3.5 h-3.5" />
-                                <span>Đã khóa</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <Unlock className="w-3.5 h-3.5" />
-                                <span>Cho phép đăng ký</span>
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                        return (
+                          <tr key={topic._id} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedTopicDetail(topic)}
+                                className="text-left group cursor-pointer"
+                                title="Bấm để xem chi tiết đề tài"
+                              >
+                                <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
+                                  {topic.title}
+                                </span>
+                              </button>
+                            </td>
+                            <td className="py-3.5 px-4 min-w-[140px]">
+                              {Array.isArray(topic.fields) && topic.fields.length > 0 ? (
+                                <div className="flex flex-wrap gap-1 max-w-[200px]">
+                                  {topic.fields.map((f, fIdx) => (
+                                    <span
+                                      key={fIdx}
+                                      className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    >
+                                      {f}
+                                    </span>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-slate-400 italic text-[11px]">Chưa gắn lĩnh vực</span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap">
+                              <div className="font-semibold text-slate-800">
+                                {lecturerName}
+                              </div>
+                              {lecturerCode && (
+                                <span className="text-slate-400 font-mono text-[11px]">
+                                  {lecturerCode}
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
+                              {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-center text-slate-500 font-mono text-[11px]">
+                              {formatDate(topic.createdAt)}
+                            </td>
+                            <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                              {topic.status === 'PENDING' ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                                  <span>Chờ duyệt</span>
+                                </span>
+                              ) : topic.status === 'REJECTED' ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]">
+                                  <span>Từ chối</span>
+                                </span>
+                              ) : isLocked ? (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-[#fce8e6] text-[#c5221f] border border-[#fad2cf]">
+                                  <span>Đã khóa</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span>Cho phép đăng ký</span>
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Top Banner */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div
+                  className={`w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white ${
+                    isReviewView
+                      ? 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
+                      : isEvaluationView
+                        ? 'bg-gradient-to-tr from-amber-500 to-[#123891] shadow-amber-200'
+                        : 'bg-gradient-to-tr from-[#0d2a75] to-[#123891] shadow-blue-200'
+                  }`}
+                >
+                  {isReviewView ? (
+                    isCouncilTab ? <Award className="w-7 h-7" /> : <Shield className="w-7 h-7" />
+                  ) : isEvaluationView ? (
+                    <Award className="w-7 h-7" />
+                  ) : (
+                    <Users className="w-7 h-7" />
+                  )}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2.5">
+                    <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                      {isReviewView
+                        ? isCouncilTab
+                          ? 'Chấm Điểm Phản Biện Hội Đồng (20%)'
+                          : 'Chấm Điểm Phản Biện Khóa Luận (GVPB - 30%)'
+                        : isEvaluationView
+                          ? 'Đánh Giá Khóa Luận Tốt Nghiệp (GVHD - 50%)'
+                          : 'Đề tài hướng dẫn'}
+                    </h2>
+                    <span
+                      className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${
+                        isReviewView
+                          ? isCouncilTab
+                            ? 'bg-blue-50 text-[#102d7d] border-blue-200'
+                            : 'bg-blue-50 text-[#102d7d] border-blue-200'
+                          : isEvaluationView
+                            ? 'bg-amber-50 text-amber-700 border-amber-200'
+                            : 'bg-blue-50 text-[#102d7d] border-blue-200'
+                      }`}
+                    >
+                      {isReviewView
+                        ? isCouncilTab
+                          ? 'PHẢN BIỆN HỘI ĐỒNG (20%)'
+                          : 'PHẢN BIỆN KÍN (GVPB 1 & GVPB 2 - 30%)'
+                        : isEvaluationView
+                          ? 'ĐÁNH GIÁ (50%)'
+                          : 'HƯỚNG DẪN (50%)'}
+                    </span>
+                  </div>
+                  <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
+                    <span>
+                      Giảng viên:{' '}
+                      <strong className="text-slate-800">
+                        {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
+                        {lecturerInfo?.userId?.fullName || user?.fullName}
+                      </strong>
+                    </span>
+                    <span>•</span>
+                    <span>
+                      Mã GV:{' '}
+                      <strong className="font-mono text-[#102d7d]">
+                        {lecturerInfo?.lecturerCode || user?.username}
+                      </strong>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => {
+                    fetchAssignedTheses();
+                    fetchMyTopics();
+                    fetchApprovedTopics();
+                  }}
+                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                  title="Làm mới"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Past/Non-active Term Notification Banner */}
+            {!isActiveTerm && (
+              <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200/90 rounded-2xl text-amber-900 text-xs shadow-2xs mt-4">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <div className="flex-1">
+                  <span className="font-bold">Đang xem học kỳ ({currentTerm?.name || 'Học kỳ'} • {currentTerm?.academicYear || ''}):</span>
+                  <span className="ml-1 text-amber-800">
+                    Học kỳ này không ở trạng thái đang diễn ra.
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Tabs for Review Section */}
+            {isReviewView && (
+              <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2">
+                <button
+                  type="button"
+                  onClick={() => navigate('/lecturer/theses?tab=review')}
+                  className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
+                    !isCouncilTab
+                      ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+                  }`}
+                >
+                  <Shield className="w-4 h-4" />
+                  <span>Phản biện kín (GVPB 1 & GVPB 2)</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                    !isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {filteredReviewer1Theses.length + filteredReviewer2Theses.length} đề tài
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => navigate('/lecturer/theses?tab=council')}
+                  className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
+                    isCouncilTab
+                      ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                      : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+                  }`}
+                >
+                  <Award className="w-4 h-4" />
+                  <span>Phản biện Hội đồng</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                    isCouncilTab ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {councilTheses.length} đề tài
+                  </span>
+                </button>
               </div>
             )}
           </div>
-        )
-      ) : isReviewView ? (
-        isCouncilTab ? (
+
+          {/* Action & Search Bar */}
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="w-full sm:w-96">
+              <SearchInput
+                value={search}
+                onChange={(val) => setSearch(val)}
+                placeholder="Tìm MSSV, Tên SV, Tên đề tài..."
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+              {/* Academic Term Selector */}
+              <select
+                value={currentTerm?._id || ''}
+                onChange={(e) => {
+                  if (setCurrentTerm && e.target.value) {
+                    setCurrentTerm(e.target.value);
+                  }
+                }}
+                className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+              >
+                {Array.isArray(terms) && terms.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Main Table Area */}
+          {isReviewView ? (
+            isCouncilTab ? (
           !effectiveActiveCouncil ? (
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs p-12 text-center space-y-3">
               <Award className="w-12 h-12 mx-auto text-slate-300" />
@@ -3335,6 +3467,8 @@ const LecturerThesesPage = () => {
           )}
         </div>
       )}
+    </>
+  )}
 
       {/* ========================================================================= */}
       {/* MODAL: CHẤM ĐIỂM (BOX POPUP NHẬP ĐIỂM SV1 & SV2) */}
@@ -3439,15 +3573,32 @@ const LecturerThesesPage = () => {
             <form onSubmit={handleConfirmGradeBox} className="space-y-4">
               <div className="space-y-3">
                 {/* SV 1 Input */}
-                <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
+                <div className={`p-3.5 rounded-2xl border space-y-2 ${gradeBoxThesis.scores?.isStudent1Failed ? 'bg-rose-50/50 border-rose-200' : 'bg-blue-50/60 border-blue-100'}`}>
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-bold text-[#123891] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#123891]" />
+                      <span className={`w-2 h-2 rounded-full ${gradeBoxThesis.scores?.isStudent1Failed ? 'bg-rose-500' : 'bg-[#123891]'}`} />
                       SV1: {gradeBoxThesis.studentId?.userId?.fullName || 'Sinh viên 1'}
                     </span>
-                    <span className="font-mono text-slate-500 text-[11px]">
-                      MSSV: {gradeBoxThesis.studentId?.studentCode || '—'}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-slate-500 text-[11px]">
+                        MSSV: {gradeBoxThesis.studentId?.studentCode || '—'}
+                      </span>
+                      {gradeBoxThesis.scores?.isStudent1Failed ? (
+                        <span className="px-2 py-0.5 text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 rounded-lg">
+                          Đã đánh dấu rớt (0 điểm)
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleRequestFailStudent(gradeBoxThesis, 1, gradeBoxThesis.studentId?.userId?.fullName || 'Sinh viên 1')}
+                          className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                          title="Đánh dấu rớt cho sinh viên này"
+                        >
+                          <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                          <span>Rớt</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
@@ -3458,26 +3609,44 @@ const LecturerThesesPage = () => {
                       step="0.1"
                       min="0"
                       max="10"
-                      required
-                      value={gradeSv1}
+                      required={!gradeBoxThesis.scores?.isStudent1Failed}
+                      disabled={Boolean(gradeBoxThesis.scores?.isStudent1Failed)}
+                      value={gradeBoxThesis.scores?.isStudent1Failed ? 0 : gradeSv1}
                       onChange={(e) => setGradeSv1(e.target.value)}
-                      placeholder="Nhập điểm từ 0 - 10..."
-                      className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-sm font-bold font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]"
+                      placeholder={gradeBoxThesis.scores?.isStudent1Failed ? '0 (Đã rớt)' : 'Nhập điểm từ 0 - 10...'}
+                      className={`w-full px-3 py-2 border rounded-xl text-sm font-bold font-mono focus:outline-none ${gradeBoxThesis.scores?.isStudent1Failed ? 'bg-slate-100 text-rose-700 border-rose-200 cursor-not-allowed' : 'bg-white border-blue-200 text-slate-900 focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]'}`}
                     />
                   </div>
                 </div>
 
                 {/* SV 2 Input (If 2 students) */}
                 {gradeBoxThesis.studentCount === 2 && gradeBoxThesis.secondStudentId && (
-                  <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
+                  <div className={`p-3.5 rounded-2xl border space-y-2 ${gradeBoxThesis.scores?.isStudent2Failed ? 'bg-rose-50/50 border-rose-200' : 'bg-blue-50/60 border-blue-100'}`}>
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-bold text-[#123891] flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-[#123891]" />
+                        <span className={`w-2 h-2 rounded-full ${gradeBoxThesis.scores?.isStudent2Failed ? 'bg-rose-500' : 'bg-[#123891]'}`} />
                         SV2: {gradeBoxThesis.secondStudentId?.userId?.fullName || 'Sinh viên 2'}
                       </span>
-                      <span className="font-mono text-slate-500 text-[11px]">
-                        MSSV: {gradeBoxThesis.secondStudentId?.studentCode || '—'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-slate-500 text-[11px]">
+                          MSSV: {gradeBoxThesis.secondStudentId?.studentCode || '—'}
+                        </span>
+                        {gradeBoxThesis.scores?.isStudent2Failed ? (
+                          <span className="px-2 py-0.5 text-[11px] font-bold bg-rose-100 text-rose-700 border border-rose-200 rounded-lg">
+                            Đã đánh dấu rớt (0 điểm)
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRequestFailStudent(gradeBoxThesis, 2, gradeBoxThesis.secondStudentId?.userId?.fullName || 'Sinh viên 2')}
+                            className="px-2.5 py-1 text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition flex items-center gap-1 cursor-pointer"
+                            title="Đánh dấu rớt cho sinh viên này"
+                          >
+                            <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
+                            <span>Rớt</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-3">
                       <label className="text-xs font-bold text-slate-700 whitespace-nowrap">
@@ -3488,11 +3657,12 @@ const LecturerThesesPage = () => {
                         step="0.1"
                         min="0"
                         max="10"
-                        required
-                        value={gradeSv2}
+                        required={!gradeBoxThesis.scores?.isStudent2Failed}
+                        disabled={Boolean(gradeBoxThesis.scores?.isStudent2Failed)}
+                        value={gradeBoxThesis.scores?.isStudent2Failed ? 0 : gradeSv2}
                         onChange={(e) => setGradeSv2(e.target.value)}
-                        placeholder="Nhập điểm từ 0 - 10..."
-                        className="w-full px-3 py-2 bg-white border border-blue-200 rounded-xl text-sm font-bold font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]"
+                        placeholder={gradeBoxThesis.scores?.isStudent2Failed ? '0 (Đã rớt)' : 'Nhập điểm từ 0 - 10...'}
+                        className={`w-full px-3 py-2 border rounded-xl text-sm font-bold font-mono focus:outline-none ${gradeBoxThesis.scores?.isStudent2Failed ? 'bg-slate-100 text-rose-700 border-rose-200 cursor-not-allowed' : 'bg-white border-blue-200 text-slate-900 focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891]'}`}
                       />
                     </div>
                   </div>
@@ -4096,8 +4266,11 @@ const LecturerThesesPage = () => {
               </div>
               <button
                 type="button"
-                onClick={() => setCreateTopicModalOpen(false)}
-                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition"
+                onClick={() => {
+                  setCreateTopicModalOpen(false);
+                  setSelectedTopicFields([]);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-700 rounded-xl transition cursor-pointer"
               >
                 ✕
               </button>
@@ -4105,40 +4278,22 @@ const LecturerThesesPage = () => {
 
             <form onSubmit={handleBatchCreateTopics} className="space-y-4">
               <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Danh sách tên đề tài (Mỗi đề tài 1 dòng hoặc cách nhau bằng dấu phẩy) <span className="text-rose-500">*</span>
+                <div className="mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Danh sách tên đề tài <span className="text-rose-500">*</span>
                   </label>
-                  <span className="text-[11px] text-blue-600 font-semibold bg-blue-50 px-2 py-0.5 rounded">
-                    Tạo hàng loạt
-                  </span>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    (Mỗi đề tài 1 dòng hoặc cách nhau bằng dấu phẩy)
+                  </p>
                 </div>
                 <textarea
-                  rows={6}
+                  rows={1}
                   value={batchTitleInput}
                   onChange={(e) => setBatchTitleInput(e.target.value)}
                   placeholder="Nhập tên đề tài"
                   required
-                  className="w-full p-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition"
+                  className="w-full min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition resize-y"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Học kỳ áp dụng <span className="text-rose-500">*</span>
-                </label>
-                <select
-                  value={selectedTermForCreation || currentTerm?._id || ''}
-                  onChange={(e) => setSelectedTermForCreation(e.target.value)}
-                  required
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                >
-                  {Array.isArray(terms) && terms.map((t) => (
-                    <option key={t._id} value={t._id}>
-                      {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : ''}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <div>
@@ -4147,13 +4302,64 @@ const LecturerThesesPage = () => {
                 </label>
                 <div className="px-3.5 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-500" />
-                  <span>{user?.fullName} ({user?.username})</span>
+                  <span>{user?.fullName}</span>
                 </div>
+              </div>
+
+              {/* Lĩnh vực nghiên cứu */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                    Lĩnh vực nghiên cứu
+                  </label>
+                  {selectedTopicFields.length > 0 && (
+                    <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                      Đã chọn {selectedTopicFields.length} lĩnh vực
+                    </span>
+                  )}
+                </div>
+
+                {systemFields.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-xl border border-slate-200">
+                    Chưa có danh mục lĩnh vực nào trên hệ thống
+                  </p>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5 p-3 bg-slate-50 border border-slate-200 rounded-2xl max-h-40 overflow-y-auto">
+                    {systemFields.map((fName) => {
+                      const isSelected = selectedTopicFields.includes(fName);
+                      return (
+                        <button
+                          key={fName}
+                          type="button"
+                          onClick={() => {
+                            setSelectedTopicFields((prev) =>
+                              prev.includes(fName)
+                                ? prev.filter((item) => item !== fName)
+                                : [...prev, fName]
+                            );
+                          }}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer select-none ${
+                            isSelected
+                              ? 'bg-[#123891] text-white border-[#123891] shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                          ) : (
+                            <span className="w-3.5 h-3.5 rounded border border-slate-300 shrink-0 inline-block" />
+                          )}
+                          <span>{fName}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                  Mô tả / Yêu cầu chung cho các đề tài
+                  Mô tả
                 </label>
                 <textarea
                   rows={3}
@@ -4167,15 +4373,18 @@ const LecturerThesesPage = () => {
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setCreateTopicModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                  onClick={() => {
+                    setCreateTopicModalOpen(false);
+                    setSelectedTopicFields([]);
+                  }}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={createTopicLoading}
-                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
                 >
                   {createTopicLoading ? 'Đang tạo...' : 'Gửi đề xuất đề tài'}
                 </button>
@@ -4217,6 +4426,23 @@ const LecturerThesesPage = () => {
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên đề tài</label>
                 <div className="text-sm font-bold text-slate-900 mt-1">{selectedTopicDetail.title}</div>
               </div>
+
+              {/* Lĩnh vực */}
+              {Array.isArray(selectedTopicDetail.fields) && selectedTopicDetail.fields.length > 0 && (
+                <div>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lĩnh vực nghiên cứu</label>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedTopicDetail.fields.map((f, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                      >
+                        {f}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {selectedTopicDetail.description && (
                 <div>
@@ -4613,6 +4839,19 @@ const LecturerThesesPage = () => {
           setDeleteTopicDialogOpen(false);
           setSelectedTopicForDelete(null);
         }}
+      />
+
+      {/* Confirmation Modal: Mark Student Fail */}
+      <ConfirmDialog
+        isOpen={confirmFailDialog.isOpen}
+        title="Xác nhận đánh dấu rớt sinh viên"
+        message={`Bạn có chắc chắn muốn đánh dấu rớt cho sinh viên ${confirmFailDialog.studentName}? Thao tác này sẽ tự động gán 0 điểm và khóa chấm điểm của sinh viên này.`}
+        confirmText="Xác nhận rớt"
+        cancelText="Hủy bỏ"
+        isDanger={true}
+        loading={confirmFailDialog.loading}
+        onConfirm={handleConfirmFailStudent}
+        onClose={() => setConfirmFailDialog({ isOpen: false, thesis: null, studentIndex: null, studentName: '', loading: false })}
       />
 
       {/* Modal: Xem Nhật ký & Tiến độ Sinh viên */}

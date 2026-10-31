@@ -249,6 +249,26 @@ const assignReviewers = async (req, res, next) => {
   }
 };
 
+// ====================
+// TBM: Auto Assign Reviewers By Field
+// ====================
+const autoAssignReviewersByField = async (req, res, next) => {
+  try {
+    const result = await thesisService.autoAssignReviewersByField({
+      academicTermId: req.body?.academicTermId || req.query?.academicTermId,
+      tbmUserId: req.user.userId,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // ==========================================
 // PHASE 11: LECTURER / REVIEWER CONTROLLERS
 // ==========================================
@@ -302,6 +322,51 @@ const gradeThesisByLecturer = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: "Chấm điểm và lưu đánh giá đề tài khóa luận thành công",
+      data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Lecturer / TBM / Admin: Mark Student Fail Independently
+// ====================
+const markStudentFail = async (req, res, next) => {
+  try {
+    const { studentIndex, reason } = req.body;
+    const thesis = await thesisService.markStudentFail(req.params.id, {
+      studentIndex: Number(studentIndex),
+      failReason: reason,
+      requestingUserId: req.user.userId || req.user._id,
+      userRole: req.user.role,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Đã đánh dấu rớt cho sinh viên ${Number(studentIndex) === 2 ? '2' : '1'} thành công`,
+      data: thesis,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Lecturer / TBM / Admin: Unmark Student Fail (Bỏ đánh rớt)
+// ====================
+const unmarkStudentFail = async (req, res, next) => {
+  try {
+    const { studentIndex } = req.body;
+    const thesis = await thesisService.unmarkStudentFail(req.params.id, {
+      studentIndex: Number(studentIndex),
+      requestingUserId: req.user.userId || req.user._id,
+      userRole: req.user.role,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Đã bỏ trạng thái rớt cho sinh viên ${Number(studentIndex) === 2 ? '2' : '1'} thành công`,
       data: thesis,
     });
   } catch (error) {
@@ -1134,11 +1199,14 @@ export default {
   rejectThesis,
   assignSupervisor,
   assignReviewers,
+  autoAssignReviewersByField,
   supervisorAcceptThesis,
   supervisorRejectThesis,
   supervisorCancelThesis,
   getAssignedThesesForLecturer,
   gradeThesisByLecturer,
+  markStudentFail,
+  unmarkStudentFail,
   evaluateThesisCriteriaBySupervisor,
   toggleThesisScoreLock,
   toggleAllThesisScoresLock,

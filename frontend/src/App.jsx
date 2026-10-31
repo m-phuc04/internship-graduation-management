@@ -29,17 +29,20 @@ import TbmEvaluationManagement from './pages/tbm/TbmEvaluationManagement';
 import TbmThesisManagement from './pages/tbm/TbmThesisManagement';
 import TbmThesisEvaluationManagement from './pages/tbm/TbmThesisEvaluationManagement';
 import TbmDashboard from './pages/tbm/TbmDashboard';
+import TbmLecturerFieldsPage from './pages/tbm/TbmLecturerFieldsPage';
 import MyInternshipPage from './pages/student/MyInternshipPage';
 import StudentInternshipDocumentsPage from './pages/student/StudentInternshipDocumentsPage';
 import RegisterInternshipPage from './pages/student/RegisterInternshipPage';
 import StudentReportPage from './pages/student/StudentReportPage';
 import MyThesisPage from './pages/student/MyThesisPage';
+import StudentThesisDocumentsPage from './pages/student/StudentThesisDocumentsPage';
 import RegisterThesisPage from './pages/student/RegisterThesisPage';
 import StudentThesisProgressPage from './pages/student/StudentThesisProgressPage';
 import StudentDashboard from './pages/student/StudentDashboard';
 import LecturerInternshipPage from './pages/lecturer/LecturerInternshipPage';
 import LecturerReportPage from './pages/lecturer/LecturerReportPage';
 import LecturerThesesPage from './pages/lecturer/LecturerThesesPage';
+import LecturerThesisDocumentsPage from './pages/lecturer/LecturerThesisDocumentsPage';
 import LecturerThesisProgressPage from './pages/lecturer/LecturerThesisProgressPage';
 import LecturerThesisEvaluationDetailPage from './pages/lecturer/LecturerThesisEvaluationDetailPage';
 import LecturerDashboard from './pages/lecturer/LecturerDashboard';
@@ -162,6 +165,7 @@ function App() {
                 <Route path="evaluations" element={<TbmEvaluationManagement />} />
                 <Route path="theses" element={<TbmThesisManagement />} />
                 <Route path="thesis-evaluations" element={<TbmThesisEvaluationManagement />} />
+                <Route path="fields" element={<TbmLecturerFieldsPage />} />
                 <Route path="news" element={<LecturerNewsManagement />} />
                 <Route path="profile" element={<ProfilePage />} />
               </Route>
@@ -181,6 +185,7 @@ function App() {
               <Route path="internship" element={<MyInternshipPage />} />
               <Route path="internship/register" element={<RegisterInternshipPage />} />
               <Route path="reports" element={<StudentReportPage />} />
+              <Route path="thesis/documents" element={<StudentThesisDocumentsPage />} />
               <Route path="thesis" element={<MyThesisPage />} />
               <Route path="thesis/register" element={<RegisterThesisPage />} />
               <Route path="thesis/progress" element={<StudentThesisProgressPage />} />
@@ -201,6 +206,7 @@ function App() {
               <Route path="internships" element={<LecturerInternshipPage />} />
               <Route path="reports" element={<LecturerReportPage />} />
               <Route path="theses" element={<LecturerThesesPage />} />
+              <Route path="theses/documents" element={<LecturerThesisDocumentsPage />} />
               <Route path="theses/:id/evaluate" element={<LecturerThesisEvaluationDetailPage />} />
               <Route path="theses/:id" element={<LecturerThesisEvaluationDetailPage />} />
               <Route path="theses/progress" element={<LecturerThesisProgressPage />} />

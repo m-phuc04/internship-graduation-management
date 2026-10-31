@@ -198,7 +198,7 @@ const ExportModal = ({
                 <option value="">Tất cả giảng viên</option>
                 {lecturers.map((l) => (
                   <option key={l._id} value={l._id}>
-                    {l.academicTitle ? `${l.academicTitle}. ` : ''}{l.userId?.fullName || l.fullName} ({l.lecturerCode})
+                    {l.academicTitle ? `${l.academicTitle}. ` : ''}{l.userId?.fullName || l.fullName}
                   </option>
                 ))}
               </select>

@@ -120,7 +120,7 @@ const StudentThesisProgressPage = () => {
 
       // Automatically unlock when real time arrives, or week 1, or has progress, or next actionable week
       const isTimeUnlocked = now >= new Date(currentStart);
-      const isUnlocked = weekNum === 1 || isTimeUnlocked || !!foundP || weekNum <= maxUnlockedWeek;
+      const isUnlocked = true;
 
       all.push({
         weekNumber: weekNum,
@@ -138,9 +138,7 @@ const StudentThesisProgressPage = () => {
       weekNum++;
     }
 
-    // Only show unlocked weeks (unlocked weeks based on duration)
-    const unlocked = all.filter((w) => w.isUnlocked);
-    return { generatedWeeks: unlocked, allGeneratedWeeks: all };
+    return { generatedWeeks: all, allGeneratedWeeks: all };
   };
 
   const fetchProgress = useCallback(async () => {
@@ -514,12 +512,6 @@ const StudentThesisProgressPage = () => {
 
   const totalWeeksCount = allWeeks.length || stats.totalWeeks || weeks.length || 1;
   const latestReport = progressList && progressList.length > 0 ? progressList[progressList.length - 1] : null;
-  const overallPercentage =
-    stats.avgPercentage !== undefined && stats.avgPercentage !== null && stats.avgPercentage > 0
-      ? stats.avgPercentage
-      : latestReport?.completionPercentage !== undefined && latestReport?.completionPercentage !== null
-      ? latestReport.completionPercentage
-      : Math.round(((stats.approved || 0) / totalWeeksCount) * 100);
 
   return (
     <div className="space-y-6">
@@ -563,10 +555,26 @@ const StudentThesisProgressPage = () => {
               <button
                 type="button"
                 onClick={() => setExportModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm transition"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm transition cursor-pointer"
               >
                 <Printer className="w-4 h-4" />
                 <span>Xuất nhật ký</span>
+              </button>
+            )}
+
+            {thesis && eligibilityInfo.eligible && (
+              <button
+                type="button"
+                onClick={() => {
+                  const targetWeek = weeks.find((w) => !w.progress) || weeks[0];
+                  if (targetWeek) {
+                    handleOpenWriteModal(targetWeek);
+                  }
+                }}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Thêm nhật ký</span>
               </button>
             )}
           </div>
@@ -632,7 +640,7 @@ const StudentThesisProgressPage = () => {
             </div>
 
             {/* Stats Summary Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80">
                 <div className="text-[11px] text-slate-500 font-medium">Tổng số tuần KLTN</div>
                 <div className="text-lg font-bold text-slate-900 font-mono mt-0.5">
@@ -662,16 +670,6 @@ const StudentThesisProgressPage = () => {
                 </div>
                 <div className="text-[10.5px] text-amber-600 font-medium mt-0.5">
                   bản ghi
-                </div>
-              </div>
-
-              <div className="p-3 rounded-2xl bg-blue-50/80 border border-blue-200/80">
-                <div className="text-[11px] text-[#102d7d] font-medium">Tiến độ tổng thể</div>
-                <div className="text-lg font-bold text-[#102d7d] font-mono mt-0.5">
-                  {overallPercentage}%
-                </div>
-                <div className="text-[10.5px] text-[#123891] font-medium mt-0.5">
-                  {stats.approved > 0 ? `Đã duyệt ${stats.approved}/${totalWeeksCount} tuần` : 'ước tính theo báo cáo'}
                 </div>
               </div>
             </div>
@@ -798,19 +796,48 @@ const StudentThesisProgressPage = () => {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      {hasProgress ? (
-                        <>
-                          <span className="text-xs font-mono font-bold text-slate-700 bg-slate-50 px-2.5 py-1 rounded-lg border border-slate-200">
-                            Tiến độ: {p.completionPercentage}%
-                          </span>
-                          <StatusBadge status={p.status} size="sm" />
-                        </>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {/* Tag 1: Trạng thái nộp / chấm điểm */}
+                      {p?.lecturerScore !== null && p?.lecturerScore !== undefined && p?.lecturerScore !== '' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Đã chấm điểm: {Number(p.lecturerScore).toFixed(1).replace('.0', '')}/10
+                        </span>
+                      ) : hasProgress && p?.status !== 'DRAFT' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                          Đã nộp
+                        </span>
+                      ) : p?.status === 'DRAFT' ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                          Bản nháp
+                        </span>
                       ) : (
-                        <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
                           Chưa nộp
                         </span>
                       )}
+
+                      {/* Tag 2: Thời gian (Tự động xét) */}
+                      {(() => {
+                        let isLate = false;
+                        if (week.endDate) {
+                          const deadline = new Date(week.endDate);
+                          deadline.setHours(23, 59, 59, 999);
+                          if (hasProgress && (p.submittedAt || p.createdAt)) {
+                            isLate = new Date(p.submittedAt || p.createdAt) > deadline;
+                          } else {
+                            isLate = new Date() > deadline;
+                          }
+                        }
+                        return isLate ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            Nộp trễ
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Đúng hạn
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
 
@@ -951,27 +978,16 @@ const StudentThesisProgressPage = () => {
                         </div>
                       )}
 
-                      {/* Action 2A: Write / Rewrite diary when REJECTED by supervisor */}
-                      {hasProgress && isRejected && (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenWriteModal(week)}
-                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition"
-                        >
-                          <PlusCircle className="w-3.5 h-3.5" />
-                          <span>Viết nhật ký</span>
-                        </button>
-                      )}
-
-                      {/* Action 2B: Edit diary (for author when DRAFT or NEEDS_REVISION) */}
-                      {hasProgress && (isDraft || isNeedsRevision) && isAuthor && (
+                      {/* Action 2: Update diary for any existing progress */}
+                      {hasProgress && (
                         <button
                           type="button"
                           onClick={() => handleOpenWriteModal(week)}
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs transition"
+                          title="Cập nhật nội dung nhật ký tuần này"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
-                          <span>Chỉnh sửa & Gửi lại</span>
+                          <span>Cập nhật</span>
                         </button>
                       )}
 
@@ -1045,9 +1061,6 @@ const StudentThesisProgressPage = () => {
 
               <div className="flex items-center gap-2">
                 <StatusBadge status={selectedProgress.status} size="md" />
-                <span className="font-mono font-bold text-[#102d7d] bg-white px-2.5 py-1 rounded-xl border border-blue-200">
-                  {selectedProgress.completionPercentage}%
-                </span>
               </div>
             </div>
 
@@ -1225,21 +1238,46 @@ const StudentThesisProgressPage = () => {
             </div>
           )}
 
-          {/* Week Info header */}
-          <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between">
+          {/* Week Selector dropdown & Info header */}
+          <div className="space-y-3">
             <div>
-              <span className="font-bold text-[#123891] text-sm">
-                {currentWeek?.label}
-              </span>
-              <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                Thời gian: {formatDate(currentWeek?.startDate)} - {formatDate(currentWeek?.endDate)}
-              </div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">
+                Chọn tuần nhật ký <span className="text-rose-500">*</span>
+              </label>
+              <select
+                value={currentWeek?.weekNumber || 1}
+                onChange={(e) => {
+                  const selectedNum = Number(e.target.value);
+                  const targetWeek = weeks.find((w) => w.weekNumber === selectedNum) || allWeeks.find((w) => w.weekNumber === selectedNum);
+                  if (targetWeek) {
+                    handleOpenWriteModal(targetWeek);
+                  }
+                }}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              >
+                {(allWeeks.length > 0 ? allWeeks : weeks).map((w) => (
+                  <option key={w.weekNumber} value={w.weekNumber}>
+                    {w.label} ({formatDate(w.startDate)} - {formatDate(w.endDate)}) {w.progress ? '• Đã nộp nhật ký' : '• Chưa viết'}
+                  </option>
+                ))}
+              </select>
             </div>
-            {thesis?.secondStudentId && (
-              <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-[#102d7d] rounded-md">
-                Nhóm 2 sinh viên (Cần SV2 xác nhận)
-              </span>
-            )}
+
+            <div className="p-3 rounded-2xl bg-blue-50/70 border border-blue-100 flex items-center justify-between">
+              <div>
+                <span className="font-bold text-[#123891] text-sm">
+                  {currentWeek?.label}
+                </span>
+                <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                  Thời gian: {formatDate(currentWeek?.startDate)} - {formatDate(currentWeek?.endDate)}
+                </div>
+              </div>
+              {thesis?.secondStudentId && (
+                <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-[#102d7d] rounded-md">
+                  Nhóm 2 sinh viên (Cần SV2 xác nhận)
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Rejection Notice Banner if previously rejected by Supervisor */}
@@ -1269,26 +1307,7 @@ const StudentThesisProgressPage = () => {
             />
           </div>
 
-          {/* Completion Percentage */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-slate-700">
-                Tỷ lệ hoàn thành khối lượng KLTN ước tính
-              </label>
-              <span className="font-mono font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                {completionPercentage}%
-              </span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              step="5"
-              value={completionPercentage}
-              onChange={(e) => setCompletionPercentage(Number(e.target.value))}
-              className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-[#123891]"
-            />
-          </div>
+
 
           {/* Description */}
           <div>
@@ -1396,7 +1415,7 @@ const StudentThesisProgressPage = () => {
               className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{submitting ? 'Đang gửi...' : 'Gửi nhật ký ngay'}</span>
+              <span>{submitting ? 'Đang lưu...' : editingProgressId ? 'Cập nhật nhật ký' : 'Gửi nhật ký ngay'}</span>
             </button>
           </div>
         </div>
@@ -1426,9 +1445,6 @@ const StudentThesisProgressPage = () => {
               <div className="flex items-center justify-between">
                 <span className="font-bold text-slate-900 text-sm">
                   {progressToConfirm.title}
-                </span>
-                <span className="font-mono font-bold text-[#102d7d] bg-white px-2 py-0.5 rounded border border-blue-100">
-                  {progressToConfirm.completionPercentage}%
                 </span>
               </div>
 
@@ -1643,7 +1659,7 @@ const StudentThesisProgressPage = () => {
                       {hasP ? (
                         <div className="space-y-1">
                           <div className="font-semibold text-slate-900">
-                            Tiêu đề: {p.title} (Tiến độ: {p.completionPercentage}%)
+                            Tiêu đề: {p.title}
                           </div>
                           <div className="text-slate-700 leading-relaxed whitespace-pre-wrap text-[11.5px]">
                             {p.description || '(Nội dung trong tệp đính kèm)'}

@@ -371,7 +371,7 @@ const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                 <span>Cấu hình thời gian nhập điểm & tiêu chí GVHD:</span>
               </div>
               <p className="text-slate-600">
-                TBM thiết lập các đợt mở/khóa quyền nhập điểm cho Giảng viên hướng dẫn, quản lý tiêu chí đánh giá điều kiện, chọn phạm vi phát thông báo (công khai / chỉ gửi GV) và tự động xử lý FAIL cho sinh viên quá hạn tại menu <strong>"Đánh giá Khóa luận"</strong> (Mục 3: Quản lý Thời gian Nhập điểm).
+                TBM thiết lập các đợt mở/khóa quyền nhập điểm cho Giảng viên hướng dẫn, quản lý tiêu chí đánh giá điều kiện, chọn phạm vi phát thông báo (công khai / chỉ gửi GV) và tự động xử lý FAIL cho sinh viên quá hạn tại menu <strong>"Quản lý Khóa luận"</strong> (Mục 3: Quản lý Thời gian Nhập điểm).
               </p>
             </div>
           </div>

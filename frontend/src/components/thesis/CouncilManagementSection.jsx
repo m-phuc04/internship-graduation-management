@@ -4,6 +4,8 @@ import { useToast } from '../../context/ToastContext';
 import councilApi from '../../api/councilApi';
 import AssignCouncilModal from './AssignCouncilModal';
 import CreateCouncilModal from './CreateCouncilModal';
+import AssignThesesToCouncilModal from './AssignThesesToCouncilModal';
+import MasterCouncilTimeModal from './MasterCouncilTimeModal';
 
 import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
 import {
@@ -19,9 +21,17 @@ import {
   CheckCircle2,
   Clock,
   Pencil,
+  Calendar,
+  PlusCircle,
 } from 'lucide-react';
 
-const CouncilManagementSection = ({ theses = [] }) => {
+const CouncilManagementSection = ({
+  theses = [],
+  thesisCouncilMap = {},
+  thesisReportFormatMap = {},
+  onBatchAssignCouncil,
+  onRefreshTheses,
+}) => {
   const { currentTerm } = useAcademicTerm();
   const { showToast } = useToast();
 
@@ -86,8 +96,71 @@ const CouncilManagementSection = ({ theses = [] }) => {
 
   const [createCouncilModalOpen, setCreateCouncilModalOpen] = useState(false);
   const [assignCouncilModalOpen, setAssignCouncilModalOpen] = useState(false);
+  const [assignThesesModalOpen, setAssignThesesModalOpen] = useState(false);
   const [targetCouncil, setTargetCouncil] = useState(null);
+  const [councilForThesisAssign, setCouncilForThesisAssign] = useState(null);
   const [editingCouncil, setEditingCouncil] = useState(null);
+
+  // Master time state
+  const [masterReportDate, setMasterReportDate] = useState('');
+  const [masterReportTime, setMasterReportTime] = useState('');
+  const [masterStartTime, setMasterStartTime] = useState('08:00');
+  const [masterEndTime, setMasterEndTime] = useState('11:30');
+  const [masterTimeModalOpen, setMasterTimeModalOpen] = useState(false);
+
+  // Sync master time from councils if available
+  useEffect(() => {
+    if (councils.length > 0) {
+      const withDate = councils.find((c) => c.reportDate);
+      if (withDate && withDate.reportDate) {
+        try {
+          const dStr = new Date(withDate.reportDate).toISOString().split('T')[0];
+          setMasterReportDate(dStr);
+        } catch {}
+      }
+      const withTime = councils.find((c) => c.reportTime);
+      if (withTime && withTime.reportTime) {
+        setMasterReportTime(withTime.reportTime);
+      }
+      const withStart = councils.find((c) => c.reportStartTime);
+      if (withStart && withStart.reportStartTime) {
+        setMasterStartTime(withStart.reportStartTime);
+      }
+      const withEnd = councils.find((c) => c.reportEndTime);
+      if (withEnd && withEnd.reportEndTime) {
+        setMasterEndTime(withEnd.reportEndTime);
+      }
+    }
+  }, [councils]);
+
+  const handleSaveMasterTime = async ({ reportDate, reportStartTime, reportEndTime, reportTime }) => {
+    await councilApi.bulkUpdateDate({
+      academicTermId: currentTerm?._id || '',
+      reportDate,
+      reportStartTime,
+      reportEndTime,
+      reportTime,
+    });
+    setMasterReportDate(reportDate);
+    setMasterStartTime(reportStartTime);
+    setMasterEndTime(reportEndTime);
+    setMasterReportTime(reportTime);
+    showToast(`Đã cập nhật thời gian báo cáo (${reportTime}) cho tất cả các phòng hội đồng!`, 'success');
+    await fetchCouncils();
+    if (onRefreshTheses) {
+      await onRefreshTheses();
+    }
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleOpenAssignThesesModal = (council) => {
+    if (isCouncilReportTimeExpired(council)) {
+      showToast('Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công đề tài!', 'warning');
+      return;
+    }
+    setCouncilForThesisAssign(council);
+    setAssignThesesModalOpen(true);
+  };
 
   const handleClearAllCouncils = async () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa TOÀN BỘ danh sách phòng hội đồng và các phân công liên quan để nhập lại từ đầu không?')) {
@@ -265,7 +338,7 @@ const CouncilManagementSection = ({ theses = [] }) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Table Header Section */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -276,6 +349,9 @@ const CouncilManagementSection = ({ theses = [] }) => {
             <h3 className="text-base font-bold text-slate-900 leading-tight">
               Phòng Hội Đồng Đánh Giá Khóa Luận
             </h3>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Quản lý các phòng hội đồng, ngày báo cáo và phân công đề tài (tối đa 5 đề tài/phòng)
+            </p>
           </div>
         </div>
 
@@ -284,212 +360,525 @@ const CouncilManagementSection = ({ theses = [] }) => {
             <button
               type="button"
               onClick={handleClearAllCouncils}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 hover:bg-rose-100 text-[#c5221f] text-xs font-bold rounded-xl border border-rose-200 transition cursor-pointer"
-              title="Xóa toàn bộ các phòng hội đồng để nhập lại từ đầu"
+              className="p-2.5 bg-rose-50 hover:bg-rose-100 text-[#c5221f] rounded-2xl border border-rose-200 transition cursor-pointer flex items-center justify-center"
+              title="Xóa tất cả phòng hội đồng"
             >
-              <Trash2 className="w-3.5 h-3.5 text-[#c5221f]" />
-              <span>Xóa tất cả phòng</span>
+              <Trash2 className="w-4 h-4 text-[#c5221f]" />
             </button>
           )}
 
           <button
             type="button"
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-            title="Tạo phòng hội đồng đánh giá mới"
+            className="p-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-2xl shadow-xs transition cursor-pointer flex items-center justify-center"
+            title="Thêm phòng hội đồng mới"
           >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Thêm hội đồng</span>
+            <Plus className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Council Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        {councils.length === 0 ? (
-          <div className="p-8 text-center space-y-2">
-            <Users className="w-10 h-10 text-slate-300 mx-auto" />
-            <div className="text-sm font-bold text-slate-700">Chưa có phòng hội đồng nào</div>
-            <p className="text-xs text-slate-400">
-              Bấm nút "+ Thêm hội đồng" ở trên để tạo phòng hội đồng đánh giá khóa luận đầu tiên.
-            </p>
+      {/* Master Time Config Bar (Text & Edit Button) */}
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 border border-blue-200/80">
+            <Clock className="w-4 h-4" />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                  <th className="py-3.5 px-4 text-center w-12">STT</th>
-                  <th className="py-3.5 px-4 min-w-[150px]">Phòng hội đồng</th>
-                  <th className="py-3.5 px-4 min-w-[140px] text-center">Hình thức</th>
-                  <th className="py-3.5 px-4 min-w-[170px] text-center">Thời gian báo cáo</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Giảng viên 1</th>
-                  <th className="py-3.5 px-4 min-w-[160px]">Giảng viên 2</th>
-                  <th className="py-3.5 px-4 text-right whitespace-nowrap">
-                    Thao tác
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {councils.map((c, idx) => {
-                  const cleanName = (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
-                  const lec1 = c.lecturers?.[0];
-                  const lec2 = c.lecturers?.[1];
-                  const isExpired = isCouncilReportTimeExpired(c);
-
-                  return (
-                    <tr key={c.id} className={`transition ${isExpired ? 'bg-slate-50/40 hover:bg-slate-50/70' : 'hover:bg-slate-50/80'}`}>
-                      <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                        {idx + 1}
-                      </td>
-
-                      <td className="py-3.5 px-4">
-                        <strong className="text-slate-900 block font-bold leading-snug">
-                          {cleanName}
-                        </strong>
-                        <div className="text-[10px] text-slate-400 font-mono mt-0.5">
-                          Phòng: {c.room || '—'}
-                        </div>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
-                            c.type === 'POSTER'
-                              ? 'bg-blue-50 text-[#102d7d] border-blue-200'
-                              : 'bg-blue-50 text-[#102d7d] border-blue-200'
-                          }`}
-                        >
-                          {c.type === 'POSTER' ? 'Báo cáo Poster' : 'Báo cáo Oral'}
-                        </span>
-                      </td>
-
-                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        {c.reportTime ? (
-                          <div className="flex flex-col items-center gap-1">
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
-                              <Clock className="w-3.5 h-3.5 text-[#123891]" />
-                              <span>{c.reportTime}</span>
-                            </span>
-                            {isExpired && (
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                                Đã kết thúc
-                              </span>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">—</span>
-                        )}
-                      </td>
-
-                      {/* Giảng viên 1 */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {lec1 ? (
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              {lec1.fullName}
-                            </div>
-                            {lec1.lecturerCode && (
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                Mã GV: {lec1.lecturerCode}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">
-                            Chưa phân công
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Giảng viên 2 */}
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {lec2 ? (
-                          <div>
-                            <div className="font-semibold text-slate-900">
-                              {lec2.fullName}
-                            </div>
-                            {lec2.lecturerCode && (
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                Mã GV: {lec2.lecturerCode}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-slate-400 italic text-[11px]">
-                            Chưa phân công
-                          </span>
-                        )}
-                      </td>
-
-                      <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* Phân công GV */}
-                          <button
-                            type="button"
-                            disabled={isExpired}
-                            onClick={() => handleOpenAssignModal(c)}
-                            className={`p-1.5 rounded-lg transition ${
-                              isExpired
-                                ? 'text-slate-300 cursor-not-allowed opacity-40'
-                                : 'text-[#123891] hover:bg-blue-50 cursor-pointer'
-                            }`}
-                            title={
-                              isExpired
-                                ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công giảng viên'
-                                : `Phân công giảng viên cho ${cleanName}`
-                            }
-                          >
-                            <UserCheck className="w-4 h-4" />
-                          </button>
-
-                          {/* Chỉnh sửa thông tin hội đồng */}
-                          <button
-                            type="button"
-                            disabled={isExpired}
-                            onClick={() => handleOpenEditModal(c)}
-                            className={`p-1.5 rounded-lg transition ${
-                              isExpired
-                                ? 'text-slate-300 cursor-not-allowed opacity-40'
-                                : 'text-amber-600 hover:bg-amber-50 cursor-pointer'
-                            }`}
-                            title={
-                              isExpired
-                                ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể chỉnh sửa'
-                                : `Chỉnh sửa thông tin ${cleanName}`
-                            }
-                          >
-                            <Pencil className="w-4 h-4" />
-                          </button>
-
-                          {/* Xóa hội đồng */}
-                          <button
-                            type="button"
-                            disabled={isExpired}
-                            onClick={() => handleDeleteCouncil(c.id, cleanName)}
-                            className={`p-1.5 rounded-lg transition ${
-                              isExpired
-                                ? 'text-slate-300 cursor-not-allowed opacity-40'
-                                : 'text-rose-500 hover:bg-rose-50 cursor-pointer'
-                            }`}
-                            title={
-                              isExpired
-                                ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể xóa'
-                                : 'Xóa phòng hội đồng này'
-                            }
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          <div>
+            <div className="text-[11px] font-semibold text-slate-500">
+              Thời gian báo cáo hội đồng (chung cho tất cả phòng):
+            </div>
+            <div className="text-xs font-bold text-slate-900 mt-0.5 flex items-center gap-2">
+              {masterReportTime ? (
+                <span className="font-mono text-[#123891] bg-blue-50 px-2.5 py-0.5 rounded-lg border border-blue-200 font-semibold">
+                  {masterReportTime}
+                </span>
+              ) : (
+                <span className="text-slate-400 italic font-normal">
+                  Chưa thiết lập thời gian báo cáo chung
+                </span>
+              )}
+            </div>
           </div>
-        )}
+        </div>
+
+        <div>
+          <button
+            type="button"
+            onClick={() => setMasterTimeModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
+            title="Chỉnh sửa ngày và khung giờ báo cáo chung"
+          >
+            <Pencil className="w-3.5 h-3.5" />
+            <span>Chỉnh sửa thời gian</span>
+          </button>
+        </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* BẢNG 1: DANH SÁCH PHÒNG HỘI ĐỒNG - BÁO CÁO ORAL (3 Giảng viên) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const oralCouncils = councils.filter((c) => c.type === 'ORAL');
+
+        return (
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            {/* Header Bảng Oral */}
+            <div className="p-4 border-b border-slate-200/80 bg-slate-50/70 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-[#123891]" />
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Danh sách Phòng Hội Đồng — Báo Cáo Oral
+                </h4>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                  {oralCouncils.length} phòng
+                </span>
+              </div>
+            </div>
+
+            {oralCouncils.length === 0 ? (
+              <div className="p-8 text-center space-y-2">
+                <Users className="w-9 h-9 text-slate-300 mx-auto" />
+                <div className="text-xs font-bold text-slate-600">Chưa có phòng hội đồng Báo cáo Oral nào</div>
+                <p className="text-[11px] text-slate-400">
+                  Bấm nút "+ Thêm hội đồng" ở trên và chọn hình thức "Báo cáo Oral" để tạo phòng.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                      <th className="py-3.5 px-4 text-center w-12">STT</th>
+                      <th className="py-3.5 px-4 min-w-[150px]">Phòng hội đồng</th>
+                      <th className="py-3.5 px-4 min-w-[120px] text-center">Hình thức</th>
+                      <th className="py-3.5 px-4 min-w-[160px] text-center">Thời gian báo cáo</th>
+                      <th className="py-3.5 px-4 min-w-[110px] text-center">Số đề tài</th>
+                      <th className="py-3.5 px-4 min-w-[140px]">Giảng viên 1</th>
+                      <th className="py-3.5 px-4 min-w-[140px]">Giảng viên 2</th>
+                      <th className="py-3.5 px-4 min-w-[140px]">Giảng viên 3</th>
+                      <th className="py-3.5 px-4 text-right whitespace-nowrap"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {oralCouncils.map((c, idx) => {
+                      const cleanName = (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+                      const lec1 = c.lecturers?.[0];
+                      const lec2 = c.lecturers?.[1];
+                      const lec3 = c.lecturers?.[2];
+                      const isExpired = isCouncilReportTimeExpired(c);
+
+                      const cIdStr = String(c.id || c._id || '');
+                      const assignedThesesCount = theses.filter((t) => {
+                        const assignedId = String(
+                          thesisCouncilMap[t._id] ||
+                          (t.councilId?._id ? t.councilId._id : t.councilId) ||
+                          ''
+                        );
+                        return assignedId === cIdStr;
+                      }).length;
+
+                      return (
+                        <tr
+                          key={c.id || c._id}
+                          className={`transition ${isExpired ? 'bg-slate-50/40 hover:bg-slate-50/70' : 'hover:bg-slate-50/80'}`}
+                        >
+                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                            {idx + 1}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <strong className="text-slate-900 block font-bold leading-snug">
+                              {cleanName}
+                            </strong>
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              Phòng: {c.room || '—'}
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border bg-blue-50 text-[#102d7d] border-blue-200">
+                              Báo cáo Oral
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            {c.reportTime ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                  <Clock className="w-3.5 h-3.5 text-[#123891]" />
+                                  <span>{c.reportTime}</span>
+                                </span>
+                                {isExpired && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    Đã kết thúc
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">—</span>
+                            )}
+                          </td>
+
+                          {/* Số đề tài */}
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                assignedThesesCount === 5
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  : assignedThesesCount > 0
+                                  ? 'bg-blue-50 text-[#123891] border-blue-200'
+                                  : 'bg-slate-50 text-slate-500 border-slate-200'
+                              }`}
+                            >
+                              {assignedThesesCount}/5 đề tài
+                            </span>
+                          </td>
+
+                          {/* Giảng viên 1 */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {lec1 ? (
+                              <div className="font-semibold text-slate-900">{lec1.fullName}</div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">Chưa phân công</span>
+                            )}
+                          </td>
+
+                          {/* Giảng viên 2 */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {lec2 ? (
+                              <div className="font-semibold text-slate-900">{lec2.fullName}</div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">Chưa phân công</span>
+                            )}
+                          </td>
+
+                          {/* Giảng viên 3 */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {lec3 ? (
+                              <div className="font-semibold text-slate-900">{lec3.fullName}</div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">Chưa phân công</span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Phân công đề tài */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleOpenAssignThesesModal(c)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-[#123891] hover:bg-blue-50 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công đề tài'
+                                    : `Phân công đề tài cho ${cleanName} (${assignedThesesCount}/5 đề tài)`
+                                }
+                              >
+                                <PlusCircle className="w-4 h-4" />
+                              </button>
+
+                              {/* Phân công GV */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleOpenAssignModal(c)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-slate-600 hover:bg-slate-100 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công giảng viên'
+                                    : `Phân công 3 giảng viên cho ${cleanName}`
+                                }
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </button>
+
+                              {/* Chỉnh sửa */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleOpenEditModal(c)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-amber-600 hover:bg-amber-50 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể chỉnh sửa'
+                                    : `Chỉnh sửa thông tin ${cleanName}`
+                                }
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+
+                              {/* Xóa */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleDeleteCouncil(c.id, cleanName)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-rose-500 hover:bg-rose-50 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể xóa'
+                                    : 'Xóa phòng hội đồng này'
+                                }
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ========================================================================= */}
+      {/* BẢNG 2: DANH SÁCH PHÒNG HỘI ĐỒNG - BÁO CÁO POSTER (2 Giảng viên) */}
+      {/* ========================================================================= */}
+      {(() => {
+        const posterCouncils = councils.filter((c) => c.type === 'POSTER');
+
+        return (
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            {/* Header Bảng Poster */}
+            <div className="p-4 border-b border-slate-200/80 bg-slate-50/70 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+                <h4 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                  Danh sách Phòng Hội Đồng — Báo Cáo Poster
+                </h4>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  {posterCouncils.length} phòng
+                </span>
+              </div>
+            </div>
+
+            {posterCouncils.length === 0 ? (
+              <div className="p-8 text-center space-y-2">
+                <Users className="w-9 h-9 text-slate-300 mx-auto" />
+                <div className="text-xs font-bold text-slate-600">Chưa có phòng hội đồng Báo cáo Poster nào</div>
+                <p className="text-[11px] text-slate-400">
+                  Bấm nút "+ Thêm hội đồng" ở trên và chọn hình thức "Báo cáo Poster" để tạo phòng.
+                </p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                      <th className="py-3.5 px-4 text-center w-12">STT</th>
+                      <th className="py-3.5 px-4 min-w-[150px]">Phòng hội đồng</th>
+                      <th className="py-3.5 px-4 min-w-[120px] text-center">Hình thức</th>
+                      <th className="py-3.5 px-4 min-w-[160px] text-center">Thời gian báo cáo</th>
+                      <th className="py-3.5 px-4 min-w-[110px] text-center">Số đề tài</th>
+                      <th className="py-3.5 px-4 min-w-[150px]">Giảng viên 1</th>
+                      <th className="py-3.5 px-4 min-w-[150px]">Giảng viên 2</th>
+                      <th className="py-3.5 px-4 text-right whitespace-nowrap"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {posterCouncils.map((c, idx) => {
+                      const cleanName = (c.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim();
+                      const lec1 = c.lecturers?.[0];
+                      const lec2 = c.lecturers?.[1];
+                      const isExpired = isCouncilReportTimeExpired(c);
+
+                      const cIdStr = String(c.id || c._id || '');
+                      const assignedThesesCount = theses.filter((t) => {
+                        const assignedId = String(
+                          thesisCouncilMap[t._id] ||
+                          (t.councilId?._id ? t.councilId._id : t.councilId) ||
+                          ''
+                        );
+                        return assignedId === cIdStr;
+                      }).length;
+
+                      return (
+                        <tr
+                          key={c.id || c._id}
+                          className={`transition ${isExpired ? 'bg-slate-50/40 hover:bg-slate-50/70' : 'hover:bg-slate-50/80'}`}
+                        >
+                          <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
+                            {idx + 1}
+                          </td>
+
+                          <td className="py-3.5 px-4">
+                            <strong className="text-slate-900 block font-bold leading-snug">
+                              {cleanName}
+                            </strong>
+                            <div className="text-[10px] text-slate-400 font-mono mt-0.5">
+                              Phòng: {c.room || '—'}
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border bg-indigo-50 text-indigo-700 border-indigo-200">
+                              Báo cáo Poster
+                            </span>
+                          </td>
+
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            {c.reportTime ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                                  <Clock className="w-3.5 h-3.5 text-[#123891]" />
+                                  <span>{c.reportTime}</span>
+                                </span>
+                                {isExpired && (
+                                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                    Đã kết thúc
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">—</span>
+                            )}
+                          </td>
+
+                          {/* Số đề tài */}
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                                assignedThesesCount === 5
+                                  ? 'bg-amber-50 text-amber-800 border-amber-200'
+                                  : assignedThesesCount > 0
+                                  ? 'bg-blue-50 text-[#123891] border-blue-200'
+                                  : 'bg-slate-50 text-slate-500 border-slate-200'
+                              }`}
+                            >
+                              {assignedThesesCount}/5 đề tài
+                            </span>
+                          </td>
+
+                          {/* Giảng viên 1 */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {lec1 ? (
+                              <div className="font-semibold text-slate-900">{lec1.fullName}</div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">Chưa phân công</span>
+                            )}
+                          </td>
+
+                          {/* Giảng viên 2 */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            {lec2 ? (
+                              <div className="font-semibold text-slate-900">{lec2.fullName}</div>
+                            ) : (
+                              <span className="text-slate-400 italic text-[11px]">Chưa phân công</span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {/* Phân công đề tài */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleOpenAssignThesesModal(c)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-[#123891] hover:bg-blue-50 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công đề tài'
+                                    : `Phân công đề tài cho ${cleanName} (${assignedThesesCount}/5 đề tài)`
+                                }
+                              >
+                                <PlusCircle className="w-4 h-4" />
+                              </button>
+
+                              {/* Phân công GV */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleOpenAssignModal(c)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-slate-600 hover:bg-slate-100 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể phân công giảng viên'
+                                    : `Phân công 2 giảng viên cho ${cleanName}`
+                                }
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </button>
+
+                              {/* Chỉnh sửa */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleOpenEditModal(c)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-amber-600 hover:bg-amber-50 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể chỉnh sửa'
+                                    : `Chỉnh sửa thông tin ${cleanName}`
+                                }
+                              >
+                                <Pencil className="w-4 h-4" />
+                              </button>
+
+                              {/* Xóa */}
+                              <button
+                                type="button"
+                                disabled={isExpired}
+                                onClick={() => handleDeleteCouncil(c.id, cleanName)}
+                                className={`p-1.5 rounded-lg transition ${
+                                  isExpired
+                                    ? 'text-slate-300 cursor-not-allowed opacity-40'
+                                    : 'text-rose-500 hover:bg-rose-50 cursor-pointer'
+                                }`}
+                                title={
+                                  isExpired
+                                    ? 'Phòng hội đồng đã kết thúc thời gian báo cáo, không thể xóa'
+                                    : 'Xóa phòng hội đồng này'
+                                }
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       <CreateCouncilModal
         isOpen={createCouncilModalOpen}
@@ -500,6 +889,12 @@ const CouncilManagementSection = ({ theses = [] }) => {
         onCouncilSaved={handleCouncilSaved}
         existingCouncilCount={councils.length}
         councilToEdit={editingCouncil}
+        masterTimeConfig={{
+          reportDate: masterReportDate,
+          reportStartTime: masterStartTime,
+          reportEndTime: masterEndTime,
+          reportTime: masterReportTime,
+        }}
       />
 
       <AssignCouncilModal
@@ -508,8 +903,38 @@ const CouncilManagementSection = ({ theses = [] }) => {
         council={targetCouncil}
         allCouncils={councils}
         theses={theses}
-        lecturerColumnCount={lecturerColumnCount}
+        lecturerColumnCount={targetCouncil?.type === 'ORAL' ? 3 : 2}
         onSaveCouncil={handleSaveCouncilFromAssign}
+      />
+
+      <MasterCouncilTimeModal
+        isOpen={masterTimeModalOpen}
+        onClose={() => setMasterTimeModalOpen(false)}
+        initialDate={masterReportDate}
+        initialStartTime={masterStartTime}
+        initialEndTime={masterEndTime}
+        onSave={handleSaveMasterTime}
+      />
+
+      <AssignThesesToCouncilModal
+        isOpen={assignThesesModalOpen}
+        onClose={() => {
+          setAssignThesesModalOpen(false);
+          setCouncilForThesisAssign(null);
+        }}
+        council={councilForThesisAssign}
+        theses={theses}
+        thesisCouncilMap={thesisCouncilMap}
+        thesisReportFormatMap={thesisReportFormatMap}
+        allCouncils={councils}
+        onAssignSuccess={async (councilId, thesisIds) => {
+          if (onBatchAssignCouncil) {
+            await onBatchAssignCouncil(councilId, thesisIds);
+          }
+          if (onRefreshTheses) {
+            await onRefreshTheses();
+          }
+        }}
       />
     </div>
   );

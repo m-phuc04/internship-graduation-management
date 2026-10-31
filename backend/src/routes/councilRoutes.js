@@ -19,6 +19,18 @@ router.post(
 );
 
 router.put(
+  "/bulk/report-date",
+  authorizeRoles("TBM", "ADMIN", "DEAN", "LECTURER"),
+  councilController.bulkUpdateReportDate
+);
+
+router.post(
+  "/batch/assign-theses",
+  authorizeRoles("TBM", "ADMIN", "DEAN", "LECTURER"),
+  councilController.batchAssignTheses
+);
+
+router.put(
   "/:id",
   authorizeRoles("TBM", "ADMIN", "DEAN", "LECTURER"),
   councilController.updateCouncil
