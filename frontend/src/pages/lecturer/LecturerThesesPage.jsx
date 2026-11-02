@@ -1104,6 +1104,8 @@ const LecturerThesesPage = () => {
       const res = await thesisApi.markStudentFail(confirmFailDialog.thesis._id, {
         studentIndex: confirmFailDialog.studentIndex,
         reason: 'Giảng viên đánh dấu không đạt (Rớt)',
+        stage: gradeBoxRole || (activeTab === 'COUNCIL' ? 'COUNCIL' : activeTab === 'REVIEW_BLIND' ? 'REVIEWER1' : 'SUPERVISOR'),
+        role: gradeBoxRole || (activeTab === 'COUNCIL' ? 'COUNCIL' : activeTab === 'REVIEW_BLIND' ? 'REVIEWER1' : 'SUPERVISOR'),
       });
       if (res.success) {
         showToast(`Đã đánh dấu rớt cho sinh viên ${confirmFailDialog.studentName}!`, 'success');
@@ -4306,11 +4308,11 @@ const LecturerThesesPage = () => {
                 </div>
               </div>
 
-              {/* Lĩnh vực nghiên cứu */}
+              {/* Lĩnh vực */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                    Lĩnh vực nghiên cứu
+                    Lĩnh vực
                   </label>
                   {selectedTopicFields.length > 0 && (
                     <span className="text-[11px] font-semibold text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
@@ -4430,7 +4432,7 @@ const LecturerThesesPage = () => {
               {/* Lĩnh vực */}
               {Array.isArray(selectedTopicDetail.fields) && selectedTopicDetail.fields.length > 0 && (
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lĩnh vực nghiên cứu</label>
+                  <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lĩnh vực</label>
                   <div className="flex flex-wrap gap-1.5 mt-1">
                     {selectedTopicDetail.fields.map((f, i) => (
                       <span

@@ -458,8 +458,24 @@ const getMyThesis = async (userId, academicTermId = null) => {
     })
     .populate("academicTermId");
 
-  const canRegisterNew =
-    !thesis || ["REJECTED"].includes(thesis.status);
+  // Self-heal: if thesis was mistakenly set to REJECTED due to fail grading, normalize to GRADED
+  if (
+    thesis &&
+    thesis.status === "REJECTED" &&
+    (thesis.scores?.isStudent1Failed || thesis.scores?.isStudent2Failed || (thesis.scores?.finalScore !== null && thesis.scores?.finalScore !== undefined))
+  ) {
+    thesis.status = "GRADED";
+    await Thesis.updateOne({ _id: thesis._id }, { $set: { status: "GRADED" } });
+  }
+
+  const isRealRegistrationRejected =
+    thesis &&
+    thesis.status === "REJECTED" &&
+    !thesis.scores?.isStudent1Failed &&
+    !thesis.scores?.isStudent2Failed &&
+    (thesis.scores?.finalScore === null || thesis.scores?.finalScore === undefined);
+
+  const canRegisterNew = !thesis || isRealRegistrationRejected;
 
   return {
     student,
@@ -528,6 +544,14 @@ const getThesisById = async (id) => {
 
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
+  }
+
+  if (
+    thesis.status === "REJECTED" &&
+    (thesis.scores?.isStudent1Failed || thesis.scores?.isStudent2Failed || (thesis.scores?.finalScore !== null && thesis.scores?.finalScore !== undefined))
+  ) {
+    thesis.status = "GRADED";
+    await Thesis.updateOne({ _id: thesis._id }, { $set: { status: "GRADED" } });
   }
 
   return thesis;
@@ -2135,19 +2159,30 @@ const getThesesForLecturerRole = async (
 // ====================
 // Mark Student Fail Independently (KLTN)
 // ====================
-const markStudentFail = async (thesisId, { studentIndex, failReason, requestingUserId, userRole }) => {
+const markStudentFail = async (
+  thesisId,
+  { studentIndex, failReason, requestingUserId, userRole, stage, role }
+) => {
   const thesis = await Thesis.findById(thesisId);
   if (!thesis) {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
 
-  const term = thesis.academicTermId ? await AcademicTerm.findById(thesis.academicTermId) : null;
+  const term = thesis.academicTermId
+    ? await AcademicTerm.findById(thesis.academicTermId)
+    : null;
   if (term && term.status === "CLOSED") {
-    throw new AppError("Học kỳ của khóa luận này đã kết thúc (CLOSED). Không thể thay đổi trạng thái.", 400);
+    throw new AppError(
+      "Học kỳ của khóa luận này đã kết thúc (CLOSED). Không thể thay đổi trạng thái.",
+      400
+    );
   }
 
   if (thesis.status === "COMPLETED") {
-    throw new AppError("Khóa luận đã hoàn thành và không thể thay đổi trạng thái.", 400);
+    throw new AppError(
+      "Khóa luận đã hoàn thành và không thể thay đổi trạng thái.",
+      400
+    );
   }
 
   let lecturer = null;
@@ -2166,8 +2201,48 @@ const markStudentFail = async (thesisId, { studentIndex, failReason, requestingU
   const targetIndex = Number(studentIndex) === 2 ? 2 : 1;
 
   if (targetIndex === 2 && !isTwo) {
-    throw new AppError("Đề tài này chỉ có 1 sinh viên, không thể đánh dấu rớt cho sinh viên 2", 400);
+    throw new AppError(
+      "Đề tài này chỉ có 1 sinh viên, không thể đánh dấu rớt cho sinh viên 2",
+      400
+    );
   }
+
+  // Determine target stage
+  let targetStage = (stage || role || "").toUpperCase().trim();
+  if (targetStage === "GVHD") targetStage = "SUPERVISOR";
+  if (targetStage === "REVIEWER1" || targetStage === "GVPB_KIN" || targetStage === "REVIEW_BLIND") targetStage = "REVIEWER_1";
+  if (targetStage === "REVIEWER2" || targetStage === "GVPB_HOIDONG" || targetStage === "GVPB_2") targetStage = "REVIEWER_2";
+  if (targetStage === "COUNCIL_MEMBER" || targetStage === "GV_HOIDONG" || targetStage === "HOIDONG") targetStage = "COUNCIL";
+
+  if (!targetStage && lecturer) {
+    const lecIdStr = lecturer._id.toString();
+    if (thesis.supervisorId?.toString() === lecIdStr) {
+      targetStage = "SUPERVISOR";
+    } else if (
+      thesis.reviewer1Id?.toString() === lecIdStr ||
+      (Array.isArray(thesis.reviewers) &&
+        thesis.reviewers.some(
+          (r) =>
+            r.isPrivateReviewer &&
+            (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr
+        ))
+    ) {
+      targetStage = "REVIEWER_1";
+    } else if (
+      thesis.reviewer2Id?.toString() === lecIdStr ||
+      (Array.isArray(thesis.reviewers) &&
+        thesis.reviewers.some(
+          (r) =>
+            r.isCouncilReviewer &&
+            (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) === lecIdStr
+        ))
+    ) {
+      targetStage = "REVIEWER_2";
+    } else {
+      targetStage = "COUNCIL";
+    }
+  }
+  if (!targetStage) targetStage = "SUPERVISOR";
 
   const reason = failReason || "Giảng viên đánh dấu không đạt (Rớt)";
 
@@ -2176,37 +2251,69 @@ const markStudentFail = async (thesisId, { studentIndex, failReason, requestingU
     thesis.scores.student1FailReason = reason;
     thesis.scores.student1FailedBy = lecturer ? lecturer._id : null;
     thesis.scores.student1FailedAt = new Date();
-
-    thesis.scores.student1SupervisorScore = 0;
-    thesis.scores.student1Reviewer1Score = 0;
-    thesis.scores.student1Reviewer2Score = 0;
-    thesis.scores.student1ReviewerScore = 0;
-    thesis.scores.student1CouncilScore = 0;
-    thesis.scores.student1FinalScore = 0;
-
-    if (Array.isArray(thesis.scores.councilLecturerScores)) {
-      thesis.scores.councilLecturerScores.forEach((c) => {
-        c.student1Score = 0;
-      });
+    thesis.scores.student1FailedStage = targetStage;
+    if (!Array.isArray(thesis.scores.student1FailedStages)) {
+      thesis.scores.student1FailedStages = [];
     }
+    if (!thesis.scores.student1FailedStages.includes(targetStage)) {
+      thesis.scores.student1FailedStages.push(targetStage);
+    }
+
+    // Gán 0 đúng tại cột điểm thành phần đang thao tác
+    if (targetStage === "SUPERVISOR") {
+      thesis.scores.student1SupervisorScore = 0;
+    } else if (targetStage === "REVIEWER_1") {
+      thesis.scores.student1Reviewer1Score = 0;
+      thesis.scores.student1ReviewerScore = 0;
+    } else if (targetStage === "REVIEWER_2") {
+      thesis.scores.student1Reviewer2Score = 0;
+      thesis.scores.student1ReviewerScore = 0;
+    } else if (targetStage === "COUNCIL") {
+      thesis.scores.student1CouncilScore = 0;
+      if (Array.isArray(thesis.scores.councilLecturerScores)) {
+        thesis.scores.councilLecturerScores.forEach((c) => {
+          if (!lecturer || (c.lecturerId?.toString() || c.lecturerId?._id?.toString()) === lecturer._id.toString()) {
+            c.student1Score = 0;
+          }
+        });
+      }
+    }
+    // Điểm tổng kết của SV bị rớt là 0
+    thesis.scores.student1FinalScore = 0;
   } else {
     thesis.scores.isStudent2Failed = true;
     thesis.scores.student2FailReason = reason;
     thesis.scores.student2FailedBy = lecturer ? lecturer._id : null;
     thesis.scores.student2FailedAt = new Date();
-
-    thesis.scores.student2SupervisorScore = 0;
-    thesis.scores.student2Reviewer1Score = 0;
-    thesis.scores.student2Reviewer2Score = 0;
-    thesis.scores.student2ReviewerScore = 0;
-    thesis.scores.student2CouncilScore = 0;
-    thesis.scores.student2FinalScore = 0;
-
-    if (Array.isArray(thesis.scores.councilLecturerScores)) {
-      thesis.scores.councilLecturerScores.forEach((c) => {
-        c.student2Score = 0;
-      });
+    thesis.scores.student2FailedStage = targetStage;
+    if (!Array.isArray(thesis.scores.student2FailedStages)) {
+      thesis.scores.student2FailedStages = [];
     }
+    if (!thesis.scores.student2FailedStages.includes(targetStage)) {
+      thesis.scores.student2FailedStages.push(targetStage);
+    }
+
+    // Gán 0 đúng tại cột điểm thành phần đang thao tác
+    if (targetStage === "SUPERVISOR") {
+      thesis.scores.student2SupervisorScore = 0;
+    } else if (targetStage === "REVIEWER_1") {
+      thesis.scores.student2Reviewer1Score = 0;
+      thesis.scores.student2ReviewerScore = 0;
+    } else if (targetStage === "REVIEWER_2") {
+      thesis.scores.student2Reviewer2Score = 0;
+      thesis.scores.student2ReviewerScore = 0;
+    } else if (targetStage === "COUNCIL") {
+      thesis.scores.student2CouncilScore = 0;
+      if (Array.isArray(thesis.scores.councilLecturerScores)) {
+        thesis.scores.councilLecturerScores.forEach((c) => {
+          if (!lecturer || (c.lecturerId?.toString() || c.lecturerId?._id?.toString()) === lecturer._id.toString()) {
+            c.student2Score = 0;
+          }
+        });
+      }
+    }
+    // Điểm tổng kết của SV bị rớt là 0
+    thesis.scores.student2FinalScore = 0;
   }
 
   const s1Failed = Boolean(thesis.scores.isStudent1Failed);
@@ -2214,37 +2321,31 @@ const markStudentFail = async (thesisId, { studentIndex, failReason, requestingU
 
   if (isTwo) {
     if (s1Failed && !s2Failed) {
-      thesis.scores.supervisorScore = thesis.scores.student2SupervisorScore ?? null;
-      thesis.scores.reviewer1Score = thesis.scores.student2Reviewer1Score ?? null;
-      thesis.scores.reviewer2Score = thesis.scores.student2Reviewer2Score ?? null;
-      thesis.scores.reviewerScore = thesis.scores.student2ReviewerScore ?? null;
-      thesis.scores.councilScore = thesis.scores.student2CouncilScore ?? null;
+      if (targetStage === "SUPERVISOR") {
+        thesis.scores.supervisorScore = thesis.scores.student2SupervisorScore ?? null;
+      } else if (targetStage.startsWith("REVIEWER")) {
+        thesis.scores.reviewerScore = thesis.scores.student2ReviewerScore ?? null;
+      } else if (targetStage === "COUNCIL") {
+        thesis.scores.councilScore = thesis.scores.student2CouncilScore ?? null;
+      }
       thesis.scores.finalScore = thesis.scores.student2FinalScore ?? null;
     } else if (s2Failed && !s1Failed) {
-      thesis.scores.supervisorScore = thesis.scores.student1SupervisorScore ?? null;
-      thesis.scores.reviewer1Score = thesis.scores.student1Reviewer1Score ?? null;
-      thesis.scores.reviewer2Score = thesis.scores.student1Reviewer2Score ?? null;
-      thesis.scores.reviewerScore = thesis.scores.student1ReviewerScore ?? null;
-      thesis.scores.councilScore = thesis.scores.student1CouncilScore ?? null;
+      if (targetStage === "SUPERVISOR") {
+        thesis.scores.supervisorScore = thesis.scores.student1SupervisorScore ?? null;
+      } else if (targetStage.startsWith("REVIEWER")) {
+        thesis.scores.reviewerScore = thesis.scores.student1ReviewerScore ?? null;
+      } else if (targetStage === "COUNCIL") {
+        thesis.scores.councilScore = thesis.scores.student1CouncilScore ?? null;
+      }
       thesis.scores.finalScore = thesis.scores.student1FinalScore ?? null;
     } else if (s1Failed && s2Failed) {
-      thesis.scores.supervisorScore = 0;
-      thesis.scores.reviewer1Score = 0;
-      thesis.scores.reviewer2Score = 0;
-      thesis.scores.reviewerScore = 0;
-      thesis.scores.councilScore = 0;
       thesis.scores.finalScore = 0;
-      thesis.status = "REJECTED";
+      thesis.status = "GRADED";
     }
   } else {
     if (s1Failed) {
-      thesis.scores.supervisorScore = 0;
-      thesis.scores.reviewer1Score = 0;
-      thesis.scores.reviewer2Score = 0;
-      thesis.scores.reviewerScore = 0;
-      thesis.scores.councilScore = 0;
       thesis.scores.finalScore = 0;
-      thesis.status = "REJECTED";
+      thesis.status = "GRADED";
     }
   }
 
@@ -2305,45 +2406,81 @@ const unmarkStudentFail = async (thesisId, { studentIndex, requestingUserId, use
   }
 
   if (targetIndex === 1) {
+    const prevStage = thesis.scores.student1FailedStage || "SUPERVISOR";
+    const prevStages = Array.isArray(thesis.scores.student1FailedStages) ? thesis.scores.student1FailedStages : [prevStage];
+
     thesis.scores.isStudent1Failed = false;
     thesis.scores.student1FailReason = null;
     thesis.scores.student1FailedBy = null;
     thesis.scores.student1FailedAt = null;
+    thesis.scores.student1FailedStage = null;
+    thesis.scores.student1FailedStages = [];
 
-    thesis.scores.student1SupervisorScore = null;
-    thesis.scores.student1Reviewer1Score = null;
-    thesis.scores.student1Reviewer2Score = null;
-    thesis.scores.student1ReviewerScore = null;
-    thesis.scores.student1CouncilScore = null;
-    thesis.scores.student1FinalScore = null;
-
-    if (Array.isArray(thesis.scores.councilLecturerScores)) {
-      thesis.scores.councilLecturerScores.forEach((c) => {
-        if (c.student1Score === 0) {
-          c.student1Score = null;
-        }
-      });
+    // Gỡ điểm 0 tại mục bị đánh rớt, mở khóa để giảng viên có thể chấm lại
+    if (prevStages.includes("SUPERVISOR") || thesis.scores.student1SupervisorScore === 0) {
+      thesis.scores.student1SupervisorScore = null;
+      thesis.scores.isSupervisorScoreLocked = false;
     }
+    if (prevStages.includes("REVIEWER_1") || thesis.scores.student1Reviewer1Score === 0) {
+      thesis.scores.student1Reviewer1Score = null;
+      thesis.scores.isReviewer1ScoreLocked = false;
+    }
+    if (prevStages.includes("REVIEWER_2") || thesis.scores.student1Reviewer2Score === 0) {
+      thesis.scores.student1Reviewer2Score = null;
+      thesis.scores.isReviewer2ScoreLocked = false;
+    }
+    if (thesis.scores.student1ReviewerScore === 0) {
+      thesis.scores.student1ReviewerScore = null;
+    }
+    if (prevStages.includes("COUNCIL") || thesis.scores.student1CouncilScore === 0) {
+      thesis.scores.student1CouncilScore = null;
+      if (Array.isArray(thesis.scores.councilLecturerScores)) {
+        thesis.scores.councilLecturerScores.forEach((c) => {
+          if (c.student1Score === 0) {
+            c.student1Score = null;
+          }
+        });
+      }
+    }
+    thesis.scores.student1FinalScore = null;
   } else {
+    const prevStage = thesis.scores.student2FailedStage || "SUPERVISOR";
+    const prevStages = Array.isArray(thesis.scores.student2FailedStages) ? thesis.scores.student2FailedStages : [prevStage];
+
     thesis.scores.isStudent2Failed = false;
     thesis.scores.student2FailReason = null;
     thesis.scores.student2FailedBy = null;
     thesis.scores.student2FailedAt = null;
+    thesis.scores.student2FailedStage = null;
+    thesis.scores.student2FailedStages = [];
 
-    thesis.scores.student2SupervisorScore = null;
-    thesis.scores.student2Reviewer1Score = null;
-    thesis.scores.student2Reviewer2Score = null;
-    thesis.scores.student2ReviewerScore = null;
-    thesis.scores.student2CouncilScore = null;
-    thesis.scores.student2FinalScore = null;
-
-    if (Array.isArray(thesis.scores.councilLecturerScores)) {
-      thesis.scores.councilLecturerScores.forEach((c) => {
-        if (c.student2Score === 0) {
-          c.student2Score = null;
-        }
-      });
+    // Gỡ điểm 0 tại mục bị đánh rớt, mở khóa để giảng viên có thể chấm lại
+    if (prevStages.includes("SUPERVISOR") || thesis.scores.student2SupervisorScore === 0) {
+      thesis.scores.student2SupervisorScore = null;
+      thesis.scores.isSupervisorScoreLocked = false;
     }
+    if (prevStages.includes("REVIEWER_1") || thesis.scores.student2Reviewer1Score === 0) {
+      thesis.scores.student2Reviewer1Score = null;
+      thesis.scores.isReviewer1ScoreLocked = false;
+    }
+    if (prevStages.includes("REVIEWER_2") || thesis.scores.student2Reviewer2Score === 0) {
+      thesis.scores.student2Reviewer2Score = null;
+      thesis.scores.isReviewer2ScoreLocked = false;
+    }
+    if (thesis.scores.student2ReviewerScore === 0) {
+      thesis.scores.student2ReviewerScore = null;
+    }
+    if (prevStages.includes("COUNCIL") || thesis.scores.student2CouncilScore === 0) {
+      thesis.scores.student2CouncilScore = null;
+      if (Array.isArray(thesis.scores.councilLecturerScores)) {
+        thesis.scores.councilLecturerScores.forEach((c) => {
+          if (c.student2Score === 0) {
+            c.student2Score = null;
+          }
+        });
+      }
+    }
+    thesis.scores.student2FinalScore = null;
   }
 
   // Restore thesis status if it was REJECTED
@@ -2411,12 +2548,12 @@ const unmarkStudentFail = async (thesisId, { studentIndex, requestingUserId, use
       thesis.scores.finalScore = thesis.scores.student1FinalScore ?? null;
     }
   } else {
-    thesis.scores.supervisorScore = null;
-    thesis.scores.reviewer1Score = null;
-    thesis.scores.reviewer2Score = null;
-    thesis.scores.reviewerScore = null;
-    thesis.scores.councilScore = null;
-    thesis.scores.finalScore = null;
+    thesis.scores.supervisorScore = thesis.scores.student1SupervisorScore ?? null;
+    thesis.scores.reviewer1Score = thesis.scores.student1Reviewer1Score ?? null;
+    thesis.scores.reviewer2Score = thesis.scores.student1Reviewer2Score ?? null;
+    thesis.scores.reviewerScore = thesis.scores.student1ReviewerScore ?? null;
+    thesis.scores.councilScore = thesis.scores.student1CouncilScore ?? null;
+    thesis.scores.finalScore = thesis.scores.student1FinalScore ?? null;
   }
 
   thesis.markModified("scores");
@@ -3306,7 +3443,7 @@ const getThesesForEvaluation = async ({ search = "", status = "ALL", academicTer
 };
 
 // ====================
-// 2. TBM Completes Thesis Evaluation
+// 2. TBM Completes Thesis Evaluation (Xác nhận & Chốt sổ đề tài)
 // ====================
 const completeThesisEvaluation = async (thesisId, tbmUserId) => {
   const thesis = await Thesis.findById(thesisId);
@@ -3314,43 +3451,80 @@ const completeThesisEvaluation = async (thesisId, tbmUserId) => {
     throw new AppError("Không tìm thấy đề tài khóa luận", 404);
   }
 
-  if (thesis.status === "REJECTED") {
-    throw new AppError("Đề tài đã bị từ chối, không thể hoàn tất đánh giá.", 400);
+  if (!thesis.scores) {
+    thesis.scores = {};
+  }
+  const s = thesis.scores;
+
+  // RULE: Khi TBM bấm nút "Xác nhận" hoàn tất đề tài ở bước cuối cùng (chốt sổ),
+  // hệ thống sẽ tiến hành gán giá trị 0 cho tất cả các cột điểm còn trống/chưa có điểm
+  // của đề tài đó để khóa vĩnh viễn.
+
+  // 1. Assign 0 to all empty/null component scores for Student 1
+  if (s.student1SupervisorScore === null || s.student1SupervisorScore === undefined) s.student1SupervisorScore = 0;
+  if (s.student1Reviewer1Score === null || s.student1Reviewer1Score === undefined) s.student1Reviewer1Score = 0;
+  if (s.student1Reviewer2Score === null || s.student1Reviewer2Score === undefined) s.student1Reviewer2Score = 0;
+  if (s.student1ReviewerScore === null || s.student1ReviewerScore === undefined) s.student1ReviewerScore = 0;
+  if (s.student1CouncilScore === null || s.student1CouncilScore === undefined) s.student1CouncilScore = 0;
+  if (s.student1FinalScore === null || s.student1FinalScore === undefined) {
+    if (s.isStudent1Failed) {
+      s.student1FinalScore = 0;
+    } else {
+      s.student1FinalScore = Number(
+        (s.student1SupervisorScore * 0.5 + s.student1ReviewerScore * 0.3 + s.student1CouncilScore * 0.2).toFixed(2)
+      );
+    }
   }
 
-  const isAssignedPB1 = Boolean(
-    thesis.reviewer1Id ||
-    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
-  );
-  const isAssignedPB2 = Boolean(
-    thesis.reviewer2Id ||
-    (Array.isArray(thesis.reviewers) && thesis.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
-  );
-  const hasPB1 = thesis.scores?.reviewer1Score !== null && thesis.scores?.reviewer1Score !== undefined;
-  const hasPB2 = thesis.scores?.reviewer2Score !== null && thesis.scores?.reviewer2Score !== undefined;
-
-  let isPBDone = false;
-  if (isAssignedPB1 && isAssignedPB2) {
-    isPBDone = hasPB1 && hasPB2;
-  } else if (isAssignedPB1) {
-    isPBDone = hasPB1;
-  } else if (isAssignedPB2) {
-    isPBDone = hasPB2;
+  // 2. Assign 0 to all empty/null component scores for Student 2 (if group)
+  if (thesis.studentCount === 2 && thesis.secondStudentId) {
+    if (s.student2SupervisorScore === null || s.student2SupervisorScore === undefined) s.student2SupervisorScore = 0;
+    if (s.student2Reviewer1Score === null || s.student2Reviewer1Score === undefined) s.student2Reviewer1Score = 0;
+    if (s.student2Reviewer2Score === null || s.student2Reviewer2Score === undefined) s.student2Reviewer2Score = 0;
+    if (s.student2ReviewerScore === null || s.student2ReviewerScore === undefined) s.student2ReviewerScore = 0;
+    if (s.student2CouncilScore === null || s.student2CouncilScore === undefined) s.student2CouncilScore = 0;
+    if (s.student2FinalScore === null || s.student2FinalScore === undefined) {
+      if (s.isStudent2Failed) {
+        s.student2FinalScore = 0;
+      } else {
+        s.student2FinalScore = Number(
+          (s.student2SupervisorScore * 0.5 + s.student2ReviewerScore * 0.3 + s.student2CouncilScore * 0.2).toFixed(2)
+        );
+      }
+    }
   }
 
-  if (
-    !thesis.scores ||
-    thesis.scores.supervisorScore === null ||
-    !isPBDone ||
-    thesis.scores.finalScore === null
-  ) {
-    throw new AppError(
-      "Đề tài chưa được chấm đầy đủ điểm (GVHD, GVPB, Hội đồng) để hoàn tất",
-      400,
-    );
+  // 3. Thesis overall scores
+  if (s.supervisorScore === null || s.supervisorScore === undefined) {
+    s.supervisorScore = thesis.studentCount === 2 && thesis.secondStudentId
+      ? Number(((s.student1SupervisorScore + s.student2SupervisorScore) / 2).toFixed(2))
+      : s.student1SupervisorScore;
   }
+  if (s.reviewer1Score === null || s.reviewer1Score === undefined) s.reviewer1Score = s.student1Reviewer1Score;
+  if (s.reviewer2Score === null || s.reviewer2Score === undefined) s.reviewer2Score = s.student1Reviewer2Score;
+  if (s.reviewerScore === null || s.reviewerScore === undefined) {
+    s.reviewerScore = thesis.studentCount === 2 && thesis.secondStudentId
+      ? Number(((s.student1ReviewerScore + s.student2ReviewerScore) / 2).toFixed(2))
+      : s.student1ReviewerScore;
+  }
+  if (s.councilScore === null || s.councilScore === undefined) {
+    s.councilScore = thesis.studentCount === 2 && thesis.secondStudentId
+      ? Number(((s.student1CouncilScore + s.student2CouncilScore) / 2).toFixed(2))
+      : s.student1CouncilScore;
+  }
+  if (s.finalScore === null || s.finalScore === undefined) {
+    s.finalScore = thesis.studentCount === 2 && thesis.secondStudentId
+      ? Number(((s.student1FinalScore + s.student2FinalScore) / 2).toFixed(2))
+      : s.student1FinalScore;
+  }
+
+  // Lock all scores
+  s.isSupervisorScoreLocked = true;
+  s.isReviewer1ScoreLocked = true;
+  s.isReviewer2ScoreLocked = true;
 
   thesis.status = "COMPLETED";
+  thesis.markModified("scores");
   await thesis.save();
 
   return await Thesis.findById(thesis._id)

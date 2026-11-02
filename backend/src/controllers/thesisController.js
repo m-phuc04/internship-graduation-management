@@ -334,10 +334,12 @@ const gradeThesisByLecturer = async (req, res, next) => {
 // ====================
 const markStudentFail = async (req, res, next) => {
   try {
-    const { studentIndex, reason } = req.body;
+    const { studentIndex, reason, stage, role } = req.body;
     const thesis = await thesisService.markStudentFail(req.params.id, {
       studentIndex: Number(studentIndex),
       failReason: reason,
+      stage: stage || role,
+      role: role || stage,
       requestingUserId: req.user.userId || req.user._id,
       userRole: req.user.role,
     });

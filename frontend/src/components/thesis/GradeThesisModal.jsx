@@ -74,6 +74,8 @@ const GradeThesisModal = ({
       const res = await thesisApi.markStudentFail(thesis._id, {
         studentIndex: confirmFailDialog.studentIndex,
         reason: 'Giảng viên đánh dấu không đạt (Rớt)',
+        stage: activeRoleTab || defaultRoleType || 'SUPERVISOR',
+        role: activeRoleTab || defaultRoleType || 'SUPERVISOR',
       });
       if (res.success) {
         showToast(`Đã đánh dấu rớt cho sinh viên ${confirmFailDialog.studentName}!`, 'success');
@@ -111,7 +113,7 @@ const GradeThesisModal = ({
   const commentRef = useRef(null);
 
   const isCompleted = thesis?.status === 'COMPLETED';
-  const isRejected = thesis?.status === 'REJECTED';
+  const isRejected = thesis?.status === 'REJECTED' && !thesis?.scores?.isStudent1Failed && !thesis?.scores?.isStudent2Failed && (thesis?.scores?.finalScore === null || thesis?.scores?.finalScore === undefined);
   const isTwoStudents = thesis?.studentCount === 2 && thesis?.secondStudentId;
 
   // Determine current lecturer's role on this thesis
@@ -545,16 +547,6 @@ const GradeThesisModal = ({
               <div className="font-bold">Đánh giá đã hoàn thành</div>
               <p className="text-[11px] text-emerald-700 mt-0.5">
                 Đề tài khóa luận này đã hoàn tất nghiệm thu và đánh giá. Không được phép chỉnh sửa điểm và nhận xét.
-              </p>
-            </div>
-          </div>
-        ) : isRejected ? (
-          <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-900 text-xs flex items-center gap-2.5 shadow-2xs">
-            <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
-            <div>
-              <div className="font-bold">Đề tài đã bị dừng quy trình (FAIL / REJECTED)</div>
-              <p className="text-[11px] text-rose-700 mt-0.5">
-                {thesis.rejectionReason || 'Đề tài không đủ điều kiện hoặc quá hạn đánh giá KLTN.'}
               </p>
             </div>
           </div>

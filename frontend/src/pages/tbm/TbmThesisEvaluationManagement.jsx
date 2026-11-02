@@ -347,48 +347,30 @@ const TbmThesisEvaluationManagement = () => {
 
       const isManuallyFailed = Boolean(studentIndex === 2 ? s.isStudent2Failed : s.isStudent1Failed);
       const manualFailReason = (studentIndex === 2 ? s.student2FailReason : s.student1FailReason) || 'Đã đánh dấu rớt (FAIL)';
+      const failedStage = studentIndex === 2 ? s.student2FailedStage : s.student1FailedStage;
+      const failedStages = (studentIndex === 2 ? s.student2FailedStages : s.student1FailedStages) || (failedStage ? [failedStage] : []);
 
-      if (isManuallyFailed) {
-        return {
-          scoreHD: 0,
-          scorePB: 0,
-          scorePB1: 0,
-          scorePB2: 0,
-          scoreGVHD1: 0,
-          scoreGVHD2: 0,
-          scoreCouncil: 0,
-          finalScore: 0,
-          hasHD: true,
-          hasPB: true,
-          hasPB1: true,
-          hasPB2: true,
-          hasCouncil: true,
-          assignedCouncil,
-          hasTwoCouncilLecturers: Boolean(assignedCouncil?.lecturers?.length >= 2),
-          isHDFailed: true,
-          isPBFailed: true,
-          isCouncilFailed: true,
-          isFailed: true,
-          isPassed: false,
-          failReason: manualFailReason,
-          isManuallyFailed: true,
-        };
-      }
+      // Xác định chính xác vòng nào bị đánh dấu rớt để chỉ gán nhãn Rớt tại đúng vòng đó
+      const isHDFailMarked = isManuallyFailed && (failedStages.includes('SUPERVISOR') || failedStage === 'SUPERVISOR' || (!failedStage && scoreHD === 0));
+      const isPBFailMarked = isManuallyFailed && (failedStages.includes('REVIEWER_1') || failedStages.includes('REVIEWER_2') || failedStage === 'REVIEWER_1' || failedStage === 'REVIEWER_2' || (failedStage && failedStage.startsWith('REVIEWER')) || (!failedStage && scorePB === 0));
+      const isCouncilFailMarked = isManuallyFailed && (failedStages.includes('COUNCIL') || failedStage === 'COUNCIL' || (!failedStage && scoreCouncil === 0));
 
-      const hasHD = !isManuallyFailed && scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD);
-      const isHDFailed = !isManuallyFailed && hasHD && Number(scoreHD) < 4.0;
+      const hasHD = (scoreHD !== null && scoreHD !== undefined && !isNaN(scoreHD)) || isHDFailMarked;
+      const isHDFailed = isHDFailMarked || (hasHD && Number(scoreHD) < 4.0);
 
-      const hasPB = scorePB !== null && scorePB !== undefined && !isNaN(scorePB);
-      const isPBFailed = hasPB && Number(scorePB) === 0;
+      const hasPB = (scorePB !== null && scorePB !== undefined && !isNaN(scorePB)) || isPBFailMarked;
+      const isPBFailed = isPBFailMarked || (hasPB && Number(scorePB) === 0);
 
-      const hasCouncil = scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil);
-      const isCouncilFailed = hasCouncil && Number(scoreCouncil) === 0;
+      const hasCouncil = (scoreCouncil !== null && scoreCouncil !== undefined && !isNaN(scoreCouncil)) || isCouncilFailMarked;
+      const isCouncilFailed = isCouncilFailMarked || (hasCouncil && Number(scoreCouncil) === 0);
 
       // 4. Điểm Tổng Kết (100%): GVHD (50%) + PB kín (30%) + Hội đồng (20%)
       let finalScore = null;
       const storedFinal = studentIndex === 2 ? s.student2FinalScore : s.student1FinalScore;
       if (storedFinal !== null && storedFinal !== undefined && !isNaN(storedFinal)) {
         finalScore = Number(Number(storedFinal).toFixed(2));
+      } else if (isManuallyFailed) {
+        finalScore = 0;
       } else if (hasHD && hasPB && hasCouncil && !isHDFailed && !isPBFailed && !isCouncilFailed) {
         finalScore = Number(
           (Number(scoreHD) * 0.5 + Number(scorePB) * 0.3 + Number(scoreCouncil) * 0.2).toFixed(2)
@@ -402,7 +384,11 @@ const TbmThesisEvaluationManagement = () => {
       let failReason = '';
       let isPassed = false;
 
-      if (isHDFailed) {
+      if (isManuallyFailed) {
+        isFailed = true;
+        failReason = manualFailReason;
+        finalScore = 0;
+      } else if (isHDFailed) {
         isFailed = true;
         failReason = 'Điểm GVHD < 4.0 (Không đạt)';
       } else if (isPBFailed) {
@@ -420,21 +406,15 @@ const TbmThesisEvaluationManagement = () => {
         }
       }
 
-      if (isManuallyFailed) {
-        isFailed = true;
-        failReason = manualFailReason;
-        finalScore = 0;
-      }
-
       return {
-        scoreHD: isManuallyFailed ? 0 : (hasHD ? Number(scoreHD) : null),
-        scorePB: isManuallyFailed ? 0 : (hasPB ? Number(scorePB) : null),
-        scorePB1: isManuallyFailed ? 0 : (hasPB1 ? Number(sPB1) : null),
-        scorePB2: isManuallyFailed ? 0 : (hasPB2 ? Number(sPB2) : null),
-        scoreGVHD1: isManuallyFailed ? 0 : (scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null),
-        scoreGVHD2: isManuallyFailed ? 0 : (scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null),
-        scoreCouncil: isManuallyFailed ? 0 : (hasCouncil ? Number(scoreCouncil) : null),
-        finalScore: isManuallyFailed ? 0 : finalScore,
+        scoreHD: hasHD ? (isHDFailMarked ? 0 : Number(scoreHD)) : null,
+        scorePB: hasPB ? (isPBFailMarked ? 0 : Number(scorePB)) : null,
+        scorePB1: sPB1 !== null && sPB1 !== undefined ? Number(sPB1) : (isPBFailMarked ? 0 : null),
+        scorePB2: sPB2 !== null && sPB2 !== undefined ? Number(sPB2) : null,
+        scoreGVHD1: scoreGVHD1 !== null && scoreGVHD1 !== undefined ? Number(scoreGVHD1) : null,
+        scoreGVHD2: scoreGVHD2 !== null && scoreGVHD2 !== undefined ? Number(scoreGVHD2) : null,
+        scoreCouncil: hasCouncil ? (isCouncilFailMarked ? 0 : Number(scoreCouncil)) : null,
+        finalScore: isFailed ? 0 : finalScore,
         hasHD,
         hasPB,
         hasPB1: hasPB,
@@ -445,9 +425,13 @@ const TbmThesisEvaluationManagement = () => {
         isHDFailed,
         isPBFailed,
         isCouncilFailed,
+        isHDFailMarked,
+        isPBFailMarked,
+        isCouncilFailMarked,
         isFailed,
         isPassed,
         failReason,
+        isManuallyFailed,
       };
     },
     [thesisCouncilMap, councilsMap]
@@ -617,40 +601,89 @@ const TbmThesisEvaluationManagement = () => {
       };
     }
 
+    let hdRequired = 0;
     let hdCount = 0;
+
+    let pb1Required = 0;
     let pb1Count = 0;
+
+    let councilRequired = 0;
     let councilCount = 0;
+
+    let finalRequired = 0;
     let finalCount = 0;
 
     list.forEach((item) => {
-      const info = getThesisScoreInfo(item);
-      if (info.hasHD) hdCount++;
-      if (info.hasPB1) pb1Count++;
-      if (info.hasCouncil) councilCount++;
-      if (info.finalScore !== null && info.finalScore !== undefined) finalCount++;
+      const isGroup = item.studentCount === 2 && Boolean(item.secondStudentId);
+      const info1 = getThesisScoreInfo(item, 1);
+      const info2 = isGroup ? getThesisScoreInfo(item, 2) : null;
+
+      // 1. GVHD (Supervisor)
+      hdRequired++;
+      const hd1Done = info1.hasHD || info1.isHDFailMarked || info1.isFailed;
+      const hd2Done = !isGroup || (info2.hasHD || info2.isHDFailMarked || info2.isFailed);
+      if (hd1Done && hd2Done) {
+        hdCount++;
+      }
+
+      // 2. PB kín (Reviewer) - Bỏ qua ngoại lệ đề tài đã rớt trước vòng này
+      const isEntirelyFailedAtHD = isGroup
+        ? (info1.isHDFailMarked || (info1.isFailed && !info1.hasPB)) && (info2.isHDFailMarked || (info2.isFailed && !info2.hasPB))
+        : (info1.isHDFailMarked || (info1.isFailed && !info1.hasPB));
+
+      if (!isEntirelyFailedAtHD) {
+        pb1Required++;
+        const pb1Done = info1.hasPB || info1.isPBFailMarked || (info1.isFailed && !info1.hasPB);
+        const pb2Done = !isGroup || info2.hasPB || info2.isPBFailMarked || (info2.isFailed && !info2.hasPB);
+        if (pb1Done && pb2Done) {
+          pb1Count++;
+        }
+      }
+
+      // 3. Hội đồng (Council) - Bỏ qua ngoại lệ đề tài đã rớt trước vòng này
+      const isEntirelyFailedBeforeCouncil = isGroup
+        ? (info1.isFailed && !info1.hasCouncil) && (info2.isFailed && !info2.hasCouncil)
+        : (info1.isFailed && !info1.hasCouncil);
+
+      if (!isEntirelyFailedBeforeCouncil) {
+        councilRequired++;
+        const c1Done = info1.hasCouncil || info1.isCouncilFailMarked || (info1.isFailed && !info1.hasCouncil);
+        const c2Done = !isGroup || info2.hasCouncil || info2.isCouncilFailMarked || (info2.isFailed && !info2.hasCouncil);
+        if (c1Done && c2Done) {
+          councilCount++;
+        }
+      }
+
+      // 4. Final Score - Mọi đề tài có điểm tổng kết hợp lệ hoặc đã có kết quả FAIL
+      finalRequired++;
+      const f1Done = info1.finalScore !== null || info1.isFailed;
+      const f2Done = !isGroup || (info2.finalScore !== null || info2.isFailed);
+      if (f1Done && f2Done) {
+        finalCount++;
+      }
     });
 
     return {
       totalTheses: total,
       supervisorScore: {
-        hasAll: hdCount === total,
+        hasAll: hdRequired > 0 && hdCount === hdRequired,
         count: hdCount,
-        total,
+        total: hdRequired,
       },
       reviewer1Score: {
-        hasAll: pb1Count === total,
+        hasAll: pb1Required > 0 && pb1Count === pb1Required,
         count: pb1Count,
-        total,
+        total: pb1Required,
       },
       councilScore: {
-        hasAll: councilCount === total,
+        hasAll: councilRequired > 0 && councilCount === councilRequired,
         count: councilCount,
-        total,
+        total: councilRequired,
       },
       finalScore: {
-        hasAll: finalCount === total,
+        hasAll: finalRequired > 0 && finalCount === finalRequired,
         count: finalCount,
-        total,
+        total: finalRequired,
       },
     };
   }, [theses, getThesisScoreInfo]);
@@ -1100,8 +1133,8 @@ const TbmThesisEvaluationManagement = () => {
                       const scoreInfo = scoreInfo1;
 
                       const isFullyGraded = isGroup
-                        ? scoreInfo1.finalScore !== null && scoreInfo2?.finalScore !== null
-                        : scoreInfo.finalScore !== null;
+                        ? (scoreInfo1.finalScore !== null || scoreInfo1.isFailed) && (scoreInfo2?.finalScore !== null || scoreInfo2?.isFailed)
+                        : (scoreInfo.finalScore !== null || scoreInfo.isFailed);
                       const isCompleted = item.status === 'COMPLETED';
 
                       // Check if any score is currently published for this thesis
@@ -1119,27 +1152,45 @@ const TbmThesisEvaluationManagement = () => {
                           )}
                           <div>
                             <span className="text-slate-400 font-sans">GVHD (50%):</span>{' '}
-                            <strong
-                              className={
-                                info.hasHD
-                                  ? 'text-[#123891]'
-                                  : 'text-slate-400 font-normal font-sans'
-                              }
-                            >
-                              {info.hasHD ? info.scoreHD : '—'}
-                            </strong>
+                            {info.isHDFailMarked ? (
+                              <span className="inline-flex items-center gap-1">
+                                <strong className="text-rose-600 font-bold">0.0</strong>
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300">
+                                  Rớt
+                                </span>
+                              </span>
+                            ) : (
+                              <strong
+                                className={
+                                  info.hasHD
+                                    ? 'text-[#123891]'
+                                    : 'text-slate-400 font-normal font-sans'
+                                }
+                              >
+                                {info.hasHD ? info.scoreHD : '—'}
+                              </strong>
+                            )}
                           </div>
                           <div>
                             <span className="text-slate-400 font-sans">PB kín (30%):</span>{' '}
-                            <strong
-                              className={
-                                info.hasPB
-                                  ? 'text-[#123891]'
-                                  : 'text-slate-400 font-normal font-sans'
-                              }
-                            >
-                              {info.hasPB ? info.scorePB : '—'}
-                            </strong>
+                            {info.isPBFailMarked ? (
+                              <span className="inline-flex items-center gap-1">
+                                <strong className="text-rose-600 font-bold">0.0</strong>
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300">
+                                  Rớt
+                                </span>
+                              </span>
+                            ) : (
+                              <strong
+                                className={
+                                  info.hasPB
+                                    ? 'text-[#123891]'
+                                    : 'text-slate-400 font-normal font-sans'
+                                }
+                              >
+                                {info.hasPB ? info.scorePB : '—'}
+                              </strong>
+                            )}
                           </div>
                           <div className="flex items-center gap-1 text-[10.5px]">
                             <span className="text-slate-400 font-sans">GVHĐ 1:</span>{' '}
@@ -1154,7 +1205,16 @@ const TbmThesisEvaluationManagement = () => {
                           </div>
                           <div>
                             <span className="text-slate-400 font-sans">Điểm hội đồng (20%):</span>{' '}
-                            {info.hasCouncil ? (
+                            {info.isCouncilFailMarked ? (
+                              <span className="inline-flex items-center gap-1">
+                                <strong className="text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200">
+                                  0.0
+                                </strong>
+                                <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300">
+                                  Rớt
+                                </span>
+                              </span>
+                            ) : info.hasCouncil ? (
                               <strong className="text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">
                                 {info.scoreCouncil}
                               </strong>
@@ -1178,7 +1238,19 @@ const TbmThesisEvaluationManagement = () => {
                               <span>{studentLabel}:</span>
                             </span>
                           )}
-                          {info.finalScore !== null ? (
+                          {info.isFailed ? (
+                            <div className="inline-flex items-baseline gap-1">
+                              <span className="text-base font-extrabold font-mono text-rose-600">
+                                0.0
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-normal">
+                                /10
+                              </span>
+                              <span className="ml-1 px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-300">
+                                Rớt
+                              </span>
+                            </div>
+                          ) : info.finalScore !== null ? (
                             <div className="inline-flex items-baseline gap-1">
                               <span
                                 className={`text-base font-extrabold font-mono ${
