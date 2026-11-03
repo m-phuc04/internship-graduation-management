@@ -219,7 +219,7 @@ const InternshipDetailModal = ({
                       {internship.lecturerId?.academicTitle} {internship.lecturerId?.userId?.fullName}
                     </span>
                     <div className="text-[11px] text-slate-500 font-mono mt-0.5">
-                      Mã GV: {internship.lecturerId?.lecturerCode} • {internship.lecturerId?.userId?.email}
+                      {internship.lecturerId?.userId?.email}
                     </div>
                   </div>
                 ) : (

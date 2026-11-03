@@ -80,10 +80,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
               {lecturer?.academicTitle} {lecturer?.fullName}
             </strong>
           </div>
-          <div>
-            Mã số Giảng viên:{' '}
-            <strong className="font-mono">{lecturer?.lecturerCode}</strong>
-          </div>
+          
           <div>
             Đơn vị công tác:{' '}
             <strong>{lecturer?.faculty || 'Khoa CNTT'}</strong>

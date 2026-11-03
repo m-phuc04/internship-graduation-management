@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -37,6 +38,7 @@ import {
 } from 'lucide-react';
 
 const MyThesisPage = () => {
+  const { user } = useAuth();
   const { currentTerm } = useAcademicTerm();
   const [searchParams] = useSearchParams();
   const isEvaluationView = searchParams.get('view') === 'evaluation';
@@ -153,7 +155,7 @@ const MyThesisPage = () => {
         fetchMyThesis();
       }
     } catch (err) {
-      showToast(err.message || 'Hủy nhóm thất bại', 'error');
+      showToast(err.message || 'Hủy đăng ký nhóm thất bại', 'error');
     } finally {
       setCancelingGroup(false);
     }
@@ -403,9 +405,18 @@ const MyThesisPage = () => {
   if (privateReviewerScore !== null) scoredCount++;
   if (councilScore !== null) scoredCount++;
 
+  const currentStudentIndex = (
+    (thesis?.secondStudentId && student?.userId?._id && String(thesis.secondStudentId._id || thesis.secondStudentId) === String(student.userId._id)) ||
+    (thesis?.secondStudentId && user?._id && String(thesis.secondStudentId.userId?._id || thesis.secondStudentId.userId || thesis.secondStudentId) === String(user._id)) ||
+    (thesis?.secondStudentId && student?.studentCode && (thesis.secondStudentId.studentCode === student.studentCode)) ||
+    (thesis?.secondStudentId && user?.studentCode && (thesis.secondStudentId.studentCode === user.studentCode))
+  ) ? 2 : 1;
+  const isFailedStudent = (currentStudentIndex === 2 ? thesis?.scores?.isStudent2Failed : thesis?.scores?.isStudent1Failed) || (thesis?.status === 'REJECTED' && (thesis?.scores?.isStudent1Failed || thesis?.scores?.isStudent2Failed || (thesis?.scores?.finalScore !== null && thesis?.scores?.finalScore !== undefined)));
   const isFullGraded = supervisorScore !== null && privateReviewerScore !== null && councilScore !== null;
   let finalScore = null;
-  if (isFullGraded) {
+  if (isFailedStudent) {
+    finalScore = 0;
+  } else if (isFullGraded) {
     finalScore = Number((supervisorScore * 0.5 + privateReviewerScore * 0.3 + councilScore * 0.2).toFixed(2));
   } else if (thesis?.scores?.finalScore !== null && thesis?.scores?.finalScore !== undefined) {
     finalScore = Number(thesis.scores.finalScore);
@@ -485,7 +496,12 @@ const MyThesisPage = () => {
     text: 'Chưa công bố điểm',
     className: 'bg-slate-100 text-slate-700 border-slate-200',
   };
-  if (isAllPublished && isFullGraded) {
+  if (isFailedStudent && (isFinalPublished || hasAnyPublished)) {
+    evalStatusBadge = {
+      text: 'Không đạt (FAIL)',
+      className: 'bg-rose-50 text-rose-700 border-rose-200',
+    };
+  } else if (isAllPublished && isFullGraded) {
     evalStatusBadge = {
       text: 'Đã hoàn tất đánh giá & công bố',
       className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -692,7 +708,7 @@ const MyThesisPage = () => {
               <RefreshCw className="w-4 h-4" />
             </button>
 
-            {canRegisterNew && (
+            {canRegisterNew && !thesis?.scores?.isStudent1Failed && !thesis?.scores?.isStudent2Failed && (
               <Link
                 to="/student/thesis/register"
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
@@ -707,59 +723,57 @@ const MyThesisPage = () => {
 
       {/* 1. SV2 Pending Invitation Banner */}
       {thesis && isStudent2 && thesis.status === 'WAITING_FOR_STUDENT2_CONFIRMATION' && thesis.student2Status === 'PENDING' && (
-        <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border-2 border-amber-400 text-slate-900 shadow-sm space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs mt-0.5">
-                <Users className="w-6 h-6 text-amber-700 animate-bounce" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 uppercase tracking-wider">
-                    Lời mời tham gia nhóm KLTN
-                  </span>
-                </div>
-                <h3 className="text-base font-bold text-slate-900 mt-1">
-                  Sinh viên {thesis.studentId?.userId?.fullName || thesis.studentId?.studentCode} ({thesis.studentId?.studentCode}) đã mời bạn tham gia nhóm đề tài
-                </h3>
-                <p className="text-xs text-slate-600 mt-1">
-                  Đề tài: <strong>"{thesis.thesisTitle}"</strong> • GVHD: <strong>{formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName)}</strong>
-                </p>
-              </div>
+        <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border-2 border-amber-400 text-slate-900 shadow-sm flex flex-col gap-4">
+          <div className="flex items-start gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+              <Users className="w-6 h-6 text-amber-700 animate-bounce" />
             </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 uppercase tracking-wider">
+                  Lời mời tham gia nhóm KLTN
+                </span>
+              </div>
+              <h3 className="text-base font-bold text-slate-900 mt-1">
+                Sinh viên {thesis.studentId?.userId?.fullName || thesis.studentId?.studentCode} ({thesis.studentId?.studentCode}) đã mời bạn tham gia nhóm đề tài
+              </h3>
+              <p className="text-xs text-slate-600 mt-1">
+                Đề tài: <strong>"{thesis.thesisTitle}"</strong> • GVHD: <strong>{formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName)}</strong>
+              </p>
+            </div>
+          </div>
 
-            <div className="flex items-center gap-2.5 self-start md:self-center shrink-0">
-              <button
-                onClick={() => handleRespondInvitation('ACCEPT')}
-                disabled={respondingInvitation}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-              >
-                <Check className="w-4 h-4" />
-                <span>{respondingInvitation ? 'Đang xử lý...' : 'Xác nhận tham gia'}</span>
-              </button>
-              <button
-                onClick={() => handleRespondInvitation('REJECT')}
-                disabled={respondingInvitation}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 hover:border-rose-400 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-                <span>Từ chối</span>
-              </button>
-            </div>
+          <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
+            <button
+              onClick={() => handleRespondInvitation('ACCEPT')}
+              disabled={respondingInvitation}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            >
+              <Check className="w-4 h-4" />
+              <span>{respondingInvitation ? 'Đang xử lý...' : 'Xác nhận tham gia'}</span>
+            </button>
+            <button
+              onClick={() => handleRespondInvitation('REJECT')}
+              disabled={respondingInvitation}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 hover:border-rose-400 disabled:opacity-50 text-xs font-bold rounded-xl transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>Từ chối</span>
+            </button>
           </div>
         </div>
       )}
 
       {/* 2. SV1 Waiting for SV2 Confirmation Banner */}
       {thesis && isStudent1 && thesis.status === 'WAITING_FOR_STUDENT2_CONFIRMATION' && (
-        <div className="p-5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-amber-50/90 border border-amber-200 text-amber-950 text-xs flex flex-col gap-3.5 shadow-2xs">
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="font-bold text-sm text-amber-900">
                 Đang chờ Sinh viên 2 xác nhận tham gia nhóm
               </div>
-              <div className="mt-0.5 leading-relaxed text-slate-700">
+              <div className="mt-1 leading-relaxed text-slate-700">
                 Hệ thống đã gửi lời mời đến Sinh viên{' '}
                 <strong>
                   {thesis.secondStudentId?.userId?.fullName || thesis.secondStudentId?.studentCode} ({thesis.secondStudentId?.studentCode})
@@ -769,7 +783,7 @@ const MyThesisPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
             <button
               onClick={handleCancelStudent2Invite}
               disabled={cancelingInvite}
@@ -784,7 +798,7 @@ const MyThesisPage = () => {
               className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-700 border border-rose-300 rounded-xl font-semibold transition cursor-pointer text-xs"
             >
               <X className="w-3.5 h-3.5" />
-              <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy đăng ký'}</span>
+              <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy đăng ký nhóm'}</span>
             </button>
           </div>
         </div>
@@ -792,10 +806,10 @@ const MyThesisPage = () => {
 
       {/* 3. Ready for Supervisor Request Banner */}
       {thesis && thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST' && (
-        <div className="p-5 rounded-2xl bg-blue-50/90 border border-blue-200 text-slate-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-blue-50/90 border border-blue-200 text-slate-900 text-xs flex flex-col gap-3.5 shadow-2xs">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="font-bold text-sm text-[#102d7d]">
                 {isStudent1
                   ? thesis.student2Status === 'ACCEPTED'
@@ -803,7 +817,7 @@ const MyThesisPage = () => {
                     : 'Đề tài sẵn sàng gửi yêu cầu xét duyệt đến Giảng viên hướng dẫn'
                   : 'Bạn đã tham gia nhóm thành công!'}
               </div>
-              <div className="mt-0.5 leading-relaxed text-slate-700">
+              <div className="mt-1 leading-relaxed text-slate-700">
                 {isStudent1 ? (
                   thesis.student2Status === 'ACCEPTED' ? (
                     <>
@@ -825,7 +839,7 @@ const MyThesisPage = () => {
 
           {/* SV2 Action */}
           {isStudent2 && canCancelRegistration && (
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
               <button
                 onClick={handleCancelParticipation}
                 disabled={cancelingParticipation}
@@ -839,7 +853,7 @@ const MyThesisPage = () => {
 
           {/* SV1 Actions */}
           {isStudent1 && (
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-2.5 pt-1">
               {(!thesis.secondStudentId || thesis.student2Status === 'REJECTED') && (
                 <button
                   onClick={() => setInviteModalOpen(true)}
@@ -869,13 +883,13 @@ const MyThesisPage = () => {
                 title="Hủy đề tài nhóm để đăng ký lại"
               >
                 <X className="w-4 h-4" />
-                <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy nhóm'}</span>
+                <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy đăng ký nhóm'}</span>
               </button>
 
               <button
                 onClick={handleSendSupervisorRequest}
                 disabled={sendingToSupervisor}
-                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition cursor-pointer text-xs"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
               >
                 <Send className="w-4 h-4" />
                 <span>{sendingToSupervisor ? 'Đang gửi...' : 'Gửi yêu cầu GVHD'}</span>
@@ -887,14 +901,14 @@ const MyThesisPage = () => {
 
       {/* 4. Pending Approval Notice Banner */}
       {thesis && isPendingApproval && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-2xs">
+        <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col gap-3.5 shadow-2xs">
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="font-bold text-sm text-amber-900">
                 Đang chờ Giảng viên hướng dẫn duyệt đăng ký
               </div>
-              <div className="mt-0.5 leading-relaxed text-slate-700">
+              <div className="mt-1 leading-relaxed text-slate-700">
                 Đề tài <strong>"{thesis.thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
                 <strong>
                   {formatLecturerDisplay(
@@ -907,19 +921,8 @@ const MyThesisPage = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 self-start sm:self-center">
-            {isStudent2 && canCancelRegistration && (
-              <button
-                onClick={handleCancelParticipation}
-                disabled={cancelingParticipation}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-rose-50 text-rose-600 border border-rose-300 rounded-xl font-bold transition cursor-pointer text-xs shadow-xs"
-              >
-                <UserMinus className="w-3.5 h-3.5" />
-                <span>{cancelingParticipation ? 'Đang xử lý...' : 'Hủy tham gia nhóm'}</span>
-              </button>
-            )}
-
-            {isStudent1 && canCancelRegistration && (
+          {canCancelRegistration && isStudent1 && (
+            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
               <button
                 onClick={handleCancelGroupRegistration}
                 disabled={cancelingGroup}
@@ -928,13 +931,13 @@ const MyThesisPage = () => {
                 <X className="w-3.5 h-3.5" />
                 <span>{cancelingGroup ? 'Đang hủy...' : 'Hủy đăng ký nhóm'}</span>
               </button>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* 5. Supervisor Rejected Banner */}
-      {thesis && thesis.status === 'REJECTED' && (
+      {thesis && thesis.status === 'REJECTED' && !thesis?.scores?.isStudent1Failed && !thesis?.scores?.isStudent2Failed && (thesis?.scores?.finalScore === null || thesis?.scores?.finalScore === undefined) && (
         <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-950 text-xs flex items-start gap-3 shadow-2xs">
           <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
           <div>
@@ -1170,15 +1173,19 @@ const MyThesisPage = () => {
                     {/* 4. Điểm Tổng Kết */}
                     <div
                       className={`p-4 rounded-2xl border space-y-1 text-center relative flex flex-col justify-between ${
-                        isFinalPublished && isFullGraded && finalScore !== null
-                          ? 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-200'
+                        isFinalPublished && (isFullGraded || isFailedStudent) && finalScore !== null
+                          ? isFailedStudent
+                            ? 'bg-rose-600 text-white border-rose-700 shadow-md shadow-rose-200'
+                            : 'bg-emerald-600 text-white border-emerald-700 shadow-md shadow-emerald-200'
                           : 'bg-slate-50 text-slate-700 border-slate-200'
                       }`}
                     >
                       <div>
                         <div
                           className={`text-[11px] font-bold uppercase tracking-wider ${
-                            isFinalPublished && isFullGraded && finalScore !== null ? 'text-emerald-100' : 'text-slate-600'
+                            isFinalPublished && (isFullGraded || isFailedStudent) && finalScore !== null
+                              ? isFailedStudent ? 'text-rose-100' : 'text-emerald-100'
+                              : 'text-slate-600'
                           }`}
                         >
                           ĐIỂM TỔNG KẾT
@@ -1191,10 +1198,10 @@ const MyThesisPage = () => {
                             <span className="inline-block w-2 h-2 rounded-full bg-slate-300"></span>
                             <span>Chưa công bố</span>
                           </div>
-                        ) : isFullGraded && finalScore !== null ? (
+                        ) : (isFullGraded || isFailedStudent) && finalScore !== null ? (
                           <div className="font-mono text-2xl font-black text-white">
                             {finalScore.toFixed(2)}{' '}
-                            <span className="text-xs font-normal text-emerald-200">/ 10</span>
+                            <span className={`text-xs font-normal ${isFailedStudent ? 'text-rose-200' : 'text-emerald-200'}`}>/ 10</span>
                           </div>
                         ) : (
                           <div className="text-xs font-semibold text-slate-500 py-1">
@@ -1205,15 +1212,17 @@ const MyThesisPage = () => {
 
                       <div
                         className={`text-[10.5px] pt-1 border-t ${
-                          isFinalPublished && isFullGraded && finalScore !== null
-                            ? 'border-emerald-500/60 text-emerald-100 font-medium'
+                          isFinalPublished && (isFullGraded || isFailedStudent) && finalScore !== null
+                            ? isFailedStudent
+                              ? 'border-rose-500/60 text-rose-100 font-bold'
+                              : 'border-emerald-500/60 text-emerald-100 font-medium'
                             : 'border-slate-200 text-slate-400'
                         }`}
                       >
                         {!isFinalPublished ? (
                           <span className="text-slate-400">—</span>
-                        ) : isFullGraded && finalScore !== null ? (
-                          <span>{finalScore >= 8.5 ? 'Xuất sắc' : finalScore >= 8.0 ? 'Giỏi' : finalScore >= 7.0 ? 'Khá' : 'Đạt'}</span>
+                        ) : (isFullGraded || isFailedStudent) && finalScore !== null ? (
+                          <span>{isFailedStudent ? 'Không đạt (FAIL)' : finalScore >= 8.5 ? 'Xuất sắc' : finalScore >= 8.0 ? 'Giỏi' : finalScore >= 7.0 ? 'Khá' : 'Đạt'}</span>
                         ) : (
                           <span>Chưa hoàn tất các cột điểm</span>
                         )}
@@ -1322,10 +1331,7 @@ const MyThesisPage = () => {
                       {formatLecturerDisplay(thesis.supervisorId.academicTitle, thesis.supervisorId.userId?.fullName)}
                     </strong>
                   </div>
-                  <div>
-                    <span className="text-slate-400 block text-[11px]">Mã giảng viên:</span>
-                    <span className="font-mono text-[#102d7d] font-bold">{thesis.supervisorId.lecturerCode}</span>
-                  </div>
+                  
                   <div>
                     <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
                     <span className="text-slate-700">{thesis.supervisorId.userId?.email || '—'}</span>
@@ -1434,7 +1440,7 @@ const MyThesisPage = () => {
                       </div>
                     )}
 
-                    {isStudent2 && thesis.student2Status === 'ACCEPTED' && canCancelRegistration && (
+                    {isStudent2 && thesis.student2Status === 'ACCEPTED' && thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST' && (
                       <div className="pt-1.5 flex justify-end">
                         <button
                           onClick={handleCancelParticipation}
@@ -1488,12 +1494,7 @@ const MyThesisPage = () => {
                           {formatLecturerDisplay(reviewer1.academicTitle, reviewer1.userId?.fullName)}
                         </strong>
                       </div>
-                      {reviewer1.lecturerCode && (
-                        <div>
-                          <span className="text-slate-400 block text-[11px]">Mã giảng viên:</span>
-                          <span className="font-mono text-[#102d7d] font-bold">{reviewer1.lecturerCode}</span>
-                        </div>
-                      )}
+                      
                       <div>
                         <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
                         <span className="text-slate-700">{reviewer1.userId?.email || '—'}</span>
@@ -1527,12 +1528,7 @@ const MyThesisPage = () => {
                           {formatLecturerDisplay(reviewer2.academicTitle, reviewer2.userId?.fullName)}
                         </strong>
                       </div>
-                      {reviewer2.lecturerCode && (
-                        <div>
-                          <span className="text-slate-400 block text-[11px]">Mã giảng viên:</span>
-                          <span className="font-mono text-[#102d7d] font-bold">{reviewer2.lecturerCode}</span>
-                        </div>
-                      )}
+                      
                       <div>
                         <span className="text-slate-400 block text-[11px]">Email liên hệ:</span>
                         <span className="text-slate-700">{reviewer2.userId?.email || '—'}</span>
@@ -1635,9 +1631,7 @@ const MyThesisPage = () => {
                                   {role}
                                 </span>
                               </div>
-                              {code && (
-                                <div className="text-[11px] text-slate-600 font-mono">Mã GV: {code}</div>
-                              )}
+                              
                               {email && (
                                 <div className="text-[11px] text-slate-500">{email}</div>
                               )}

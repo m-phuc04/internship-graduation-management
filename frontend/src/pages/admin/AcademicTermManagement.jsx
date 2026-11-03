@@ -262,10 +262,9 @@ const AcademicTermManagement = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-center justify-between gap-3">
-        {/* Search Input */}
-        <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:w-96">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             placeholder="Tìm theo mã, tên học kỳ, năm học..."
@@ -275,13 +274,12 @@ const AcademicTermManagement = () => {
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
           {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700"
+            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700 cursor-pointer"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">🟢 Đang diễn ra</option>
@@ -294,7 +292,7 @@ const AcademicTermManagement = () => {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700"
+            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700 cursor-pointer"
           >
             <option value="ALL">Tất cả năm học</option>
             {uniqueYears.map((y) => (
@@ -318,7 +316,7 @@ const AcademicTermManagement = () => {
                 <th className="py-3.5 px-4">Thời gian học kỳ</th>
                 <th className="py-3.5 px-4">Dữ liệu liên kết</th>
                 <th className="py-3.5 px-4">Trạng thái</th>
-                <th className="py-3.5 px-4 text-right">Thao tác</th>
+                <th className="py-3.5 px-4 text-right"></th>
               </tr>
             </thead>
 

@@ -19,7 +19,6 @@ import {
   Globe,
   Mail,
   MapPin,
-  RefreshCw,
   Users,
 } from 'lucide-react';
 
@@ -126,13 +125,6 @@ const CompanyManagement = () => {
           </div>
         </div>
         <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => fetchCompanies()}
-            className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition"
-            title="Làm mới dữ liệu"
-          >
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
 
           <button
             onClick={() => {
@@ -147,30 +139,26 @@ const CompanyManagement = () => {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {/* Search Input */}
-          <div className="lg:col-span-2">
-            <SearchInput
-              value={search}
-              onChange={(val) => handleFilterChange(setSearch, val)}
-              placeholder="Tìm theo Tên, Mã code, Email, Người liên hệ..."
-            />
-          </div>
+      {/* Search & Filter Bar */}
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="w-full md:w-96">
+          <SearchInput
+            value={search}
+            onChange={(val) => handleFilterChange(setSearch, val)}
+            placeholder="Tìm theo Tên, Mã code, Email, Người liên hệ..."
+          />
+        </div>
 
-          {/* Filter: Status */}
-          <div>
-            <select
-              value={status}
-              onChange={(e) => handleFilterChange(setStatus, e.target.value)}
-              className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="">-- Tất cả trạng thái --</option>
-              <option value="ACTIVE">Đang hợp tác</option>
-              <option value="INACTIVE">Tạm ngưng</option>
-            </select>
-          </div>
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          <select
+            value={status}
+            onChange={(e) => handleFilterChange(setStatus, e.target.value)}
+            className="w-full sm:w-auto min-w-[200px] py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+          >
+            <option value="">-- Tất cả trạng thái --</option>
+            <option value="ACTIVE">Đang hợp tác</option>
+            <option value="INACTIVE">Tạm ngưng</option>
+          </select>
         </div>
       </div>
 
@@ -202,7 +190,7 @@ const CompanyManagement = () => {
                   <th className="py-3.5 px-4">Người đại diện</th>
                   <th className="py-3.5 px-4">SV thực tập</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4 pr-6 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">

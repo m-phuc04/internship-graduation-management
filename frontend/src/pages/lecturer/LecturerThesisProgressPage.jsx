@@ -30,6 +30,40 @@ import {
   Check,
 } from 'lucide-react';
 
+// Helper to calculate weeks
+const calculateWeeks = (startDate, endDate) => {
+  if (!startDate || !endDate) return [];
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return [];
+
+  const weeks = [];
+  let currentStart = new Date(start);
+  let weekNum = 1;
+
+  while (currentStart < end) {
+    const currentEnd = new Date(currentStart);
+    currentEnd.setDate(currentEnd.getDate() + 6);
+    currentEnd.setHours(23, 59, 59, 999);
+    const actualEnd = currentEnd > end ? new Date(end) : currentEnd;
+
+    weeks.push({
+      weekNumber: weekNum,
+      startDate: new Date(currentStart).toISOString(),
+      endDate: actualEnd.toISOString(),
+      label: `Tuần ${weekNum}`,
+    });
+
+    const nextStart = new Date(currentStart);
+    nextStart.setDate(nextStart.getDate() + 7);
+    nextStart.setHours(0, 0, 0, 0);
+    currentStart = nextStart;
+    weekNum++;
+  }
+
+  return weeks;
+};
+
 const LecturerThesisProgressPage = () => {
   const { user } = useAuth();
   const [lecturerInfo, setLecturerInfo] = useState(null);
@@ -67,6 +101,7 @@ const LecturerThesisProgressPage = () => {
   const [selectedProgress, setSelectedProgress] = useState(null);
   const [lecturerComment, setLecturerComment] = useState('');
   const [reviewStatus, setReviewStatus] = useState('APPROVED');
+  const [lecturerScore, setLecturerScore] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
@@ -92,7 +127,7 @@ const LecturerThesisProgressPage = () => {
     fetchSupervisedProgress();
   }, [fetchSupervisedProgress]);
 
-  // Flatten and enrich all reports with parent thesis information
+  // Flatten and enrich only submitted progress reports with parent thesis information
   const allReports = useMemo(() => {
     const reports = [];
     theses.forEach((t) => {
@@ -107,9 +142,11 @@ const LecturerThesisProgressPage = () => {
           student2: t.secondStudentId,
           supervisorInfo: t.supervisorId,
           parentThesis: t,
+          hasSubmitted: true,
         });
       });
     });
+    reports.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
     return reports;
   }, [theses]);
 
@@ -120,10 +157,29 @@ const LecturerThesisProgressPage = () => {
       if (selectedThesisId !== 'ALL' && item.thesisId !== selectedThesisId) {
         return false;
       }
+
+      const isGraded = item.lecturerScore !== null && item.lecturerScore !== undefined && item.lecturerScore !== '';
+      const isLate = (() => {
+        if (!item.weekEndDate) return false;
+        const deadline = new Date(item.weekEndDate);
+        deadline.setHours(23, 59, 59, 999);
+        if (item.submittedAt || item.createdAt) {
+          return new Date(item.submittedAt || item.createdAt) > deadline;
+        }
+        return new Date() > deadline;
+      })();
+
       // Status Filter
-      if (statusFilter !== 'ALL' && item.status !== statusFilter) {
-        return false;
+      if (statusFilter === 'GRADED') {
+        if (!isGraded) return false;
+      } else if (statusFilter === 'SUBMITTED') {
+        if (isGraded) return false;
+      } else if (statusFilter === 'LATE') {
+        if (!isLate) return false;
+      } else if (statusFilter === 'ON_TIME') {
+        if (isLate) return false;
       }
+
       // Search term (MSSV, Student Name, Thesis Title, Progress Title)
       if (searchTerm.trim()) {
         const term = searchTerm.toLowerCase().trim();
@@ -185,6 +241,7 @@ const LecturerThesisProgressPage = () => {
     }
     setSelectedProgress(report);
     setLecturerComment(report.lecturerComment || '');
+    setLecturerScore(report.lecturerScore !== null && report.lecturerScore !== undefined ? String(report.lecturerScore) : '');
     setReviewStatus(
       ['APPROVED', 'REJECTED', 'REVIEWING'].includes(report.status)
         ? report.status
@@ -198,15 +255,22 @@ const LecturerThesisProgressPage = () => {
   const handleSubmitReview = async () => {
     setFormError('');
 
-    if (reviewStatus === 'REJECTED' && !lecturerComment.trim()) {
-      setFormError('Vui lòng nhập nhận xét / lý do khi yêu cầu sinh viên chỉnh sửa nhật ký');
+    if (lecturerScore === '' || lecturerScore === null || lecturerScore === undefined) {
+      setFormError('Vui lòng nhập điểm tuần (thang điểm 10) cho sinh viên');
+      return;
+    }
+
+    const numScore = Number(lecturerScore);
+    if (isNaN(numScore) || numScore < 0 || numScore > 10) {
+      setFormError('Điểm tuần phải là số từ 0 đến 10');
       return;
     }
 
     setSubmitting(true);
     try {
       const payload = {
-        status: reviewStatus,
+        lecturerScore: numScore,
+        status: 'APPROVED',
         lecturerComment: lecturerComment.trim() || null,
       };
 
@@ -216,7 +280,7 @@ const LecturerThesisProgressPage = () => {
       );
 
       if (res.success) {
-        showToast('Đã lưu nhận xét và cập nhật trạng thái nhật ký!', 'success');
+        showToast('Đã lưu điểm tuần và nhận xét đánh giá!', 'success');
         setReviewModalOpen(false);
         fetchSupervisedProgress();
       }
@@ -281,26 +345,9 @@ const LecturerThesisProgressPage = () => {
                     {lecturerInfo?.userId?.fullName || user?.fullName}
                   </strong>
                 </span>
-                <span>•</span>
-                <span>
-                  Mã GV:{' '}
-                  <strong className="font-mono text-[#102d7d]">
-                    {lecturerInfo?.lecturerCode || user?.username}
-                  </strong>
-                </span>
+                
               </div>
             </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={fetchSupervisedProgress}
-              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-              title="Làm mới"
-            >
-              <RefreshCw className="w-4 h-4" />
-            </button>
           </div>
         </div>
 
@@ -405,10 +452,10 @@ const LecturerThesisProgressPage = () => {
             className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
           >
             <option value="ALL">Tất cả trạng thái</option>
-            <option value="SUBMITTED">Chờ duyệt</option>
-            <option value="REVIEWING">Đang xem xét</option>
-            <option value="APPROVED">Đã duyệt</option>
-            <option value="REJECTED">Từ chối</option>
+            <option value="SUBMITTED">Đã nộp (Chờ chấm)</option>
+            <option value="GRADED">Đã chấm điểm</option>
+            <option value="ON_TIME">Đúng hạn</option>
+            <option value="LATE">Nộp trễ</option>
           </select>
         </div>
       </div>
@@ -435,12 +482,11 @@ const LecturerThesisProgressPage = () => {
                     <th className="py-3.5 px-4">Tuần</th>
                     <th className="py-3.5 px-4">Nhóm Sinh viên</th>
                     <th className="py-3.5 px-4">Tiêu đề & Đề tài KLTN</th>
-                    <th className="py-3.5 px-4">Tiến độ (%)</th>
+                    <th className="py-3.5 px-4">Điểm tuần</th>
                     <th className="py-3.5 px-4">File đính kèm</th>
-                    <th className="py-3.5 px-4">Xác nhận SV2</th>
                     <th className="py-3.5 px-4">Nhận xét / Nhiệm vụ tuần tiếp theo</th>
                     <th className="py-3.5 px-4">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-right">Thao tác</th>
+                    <th className="py-3.5 px-4 text-right"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -459,20 +505,16 @@ const LecturerThesisProgressPage = () => {
 
                         {/* Student info */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-900">
-                            1. {item.student1?.userId?.fullName || 'Sinh viên 1'}
-                          </div>
-                          <div className="text-[10px] text-slate-500 font-mono">
-                            MSSV: {item.student1?.studentCode || '—'}
-                          </div>
-                          {item.student2 && (
-                            <div className="text-[11px] text-slate-700 mt-0.5">
-                              2. {item.student2.userId?.fullName}{' '}
-                              <span className="text-[10px] font-mono text-slate-500">
-                                ({item.student2.studentCode})
-                              </span>
+                          <div className="space-y-1 text-slate-900 font-semibold">
+                            <div>
+                              1. {item.student1?.userId?.fullName || 'Sinh viên 1'} ({item.student1?.studentCode || '—'})
                             </div>
-                          )}
+                            {item.student2 && (
+                              <div>
+                                2. {item.student2?.userId?.fullName || 'Sinh viên 2'} ({item.student2?.studentCode || '—'})
+                              </div>
+                            )}
+                          </div>
                         </td>
 
                         {/* Title & Thesis */}
@@ -483,11 +525,15 @@ const LecturerThesisProgressPage = () => {
                           </div>
                         </td>
 
-                        {/* Completion % */}
+                        {/* Điểm tuần */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <span className="font-mono font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                            {item.completionPercentage}%
-                          </span>
+                          {item.lecturerScore !== null && item.lecturerScore !== undefined && item.lecturerScore !== '' ? (
+                            <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-xl border border-emerald-200">
+                              {Number(item.lecturerScore).toFixed(1).replace('.0', '')}/10
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 italic font-mono">—</span>
+                          )}
                         </td>
 
                         {/* File */}
@@ -512,22 +558,7 @@ const LecturerThesisProgressPage = () => {
                           )}
                         </td>
 
-                        {/* SV2 Confirmation Status */}
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          {item.student2 ? (
-                            item.student2Status === 'CONFIRMED' ? (
-                              <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200">
-                                Đã xác nhận
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded-lg border border-amber-200">
-                                Chờ xác nhận
-                              </span>
-                            )
-                          ) : (
-                            <span className="text-slate-400 italic text-[11px]">Nhóm 1 SV</span>
-                          )}
-                        </td>
+
 
                         {/* Nhận xét & Nhiệm vụ */}
                         <td className="py-3.5 px-4 max-w-xs">
@@ -540,9 +571,46 @@ const LecturerThesisProgressPage = () => {
                           )}
                         </td>
 
-                        {/* Status */}
+                        {/* Status: 2 tags (Nộp/chấm điểm & Thời gian đúng/trễ hạn) */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
-                          <StatusBadge status={item.status} size="sm" />
+                          {(() => {
+                            const isGraded = item.lecturerScore !== null && item.lecturerScore !== undefined && item.lecturerScore !== '';
+                            const isLate = (() => {
+                              if (!item.weekEndDate) return false;
+                              const deadline = new Date(item.weekEndDate);
+                              deadline.setHours(23, 59, 59, 999);
+                              if (item.submittedAt || item.createdAt) {
+                                return new Date(item.submittedAt || item.createdAt) > deadline;
+                              }
+                              return new Date() > deadline;
+                            })();
+
+                            return (
+                              <div className="flex flex-col gap-1 items-start">
+                                {/* Tag 1: Trạng thái nộp / chấm điểm */}
+                                {isGraded ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Đã chấm điểm
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Đã nộp
+                                  </span>
+                                )}
+
+                                {/* Tag 2: Thời gian (Tự động xét) */}
+                                {isLate ? (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                    Nộp trễ
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Đúng hạn
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </td>
 
                         {/* Actions */}
@@ -564,7 +632,7 @@ const LecturerThesisProgressPage = () => {
                               className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition text-[11px]"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>{isPending ? 'Đánh giá' : 'Sửa đánh giá'}</span>
+                              <span>{item.lecturerScore !== null && item.lecturerScore !== undefined && item.lecturerScore !== '' ? 'Sửa điểm' : 'Đánh giá'}</span>
                             </button>
                           )}
                         </td>
@@ -697,9 +765,11 @@ const LecturerThesisProgressPage = () => {
                   </h4>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-[#102d7d] bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                    {selectedDetail.completionPercentage}%
-                  </span>
+                  {selectedDetail.lecturerScore !== null && selectedDetail.lecturerScore !== undefined && selectedDetail.lecturerScore !== '' && (
+                    <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-xl border border-emerald-200">
+                      Điểm: {Number(selectedDetail.lecturerScore).toFixed(1).replace('.0', '')}/10
+                    </span>
+                  )}
                   <StatusBadge status={selectedDetail.status} size="sm" />
                 </div>
               </div>
@@ -831,9 +901,6 @@ const LecturerThesisProgressPage = () => {
                 <span className="font-bold text-[#123891] text-xs">
                   Tuần {selectedProgress.weekNumber}: "{selectedProgress.title}"
                 </span>
-                <span className="font-mono font-bold text-[#102d7d]">
-                  {selectedProgress.completionPercentage}%
-                </span>
               </div>
               <div className="text-[11px] text-slate-600">
                 Nhóm SV: <strong>{selectedProgress.student1?.userId?.fullName}</strong>
@@ -869,26 +936,27 @@ const LecturerThesisProgressPage = () => {
               </div>
             )}
 
-            {/* Status Input */}
+            {/* Weekly Score Input */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Trạng thái đánh giá <span className="text-rose-500">*</span>
+                Điểm tuần <span className="text-rose-500">*</span> (Thang điểm 10)
               </label>
-              <select
-                value={reviewStatus}
-                onChange={(e) => setReviewStatus(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-              >
-                <option value="APPROVED">Phê duyệt</option>
-                <option value="REVIEWING">Đang xem xét</option>
-                <option value="REJECTED">Yêu cầu sửa / Từ chối</option>
-              </select>
+              <input
+                type="number"
+                min="0"
+                max="10"
+                step="0.1"
+                value={lecturerScore}
+                onChange={(e) => setLecturerScore(e.target.value)}
+                placeholder="Nhập điểm số từ 0 đến 10 (VD: 8.5)"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+              />
             </div>
 
             {/* Comments / Tasks for next week */}
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Nhận xét & Định hướng / Nhiệm vụ cho tuần tiếp theo {reviewStatus === 'REJECTED' && <span className="text-rose-500">*</span>}
+                Nhận xét & Định hướng / Nhiệm vụ cho tuần tiếp theo
               </label>
               <textarea
                 rows={4}

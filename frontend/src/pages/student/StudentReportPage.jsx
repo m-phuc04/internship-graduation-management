@@ -328,7 +328,7 @@ const StudentReportPage = () => {
                     <th className="py-3.5 px-4 min-w-[240px]">Nội dung</th>
                     <th className="py-3.5 px-4 w-44">File đính kèm</th>
                     <th className="py-3.5 px-4 w-48">Trạng thái</th>
-                    <th className="py-3.5 px-4 pr-6 text-right w-44">Thao tác</th>
+                    <th className="py-3.5 px-4 pr-6 text-right w-44"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">

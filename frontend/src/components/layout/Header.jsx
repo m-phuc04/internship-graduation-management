@@ -24,8 +24,8 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
     if (location.pathname.includes('/tbm/companies')) return 'Quản lý Doanh nghiệp';
     if (location.pathname.includes('/tbm/internships') || location.pathname.includes('/admin/internships')) return 'Quản lý Thực tập';
     if (location.pathname.includes('/tbm/evaluations') || location.pathname.includes('/admin/evaluations')) return 'Đánh giá Thực tập';
-    if (location.pathname.includes('/tbm/theses') || location.pathname.includes('/admin/theses')) return 'Quản lý Khóa luận';
-    if (location.pathname.includes('/tbm/thesis-evaluations') || location.pathname.includes('/admin/thesis-evaluations')) return 'Đánh giá Khóa luận';
+    if (location.pathname.includes('/tbm/thesis-evaluations') || location.pathname.includes('/admin/thesis-evaluations')) return 'Quản lý Khóa luận';
+    if (location.pathname.includes('/tbm/theses') || location.pathname.includes('/admin/theses')) return 'Phân công Khóa luận';
     return 'Bảng điều khiển';
   };
 

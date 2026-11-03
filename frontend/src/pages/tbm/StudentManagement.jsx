@@ -188,59 +188,49 @@ const StudentManagement = () => {
         </button>
       </div>
 
-      {/* Filter Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Search Input */}
-          <div className="lg:col-span-2">
-            <SearchInput
-              value={search}
-              onChange={(val) => handleFilterChange(setSearch, val)}
-              placeholder="Tìm theo MSSV, Họ tên, Email, Lớp..."
-            />
-          </div>
+      {/* Search & Filter Bar */}
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="w-full md:w-80">
+          <SearchInput
+            value={search}
+            onChange={(val) => handleFilterChange(setSearch, val)}
+            placeholder="Tìm theo MSSV, Họ tên, Email, Lớp..."
+          />
+        </div>
 
-          {/* Class Filter */}
-          <div>
-            <select
-              value={className}
-              onChange={(e) => handleFilterChange(setClassName, e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="">Tất cả Lớp học</option>
-              {availableClasses.map((cls) => (
-                <option key={cls} value={cls}>
-                  {cls}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+          <select
+            value={className}
+            onChange={(e) => handleFilterChange(setClassName, e.target.value)}
+            className="w-full sm:w-auto h-9 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+          >
+            <option value="">Tất cả Lớp học</option>
+            {availableClasses.map((cls) => (
+              <option key={cls} value={cls}>
+                {cls}
+              </option>
+            ))}
+          </select>
 
-          {/* Prerequisite Filter */}
-          <div>
-            <select
-              value={prerequisiteCompleted}
-              onChange={(e) => handleFilterChange(setPrerequisiteCompleted, e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="">ĐK Tiên quyết (Tất cả)</option>
-              <option value="true">Đã đủ điều kiện</option>
-              <option value="false">Chưa đạt điều kiện</option>
-            </select>
-          </div>
+          <select
+            value={prerequisiteCompleted}
+            onChange={(e) => handleFilterChange(setPrerequisiteCompleted, e.target.value)}
+            className="w-full sm:w-auto h-9 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+          >
+            <option value="">ĐK Tiên quyết (Tất cả)</option>
+            <option value="true">Đã đủ điều kiện</option>
+            <option value="false">Chưa đạt điều kiện</option>
+          </select>
 
-          {/* Internship Registered Filter */}
-          <div>
-            <select
-              value={internshipRegistered}
-              onChange={(e) => handleFilterChange(setInternshipRegistered, e.target.value)}
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-            >
-              <option value="">ĐK Thực tập (Tất cả)</option>
-              <option value="true">Đã đăng ký TTDN</option>
-              <option value="false">Chưa đăng ký TTDN</option>
-            </select>
-          </div>
+          <select
+            value={internshipRegistered}
+            onChange={(e) => handleFilterChange(setInternshipRegistered, e.target.value)}
+            className="w-full sm:w-auto h-9 px-3 rounded-xl border border-slate-200 bg-slate-50 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+          >
+            <option value="">Đăng ký thực tập (Tất cả)</option>
+            <option value="true">Đã đăng ký</option>
+            <option value="false">Chưa đăng ký</option>
+          </select>
         </div>
       </div>
 
@@ -278,7 +268,7 @@ const StudentManagement = () => {
                   <th className="py-3.5 px-4">TTDN</th>
                   <th className="py-3.5 px-4">KLTN</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4 pr-6 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">

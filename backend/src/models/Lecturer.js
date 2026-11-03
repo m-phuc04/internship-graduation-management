@@ -29,6 +29,11 @@ const lecturerSchema = new mongoose.Schema(
       default: null,
     },
 
+    fields: {
+      type: [String],
+      default: [],
+    },
+
     maxSupervisedStudents: {
       type: Number,
       min: [1, "Số lượng sinh viên tối đa phải lớn hơn 0"],

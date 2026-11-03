@@ -10,7 +10,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
-  RefreshCw,
   Award,
   UserCheck,
   Building,
@@ -131,27 +130,19 @@ const AdminPermissionsPage = () => {
             </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={fetchPermissionsList}
-          className="self-start sm:self-auto p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer shrink-0"
-          title="Làm mới"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
       </div>
 
       {/* 2. Filter / Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div className="w-full sm:w-80">
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="w-full md:w-96">
           <SearchInput
             value={search}
             onChange={setSearch}
-            placeholder="Tìm theo tên GV, Mã GV..."
+            placeholder="Tìm theo tên GV, email..."
           />
         </div>
-        <div className="text-xs text-slate-500 font-medium">
+
+        <div className="text-xs text-slate-500 font-medium whitespace-nowrap">
           Tổng cộng: <strong>{filteredLecturers.length}</strong> giảng viên
         </div>
       </div>
@@ -176,11 +167,11 @@ const AdminPermissionsPage = () => {
                 <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                   <th className="py-3.5 px-4 text-center w-14">STT</th>
                   <th className="py-3.5 px-4">Họ và Tên</th>
-                  <th className="py-3.5 px-4">Mã GV</th>
+                  
                   <th className="py-3.5 px-4">Role</th>
                   <th className="py-3.5 px-4">Quyền Nghiệp Vụ</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -207,10 +198,7 @@ const AdminPermissionsPage = () => {
                         </div>
                       </td>
 
-                      {/* Code */}
-                      <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
-                        {item.lecturerCode}
-                      </td>
+                      
 
                       {/* Role */}
                       <td className="py-3.5 px-4">
@@ -306,8 +294,7 @@ const AdminPermissionsPage = () => {
                 {selectedLecturer.user?.fullName}
               </div>
               <div className="text-slate-500 flex items-center gap-3">
-                <span>Mã GV: <strong className="font-mono text-slate-800">{selectedLecturer.lecturerCode}</strong></span>
-                <span>•</span>
+                
                 <span>Role: <strong className="text-[#123891]">{selectedRole}</strong></span>
               </div>
             </div>

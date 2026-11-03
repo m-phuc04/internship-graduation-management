@@ -262,7 +262,7 @@ const AssignCouncilToThesisModal = ({
                   )}
                 </div>
                 <div>
-                  <strong>GVHD:</strong> <span className="font-bold text-slate-900">{supervisorName}</span> ({thesis.supervisorId?.lecturerCode || 'Mã GV'})
+                  <strong>GVHD:</strong> <span className="font-bold text-slate-900">{supervisorName}</span>
                 </div>
               </div>
             </div>

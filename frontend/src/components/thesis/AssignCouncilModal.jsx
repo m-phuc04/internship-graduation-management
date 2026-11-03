@@ -12,7 +12,7 @@ const AssignCouncilModal = ({
   council,
   allCouncils = [],
   theses = [],
-  lecturerColumnCount = 2,
+  lecturerColumnCount,
   onSaveCouncil,
 }) => {
   const [lecturers, setLecturers] = useState([]);
@@ -23,14 +23,18 @@ const AssignCouncilModal = ({
 
   const { showToast } = useToast();
 
+  // Báo cáo Oral: Cố định 3 giảng viên; Báo cáo Poster: 2 giảng viên
+  const targetLecturerCount = council?.type === 'ORAL' ? 3 : (lecturerColumnCount || 2);
+
   useEffect(() => {
     if (isOpen && council) {
       setError('');
-      const initialIds = Array(lecturerColumnCount).fill('');
+      const count = council.type === 'ORAL' ? 3 : 2;
+      const initialIds = Array(count).fill('');
 
       if (Array.isArray(council.lecturers)) {
         council.lecturers.forEach((lec, idx) => {
-          if (idx < lecturerColumnCount) {
+          if (idx < count) {
             initialIds[idx] = lec.lecturerId?._id || lec.lecturerId || lec.id || '';
           }
         });
@@ -39,7 +43,7 @@ const AssignCouncilModal = ({
       setAssignedLecturerIds(initialIds);
       fetchLecturers();
     }
-  }, [isOpen, council, lecturerColumnCount]);
+  }, [isOpen, council]);
 
   const fetchLecturers = async () => {
     setLoadingLecturers(true);
@@ -153,7 +157,7 @@ const AssignCouncilModal = ({
     try {
       const updatedLecturers = [];
       const recipientUserIds = [];
-      for (let i = 0; i < lecturerColumnCount; i++) {
+      for (let i = 0; i < targetLecturerCount; i++) {
         const lId = assignedLecturerIds[i];
         if (lId) {
           const foundLec = lecturers.find((l) => String(l._id) === String(lId));
@@ -282,11 +286,11 @@ const AssignCouncilModal = ({
               Phân công giảng viên hội đồng
             </label>
             <span className="text-[11px] text-slate-500 font-medium">
-              Số lượng: <strong>{lecturerColumnCount} giảng viên</strong>
+              Số lượng: <strong>{targetLecturerCount} giảng viên ({council.type === 'ORAL' ? 'Báo cáo Oral' : 'Báo cáo Poster'})</strong>
             </span>
           </div>
 
-          {Array.from({ length: lecturerColumnCount }).map((_, idx) => {
+          {Array.from({ length: targetLecturerCount }).map((_, idx) => {
             const currentSelectedId = assignedLecturerIds[idx] || '';
 
             return (
@@ -332,7 +336,7 @@ const AssignCouncilModal = ({
 
                       const title = lec.academicTitle ? `${lec.academicTitle} ` : '';
                       const name = lec.userId?.fullName || 'Giảng viên';
-                      const code = lec.lecturerCode ? ` (${lec.lecturerCode})` : '';
+                      const code = '';
                       const suffix = isAssignedToOther || isSelectedInThisModal
                         ? ' - (Đã có phòng)'
                         : '';

@@ -167,7 +167,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
                       <th className="py-3 px-4 min-w-[220px]">Nội dung nhật ký</th>
                       <th className="py-3 px-4 w-40">File đính kèm</th>
                       <th className="py-3 px-4 w-36">Trạng thái</th>
-                      <th className="py-3 px-4 pr-5 text-right w-28">Thao tác</th>
+                      <th className="py-3 px-4 pr-5 text-right w-28"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100 text-xs">

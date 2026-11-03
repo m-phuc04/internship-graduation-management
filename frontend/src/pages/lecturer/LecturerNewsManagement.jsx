@@ -14,7 +14,6 @@ import {
   Calendar,
   User,
   Tag,
-  RotateCw,
   CheckCircle2,
   XCircle,
   Clock,
@@ -213,10 +212,9 @@ const LecturerNewsManagement = () => {
       </div>
 
       {/* 2. Search & Filter Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative w-full md:w-80">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="relative w-full md:w-96">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={search}
@@ -226,8 +224,7 @@ const LecturerNewsManagement = () => {
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
@@ -248,15 +245,6 @@ const LecturerNewsManagement = () => {
             <option value="PUBLISHED">Đang hiển thị</option>
             <option value="HIDDEN">Đang ẩn</option>
           </select>
-
-          <button
-            type="button"
-            onClick={() => fetchNews(1)}
-            title="Làm mới"
-            className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 transition cursor-pointer"
-          >
-            <RotateCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
@@ -272,7 +260,7 @@ const LecturerNewsManagement = () => {
                 <th className="px-4 py-3.5">Ngày đăng</th>
                 <th className="px-4 py-3.5 text-center">Trạng thái</th>
                 <th className="px-4 py-3.5 text-center">Lượt xem</th>
-                <th className="px-5 py-3.5 text-right">Thao tác</th>
+                <th className="px-5 py-3.5 text-right"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

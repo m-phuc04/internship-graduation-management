@@ -240,7 +240,7 @@ const ProfilePage = () => {
   const getAccountCode = () => {
     if (user?.role === 'ADMIN') return user.code || 'ADMIN001';
     if (student?.studentCode) return student.studentCode;
-    if (lecturer?.lecturerCode) return lecturer.lecturerCode;
+    // lecturer code hidden from account code display
     if (company?.code) return company.code;
     return user?.code || user?.role || 'N/A';
   };
@@ -551,13 +551,7 @@ const ProfilePage = () => {
           {/* Lecturer / TBM Specific Fields */}
           {(user?.role === 'LECTURER' || user?.role === 'TBM') && lecturer && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Mã giảng viên</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-[#102d7d] font-mono flex items-center justify-between">
-                  <span>{lecturer.lecturerCode}</span>
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              </div>
+              
 
               <div>
                 <span className="text-[11px] font-semibold text-slate-400 block mb-1">Học hàm / Học vị</span>

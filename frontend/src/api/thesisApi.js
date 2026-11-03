@@ -97,6 +97,12 @@ export const thesisApi = {
   // Lecturer grades thesis based on role (Supervisor / Reviewer 1 / Reviewer 2)
   gradeThesis: (id, data) => axiosClient.patch(`/theses/${id}/grade`, data),
 
+  // Mark student fail independently (KLTN)
+  markStudentFail: (id, data) => axiosClient.patch(`/theses/${id}/fail-student`, data),
+
+  // Unmark student fail (Bỏ đánh rớt)
+  unmarkStudentFail: (id, data) => axiosClient.patch(`/theses/${id}/unfail-student`, data),
+
   // Lecturer (GVHD) evaluates criteria condition
   evaluateCriteria: (id, data) => axiosClient.patch(`/theses/${id}/evaluate-criteria`, data),
 
@@ -140,6 +146,10 @@ export const thesisApi = {
   // TBM assigns Reviewer 1 & Reviewer 2
   assignReviewers: (id, data) =>
     axiosClient.patch(`/theses/${id}/assign-reviewers`, data),
+
+  // TBM auto-assigns Reviewers by field
+  autoAssignReviewers: (data) =>
+    axiosClient.post('/theses/auto-assign-reviewers', data),
 
   // ==========================================
   // KLTN Topic Management Endpoints (GV -> TBM -> SV FIFO)

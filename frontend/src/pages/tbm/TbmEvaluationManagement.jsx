@@ -398,9 +398,9 @@ const TbmEvaluationManagement = () => {
 
       {/* Main Content: Evaluations List */}
       <div className="space-y-4">
-        {/* Filter and Search Bar */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="w-full sm:w-80">
+        {/* Filter & Search Bar */}
+        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="w-full md:w-96">
             <SearchInput
               value={search}
               onChange={(v) => {
@@ -411,32 +411,22 @@ const TbmEvaluationManagement = () => {
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-slate-400" />
-              <select
-                value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
-                  setPage(1);
-                }}
-                className="bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891]"
-              >
-                {EVAL_STATUS_FILTERS.map((f) => (
-                  <option key={f.value} value={f.value}>
-                    {f.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <button
-              onClick={fetchEvaluations}
-              className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-              title="Tải lại danh sách"
+          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+            <Filter className="w-4 h-4 text-slate-400" />
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(1);
+              }}
+              className="bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+              {EVAL_STATUS_FILTERS.map((f) => (
+                <option key={f.value} value={f.value}>
+                  {f.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -465,7 +455,7 @@ const TbmEvaluationManagement = () => {
                     <th className="py-3.5 px-4">Điểm số</th>
                     <th className="py-3.5 px-4 text-center">Kết quả</th>
                     <th className="py-3.5 px-4 text-center">Công bố điểm</th>
-                    <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                    <th className="py-3.5 px-4 pr-6 text-right"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
@@ -521,9 +511,7 @@ const TbmEvaluationManagement = () => {
                               <div className="font-semibold text-[#102d7d]">
                                 {item.lecturerId?.academicTitle} {item.lecturerId?.userId?.fullName}
                               </div>
-                              <div className="text-[11px] text-slate-400 font-mono">
-                                {item.lecturerId?.lecturerCode}
-                              </div>
+                              
                             </div>
                           ) : (
                             <span className="text-slate-400 italic">Chưa phân công</span>

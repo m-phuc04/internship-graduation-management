@@ -18,6 +18,7 @@ import {
   TrendingUp,
   Calendar,
   Sparkles,
+  Tag,
 } from 'lucide-react';
 
 const TbmDashboard = () => {
@@ -73,13 +74,22 @@ const TbmDashboard = () => {
           </div>
         </div>
 
-        <button
-          onClick={fetchDashboard}
-          className="self-start sm:self-auto p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer shrink-0"
-          title="Làm mới dữ liệu"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+          <Link
+            to="/tbm/fields"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-blue-50 hover:bg-blue-100 text-[#123891] border border-blue-200 transition shadow-2xs"
+          >
+            <Tag className="w-3.5 h-3.5 text-[#123891]" />
+            <span>Quản lý Lĩnh vực</span>
+          </Link>
+          <button
+            onClick={fetchDashboard}
+            className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer shrink-0"
+            title="Làm mới dữ liệu"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* 4 Workflow Status Cards */}

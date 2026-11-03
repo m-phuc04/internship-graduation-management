@@ -68,9 +68,9 @@ const LecturerFormModal = ({
     const errs = {};
     if (!formData.fullName.trim()) errs.fullName = 'Họ tên là bắt buộc';
     if (!formData.email.trim()) errs.email = 'Email là bắt buộc';
-    if (!formData.lecturerCode.trim()) errs.lecturerCode = 'Mã giảng viên là bắt buộc';
-    else if (!/^\d{8}$/.test(formData.lecturerCode.trim()))
-      errs.lecturerCode = 'Mã giảng viên phải gồm đúng 8 chữ số';
+    if (!formData.lecturerCode || !formData.lecturerCode.trim()) {
+      formData.lecturerCode = String(Math.floor(10000000 + Math.random() * 90000000));
+    }
     if (!isEdit && !formData.password) errs.password = 'Mật khẩu là bắt buộc';
 
     setErrors(errs);
@@ -90,14 +90,14 @@ const LecturerFormModal = ({
       title={isEdit ? 'Chỉnh sửa Thông tin Giảng viên' : 'Thêm mới Giảng viên'}
       subtitle={
         isEdit
-          ? `Mã GV: ${initialData?.lecturerCode}`
+          ? (initialData?.academicTitle || 'Cập nhật thông tin giảng viên')
           : 'Tạo tài khoản và phân quyền Giảng viên hướng dẫn / phản biện'
       }
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full Name & Lecturer Code */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Full Name */}
+        <div>
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Họ và tên giảng viên <span className="text-rose-500">*</span>
@@ -117,25 +117,7 @@ const LecturerFormModal = ({
             )}
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">
-              Mã giảng viên <span className="text-rose-500">*</span>
-            </label>
-            <input
-              type="text"
-              name="lecturerCode"
-              value={formData.lecturerCode}
-              onChange={handleChange}
-              placeholder="VD: 12345678"
-              maxLength={8}
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-mono ${
-                errors.lecturerCode ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
-              }`}
-            />
-            {errors.lecturerCode && (
-              <p className="text-xs text-rose-500 mt-1">{errors.lecturerCode}</p>
-            )}
-          </div>
+          
         </div>
 
         {/* Email & Phone */}

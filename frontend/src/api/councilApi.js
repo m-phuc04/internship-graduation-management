@@ -19,6 +19,12 @@ export const councilApi = {
   // Assign or unassign council to a thesis
   assignThesis: (data) => axiosClient.post('/councils/assign-thesis', data),
 
+  // Bulk update report date for all councils in a term
+  bulkUpdateDate: (data) => axiosClient.put('/councils/bulk/report-date', data),
+
+  // Batch assign theses to a council room (max 5)
+  batchAssignTheses: (data) => axiosClient.post('/councils/batch/assign-theses', data),
+
   // Clear all councils
   clearAll: (params) => axiosClient.delete('/councils/clear-all', { params }),
 };

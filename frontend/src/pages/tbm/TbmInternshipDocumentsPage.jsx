@@ -12,7 +12,6 @@ import {
   Upload,
   Calendar,
   AlertCircle,
-  RefreshCw,
   FileSpreadsheet,
   File,
   X,
@@ -194,25 +193,14 @@ const TbmInternshipDocumentsPage = () => {
 
       {/* Main Content Area */}
       <div className="space-y-4">
-        {/* Toolbar: Search and Refresh */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="w-full sm:w-80">
-            <SearchInput
-              value={search}
-              onChange={(v) => setSearch(v)}
-              placeholder="Tìm theo tên file, ghi chú..."
-            />
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={fetchDocuments}
-              className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-              title="Tải lại danh sách"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+        {/* Search Bar */}
+        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+          <SearchInput
+            value={search}
+            onChange={(v) => setSearch(v)}
+            placeholder="Tìm theo tên file, ghi chú..."
+            className="w-full md:w-96"
+          />
         </div>
 
         {/* Nút Thêm (để dưới thanh search và để trước bảng, không có dấu +) */}
@@ -246,7 +234,7 @@ const TbmInternshipDocumentsPage = () => {
                     <th className="py-3.5 px-4 text-center w-16">STT</th>
                     <th className="py-3.5 px-4 pl-6">File</th>
                     <th className="py-3.5 px-4">Ghi chú</th>
-                    <th className="py-3.5 px-4 pr-6 text-right w-36">Thao tác</th>
+                    <th className="py-3.5 px-4 pr-6 text-right w-36"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">

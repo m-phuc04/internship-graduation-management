@@ -95,7 +95,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
               const displayName = title && !rawName.toLowerCase().startsWith(title.toLowerCase())
                 ? `${title} ${rawName}`
                 : rawName;
-              const code = lec.lecturerCode ? ` - Mã GV: ${lec.lecturerCode}` : '';
+              const code = '';
               return (
                 <option
                   key={lec._id}
