@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import reportApi from '../../api/reportApi';
 import internshipApi from '../../api/internshipApi';
 import { useToast } from '../../context/ToastContext';
@@ -45,6 +46,7 @@ const isWeekEnded = (date) => {
 };
 
 const getDurationWeeks = (internship) => {
+  if (!internship) return 0;
   if (internship?.durationInWeeks && (internship.durationInWeeks === 10 || internship.durationInWeeks === 12)) {
     return internship.durationInWeeks;
   }
@@ -146,10 +148,18 @@ const StudentReportPage = () => {
     return map;
   }, [reports]);
 
-  // Total duration: 10 or 12 weeks
-  const totalWeeks = useMemo(() => {
-    return getDurationWeeks(internship);
+  // Check if internship has been approved by TBM
+  const isApprovedByTBM = useMemo(() => {
+    return Boolean(
+      internship && ['APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status)
+    );
   }, [internship]);
+
+  // Total duration: 10 or 12 weeks according to registered duration
+  const totalWeeks = useMemo(() => {
+    if (!internship || !isApprovedByTBM) return 0;
+    return getDurationWeeks(internship);
+  }, [internship, isApprovedByTBM]);
 
   // Report cycle configured by GVGS (1, 2, or 3 weeks/time)
   const cycle = useMemo(() => {
@@ -158,6 +168,10 @@ const StudentReportPage = () => {
 
   // Calculate weeks to display according to cycle and preserve previous reports
   const weeks = useMemo(() => {
+    if (!isApprovedByTBM || totalWeeks === 0) {
+      return [];
+    }
+
     const result = [];
     const start = internship?.startDate ? new Date(internship.startDate) : null;
     const hasValidStart = start && !isNaN(start.getTime());
@@ -190,7 +204,7 @@ const StudentReportPage = () => {
     }
 
     return result;
-  }, [internship?.startDate, totalWeeks, cycle, reportMap]);
+  }, [isApprovedByTBM, totalWeeks, internship?.startDate, cycle, reportMap]);
 
   // Statistics
   const completedWeeks = useMemo(() => {
@@ -199,13 +213,11 @@ const StudentReportPage = () => {
     ).length;
   }, [reportMap]);
 
-  const isReady =
-    internship &&
-    ['APPROVED', 'INTERNING', 'PENDING_SUPERVISOR_ACCEPTANCE', 'COMPLETED'].includes(
-      internship.status,
-    );
-
   const handleOpenCreateForWeek = (week, existing = null) => {
+    if (!isApprovedByTBM) {
+      showToast('Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.', 'warning');
+      return;
+    }
     setTargetWeekForCreate({
       weekNumber: week.weekNumber,
       startDate: existing?.weekStartDate || week.defaultStartDate || null,
@@ -248,7 +260,7 @@ const StudentReportPage = () => {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          {isReady && (
+          {isApprovedByTBM && (
             <button
               type="button"
               onClick={() => setExportModalOpen(true)}
@@ -261,8 +273,41 @@ const StudentReportPage = () => {
         </div>
       </div>
 
-      {/* Internship Overview Summary Card */}
-      {internship && (
+      {/* 1. Loading State */}
+      {loading && (
+        <div className="p-6 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
+          <LoadingSkeleton rows={4} cols={4} />
+        </div>
+      )}
+
+      {/* 2. Unregistered Student Guidance Card */}
+      {!loading && !internship && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 text-center shadow-2xs space-y-4">
+          <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#123891] flex items-center justify-center mx-auto shadow-inner">
+            <Briefcase className="w-8 h-8" />
+          </div>
+          <div className="max-w-md mx-auto space-y-2">
+            <h2 className="text-lg font-bold text-slate-800">
+              Bạn Chưa Đăng Ký Thực Tập Doanh Nghiệp
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Bạn chưa có hồ sơ thực tập doanh nghiệp trong hệ thống. Vui lòng đăng ký thực tập và chờ Trưởng Bộ Môn (TBM) phê duyệt trước khi sử dụng chức năng ghi nhật ký thực tập.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              to="/student/internship/register"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+            >
+              <Briefcase className="w-4 h-4 text-blue-200" />
+              <span>Đăng ký thực tập ngay</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Registered Internship Overview Summary Card */}
+      {!loading && internship && (
         <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#123891] to-[#102d7d] text-white shadow-md border border-blue-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-blue-800/60">
             <div>
@@ -279,14 +324,22 @@ const StudentReportPage = () => {
               </div>
             </div>
 
-            {hasStudent2 && (
-              <div className="px-3 py-1.5 rounded-xl bg-[#123891]/60 border border-[#123891]/60 text-xs flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-300" />
-                <span>
-                  Nhóm 2 SV: <strong>{isSV1 ? 'Bạn là SV1' : isSV2 ? 'Bạn là SV2' : 'Nhóm 2 SV'}</strong>
+            <div className="flex items-center gap-2 flex-wrap">
+              {!isApprovedByTBM && (
+                <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-semibold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Chờ TBM phê duyệt</span>
                 </span>
-              </div>
-            )}
+              )}
+              {hasStudent2 && (
+                <div className="px-3 py-1.5 rounded-xl bg-[#123891]/60 border border-[#123891]/60 text-xs flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-blue-300" />
+                  <span>
+                    Nhóm 2 SV: <strong>{isSV1 ? 'Bạn là SV1' : isSV2 ? 'Bạn là SV2' : 'Nhóm 2 SV'}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -300,53 +353,54 @@ const StudentReportPage = () => {
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
               <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Thời lượng & Chu kỳ</span>
-              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{totalWeeks} tuần • {cycle} tuần/lần</span>
+              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{getDurationWeeks(internship)} tuần • {cycle} tuần/lần</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
               <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Đã hoàn thành</span>
-              <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">{completedWeeks}/{weeks.filter(w => w.isCycleWeek).length} kỳ nộp</span>
+              <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">
+                {completedWeeks}/{weeks.filter(w => w.isCycleWeek).length || Math.ceil(getDurationWeeks(internship) / cycle)} kỳ nộp
+              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Warning if internship is not approved yet */}
-      {!loading && !isReady && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+      {/* 4. Warning if internship is not approved yet */}
+      {!loading && internship && !isApprovedByTBM && (
+        <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3.5 shadow-2xs">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <div className="font-bold text-sm">Hồ sơ thực tập chưa sẵn sàng ghi nhật ký</div>
-            <div className="text-amber-800 text-[11px] mt-0.5 leading-relaxed">
-              Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt (Trạng thái APPROVED hoặc INTERNING).
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-amber-900">
+              Hồ sơ thực tập đang chờ Trưởng Bộ Môn phê duyệt
+            </div>
+            <div className="text-amber-800 text-xs leading-relaxed">
+              Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Weeks List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#123891]" />
-            Danh Sách Nhật Ký Thực Tập ({totalWeeks} Tuần • Chu kỳ {cycle} tuần/lần)
-          </h2>
-          <span className="text-xs text-slate-500 font-medium">
-            {cycle === 1 ? 'Nộp định kỳ mỗi tuần' : `Nộp định kỳ mỗi ${cycle} tuần một lần`}
-          </span>
-        </div>
+      {/* 5. Main Weeks List (Chỉ hiển thị khi hồ sơ đã được TBM phê duyệt) */}
+      {!loading && isApprovedByTBM && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#123891]" />
+              Danh Sách Nhật Ký Thực Tập ({totalWeeks} Tuần • Chu kỳ {cycle} tuần/lần)
+            </h2>
+            <span className="text-xs text-slate-500 font-medium">
+              {cycle === 1 ? 'Nộp định kỳ mỗi tuần' : `Nộp định kỳ mỗi ${cycle} tuần một lần`}
+            </span>
+          </div>
 
-        {loading ? (
-          <div className="p-6 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
-            <LoadingSkeleton rows={4} cols={4} />
-          </div>
-        ) : weeks.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs">
-            <EmptyState
-              title="Chưa có dữ liệu tuần thực tập"
-              description="Hồ sơ thực tập chưa được thiết lập ngày bắt đầu và kết thúc hợp lệ để tạo danh sách tuần."
-            />
-          </div>
-        ) : (
+          {weeks.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs">
+              <EmptyState
+                title="Chưa có dữ liệu tuần thực tập"
+                description="Hồ sơ thực tập chưa được thiết lập ngày bắt đầu và kết thúc hợp lệ để tạo danh sách tuần."
+              />
+            </div>
+          ) : (
           <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[800px]">
@@ -631,6 +685,7 @@ const StudentReportPage = () => {
           </div>
         )}
       </div>
+    )}
 
       {/* Modals */}
       <StudentReportModal
@@ -665,21 +720,23 @@ const StudentReportPage = () => {
         report={selectedReport}
       />
 
-      <ExportInternshipDiaryModal
-        isOpen={exportModalOpen}
-        onClose={() => setExportModalOpen(false)}
-        student={student}
-        internship={internship}
-        weeks={weeks.map((w) => {
-          const r = reportMap[w.weekNumber];
-          return {
-            weekNumber: w.weekNumber,
-            startDate: r?.weekStartDate || w.defaultStartDate,
-            endDate: r?.weekEndDate || w.defaultEndDate,
-          };
-        })}
-        reports={reports}
-      />
+      {isApprovedByTBM && (
+        <ExportInternshipDiaryModal
+          isOpen={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          student={student}
+          internship={internship}
+          weeks={weeks.map((w) => {
+            const r = reportMap[w.weekNumber];
+            return {
+              weekNumber: w.weekNumber,
+              startDate: r?.weekStartDate || w.defaultStartDate,
+              endDate: r?.weekEndDate || w.defaultEndDate,
+            };
+          })}
+          reports={reports}
+        />
+      )}
     </div>
   );
 };

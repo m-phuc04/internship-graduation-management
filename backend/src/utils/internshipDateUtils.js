@@ -59,6 +59,7 @@ export const isWeekEnded = (weekEndDate) => {
  * Get effective duration in weeks for an internship (safely handles legacy records).
  */
 export const getInternshipTotalWeeks = (internship) => {
+  if (!internship) return 0;
   if (internship?.durationInWeeks && [10, 12].includes(internship.durationInWeeks)) {
     return internship.durationInWeeks;
   }

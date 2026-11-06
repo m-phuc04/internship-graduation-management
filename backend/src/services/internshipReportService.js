@@ -56,14 +56,10 @@ const createReport = async ({
     throw new AppError("Hồ sơ thực tập không thuộc về tài khoản này", 403);
   }
 
-  if (
-    !["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(
-      internship.status,
-    )
-  ) {
+  if (!["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) {
     throw new AppError(
-      `Chưa thể nộp nhật ký khi hồ sơ thực tập đang ở trạng thái ${internship.status}. Hồ sơ phải được duyệt (APPROVED/INTERNING).`,
-      409,
+      "Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.",
+      403,
     );
   }
 
@@ -251,6 +247,13 @@ const updateReport = async ({
 
   if (!isSV1 && !isSV2) {
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
+  }
+
+  if (!["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) {
+    throw new AppError(
+      "Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.",
+      403,
+    );
   }
 
   // Khóa nhật ký khi tuần thực tập đã kết thúc
@@ -467,7 +470,6 @@ const getReportsForStudent = async (userId) => {
 
   const internship = await Internship.findOne({
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
   })
     .sort({ createdAt: -1 })
     .populate("companyId")

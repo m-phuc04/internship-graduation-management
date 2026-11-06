@@ -762,7 +762,9 @@ const getMyInternship = async (userId, academicTermId = null) => {
     throw new AppError("Không tìm thấy thông tin hồ sơ sinh viên", 404);
   }
 
-  const query = { studentId: student._id };
+  const query = {
+    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+  };
   if (academicTermId && academicTermId !== "ALL") {
     query.academicTermId = academicTermId;
   }
