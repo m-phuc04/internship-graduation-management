@@ -9,8 +9,10 @@ import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import AcademicTerm from "../models/AcademicTerm.js";
+import InternshipReport from "../models/InternshipReport.js";
 import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
+import { checkInternshipDiaryCompletion } from "../utils/internshipDateUtils.js";
 
 // ====================
 // Helper: Resolve Academic Term for Internship
@@ -1543,6 +1545,30 @@ const gradeInternshipByLecturer = async ({
     throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
   }
 
+  // ==========================================
+  // Prompt 2 - Requirement 4: Ràng buộc đầy đủ 3 điều kiện trước khi chấm điểm
+  // ==========================================
+
+  // Điều kiện 1: PASS PRETEST
+  if (!internship.pretest?.isPassed) {
+    throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa được GVGS xác nhận PASS PRETEST.", 400);
+  }
+
+  // Điều kiện 2: Hoàn thành nhật ký thực tập (tất cả các tuần bắt buộc theo chu kỳ)
+  const reports = await InternshipReport.find({ internshipId: internship._id }).lean();
+  const diaryStatus = checkInternshipDiaryCompletion(internship, reports);
+  if (!diaryStatus.isCompleted) {
+    throw new AppError(
+      `Chưa đủ điều kiện chấm điểm: Sinh viên chưa hoàn thành nhật ký thực tập (còn thiếu tuần ${diaryStatus.missingWeeks.join(", ")}).`,
+      400,
+    );
+  }
+
+  // Điều kiện 3: Nộp file báo cáo thực tập
+  if (!internship.reportFile || !internship.reportFile.fileUrl) {
+    throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa nộp file báo cáo thực tập.", 400);
+  }
+
   // Validate Grading Window for current academic term
   const term = await resolveAcademicTermForInternship(internship);
   validateInternshipGradingWindow(term, new Date());
@@ -1552,6 +1578,11 @@ const gradeInternshipByLecturer = async ({
     evaluationType: "INTERNSHIP",
     targetId: internship._id,
   });
+
+  // Prompt 2 - Requirement 5.3: Tuân thủ trạng thái khóa nếu điểm đã được công bố
+  if (evaluation && (evaluation.isScorePublished || internship.isScorePublished)) {
+    throw new AppError("Kết quả đánh giá thực tập đã được công bố, không thể chỉnh sửa điểm.", 400);
+  }
 
   const evaluatorInfo = {
     name: lecturer.userId.fullName,
@@ -1568,7 +1599,23 @@ const gradeInternshipByLecturer = async ({
         { name: "Báo cáo thực tập & nhật ký công việc", score: Number((numericScore * 0.3).toFixed(2)) },
       ];
 
+  const isUpdate = Boolean(evaluation);
+
   if (evaluation) {
+    // Prompt 2 - Requirement 5.4: Lưu vết lịch sử chỉnh sửa điểm
+    if (!Array.isArray(evaluation.editHistory)) {
+      evaluation.editHistory = [];
+    }
+    evaluation.editHistory.push({
+      editedBy: lecturer.userId._id,
+      editedAt: new Date(),
+      previousScore: evaluation.score,
+      newScore: numericScore,
+      previousComments: evaluation.comments || null,
+      newComments: comments ? comments.trim() : null,
+      action: "UPDATE",
+    });
+
     evaluation.score = numericScore;
     evaluation.comments = comments ? comments.trim() : null;
     evaluation.criteria = formattedCriteria;
@@ -1586,6 +1633,17 @@ const gradeInternshipByLecturer = async ({
       score: numericScore,
       comments: comments ? comments.trim() : null,
       criteria: formattedCriteria,
+      editHistory: [
+        {
+          editedBy: lecturer.userId._id,
+          editedAt: new Date(),
+          previousScore: 0,
+          newScore: numericScore,
+          previousComments: null,
+          newComments: comments ? comments.trim() : null,
+          action: "CREATE",
+        },
+      ],
     });
   }
 
@@ -1607,8 +1665,10 @@ const gradeInternshipByLecturer = async ({
     await notificationService.createNotification({
       recipientId: student.userId._id,
       type: "INTERNSHIP",
-      title: "Giảng viên Giám sát đã hoàn thành chấm điểm",
-      message: `Giảng viên Giám sát ${lecturer.userId.fullName} đã hoàn thành đánh giá thực tập doanh nghiệp của bạn. Kết quả sẽ được Trưởng Bộ Môn công bố.`,
+      title: isUpdate
+        ? "Giảng viên Giám sát đã cập nhật điểm thực tập"
+        : "Giảng viên Giám sát đã hoàn thành chấm điểm",
+      message: `Giảng viên Giám sát ${lecturer.userId.fullName} đã ${isUpdate ? "cập nhật" : "hoàn thành"} đánh giá thực tập doanh nghiệp của bạn. Kết quả sẽ được Trưởng Bộ Môn công bố.`,
       referenceId: internship._id,
       referenceModel: "Internship",
       link: "/student/internship",
@@ -1618,6 +1678,7 @@ const gradeInternshipByLecturer = async ({
   return {
     evaluation,
     internship,
+    isUpdate,
   };
 };
 

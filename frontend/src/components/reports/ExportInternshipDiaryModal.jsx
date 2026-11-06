@@ -133,7 +133,11 @@ const ExportInternshipDiaryModal = ({
               </div>
               <div>
                 <strong>Tổng số tuần thực tập:</strong>{' '}
-                <span className="font-bold font-mono">{weeks.length} tuần</span>
+                <span className="font-bold font-mono">{internship.durationInWeeks || weeks.length} tuần</span>
+              </div>
+              <div>
+                <strong>Chu kỳ nộp nhật ký:</strong>{' '}
+                <span className="font-bold font-mono">{internship.reportCycle || 1} tuần/lần</span>
               </div>
             </div>
           </div>

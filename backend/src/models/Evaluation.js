@@ -143,6 +143,42 @@ const evaluationSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
+    // Lịch sử lưu vết chỉnh sửa điểm đánh giá (Yêu cầu Prompt 2)
+    editHistory: [
+      {
+        editedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        editedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        previousScore: {
+          type: Number,
+          required: true,
+        },
+        newScore: {
+          type: Number,
+          required: true,
+        },
+        previousComments: {
+          type: String,
+          default: null,
+        },
+        newComments: {
+          type: String,
+          default: null,
+        },
+        action: {
+          type: String,
+          enum: ["CREATE", "UPDATE"],
+          default: "UPDATE",
+        },
+      },
+    ],
   },
   {
     timestamps: true,

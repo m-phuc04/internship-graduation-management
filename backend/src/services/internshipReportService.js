@@ -5,6 +5,12 @@ import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
+import {
+  calculateInternshipWeeks,
+  getWeekEndDate,
+  isWeekEnded,
+  getInternshipTotalWeeks,
+} from "../utils/internshipDateUtils.js";
 
 // ====================
 // Student Creates or Submits Report
@@ -70,6 +76,33 @@ const createReport = async ({
       throw new AppError("Báo cáo tuần (WEEKLY) bắt buộc phải có số tuần (từ 1 đến 52)", 400);
     }
     validWeek = Number(weekNumber);
+
+    // 1. Kiểm tra không vượt quá tổng thời lượng thực tập
+    const totalWeeks = getInternshipTotalWeeks(internship);
+    if (validWeek > totalWeeks) {
+      throw new AppError(
+        `Tuần ${validWeek} vượt quá tổng thời gian thực tập đã đăng ký (${totalWeeks} tuần)`,
+        400,
+      );
+    }
+
+    // 2. Kiểm tra chu kỳ nộp nhật ký của GVGS
+    const cycle = internship.reportCycle || 1;
+    if (validWeek % cycle !== 0) {
+      throw new AppError(
+        `Tuần ${validWeek} không thuộc chu kỳ nộp nhật ký (${cycle} tuần/lần) do Giảng viên Giám sát thiết lập`,
+        400,
+      );
+    }
+
+    // 3. Khóa nhật ký khi tuần thực tập đã kết thúc
+    const weekEnd = getWeekEndDate(internship.startDate, validWeek, weekEndDate);
+    if (isWeekEnded(weekEnd)) {
+      throw new AppError(
+        `Tuần thực tập số ${validWeek} đã kết thúc. Nhật ký của tuần này đã bị khóa, không thể tạo mới hoặc nộp bổ sung.`,
+        400,
+      );
+    }
   } else if (reportType === "MONTHLY") {
     if (!monthNumber || Number(monthNumber) < 1 || Number(monthNumber) > 12) {
       throw new AppError("Báo cáo tháng (MONTHLY) bắt buộc phải có số tháng (từ 1 đến 12)", 400);
@@ -218,6 +251,17 @@ const updateReport = async ({
 
   if (!isSV1 && !isSV2) {
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
+  }
+
+  // Khóa nhật ký khi tuần thực tập đã kết thúc
+  if (report.reportType === "WEEKLY" && report.weekNumber) {
+    const weekEnd = getWeekEndDate(internship.startDate, report.weekNumber, report.weekEndDate);
+    if (isWeekEnded(weekEnd)) {
+      throw new AppError(
+        `Tuần thực tập số ${report.weekNumber} đã kết thúc. Nhật ký của tuần này đã bị khóa, không thể chỉnh sửa hoặc nộp lại.`,
+        400,
+      );
+    }
   }
 
   if (!["DRAFT", "NEEDS_REVISION", "REJECTED"].includes(report.status)) {

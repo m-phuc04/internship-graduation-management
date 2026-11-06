@@ -34,7 +34,28 @@ export const internshipApi = {
   complete: (id) =>
     axiosClient.patch(`/internships/${id}/complete`),
 
-  // Lecturer (GVGS) grades internship
+  // Lecturer (GVGS) updates report cycle (1, 2, or 3 weeks/time)
+  updateReportCycle: (id, reportCycle) =>
+    axiosClient.patch(`/internships/${id}/report-cycle`, { reportCycle }),
+
+  // Lecturer (GVGS) confirms or updates PASS PRETEST status (Prompt 2 - Requirement 3)
+  updatePretestStatus: (id, isPassed = true, note = '') =>
+    axiosClient.patch(`/internships/${id}/pass-pretest`, { isPassed, note }),
+
+  // Student uploads internship report file (Prompt 2 - Requirement 1)
+  uploadReportFile: (formData, id = null) => {
+    const url = id ? `/internships/${id}/report-file` : '/internships/my/report-file';
+    return axiosClient.post(url, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+  },
+
+  // Get report file info (Prompt 2 - Requirement 1)
+  getReportFile: (id) => axiosClient.get(`/internships/${id}/report-file`),
+
+  // Lecturer (GVGS) grades or updates grade for internship (Prompt 2 - Requirement 4 & 5)
   grade: (id, data) =>
     axiosClient.post('/evaluations/internship/grade', { ...data, internshipId: id }),
 

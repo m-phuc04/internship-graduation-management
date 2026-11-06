@@ -29,6 +29,9 @@ import {
   CheckCircle2,
   Shield,
   AlertCircle,
+  Clock,
+  Sliders,
+  Settings2,
 } from 'lucide-react';
 
 const LecturerInternshipPage = () => {
@@ -77,6 +80,12 @@ const LecturerInternshipPage = () => {
   const [targetInternship, setTargetInternship] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+
+  // Report Cycle Modal State
+  const [cycleModalOpen, setCycleModalOpen] = useState(false);
+  const [cycleTarget, setCycleTarget] = useState(null);
+  const [selectedCycle, setSelectedCycle] = useState(1);
+  const [cycleLoading, setCycleLoading] = useState(false);
 
   // Document Modal States
   const [docModalOpen, setDocModalOpen] = useState(false);
@@ -263,6 +272,48 @@ const LecturerInternshipPage = () => {
     }
   };
 
+  const handleOpenCycleModal = (intern) => {
+    setCycleTarget(intern);
+    setSelectedCycle(intern.reportCycle || 1);
+    setCycleModalOpen(true);
+  };
+
+  const handleSaveReportCycle = async () => {
+    if (!cycleTarget) return;
+    setCycleLoading(true);
+    try {
+      const res = await internshipApi.updateReportCycle(cycleTarget._id, selectedCycle);
+      if (res.success) {
+        showToast(
+          `Đã thiết lập chu kỳ nộp nhật ký thành ${selectedCycle} tuần/lần cho sinh viên ${cycleTarget.studentId?.userId?.fullName || ''}!`,
+          'success',
+        );
+        setCycleModalOpen(false);
+        setCycleTarget(null);
+        fetchSupervisedStudents();
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể cập nhật chu kỳ nộp nhật ký', 'error');
+    } finally {
+      setCycleLoading(false);
+    }
+  };
+
+  const handleConfirmPretest = async (item) => {
+    try {
+      const res = await internshipApi.updatePretestStatus(item._id, true);
+      if (res?.success) {
+        showToast(
+          `Đã xác nhận PASS PRETEST thành công cho sinh viên ${item.studentId?.userId?.fullName || ''}!`,
+          'success',
+        );
+        fetchSupervisedStudents();
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể cập nhật trạng thái PASS PRETEST', 'error');
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner with Lecturer Workload Stats & Actions */}
@@ -360,10 +411,13 @@ const LecturerInternshipPage = () => {
                   <th className="py-3.5 px-4 pl-6">MSSV</th>
                   <th className="py-3.5 px-4">Tên sinh viên</th>
                   <th className="py-3.5 px-4">Doanh nghiệp</th>
-                  <th className="py-3.5 px-4">Vị trí thực tập</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap">Chu kỳ nộp</th>
+                  <th className="py-3.5 px-4 text-center">PASS PRETEST</th>
+                  <th className="py-3.5 px-4 text-center">Nhật ký</th>
+                  <th className="py-3.5 px-4 text-center">Báo cáo</th>
                   <th className="py-3.5 px-4">Điểm ĐG</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right"></th>
+                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -404,13 +458,96 @@ const LecturerInternshipPage = () => {
                         {item.companyId?.name}
                       </div>
                       <div className="text-[11px] text-slate-400 truncate">
-                        {item.companyId?.address}
+                        {item.position}
                       </div>
                     </td>
 
-                    {/* Position */}
-                    <td className="py-3.5 px-4 text-xs font-semibold text-slate-800 max-w-[160px] truncate">
-                      {item.position}
+                    {/* Report Cycle */}
+                    <td
+                      className="py-3.5 px-4 whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleOpenCycleModal(item)}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-50/80 hover:bg-blue-100 text-[#102d7d] border border-blue-200/80 text-xs font-bold transition shadow-2xs cursor-pointer group"
+                        title="Bấm để thiết lập chu kỳ nộp nhật ký cho sinh viên này"
+                      >
+                        <Clock className="w-3.5 h-3.5 text-blue-600" />
+                        <span>{item.reportCycle || 1} tuần/lần</span>
+                        <Settings2 className="w-3 h-3 text-slate-400 group-hover:text-blue-700 ml-0.5" />
+                      </button>
+                    </td>
+
+                    {/* PASS PRETEST (Prompt 2 - Requirement 3) */}
+                    <td
+                      className="py-3.5 px-4 text-center whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {item.pretestPassed ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold shadow-2xs"
+                          title={`Đã xác nhận PASS PRETEST${item.pretest?.passedAt ? ' lúc ' + new Date(item.pretest.passedAt).toLocaleDateString('vi-VN') : ''}`}
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>PASS PRETEST</span>
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleConfirmPretest(item)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition shadow-2xs cursor-pointer"
+                          title="Nhấn để xác nhận sinh viên này đã PASS PRETEST"
+                        >
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Xác nhận PASS</span>
+                        </button>
+                      )}
+                    </td>
+
+                    {/* Diary Completion Status (Prompt 2 - Requirement 2) */}
+                    <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                      {item.diaryStatus?.isCompleted ? (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold"
+                          title={item.diaryStatus?.summaryText || 'Đã nộp đủ nhật ký'}
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Đủ ({item.diaryStatus?.submittedWeeks?.length}/{item.diaryStatus?.mandatoryWeeks?.length})</span>
+                        </span>
+                      ) : (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-bold"
+                          title={`Chưa nộp đủ nhật ký. Còn thiếu tuần: ${item.diaryStatus?.missingWeeks?.join(', ')}`}
+                        >
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          <span>Thiếu tuần {item.diaryStatus?.missingWeeks?.join(', ')}</span>
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Report File Status (Prompt 2 - Requirement 1) */}
+                    <td
+                      className="py-3.5 px-4 text-center whitespace-nowrap"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {item.reportFileSubmitted ? (
+                        <a
+                          href={item.reportFile.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold hover:bg-emerald-100 transition shadow-2xs"
+                          title={`Mở file báo cáo: ${item.reportFile?.originalName || item.reportFile?.fileName}`}
+                        >
+                          <FileText className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Đã nộp file</span>
+                        </a>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 text-slate-500 border border-slate-200 text-[11px] font-semibold">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span>Chưa nộp</span>
+                        </span>
+                      )}
                     </td>
 
                     {/* Score */}
@@ -435,31 +572,95 @@ const LecturerInternshipPage = () => {
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-1.5">
-                        {/* Nút Chấm điểm: chỉ hiển thị khi chưa có điểm */}
-                        {(!item.evaluation || item.evaluation?.score === undefined || item.evaluation?.score === null) && (() => {
-                          const windowStatus = getGradingWindowStatus(item);
-                          return (
-                            <button
-                              type="button"
-                              disabled={!windowStatus.allowed}
-                              onClick={() => {
-                                if (windowStatus.allowed) {
-                                  handleOpenGrading(item);
-                                }
-                              }}
-                              className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${
-                                windowStatus.allowed
-                                  ? 'text-white bg-[#123891] hover:bg-[#102d7d] cursor-pointer'
-                                  : 'text-slate-400 bg-slate-100 hover:bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
-                              }`}
-                              title={windowStatus.allowed ? 'Chấm điểm thực tập cho sinh viên này' : windowStatus.reason}
-                            >
-                              <Award className="w-3.5 h-3.5" />
-                              <span>Chấm điểm</span>
-                            </button>
-                          );
-                        })()}
+                        {/* Nút Chu kỳ nộp */}
+                        <button
+                          type="button"
+                          onClick={() => handleOpenCycleModal(item)}
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                          title="Thiết lập chu kỳ nộp nhật ký"
+                        >
+                          <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                          <span>Chu kỳ</span>
+                        </button>
 
+                        {/* Prompt 2 - Requirement 4 & 5: Nút Chấm điểm & Nút Chỉnh sửa điểm */}
+                        {(() => {
+                          const hasScore =
+                            item.evaluation &&
+                            item.evaluation?.score !== undefined &&
+                            item.evaluation?.score !== null;
+                          const windowStatus = getGradingWindowStatus(item);
+
+                          const allReasons = [];
+                          if (!item.pretestPassed) allReasons.push('Chưa PASS PRETEST');
+                          if (!item.diaryStatus?.isCompleted) {
+                            allReasons.push(`Chưa đủ nhật ký (thiếu tuần ${item.diaryStatus?.missingWeeks?.join(', ')})`);
+                          }
+                          if (!item.reportFileSubmitted) allReasons.push('Chưa nộp file báo cáo thực tập');
+                          if (!windowStatus.allowed) allReasons.push(windowStatus.reason);
+
+                          const isEligibleToGrade =
+                            item.canGrade && windowStatus.allowed;
+
+                          if (!hasScore) {
+                            // Chấm điểm lần đầu (Prompt 2 - Requirement 4)
+                            return (
+                              <button
+                                type="button"
+                                disabled={!isEligibleToGrade}
+                                onClick={() => {
+                                  if (isEligibleToGrade) {
+                                    handleOpenGrading(item);
+                                  }
+                                }}
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${
+                                  isEligibleToGrade
+                                    ? 'text-white bg-[#123891] hover:bg-[#102d7d] cursor-pointer'
+                                    : 'text-slate-400 bg-slate-100 hover:bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
+                                }`}
+                                title={
+                                  isEligibleToGrade
+                                    ? 'Chấm điểm thực tập cho sinh viên này'
+                                    : `Chưa đủ điều kiện: ${allReasons.join(' • ')}`
+                                }
+                              >
+                                <Award className="w-3.5 h-3.5" />
+                                <span>Chấm điểm</span>
+                              </button>
+                            );
+                          } else {
+                            // Đã có điểm -> Chỉnh sửa điểm (Prompt 2 - Requirement 5)
+                            const isLocked = item.isScorePublished;
+                            const canEdit = !isLocked && isEligibleToGrade;
+
+                            return (
+                              <button
+                                type="button"
+                                disabled={!canEdit}
+                                onClick={() => {
+                                  if (canEdit) {
+                                    handleOpenGrading(item);
+                                  }
+                                }}
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${
+                                  canEdit
+                                    ? 'text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 cursor-pointer'
+                                    : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
+                                }`}
+                                title={
+                                  isLocked
+                                    ? 'Điểm đã được công bố, không thể chỉnh sửa'
+                                    : canEdit
+                                    ? 'Chỉnh sửa điểm đã chấm cho sinh viên này'
+                                    : `Không thể sửa điểm: ${allReasons.join(' • ')}`
+                                }
+                              >
+                                <Award className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Sửa điểm</span>
+                              </button>
+                            );
+                          }
+                        })()}
 
                         {/* Nút Chi tiết */}
                         <button
@@ -715,6 +916,109 @@ const LecturerInternshipPage = () => {
           <InternshipEvaluationDoc internship={evaluationDocData} />
         )}
       </DocumentViewerModal>
+
+      {/* Set Report Cycle Modal */}
+      {cycleModalOpen && cycleTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 font-bold">
+                <Sliders className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Thiết Lập Chu Kỳ Nộp Nhật Ký</h3>
+                <p className="text-xs text-slate-500">Lựa chọn chu kỳ báo cáo định kỳ cho sinh viên</p>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-1.5">
+              <div>
+                <span className="text-slate-400">Sinh viên: </span>
+                <strong className="text-slate-900">
+                  {cycleTarget.studentId?.userId?.fullName} ({cycleTarget.studentId?.studentCode})
+                </strong>
+              </div>
+              <div>
+                <span className="text-slate-400">Đơn vị: </span>
+                <span className="text-slate-700">{cycleTarget.companyId?.name}</span>
+              </div>
+              <div>
+                <span className="text-slate-400">Thời lượng thực tập: </span>
+                <span className="font-bold text-[#102d7d]">
+                  {cycleTarget.durationInWeeks || 12} tuần
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Chọn chu kỳ nộp nhật ký:
+              </label>
+
+              <div className="space-y-2">
+                {[
+                  { value: 1, label: '1 tuần / lần', desc: 'Sinh viên nộp hàng tuần: Tuần 1, 2, 3, 4, 5, 6...' },
+                  { value: 2, label: '2 tuần / lần', desc: 'Sinh viên nộp 2 tuần một lần: Tuần 2, 4, 6, 8, 10, 12' },
+                  { value: 3, label: '3 tuần / lần', desc: 'Sinh viên nộp 3 tuần một lần: Tuần 3, 6, 9, 12' },
+                ].map((option) => (
+                  <label
+                    key={option.value}
+                    onClick={() => setSelectedCycle(option.value)}
+                    className={`p-3.5 rounded-2xl border text-xs flex items-start gap-3 cursor-pointer transition ${
+                      selectedCycle === option.value
+                        ? 'bg-blue-50/70 border-[#123891] ring-1 ring-[#123891]'
+                        : 'bg-white border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="reportCycle"
+                      value={option.value}
+                      checked={selectedCycle === option.value}
+                      onChange={() => setSelectedCycle(option.value)}
+                      className="mt-0.5 text-[#123891] focus:ring-[#123891]"
+                    />
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs">
+                        {option.label}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 leading-relaxed">
+                        {option.desc}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200/80 text-[11px] text-amber-900 flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <span>
+                Việc thay đổi chu kỳ không làm mất dữ liệu nhật ký và file đính kèm sinh viên đã nộp trước đó.
+              </span>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setCycleModalOpen(false)}
+                disabled={cycleLoading}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleSaveReportCycle}
+                disabled={cycleLoading}
+                className="px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50"
+              >
+                {cycleLoading ? 'Đang lưu...' : 'Lưu chu kỳ'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -49,6 +49,18 @@ const internshipSchema = new mongoose.Schema(
       required: [true, "Ngày kết thúc thực tập là bắt buộc"],
     },
 
+    durationInWeeks: {
+      type: Number,
+      enum: [10, 12],
+      default: null,
+    },
+
+    reportCycle: {
+      type: Number,
+      enum: [1, 2, 3],
+      default: 1,
+    },
+
     mentorName: {
       type: String,
       trim: true,
@@ -152,6 +164,60 @@ const internshipSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,
+    },
+
+    // File báo cáo thực tập doanh nghiệp (Yêu cầu Prompt 2)
+    reportFile: {
+      originalName: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      fileName: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      fileUrl: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      fileSize: {
+        type: Number,
+        default: 0,
+      },
+      fileType: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      uploadedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+
+    // Trạng thái PASS PRETEST trước khi chấm điểm (Yêu cầu Prompt 2)
+    pretest: {
+      isPassed: {
+        type: Boolean,
+        default: false,
+      },
+      passedAt: {
+        type: Date,
+        default: null,
+      },
+      passedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      note: {
+        type: String,
+        trim: true,
+        default: null,
+      },
     },
   },
   {

@@ -163,6 +163,39 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
                   {formatDate(internship.endDate)} {durationWeeks && `(${durationWeeks} tuần)`}
                 </span>
               </div>
+              <div className="flex justify-between">
+                <span className="text-slate-400">Chu kỳ nộp nhật ký:</span>
+                <span className="font-bold text-[#123891]">
+                  {internship.reportCycle || 1} tuần / lần
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">Trạng thái PRETEST:</span>
+                {internship.pretest?.isPassed ? (
+                  <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px]">
+                    ĐÃ PASS PRETEST
+                  </span>
+                ) : (
+                  <span className="text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[11px]">
+                    Chưa xác nhận
+                  </span>
+                )}
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-400">File báo cáo thực tập:</span>
+                {internship.reportFile?.fileUrl ? (
+                  <a
+                    href={internship.reportFile.fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-emerald-700 font-bold hover:underline inline-flex items-center gap-1 text-[11px]"
+                  >
+                    <span>{internship.reportFile.originalName || 'Xem file báo cáo'}</span>
+                  </a>
+                ) : (
+                  <span className="text-slate-400 italic text-[11px]">Chưa nộp</span>
+                )}
+              </div>
               {internship.registrationNote && (
                 <div className="pt-1">
                   <span className="text-slate-400 block mb-0.5">Nguyện vọng / Ghi chú đăng ký:</span>

@@ -27,6 +27,12 @@ const LecturerInternshipGradingModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const isEditing = Boolean(
+    internship?.evaluation &&
+      internship.evaluation?.score !== undefined &&
+      internship.evaluation?.score !== null,
+  );
+
   // Determine grading window status according to TBM timeline configuration
   const internshipTerm =
     internship?.academicTermId && (internship.academicTermId.internship !== undefined || internship.academicTermId.name)
@@ -61,6 +67,16 @@ const LecturerInternshipGradingModal = ({
       return;
     }
 
+    // Confirmation dialog before saving edit (Prompt 2 - Requirement 5.1)
+    if (isEditing) {
+      const confirmed = window.confirm(
+        `Bạn có chắc chắn muốn cập nhật điểm thực tập cho sinh viên ${
+          internship.studentId?.userId?.fullName || ''
+        } thành ${numScore} điểm không?`,
+      );
+      if (!confirmed) return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
@@ -70,7 +86,12 @@ const LecturerInternshipGradingModal = ({
       };
 
       await internshipApi.grade(internship._id, payload);
-      showToast('Đã lưu kết quả chấm điểm thực tập thành công!', 'success');
+      showToast(
+        isEditing
+          ? 'Đã cập nhật điểm đánh giá thực tập thành công!'
+          : 'Đã lưu kết quả chấm điểm thực tập thành công!',
+        'success',
+      );
       if (onGraded) onGraded();
       onClose();
     } catch (err) {
@@ -86,7 +107,11 @@ const LecturerInternshipGradingModal = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Chấm điểm Thực tập Doanh nghiệp (Giảng viên Giám sát)"
+      title={
+        isEditing
+          ? 'Chỉnh sửa điểm Thực tập Doanh nghiệp (Giảng viên Giám sát)'
+          : 'Chấm điểm Thực tập Doanh nghiệp (Giảng viên Giám sát)'
+      }
       maxWidth="max-w-lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
@@ -112,6 +137,23 @@ const LecturerInternshipGradingModal = ({
             </div>
           </div>
         </div>
+
+        {/* Notice if Editing */}
+        {isEditing && (
+          <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs leading-relaxed space-y-1">
+            <div className="font-bold flex items-center gap-1.5 text-amber-800">
+              <Clock className="w-4 h-4 text-amber-600" />
+              <span>Chỉnh sửa điểm đã chấm</span>
+            </div>
+            <p className="text-[11px] text-slate-700">
+              Điểm hiện tại:{' '}
+              <strong className="text-amber-800 font-mono">
+                {internship.evaluation.score} / 10
+              </strong>
+              . Mọi thay đổi điểm số sẽ được ghi nhận và lưu vết vào hệ thống.
+            </p>
+          </div>
+        )}
 
         {/* Lock Warning Banner if window is not allowed */}
         {!windowStatus.allowed && (
@@ -189,7 +231,7 @@ const LecturerInternshipGradingModal = ({
             ) : (
               <CheckCircle2 className="w-3.5 h-3.5" />
             )}
-            <span>Xác nhận</span>
+            <span>{isEditing ? 'Lưu thay đổi' : 'Xác nhận chấm điểm'}</span>
           </button>
         </div>
       </form>

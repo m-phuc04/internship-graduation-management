@@ -369,6 +369,94 @@ const completeInternship = async (req, res, next) => {
   }
 };
 
+// ====================
+// Lecturer / TBM Updates Report Cycle
+// ====================
+const updateReportCycle = async (req, res, next) => {
+  try {
+    const { reportCycle } = req.body;
+    const internship = await internshipService.updateReportCycle(
+      req.params.id,
+      req.user,
+      reportCycle,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Cập nhật chu kỳ nộp nhật ký thành công: ${internship.reportCycle} tuần/lần`,
+      data: internship,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Student Uploads Report File (Prompt 2 - Requirement 1)
+// ====================
+const uploadReportFile = async (req, res, next) => {
+  try {
+    const internshipId = req.params.id || null;
+    const internship = await internshipService.uploadReportFile({
+      internshipId,
+      userId: req.user.userId,
+      file: req.file,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Tải lên file báo cáo thực tập thành công",
+      data: internship,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Lecturer Updates PASS PRETEST Status (Prompt 2 - Requirement 3)
+// ====================
+const updatePretestStatus = async (req, res, next) => {
+  try {
+    const { isPassed = true, note = "" } = req.body;
+    const internship = await internshipService.updatePretestStatus(
+      req.params.id,
+      req.user,
+      { isPassed, note },
+    );
+
+    res.status(200).json({
+      success: true,
+      message: isPassed
+        ? "Đã xác nhận PASS PRETEST cho sinh viên thành công"
+        : "Đã hủy trạng thái PASS PRETEST",
+      data: internship,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Get Report File (Prompt 2 - Requirement 1)
+// ====================
+const getReportFile = async (req, res, next) => {
+  try {
+    const reportFile = await internshipService.getReportFile(
+      req.params.id,
+      req.user,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy thông tin file báo cáo thực tập thành công",
+      data: reportFile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   createInternship,
   getAllInternships,
@@ -385,4 +473,8 @@ export default {
   getActiveCompanies,
   getInternshipById,
   exportInternships,
+  updateReportCycle,
+  uploadReportFile,
+  updatePretestStatus,
+  getReportFile,
 };

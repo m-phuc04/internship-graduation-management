@@ -29,8 +29,15 @@ router.post(
 // 2. Lecturer Endpoints
 // ==========================================
 
-// Lecturer (GVGS): Grade Internship
+// Lecturer (GVGS): Grade Internship & Edit Score
 router.post(
+  "/internship/grade",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  evaluationController.gradeInternship,
+);
+
+router.put(
   "/internship/grade",
   authMiddleware,
   authorizeRoles("LECTURER", "TBM", "ADMIN"),

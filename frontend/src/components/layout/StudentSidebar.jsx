@@ -50,12 +50,6 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   // Submenu items data
   const internshipSubItems = [
     {
-      to: '/student/internship/documents',
-      label: 'Tài liệu thực tập',
-      icon: FileText,
-      active: location.pathname === '/student/internship/documents',
-    },
-    {
       to: '/student/internship/register',
       label: 'Đăng ký thực tập',
       icon: PlusCircle,
@@ -66,6 +60,12 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
       label: 'Thông tin thực tập',
       icon: Briefcase,
       active: isItemActive('/student/internship'),
+    },
+    {
+      to: '/student/internship/documents',
+      label: 'Tài liệu thực tập',
+      icon: FileText,
+      active: location.pathname === '/student/internship/documents',
     },
     {
       to: '/student/reports',

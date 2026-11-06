@@ -151,6 +151,20 @@ const StudentReportModal = ({
       }
     }
 
+    // Kiểm tra tuần đã kết thúc (khóa nhật ký)
+    const checkEnd = weekEndDate || targetWeek?.endDate;
+    if (checkEnd) {
+      const endD = new Date(checkEnd);
+      if (!isNaN(endD.getTime())) {
+        endD.setHours(23, 59, 59, 999);
+        if (new Date().getTime() > endD.getTime()) {
+          setError('Tuần thực tập này đã kết thúc. Nhật ký đã bị khóa, không thể tạo mới, chỉnh sửa hoặc gửi lại.');
+          showToast('Tuần thực tập này đã kết thúc. Nhật ký đã bị khóa.', 'error');
+          return;
+        }
+      }
+    }
+
     setSubmitting(true);
 
     try {

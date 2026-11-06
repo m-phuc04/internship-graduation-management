@@ -32,40 +32,29 @@ import {
   RefreshCw,
   Award,
   ChevronRight,
+  Lock,
 } from 'lucide-react';
 
-const DEFAULT_WEEKS_COUNT = 12;
+const isWeekEnded = (date) => {
+  if (!date) return false;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return false;
+  const endOfDay = new Date(d);
+  endOfDay.setHours(23, 59, 59, 999);
+  return new Date().getTime() > endOfDay.getTime();
+};
 
-/**
- * Creates 12 default weeks for internship.
- * If internship start date is available, provides suggested 7-day ranges.
- * Students can freely enter or adjust dates when writing/editing reports.
- */
-const generateDefaultWeeks = (startDateStr) => {
-  const weeks = [];
-  const start = startDateStr ? new Date(startDateStr) : null;
-  const hasValidStart = start && !isNaN(start.getTime());
-
-  for (let i = 1; i <= DEFAULT_WEEKS_COUNT; i++) {
-    let defaultStart = null;
-    let defaultEnd = null;
-
-    if (hasValidStart) {
-      defaultStart = new Date(start);
-      defaultStart.setDate(defaultStart.getDate() + (i - 1) * 7);
-
-      defaultEnd = new Date(defaultStart);
-      defaultEnd.setDate(defaultEnd.getDate() + 6);
-    }
-
-    weeks.push({
-      weekNumber: i,
-      defaultStartDate: defaultStart,
-      defaultEndDate: defaultEnd,
-    });
+const getDurationWeeks = (internship) => {
+  if (internship?.durationInWeeks && (internship.durationInWeeks === 10 || internship.durationInWeeks === 12)) {
+    return internship.durationInWeeks;
   }
-
-  return weeks;
+  if (internship?.startDate && internship?.endDate) {
+    const diff = new Date(internship.endDate) - new Date(internship.startDate);
+    const weeks = Math.round(diff / (1000 * 60 * 60 * 24 * 7));
+    if (weeks === 10) return 10;
+    if (weeks === 12) return 12;
+  }
+  return 12;
 };
 
 const StudentReportPage = () => {
@@ -146,11 +135,6 @@ const StudentReportPage = () => {
 
   const hasStudent2 = !!internship?.secondStudentId;
 
-  // Always default to 12 weeks
-  const weeks = useMemo(() => {
-    return generateDefaultWeeks(internship?.startDate);
-  }, [internship?.startDate]);
-
   // Map existing reports by weekNumber
   const reportMap = useMemo(() => {
     const map = {};
@@ -162,8 +146,53 @@ const StudentReportPage = () => {
     return map;
   }, [reports]);
 
+  // Total duration: 10 or 12 weeks
+  const totalWeeks = useMemo(() => {
+    return getDurationWeeks(internship);
+  }, [internship]);
+
+  // Report cycle configured by GVGS (1, 2, or 3 weeks/time)
+  const cycle = useMemo(() => {
+    return Number(internship?.reportCycle) || 1;
+  }, [internship?.reportCycle]);
+
+  // Calculate weeks to display according to cycle and preserve previous reports
+  const weeks = useMemo(() => {
+    const result = [];
+    const start = internship?.startDate ? new Date(internship.startDate) : null;
+    const hasValidStart = start && !isNaN(start.getTime());
+
+    for (let i = 1; i <= totalWeeks; i++) {
+      const isCycleWeek = i % cycle === 0;
+      const existing = reportMap[i];
+
+      // Display week if it belongs to the report cycle OR has an existing submitted report
+      if (isCycleWeek || existing) {
+        let defaultStart = null;
+        let defaultEnd = null;
+
+        if (hasValidStart) {
+          const intervalOffset = Math.max(0, i - cycle);
+          defaultStart = new Date(start);
+          defaultStart.setDate(defaultStart.getDate() + intervalOffset * 7);
+
+          defaultEnd = new Date(start);
+          defaultEnd.setDate(defaultEnd.getDate() + (i * 7 - 1));
+        }
+
+        result.push({
+          weekNumber: i,
+          isCycleWeek,
+          defaultStartDate: defaultStart,
+          defaultEndDate: defaultEnd,
+        });
+      }
+    }
+
+    return result;
+  }, [internship?.startDate, totalWeeks, cycle, reportMap]);
+
   // Statistics
-  const totalWeeks = DEFAULT_WEEKS_COUNT;
   const completedWeeks = useMemo(() => {
     return Object.values(reportMap).filter(
       (r) => ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(r.status),
@@ -270,12 +299,12 @@ const StudentReportPage = () => {
               <span className="font-bold text-sm text-white mt-0.5 block font-mono">{formatDate(internship.endDate)}</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Tổng số tuần</span>
-              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{totalWeeks} tuần</span>
+              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Thời lượng & Chu kỳ</span>
+              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{totalWeeks} tuần • {cycle} tuần/lần</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
               <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Đã hoàn thành</span>
-              <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">{completedWeeks}/{totalWeeks} tuần</span>
+              <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">{completedWeeks}/{weeks.filter(w => w.isCycleWeek).length} kỳ nộp</span>
             </div>
           </div>
         </div>
@@ -296,13 +325,13 @@ const StudentReportPage = () => {
 
       {/* Main Weeks List */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
             <Calendar className="w-4 h-4 text-[#123891]" />
-            Danh Sách Nhật Ký Hàng Tuần ({totalWeeks} Tuần)
+            Danh Sách Nhật Ký Thực Tập ({totalWeeks} Tuần • Chu kỳ {cycle} tuần/lần)
           </h2>
           <span className="text-xs text-slate-500 font-medium">
-            Mặc định 12 tuần thực tập
+            {cycle === 1 ? 'Nộp định kỳ mỗi tuần' : `Nộp định kỳ mỗi ${cycle} tuần một lần`}
           </span>
         </div>
 
@@ -338,6 +367,7 @@ const StudentReportPage = () => {
 
                     const displayStartDate = report?.weekStartDate || week.defaultStartDate;
                     const displayEndDate = report?.weekEndDate || week.defaultEndDate;
+                    const isLocked = isWeekEnded(displayEndDate);
 
                     const fileName = report?.file?.originalName || report?.file?.fileName;
                     const fileUrl = report?.file?.fileUrl ? getFileUrl(report.file.fileUrl) : '';
@@ -352,6 +382,8 @@ const StudentReportPage = () => {
                             ? 'bg-amber-50/20'
                             : status === 'NEEDS_REVISION'
                             ? 'bg-rose-50/20'
+                            : isLocked && !report
+                            ? 'bg-slate-50/40 opacity-80'
                             : ''
                         }`}
                       >
@@ -360,6 +392,11 @@ const StudentReportPage = () => {
                           <span className="inline-flex items-center justify-center font-black text-xs px-2.5 py-1 rounded-xl bg-[#123891] text-white font-mono shadow-2xs">
                             Tuần {week.weekNumber}
                           </span>
+                          {!week.isCycleWeek && (
+                            <span className="block text-[10px] text-amber-600 font-semibold mt-0.5">
+                              Ngoài chu kỳ
+                            </span>
+                          )}
                         </td>
 
                         {/* 2. Thời gian */}
@@ -374,11 +411,15 @@ const StudentReportPage = () => {
                                 : 'Chưa cập nhật ngày'}
                             </span>
                           </div>
-                          {report?.submittedAt && (
+                          {report?.submittedAt ? (
                             <div className="text-[10px] text-slate-400 mt-1 font-mono">
                               Nộp: {formatDate(report.submittedAt)}
                             </div>
-                          )}
+                          ) : isLocked ? (
+                            <div className="text-[10px] text-rose-500 font-semibold mt-1 flex items-center gap-1">
+                              <Lock className="w-3 h-3" /> Đã kết thúc
+                            </div>
+                          ) : null}
                         </td>
 
                         {/* 3. Nội dung */}
@@ -401,7 +442,7 @@ const StudentReportPage = () => {
                             </div>
                           ) : (
                             <span className="text-xs text-slate-400 italic">
-                              Chưa nộp nhật ký tuần này
+                              {isLocked ? 'Đã hết hạn nộp nhật ký tuần này' : 'Chưa nộp nhật ký tuần này'}
                             </span>
                           )}
                         </td>
@@ -434,26 +475,51 @@ const StudentReportPage = () => {
                         {/* 5. Trạng thái */}
                         <td className="py-4 px-4 whitespace-nowrap">
                           {status === 'NOT_SUBMITTED' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                              Chưa nộp
-                            </span>
+                            isLocked ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg">
+                                <Lock className="w-3 h-3 text-slate-400" />
+                                <span>Đã khóa (Quá hạn)</span>
+                              </span>
+                            ) : !week.isCycleWeek ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                Ngoài chu kỳ
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
+                                Chưa nộp
+                              </span>
+                            )
                           )}
                           {status === 'DRAFT' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
-                              Bản nháp
-                            </span>
+                            isLocked ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-300 px-2.5 py-1 rounded-lg">
+                                <Lock className="w-3 h-3 text-slate-400" />
+                                <span>Đã khóa (Bản nháp)</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
+                                Bản nháp
+                              </span>
+                            )
                           )}
                           {status === 'WAITING_STUDENT_2' && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 px-2.5 py-1 rounded-lg">
                               <Clock className="w-3 h-3" />
-                              <span>Chờ SV2 xác nhận</span>
+                              <span>{isLocked ? 'Chờ SV2 (Đã khóa tuần)' : 'Chờ SV2 xác nhận'}</span>
                             </span>
                           )}
                           {status === 'NEEDS_REVISION' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                              <AlertTriangle className="w-3 h-3" />
-                              <span>Cần chỉnh sửa</span>
-                            </span>
+                            isLocked ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg">
+                                <Lock className="w-3 h-3 text-rose-500" />
+                                <span>Đã khóa (Hết hạn sửa)</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
+                                <AlertTriangle className="w-3 h-3" />
+                                <span>Cần chỉnh sửa</span>
+                              </span>
+                            )
                           )}
                           {(status === 'SUBMITTED' || status === 'REVIEWING') && (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#102d7d] bg-blue-100/70 border border-blue-200 px-2.5 py-1 rounded-lg">
@@ -468,9 +534,16 @@ const StudentReportPage = () => {
                             </span>
                           )}
                           {status === 'REJECTED' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                              <span>GVGS yêu cầu sửa</span>
-                            </span>
+                            isLocked ? (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-lg">
+                                <Lock className="w-3 h-3 text-rose-500" />
+                                <span>Đã khóa (Hết hạn nộp lại)</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
+                                <span>GVGS yêu cầu sửa</span>
+                              </span>
+                            )
                           )}
                         </td>
 
@@ -479,32 +552,46 @@ const StudentReportPage = () => {
                           <div className="flex items-center justify-end gap-1.5">
                             {/* Case A: Not submitted yet */}
                             {!report && isReady && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCreateForWeek(week)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Viết báo cáo</span>
-                              </button>
+                              isLocked ? (
+                                <span className="inline-flex items-center gap-1 text-slate-400 text-xs font-medium py-1 px-2.5 rounded-xl bg-slate-100 border border-slate-200/60" title="Tuần thực tập đã kết thúc, không thể nộp bổ sung">
+                                  <Lock className="w-3.5 h-3.5" />
+                                  <span>Đã khóa</span>
+                                </span>
+                              ) : week.isCycleWeek ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCreateForWeek(week)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>Viết báo cáo</span>
+                                </button>
+                              ) : null
                             )}
 
                             {/* Case B: Draft, Needs Revision, or Rejected by GVGS */}
                             {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCreateForWeek(week, report)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>{report.status === 'REJECTED' ? 'Viết lại' : 'Chỉnh sửa'}</span>
-                              </button>
+                              !isLocked ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenCreateForWeek(week, report)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>{report.status === 'REJECTED' ? 'Viết lại' : 'Chỉnh sửa'}</span>
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 text-slate-400 text-xs font-medium py-1 px-2.5 rounded-xl bg-slate-100 border border-slate-200/60" title="Tuần thực tập đã kết thúc, không thể chỉnh sửa hoặc nộp lại">
+                                  <Lock className="w-3.5 h-3.5" />
+                                  <span>Đã khóa</span>
+                                </span>
+                              )
                             )}
 
                             {/* Case C: Waiting for SV2 */}
                             {report && report.status === 'WAITING_STUDENT_2' && (
                               <>
-                                {isSV2 ? (
+                                {isSV2 && !isLocked ? (
                                   <button
                                     type="button"
                                     onClick={() => handleOpenConfirm(report)}
@@ -515,7 +602,7 @@ const StudentReportPage = () => {
                                   </button>
                                 ) : (
                                   <span className="text-[11px] text-amber-700 font-semibold italic">
-                                    Chờ SV2
+                                    {isLocked ? 'Đã khóa tuần' : 'Chờ SV2'}
                                   </span>
                                 )}
                               </>

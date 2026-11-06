@@ -38,6 +38,7 @@ const RegisterInternshipPage = () => {
 
     // Internship specifics
     position: '',
+    durationInWeeks: 10,
     startDate: '',
     endDate: '',
     registrationNote: '',
@@ -73,6 +74,61 @@ const RegisterInternshipPage = () => {
     fetchData();
   }, [showToast]);
 
+  const computeEndDate = (startDateStr, weeks) => {
+    if (!startDateStr || !weeks) return '';
+    const start = new Date(startDateStr);
+    if (isNaN(start.getTime())) return '';
+    const end = new Date(start);
+    end.setDate(end.getDate() + (weeks * 7 - 1));
+    const year = end.getFullYear();
+    const month = String(end.getMonth() + 1).padStart(2, '0');
+    const day = String(end.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const calculateWeeksFromDates = (startStr, endStr) => {
+    if (!startStr || !endStr) return null;
+    const start = new Date(startStr);
+    const end = new Date(endStr);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start >= end) return null;
+    const diffDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    return Math.round(diffDays / 7);
+  };
+
+  const handleDurationSelect = (weeks) => {
+    setFormData((prev) => {
+      const updated = { ...prev, durationInWeeks: weeks };
+      if (prev.startDate) {
+        updated.endDate = computeEndDate(prev.startDate, weeks);
+      }
+      return updated;
+    });
+    setErrors((prev) => ({ ...prev, durationInWeeks: null, endDate: null }));
+  };
+
+  const handleStartDateChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => {
+      const updated = { ...prev, startDate: value };
+      if (value && prev.durationInWeeks) {
+        updated.endDate = computeEndDate(value, prev.durationInWeeks);
+      }
+      return updated;
+    });
+    setErrors((prev) => ({ ...prev, startDate: null, endDate: null }));
+  };
+
+  const handleEndDateChange = (e) => {
+    const value = e.target.value;
+    const weeks = calculateWeeksFromDates(formData.startDate, value);
+    setFormData((prev) => ({
+      ...prev,
+      endDate: value,
+      durationInWeeks: weeks === 10 || weeks === 12 ? weeks : prev.durationInWeeks,
+    }));
+    setErrors((prev) => ({ ...prev, endDate: null }));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -106,8 +162,15 @@ const RegisterInternshipPage = () => {
     if (formData.startDate && formData.endDate) {
       const start = new Date(formData.startDate);
       const end = new Date(formData.endDate);
-      if (start >= end) {
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        errs.startDate = 'Thời gian thực tập không hợp lệ';
+      } else if (start >= end) {
         errs.endDate = 'Ngày kết thúc phải sau ngày bắt đầu';
+      } else {
+        const weeks = calculateWeeksFromDates(formData.startDate, formData.endDate);
+        if (weeks !== 10 && weeks !== 12) {
+          errs.endDate = `Thời gian thực tập chỉ được phép là 10 tuần hoặc 12 tuần (Hiện tại: ${weeks ? `${weeks} tuần` : 'không hợp lệ'}). Vui lòng điều chỉnh lại ngày kết thúc.`;
+        }
       }
     }
 
@@ -392,12 +455,76 @@ const RegisterInternshipPage = () => {
         </div>
 
         {/* SECTION 3: Internship Position & Dates */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
             <Calendar className="w-5 h-5 text-[#123891]" />
             <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              3. Vị trí & Thời gian Thực tập
+              3. Vị trí & Thời gian Thực tập (10 hoặc 12 tuần)
             </h3>
+          </div>
+
+          {/* Duration selection */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold text-slate-700">
+              Quy chuẩn thời lượng thực tập <span className="text-rose-500">*</span>
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleDurationSelect(10)}
+                className={`p-3.5 rounded-2xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                  formData.durationInWeeks === 10
+                    ? 'bg-blue-50/70 border-[#123891] ring-1 ring-[#123891]'
+                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                    formData.durationInWeeks === 10
+                      ? 'border-[#123891] bg-[#123891] text-white'
+                      : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {formData.durationInWeeks === 10 && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">
+                    Thời lượng 10 Tuần
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Thời lượng chuẩn cho đợt Thực tập Doanh nghiệp (70 ngày)
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDurationSelect(12)}
+                className={`p-3.5 rounded-2xl border text-left transition flex items-start gap-3 cursor-pointer ${
+                  formData.durationInWeeks === 12
+                    ? 'bg-blue-50/70 border-[#123891] ring-1 ring-[#123891]'
+                    : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${
+                    formData.durationInWeeks === 12
+                      ? 'border-[#123891] bg-[#123891] text-white'
+                      : 'border-slate-300 bg-white'
+                  }`}
+                >
+                  {formData.durationInWeeks === 12 && <div className="w-2 h-2 rounded-full bg-white" />}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900">
+                    Thời lượng 12 Tuần
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">
+                    Thời lượng mở rộng theo yêu cầu của đơn vị thực tập (84 ngày)
+                  </div>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -426,7 +553,7 @@ const RegisterInternshipPage = () => {
                 type="date"
                 name="startDate"
                 value={formData.startDate}
-                onChange={handleChange}
+                onChange={handleStartDateChange}
                 className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               />
               {errors.startDate && (
@@ -442,7 +569,7 @@ const RegisterInternshipPage = () => {
                 type="date"
                 name="endDate"
                 value={formData.endDate}
-                onChange={handleChange}
+                onChange={handleEndDateChange}
                 className="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
               />
               {errors.endDate && (
@@ -450,6 +577,37 @@ const RegisterInternshipPage = () => {
               )}
             </div>
           </div>
+
+          {/* Real-time Duration Indicator */}
+          {formData.startDate && formData.endDate && (() => {
+            const calculated = calculateWeeksFromDates(formData.startDate, formData.endDate);
+            const isValid = calculated === 10 || calculated === 12;
+            return (
+              <div
+                className={`p-3 rounded-2xl border text-xs flex items-center gap-2 ${
+                  isValid
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                }`}
+              >
+                {isValid ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>
+                      Thời lượng tính toán: <strong>{calculated} tuần</strong> (Hợp lệ theo quy định thực tập)
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>
+                      Thời lượng tính toán: <strong>{calculated ? `${calculated} tuần` : 'Không hợp lệ'}</strong>. Quy định chỉ cho phép <strong>10 tuần hoặc 12 tuần</strong>.
+                    </span>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* THÔNG TIN NGƯỜI ĐÁNH GIÁ TẠI DOANH NGHIỆP */}
           <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">

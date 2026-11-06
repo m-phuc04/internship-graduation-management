@@ -14,6 +14,7 @@ import {
   Sliders,
   Newspaper,
   Menu,
+  FolderOpen,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
@@ -23,7 +24,10 @@ const LecturerSidebar = ({ onCloseMobile, onToggleCollapse }) => {
 
   // Accordion state: open by default if active route matches
   const isInternshipRoute =
-    location.pathname.startsWith('/lecturer/internships') || location.pathname.startsWith('/lecturer/reports');
+    location.pathname.startsWith('/lecturer/internships') ||
+    location.pathname.startsWith('/lecturer/reports') ||
+    location.pathname.startsWith('/lecturer/internship-documents') ||
+    location.pathname.startsWith('/lecturer/internship-dossiers');
   const isThesisRoute = location.pathname.includes('/lecturer/theses');
 
   const [internshipOpen, setInternshipOpen] = useState(true);
@@ -180,6 +184,16 @@ const LecturerSidebar = ({ onCloseMobile, onToggleCollapse }) => {
                 <span>Sinh viên thực tập</span>
               </Link>
 
+              {/* Item: Tài liệu thực tập */}
+              <Link
+                to="/lecturer/internship-documents"
+                onClick={onCloseMobile}
+                className={getSubLinkClass(location.pathname === '/lecturer/internship-documents')}
+              >
+                <FolderOpen className="w-3.5 h-3.5 shrink-0" />
+                <span>Tài liệu thực tập</span>
+              </Link>
+
               {/* Item 2: Nhật ký thực tập */}
               <Link
                 to="/lecturer/reports"
@@ -190,7 +204,17 @@ const LecturerSidebar = ({ onCloseMobile, onToggleCollapse }) => {
                 <span>Nhật ký thực tập</span>
               </Link>
 
-              {/* Item 3: Đánh giá thực tập */}
+              {/* Item 3: Hồ sơ thực tập (Prompt 2 - Requirement 1) */}
+              <Link
+                to="/lecturer/internship-dossiers"
+                onClick={onCloseMobile}
+                className={getSubLinkClass(isItemActive('/lecturer/internship-dossiers'))}
+              >
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span>Hồ sơ thực tập</span>
+              </Link>
+
+              {/* Item 4: Đánh giá thực tập */}
               <Link
                 to="/lecturer/internships?view=evaluation"
                 onClick={onCloseMobile}
