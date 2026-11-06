@@ -65,11 +65,10 @@ const getAllTerms = async ({ status = "", academicYear = "", search = "" } = {})
 const getCurrentAcademicTerm = async (targetDate = new Date()) => {
   const date = new Date(targetDate);
 
-  // 1. Try finding term that covers the target date: startDate <= date <= endDate (non-closed)
+  // 1. Try finding term that covers the target date: startDate <= date <= endDate
   const dateMatchingTerms = await AcademicTerm.find({
     startDate: { $lte: date },
     endDate: { $gte: date },
-    status: { $ne: "CLOSED" },
   })
     .populate({ path: "createdBy", select: "fullName email role" })
     .lean();
@@ -77,6 +76,8 @@ const getCurrentAcademicTerm = async (targetDate = new Date()) => {
   if (dateMatchingTerms.length > 0) {
     const active = dateMatchingTerms.find((t) => t.status === "ACTIVE");
     if (active) return active;
+    const nonClosed = dateMatchingTerms.find((t) => t.status !== "CLOSED");
+    if (nonClosed) return nonClosed;
     return dateMatchingTerms[0];
   }
 
@@ -461,8 +462,8 @@ const ensureDefaultActiveTerm = async () => {
         code: "HK1-2026-2027",
         startDate: new Date("2026-08-01"),
         endDate: new Date("2027-01-15"),
-        status: "CLOSED",
-        description: "Học kỳ 1 năm học 2026-2027 (Học kỳ trước)",
+        status: "ACTIVE",
+        description: "Học kỳ 1 năm học 2026-2027 (Đang diễn ra)",
         internship: {
           registrationStart: new Date("2026-08-01"),
           registrationEnd: new Date("2026-09-30"),
@@ -478,7 +479,7 @@ const ensureDefaultActiveTerm = async () => {
           defenseEnd: new Date("2027-01-10"),
         },
       });
-      console.log("Created default AcademicTerm: HK1-2026-2027 (CLOSED)");
+      console.log("Created default AcademicTerm: HK1-2026-2027 (ACTIVE)");
     }
 
     // Ensure HK2-2026-2027 exists
@@ -490,8 +491,8 @@ const ensureDefaultActiveTerm = async () => {
         code: "HK2-2026-2027",
         startDate: new Date("2027-01-16"),
         endDate: new Date("2027-06-30"),
-        status: "ACTIVE",
-        description: "Học kỳ 2 năm học 2026-2027 (Đang diễn ra)",
+        status: "UPCOMING",
+        description: "Học kỳ 2 năm học 2026-2027 (Sắp diễn ra)",
         internship: {
           registrationStart: new Date("2027-01-16"),
           registrationEnd: new Date("2027-02-28"),
@@ -507,14 +508,20 @@ const ensureDefaultActiveTerm = async () => {
           defenseEnd: new Date("2027-06-10"),
         },
       });
-      console.log("Created default AcademicTerm: HK2-2026-2027 (ACTIVE)");
+      console.log("Created default AcademicTerm: HK2-2026-2027 (UPCOMING)");
     }
 
     let activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" });
     if (!activeTerm) {
-      hk2.status = "ACTIVE";
-      await hk2.save();
-      activeTerm = hk2;
+      if (hk1) {
+        hk1.status = "ACTIVE";
+        await hk1.save();
+        activeTerm = hk1;
+      } else {
+        hk2.status = "ACTIVE";
+        await hk2.save();
+        activeTerm = hk2;
+      }
     }
 
     // Safe migration: Link any orphaned or unassigned internships & theses to active term

@@ -429,7 +429,7 @@ const updatePretestStatus = async (req, res, next) => {
       success: true,
       message: isPassed
         ? "Đã xác nhận PASS PRETEST cho sinh viên thành công"
-        : "Đã hủy trạng thái PASS PRETEST",
+        : "Đã chuyển trạng thái về CHƯA PASS cho sinh viên thành công",
       data: internship,
     });
   } catch (error) {

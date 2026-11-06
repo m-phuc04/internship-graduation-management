@@ -36,6 +36,7 @@ const StudentReportModal = ({
   targetWeek,
   editingReport,
   onCreated,
+  autoOpenFile = false,
 }) => {
   const [weekNumber, setWeekNumber] = useState(1);
   const [weekStartDate, setWeekStartDate] = useState('');
@@ -78,8 +79,15 @@ const StudentReportModal = ({
         setSelectedFile(null);
       }
       setError('');
+
+      if (autoOpenFile) {
+        const timer = setTimeout(() => {
+          fileInputRef.current?.click();
+        }, 250);
+        return () => clearTimeout(timer);
+      }
     }
-  }, [isOpen, targetWeek, editingReport]);
+  }, [isOpen, targetWeek, editingReport, autoOpenFile]);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];

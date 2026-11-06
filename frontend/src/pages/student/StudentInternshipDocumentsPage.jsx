@@ -314,7 +314,7 @@ const StudentInternshipDocumentsPage = () => {
       </div>
 
       {/* Internship Info Banner */}
-      {guidesData.internship && (
+      {guidesData.internship ? (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border border-blue-200/60 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
@@ -344,6 +344,13 @@ const StudentInternshipDocumentsPage = () => {
               </span>
             </div>
           )}
+        </div>
+      ) : (
+        <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/60 shadow-2xs flex items-center gap-3 text-xs text-amber-800">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            Bạn chưa đăng ký hoặc chưa có hồ sơ thực tập được duyệt. Bạn vẫn có thể xem và tải các tài liệu hướng dẫn chung và biểu mẫu bên dưới.
+          </span>
         </div>
       )}
 
@@ -432,17 +439,15 @@ const StudentInternshipDocumentsPage = () => {
                 <div className="p-6">
                   <LoadingSkeleton rows={4} cols={4} />
                 </div>
-              ) : !guidesData.hasInternship ? (
-                <EmptyState
-                  icon={Briefcase}
-                  title="Bạn chưa có hồ sơ thực tập"
-                  description="Sau khi được duyệt hồ sơ thực tập và phân công Giảng viên giám sát, bạn sẽ xem được các tài liệu hướng dẫn tại đây."
-                />
               ) : guidesData.documents.length === 0 ? (
                 <EmptyState
                   icon={FileText}
                   title="Chưa có tài liệu hướng dẫn nào"
-                  description="Hiện tại Giảng viên giám sát chưa tải lên tài liệu hướng dẫn nào cho bạn."
+                  description={
+                    !guidesData.hasInternship
+                      ? 'Hiện tại chưa có tài liệu hướng dẫn chung nào cho học kỳ này. Bạn có thể đăng ký thực tập để được phân công Giảng viên giám sát.'
+                      : 'Hiện tại chưa có tài liệu hướng dẫn nào được tải lên cho học kỳ này.'
+                  }
                 />
               ) : (
                 <div className="overflow-x-auto">

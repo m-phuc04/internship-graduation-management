@@ -1,5 +1,7 @@
 import internshipDocumentService from "../services/internshipDocumentService.js";
 
+const getUserId = (req) => req.user?.userId || req.user?._id || req.user?.id || null;
+
 // ==========================================
 // 1. Phía Trưởng Bộ Môn (TBM / Quản trị)
 // ==========================================
@@ -28,7 +30,7 @@ export const createDocument = async (req, res, next) => {
       title,
       description,
       academicTermId: academicTermId || null,
-      userId: req.user?._id || null,
+      userId: getUserId(req),
     });
     res.status(201).json({
       success: true,
@@ -45,7 +47,7 @@ export const deleteDocument = async (req, res, next) => {
     const { id } = req.params;
     const result = await internshipDocumentService.deleteDocument(
       id,
-      req.user?._id,
+      getUserId(req),
     );
     res.status(200).json({
       success: true,
@@ -64,7 +66,7 @@ export const getLecturerSupervisedInternships = async (req, res, next) => {
   try {
     const { academicTermId } = req.query;
     const list = await internshipDocumentService.getLecturerSupervisedInternships(
-      req.user?._id,
+      getUserId(req),
       academicTermId,
     );
     res.status(200).json({
@@ -80,7 +82,7 @@ export const getLecturerGuides = async (req, res, next) => {
   try {
     const { academicTermId, search, internshipId } = req.query;
     const docs = await internshipDocumentService.getLecturerGuides(
-      req.user?._id,
+      getUserId(req),
       {
         academicTermId,
         search,
@@ -100,7 +102,7 @@ export const createLecturerGuide = async (req, res, next) => {
   try {
     const { title, description, scope, internshipId, category, academicTermId } = req.body;
     const doc = await internshipDocumentService.createLecturerGuide({
-      userId: req.user?._id,
+      userId: getUserId(req),
       file: req.file,
       title,
       description,
@@ -125,7 +127,7 @@ export const updateLecturerGuide = async (req, res, next) => {
     const { title, description, scope, internshipId, category } = req.body;
     const doc = await internshipDocumentService.updateLecturerGuide(
       id,
-      req.user?._id,
+      getUserId(req),
       {
         title,
         description,
@@ -150,7 +152,7 @@ export const deleteLecturerGuide = async (req, res, next) => {
     const { id } = req.params;
     const result = await internshipDocumentService.deleteLecturerGuide(
       id,
-      req.user?._id,
+      getUserId(req),
     );
     res.status(200).json({
       success: true,
@@ -165,7 +167,7 @@ export const getLecturerSubmissions = async (req, res, next) => {
   try {
     const { academicTermId, search, internshipId } = req.query;
     const result = await internshipDocumentService.getLecturerSubmissions(
-      req.user?._id,
+      getUserId(req),
       {
         academicTermId,
         search,
@@ -191,7 +193,7 @@ export const getStudentGuides = async (req, res, next) => {
   try {
     const { academicTermId, search } = req.query;
     const data = await internshipDocumentService.getStudentGuides(
-      req.user?._id,
+      getUserId(req),
       {
         academicTermId,
         search,
@@ -210,7 +212,7 @@ export const getStudentSubmissions = async (req, res, next) => {
   try {
     const { academicTermId } = req.query;
     const docs = await internshipDocumentService.getStudentSubmissions(
-      req.user?._id,
+      getUserId(req),
       {
         academicTermId,
       },
@@ -228,7 +230,7 @@ export const createStudentSubmission = async (req, res, next) => {
   try {
     const { title, description, category } = req.body;
     const doc = await internshipDocumentService.createStudentSubmission({
-      userId: req.user?._id,
+      userId: getUserId(req),
       file: req.file,
       title,
       description,
@@ -249,7 +251,7 @@ export const deleteStudentSubmission = async (req, res, next) => {
     const { id } = req.params;
     const result = await internshipDocumentService.deleteStudentSubmission(
       id,
-      req.user?._id,
+      getUserId(req),
     );
     res.status(200).json({
       success: true,

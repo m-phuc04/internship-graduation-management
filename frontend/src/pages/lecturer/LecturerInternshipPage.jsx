@@ -94,6 +94,11 @@ const LecturerInternshipPage = () => {
   const [evaluationDocData, setEvaluationDocData] = useState(null);
   const [loadingDoc, setLoadingDoc] = useState(false);
 
+  // PASS PRETEST Modal & Action States (Đảo trạng thái 2 chiều)
+  const [unpassModalOpen, setUnpassModalOpen] = useState(false);
+  const [targetPretestItem, setTargetPretestItem] = useState(null);
+  const [pretestTogglingId, setPretestTogglingId] = useState(null);
+
   const { showToast } = useToast();
 
   const fetchSupervisedStudents = useCallback(async () => {
@@ -299,7 +304,18 @@ const LecturerInternshipPage = () => {
     }
   };
 
-  const handleConfirmPretest = async (item) => {
+  // Toggle PASS PRETEST (Prompt Bổ Sung: Đảo trạng thái 2 chiều)
+  const handleTogglePretest = (item) => {
+    if (item.pretestPassed) {
+      setTargetPretestItem(item);
+      setUnpassModalOpen(true);
+    } else {
+      handleConfirmPassPretest(item);
+    }
+  };
+
+  const handleConfirmPassPretest = async (item) => {
+    setPretestTogglingId(item._id);
     try {
       const res = await internshipApi.updatePretestStatus(item._id, true);
       if (res?.success) {
@@ -311,6 +327,29 @@ const LecturerInternshipPage = () => {
       }
     } catch (err) {
       showToast(err.message || 'Không thể cập nhật trạng thái PASS PRETEST', 'error');
+    } finally {
+      setPretestTogglingId(null);
+    }
+  };
+
+  const handleConfirmUnpassPretest = async () => {
+    if (!targetPretestItem) return;
+    setPretestTogglingId(targetPretestItem._id);
+    try {
+      const res = await internshipApi.updatePretestStatus(targetPretestItem._id, false);
+      if (res?.success) {
+        showToast(
+          `Đã chuyển trạng thái về CHƯA PASS cho sinh viên ${targetPretestItem.studentId?.userId?.fullName || ''}!`,
+          'success',
+        );
+        setUnpassModalOpen(false);
+        setTargetPretestItem(null);
+        fetchSupervisedStudents();
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể chuyển trạng thái về CHƯA PASS', 'error');
+    } finally {
+      setPretestTogglingId(null);
     }
   };
 
@@ -479,28 +518,40 @@ const LecturerInternshipPage = () => {
                       </button>
                     </td>
 
-                    {/* PASS PRETEST (Prompt 2 - Requirement 3) */}
+                    {/* PASS PRETEST (Prompt Bổ Sung: Đảo trạng thái 2 chiều) */}
                     <td
                       className="py-3.5 px-4 text-center whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
                     >
                       {item.pretestPassed ? (
-                        <span
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold shadow-2xs"
-                          title={`Đã xác nhận PASS PRETEST${item.pretest?.passedAt ? ' lúc ' + new Date(item.pretest.passedAt).toLocaleDateString('vi-VN') : ''}`}
+                        <button
+                          type="button"
+                          disabled={pretestTogglingId === item._id}
+                          onClick={() => handleTogglePretest(item)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 active:scale-95 text-emerald-700 border border-emerald-200 text-xs font-bold shadow-2xs transition-all cursor-pointer group disabled:opacity-50"
+                          title={`Đã xác nhận PASS PRETEST${item.pretest?.passedAt ? ' lúc ' + new Date(item.pretest.passedAt).toLocaleDateString('vi-VN') : ''} • Bấm để chuyển về CHƯA PASS`}
                         >
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          {pretestTogglingId === item._id ? (
+                            <span className="w-3.5 h-3.5 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
+                          )}
                           <span>PASS PRETEST</span>
-                        </span>
+                        </button>
                       ) : (
                         <button
                           type="button"
-                          onClick={() => handleConfirmPretest(item)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition shadow-2xs cursor-pointer"
-                          title="Nhấn để xác nhận sinh viên này đã PASS PRETEST"
+                          disabled={pretestTogglingId === item._id}
+                          onClick={() => handleTogglePretest(item)}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100/90 active:scale-95 text-amber-800 border border-amber-200 text-xs font-bold shadow-2xs transition-all cursor-pointer group disabled:opacity-50"
+                          title="Chưa đạt Pretest • Bấm để xác nhận PASS PRETEST"
                         >
-                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Xác nhận PASS</span>
+                          {pretestTogglingId === item._id ? (
+                            <span className="w-3.5 h-3.5 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin" />
+                          ) : (
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
+                          )}
+                          <span>CHƯA PASS</span>
                         </button>
                       )}
                     </td>
@@ -893,6 +944,70 @@ const LecturerInternshipPage = () => {
               >
                 <CheckCircle2 className="w-4 h-4" />
                 <span>{actionLoading ? 'Đang xử lý...' : 'Xác nhận Hoàn thành'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unpass Pretest Confirmation Modal (Prompt Bổ Sung: Đảo trạng thái 2 chiều) */}
+      {unpassModalOpen && targetPretestItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 font-bold">
+                <AlertCircle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Chuyển Về Trạng Thái CHƯA PASS?</h3>
+                <p className="text-xs text-slate-500">Hủy xác nhận đạt Pretest của sinh viên</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/70 text-xs space-y-2">
+              <div>
+                <span className="text-slate-400">Sinh viên:</span>
+                <strong className="block text-slate-900 mt-0.5">
+                  {targetPretestItem.studentId?.userId?.fullName} ({targetPretestItem.studentId?.studentCode})
+                </strong>
+              </div>
+              <div className="pt-2 border-t border-slate-200/60">
+                <span className="text-slate-400">Doanh nghiệp thực tập:</span>
+                <div className="font-semibold text-slate-800">
+                  {targetPretestItem.companyId?.name || 'Chưa cập nhật'}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200/80 text-rose-900 text-xs space-y-1">
+              <div className="font-bold flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                Ảnh hưởng nghiệp vụ
+              </div>
+              <p>
+                Khi chuyển về <strong>CHƯA PASS</strong>, chức năng <strong>Chấm điểm TTDN</strong> của sinh viên này sẽ bị <strong>tạm khóa</strong> cho đến khi đạt lại Pretest. Dữ liệu nhật ký, báo cáo hoặc điểm đã chấm trước đó vẫn được lưu giữ nguyên vẹn.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setUnpassModalOpen(false);
+                  setTargetPretestItem(null);
+                }}
+                disabled={Boolean(pretestTogglingId)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmUnpassPretest}
+                disabled={Boolean(pretestTogglingId)}
+                className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 disabled:opacity-50 rounded-xl shadow-xs transition cursor-pointer"
+              >
+                {pretestTogglingId ? 'Đang cập nhật...' : 'Xác nhận chuyển về CHƯA PASS'}
               </button>
             </div>
           </div>

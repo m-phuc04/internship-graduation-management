@@ -36,6 +36,7 @@ const createInternship = async ({
   mentorEmail,
   mentorPhone,
   lecturerId,
+  academicTermId,
 }) => {
   // 1. Identify Student
   let student;
@@ -83,16 +84,31 @@ const createInternship = async ({
     );
   }
 
-  // 3. Identify Current Academic Term automatically (by Date or ACTIVE status)
-  const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  // 3. Identify Current Academic Term automatically (by explicit term ID, Date, or ACTIVE status)
+  let activeTerm = null;
+  if (academicTermId) {
+    activeTerm = await AcademicTerm.findById(academicTermId).lean();
+  }
+  if (!activeTerm) {
+    activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  }
 
   // Validate Registration Window (if configured)
   const now = new Date();
-  if (activeTerm.internship?.registrationStart && now < new Date(activeTerm.internship.registrationStart)) {
-    throw new AppError("Chưa đến thời gian mở cổng đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
+  if (activeTerm.internship?.registrationStart) {
+    const regStart = new Date(activeTerm.internship.registrationStart);
+    if (now < regStart) {
+      throw new AppError("Chưa đến thời gian mở cổng đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
+    }
   }
-  if (activeTerm.internship?.registrationEnd && now > new Date(activeTerm.internship.registrationEnd)) {
-    throw new AppError("Đã hết thời gian đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
+  if (activeTerm.internship?.registrationEnd) {
+    const regEnd = new Date(activeTerm.internship.registrationEnd);
+    if (regEnd.getUTCHours() === 0 && regEnd.getUTCMinutes() === 0 && regEnd.getUTCSeconds() === 0) {
+      regEnd.setUTCHours(23, 59, 59, 999);
+    }
+    if (now > regEnd) {
+      throw new AppError("Đã hết thời gian đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
+    }
   }
 
   // 4. Check 1 MSSV = 1 Active Internship Rule within active term
@@ -808,13 +824,29 @@ const getMyInternship = async (userId, academicTermId = null) => {
 // ====================
 // Lecturer: Get Supervised Internships (AcademicTerm-aware)
 // ====================
-const getSupervisedInternships = async ({
-  userId,
-  page = 1,
-  limit = 10,
-  search = "",
-  academicTermId = "",
-}) => {
+const getSupervisedInternships = async (
+  userIdOrOptions,
+  options = {},
+) => {
+  let userId, page, limit, search, academicTermId;
+  if (typeof userIdOrOptions === "object" && userIdOrOptions !== null && !userIdOrOptions._bsontype) {
+    ({
+      userId,
+      page = 1,
+      limit = 10,
+      search = "",
+      academicTermId = "",
+    } = userIdOrOptions);
+  } else {
+    userId = userIdOrOptions;
+    ({
+      page = 1,
+      limit = 10,
+      search = "",
+      academicTermId = "",
+    } = options);
+  }
+
   const lecturer = await Lecturer.findOne({ userId }).populate({
     path: "userId",
     select: "fullName email phone",
@@ -1278,16 +1310,21 @@ const updatePretestStatus = async (internshipId, requestingUser, { isPassed = tr
 
   // Permission check
   if (requestingUser.role === "LECTURER") {
-    const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
+    const lecturerUserId = requestingUser.userId || requestingUser._id || requestingUser.id;
+    let lecturer = await Lecturer.findOne({ userId: lecturerUserId });
+    if (!lecturer && requestingUser.email) {
+      lecturer = await Lecturer.findOne({ email: requestingUser.email.toLowerCase() });
+    }
     if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
       throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
     }
   }
 
+  const actorUserId = requestingUser.userId || requestingUser._id || requestingUser.id;
   internship.pretest = {
     isPassed: Boolean(isPassed),
     passedAt: isPassed ? new Date() : null,
-    passedBy: isPassed ? requestingUser.userId : null,
+    passedBy: isPassed ? actorUserId : null,
     note: note ? note.trim() : null,
   };
 

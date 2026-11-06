@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import internshipApi from '../../api/internshipApi';
+import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { useToast } from '../../context/ToastContext';
+import { formatDateVN, formatFullDateVN } from '../../utils/dateUtils';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import {
   Briefcase,
@@ -20,9 +22,52 @@ import {
 } from 'lucide-react';
 
 const RegisterInternshipPage = () => {
+  const { currentTerm } = useAcademicTerm();
   const [profileData, setProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+
+  // Registration Timeline & Lock calculation
+  const isRegistrationLocked = Boolean(currentTerm?.internship?.isRegistrationLocked);
+  const regStart = currentTerm?.internship?.registrationStart ? new Date(currentTerm.internship.registrationStart) : null;
+  const regEnd = currentTerm?.internship?.registrationEnd ? new Date(currentTerm.internship.registrationEnd) : null;
+  if (regEnd) {
+    if (regEnd.getHours() === 0 && regEnd.getMinutes() === 0 && regEnd.getSeconds() === 0 && regEnd.getMilliseconds() === 0) {
+      regEnd.setHours(23, 59, 59, 999);
+    }
+  }
+
+  const now = new Date();
+  const isBeforeStart = regStart && now < regStart;
+  const isPastEnd = regEnd && now > regEnd;
+  const isClosedOrLocked = isRegistrationLocked || isBeforeStart || isPastEnd;
+
+  const getLockReason = () => {
+    if (isRegistrationLocked) {
+      return {
+        title: 'Cổng đăng ký Thực tập Doanh nghiệp đang bị KHÓA',
+        desc: 'Trưởng Bộ Môn hiện đang tạm khóa cổng đăng ký Thực tập Doanh nghiệp cho học kỳ này. Vui lòng quay lại sau.',
+        type: 'LOCKED',
+      };
+    }
+    if (isPastEnd) {
+      return {
+        title: 'Đã hết thời hạn đăng ký Thực tập Doanh nghiệp',
+        desc: `Hệ thống đã tự động khóa đăng ký do đã qua hạn chót (${formatFullDateVN(regEnd)} • ${formatDateVN(regEnd)}).`,
+        type: 'EXPIRED',
+      };
+    }
+    if (isBeforeStart) {
+      return {
+        title: 'Chưa đến thời gian mở cổng đăng ký Thực tập Doanh nghiệp',
+        desc: `Cổng đăng ký dự kiến sẽ mở vào ngày ${formatFullDateVN(regStart)} (${formatDateVN(regStart)}).`,
+        type: 'UPCOMING',
+      };
+    }
+    return null;
+  };
+
+  const lockInfo = getLockReason();
 
   // Form inputs
   const [formData, setFormData] = useState({
@@ -201,6 +246,10 @@ const RegisterInternshipPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isClosedOrLocked) {
+      showToast(lockInfo?.desc || 'Cổng đăng ký Thực tập Doanh nghiệp hiện không mở', 'warning');
+      return;
+    }
     if (!validate()) {
       showToast('Vui lòng kiểm tra lại các trường thông tin bắt buộc', 'error');
       return;
@@ -209,6 +258,7 @@ const RegisterInternshipPage = () => {
     setSubmitting(true);
 
     const payload = {
+      academicTermId: currentTerm?._id || undefined,
       position: formData.position.trim(),
       startDate: formData.startDate,
       endDate: formData.endDate,
@@ -292,6 +342,33 @@ const RegisterInternshipPage = () => {
           Vui lòng kiểm tra thông tin sinh viên và điền đầy đủ chi tiết về đơn vị thực tập
         </p>
       </div>
+
+      {/* Registration Lock / Timeline Alert Banner */}
+      {lockInfo && (
+        <div
+          className={`p-5 rounded-2xl border flex items-start gap-3.5 shadow-2xs ${
+            lockInfo.type === 'UPCOMING'
+              ? 'bg-amber-50/80 border-amber-200 text-amber-900'
+              : lockInfo.type === 'EXPIRED'
+              ? 'bg-rose-50/80 border-rose-200 text-rose-900'
+              : 'bg-slate-50 border-slate-300 text-slate-800'
+          }`}
+        >
+          <AlertCircle
+            className={`w-5 h-5 shrink-0 mt-0.5 ${
+              lockInfo.type === 'UPCOMING'
+                ? 'text-amber-600'
+                : lockInfo.type === 'EXPIRED'
+                ? 'text-rose-600'
+                : 'text-slate-600'
+            }`}
+          />
+          <div>
+            <h4 className="font-bold text-sm">{lockInfo.title}</h4>
+            <p className="text-xs mt-0.5 leading-relaxed opacity-90">{lockInfo.desc}</p>
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* SECTION 1: Student Info */}
@@ -728,8 +805,9 @@ const RegisterInternshipPage = () => {
 
             <button
               type="submit"
-              disabled={submitting}
-              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
+              disabled={submitting || Boolean(isClosedOrLocked)}
+              title={lockInfo ? lockInfo.title : undefined}
+              className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />

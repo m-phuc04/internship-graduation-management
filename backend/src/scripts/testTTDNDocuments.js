@@ -276,8 +276,8 @@ async function runTTDNDocumentsTests() {
     assert(
       studentDGuides.hasInternship === false &&
       studentDGuides.canSubmit === false &&
-      studentDGuides.documents.length === 0,
-      "TEST 1: Sinh viên chưa có hồ sơ thực tập trả về hasInternship: false, canSubmit: false",
+      studentDGuides.documents.length >= 3,
+      "TEST 1: Sinh viên chưa có hồ sơ thực tập trả về hasInternship: false, canSubmit: false và xem được biểu mẫu chung",
     );
 
     let studentDDirectSubmitBlocked = false;
@@ -356,8 +356,7 @@ async function runTTDNDocumentsTests() {
     assert(
       studentAGuides.hasInternship === true &&
       studentAGuides.canSubmit === true &&
-      studentAGuides.documents.length === 1 &&
-      studentAGuides.documents[0]._id.toString() === createdGuide._id.toString() &&
+      studentAGuides.documents.some((d) => d._id.toString() === createdGuide._id.toString()) &&
       studentAGuides.internship.companyName === "Công ty Test Tài Liệu FPT",
       "TEST 4: Sinh viên A xem được tài liệu hướng dẫn của GVGS và canSubmit: true",
     );

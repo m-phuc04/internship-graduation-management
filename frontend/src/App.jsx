@@ -24,7 +24,6 @@ import StudentManagement from './pages/tbm/StudentManagement';
 import LecturerManagement from './pages/tbm/LecturerManagement';
 import CompanyManagement from './pages/tbm/CompanyManagement';
 import InternshipManagement from './pages/tbm/InternshipManagement';
-import TbmInternshipDocumentsPage from './pages/tbm/TbmInternshipDocumentsPage';
 import TbmEvaluationManagement from './pages/tbm/TbmEvaluationManagement';
 import TbmThesisManagement from './pages/tbm/TbmThesisManagement';
 import TbmThesisEvaluationManagement from './pages/tbm/TbmThesisEvaluationManagement';
@@ -162,7 +161,7 @@ function App() {
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="lecturers" element={<LecturerManagement />} />
                 <Route path="companies" element={<CompanyManagement />} />
-                <Route path="internship-documents" element={<TbmInternshipDocumentsPage />} />
+                <Route path="internship-documents" element={<Navigate to="/tbm/internships" replace />} />
                 <Route path="internships" element={<InternshipManagement />} />
                 <Route path="evaluations" element={<TbmEvaluationManagement />} />
                 <Route path="theses" element={<TbmThesisManagement />} />

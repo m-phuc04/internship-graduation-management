@@ -6,6 +6,7 @@ import Internship from "../models/Internship.js";
 import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import Company from "../models/Company.js";
+import User from "../models/User.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 
@@ -170,42 +171,68 @@ export const getLecturerGuides = async (
   { academicTermId = null, search = "", internshipId = null } = {},
 ) => {
   if (!userId) return [];
-  const lecturer = await Lecturer.findOne({ userId });
+  let lecturer = await Lecturer.findOne({ userId });
   if (!lecturer) {
-    return [];
+    const user = await User.findById(userId);
+    if (user && user.email) {
+      lecturer = await Lecturer.findOne({ email: user.email.toLowerCase() });
+    }
   }
 
-  const query = {
-    supervisorId: lecturer._id,
-    documentType: "GUIDE",
+  const guideTypeFilter = {
+    documentType: { $in: ["GUIDE", "DEPARTMENT", null] },
   };
 
-  if (academicTermId && academicTermId !== "ALL") {
-    query.$or = [{ academicTermId }, { academicTermId: null }];
+  const queryConditions = [guideTypeFilter];
+
+  if (lecturer) {
+    if (internshipId && internshipId !== "ALL") {
+      queryConditions.push({
+        supervisorId: lecturer._id,
+        internshipId,
+      });
+    } else {
+      queryConditions.push({
+        $or: [
+          { supervisorId: lecturer._id },
+          { uploadedBy: userId },
+          { scope: "ALL" },
+          { supervisorId: null },
+          { documentType: "DEPARTMENT" },
+        ],
+      });
+    }
+  } else {
+    // Admin or TBM
+    queryConditions.push({
+      $or: [
+        { scope: "ALL" },
+        { supervisorId: null },
+        { documentType: "DEPARTMENT" },
+        { uploadedBy: userId },
+      ],
+    });
   }
 
-  if (internshipId && internshipId !== "ALL") {
-    query.internshipId = internshipId;
+  if (academicTermId && academicTermId !== "ALL") {
+    queryConditions.push({
+      $or: [{ academicTermId }, { academicTermId: null }],
+    });
   }
 
   if (search && search.trim()) {
     const searchRegex = { $regex: search.trim(), $options: "i" };
-    const textFilter = {
+    queryConditions.push({
       $or: [
         { fileName: searchRegex },
         { title: searchRegex },
         { description: searchRegex },
+        { category: searchRegex },
       ],
-    };
-    if (query.$or) {
-      query.$and = [{ $or: query.$or }, textFilter];
-      delete query.$or;
-    } else {
-      query.$or = textFilter.$or;
-    }
+    });
   }
 
-  const docs = await InternshipDocument.find(query)
+  const docs = await InternshipDocument.find({ $and: queryConditions })
     .populate({
       path: "internshipId",
       populate: [
@@ -235,13 +262,32 @@ export const createLecturerGuide = async ({
   category = "Tài liệu hướng dẫn",
   academicTermId = null,
 }) => {
-  const lecturer = await Lecturer.findOne({ userId }).populate("userId", "fullName");
+  let lecturer = await Lecturer.findOne({ userId }).populate("userId", "fullName");
+  if (!lecturer) {
+    const user = await User.findById(userId);
+    if (user) {
+      if (user.email) {
+        lecturer = await Lecturer.findOne({ email: user.email.toLowerCase() }).populate("userId", "fullName");
+      }
+      if (!lecturer && (user.role === "ADMIN" || user.role === "TBM")) {
+        lecturer = await Lecturer.findOne().populate("userId", "fullName");
+      }
+    }
+  }
   if (!lecturer) {
     throw new AppError("Không tìm thấy thông tin giảng viên của bạn", 404);
   }
 
   if (!file) {
     throw new AppError("Vui lòng chọn tệp tài liệu để tải lên", 400);
+  }
+
+  let targetTermId = academicTermId;
+  if (!targetTermId || targetTermId === "ALL") {
+    try {
+      const activeTerm = await academicTermService.getCurrentAcademicTerm();
+      targetTermId = activeTerm?._id || null;
+    } catch {}
   }
 
   const normalizedScope = scope === "SPECIFIC" ? "SPECIFIC" : "ALL";
@@ -264,7 +310,7 @@ export const createLecturerGuide = async ({
   const fileUrl = `/uploads/internship-documents/${file.filename}`;
 
   const doc = await InternshipDocument.create({
-    academicTermId: academicTermId || null,
+    academicTermId: targetTermId || null,
     supervisorId: lecturer._id,
     internshipId: targetInternshipId,
     documentType: "GUIDE",
@@ -343,9 +389,10 @@ export const updateLecturerGuide = async (
   userId,
   { title, description, scope, internshipId, category, file = null } = {},
 ) => {
-  const lecturer = await Lecturer.findOne({ userId });
-  if (!lecturer) {
-    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  let lecturer = await Lecturer.findOne({ userId });
+  const user = await User.findById(userId);
+  if (!lecturer && user && user.email) {
+    lecturer = await Lecturer.findOne({ email: user.email.toLowerCase() });
   }
 
   const doc = await InternshipDocument.findById(id);
@@ -353,8 +400,13 @@ export const updateLecturerGuide = async (
     throw new AppError("Không tìm thấy tài liệu cần cập nhật", 404);
   }
 
-  if (doc.supervisorId?.toString() !== lecturer._id.toString()) {
-    throw new AppError("Bạn không có quyền chỉnh sửa tài liệu của giảng viên khác", 403);
+  const isOwner =
+    (lecturer && doc.supervisorId?.toString() === lecturer._id.toString()) ||
+    (doc.uploadedBy && doc.uploadedBy.toString() === userId.toString()) ||
+    (user && (user.role === "ADMIN" || user.role === "TBM"));
+
+  if (!isOwner) {
+    throw new AppError("Bạn không có quyền chỉnh sửa tài liệu này", 403);
   }
 
   if (typeof title === "string" && title.trim()) {
@@ -374,7 +426,7 @@ export const updateLecturerGuide = async (
       if (internshipId) {
         const internship = await Internship.findOne({
           _id: internshipId,
-          lecturerId: lecturer._id,
+          lecturerId: lecturer?._id || doc.supervisorId,
         });
         if (!internship) {
           throw new AppError("Không tìm thấy hồ sơ thực tập do bạn hướng dẫn", 404);
@@ -404,9 +456,10 @@ export const updateLecturerGuide = async (
 
 // 2.5 Xóa tài liệu hướng dẫn
 export const deleteLecturerGuide = async (id, userId) => {
-  const lecturer = await Lecturer.findOne({ userId });
-  if (!lecturer) {
-    throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+  let lecturer = await Lecturer.findOne({ userId });
+  const user = await User.findById(userId);
+  if (!lecturer && user && user.email) {
+    lecturer = await Lecturer.findOne({ email: user.email.toLowerCase() });
   }
 
   const doc = await InternshipDocument.findById(id);
@@ -414,8 +467,13 @@ export const deleteLecturerGuide = async (id, userId) => {
     throw new AppError("Không tìm thấy tài liệu cần xóa", 404);
   }
 
-  if (doc.supervisorId?.toString() !== lecturer._id.toString()) {
-    throw new AppError("Bạn không có quyền xóa tài liệu của giảng viên khác", 403);
+  const isOwner =
+    (lecturer && doc.supervisorId?.toString() === lecturer._id.toString()) ||
+    (doc.uploadedBy && doc.uploadedBy.toString() === userId.toString()) ||
+    (user && (user.role === "ADMIN" || user.role === "TBM"));
+
+  if (!isOwner) {
+    throw new AppError("Bạn không có quyền xóa tài liệu này", 403);
   }
 
   unlinkFileSafe(doc.fileUrl);
@@ -567,7 +625,7 @@ export const getLecturerSubmissions = async (
 // 3. Phía Sinh viên (Student)
 // ==========================================
 
-// 3.1 Lấy danh sách tài liệu từ giảng viên giám sát
+// 3.1 Lấy danh sách tài liệu từ giảng viên giám sát & tài liệu hướng dẫn chung
 export const getStudentGuides = async (
   userId,
   { academicTermId = null, search = "" } = {},
@@ -595,13 +653,21 @@ export const getStudentGuides = async (
     };
   }
 
+  let targetTermId = academicTermId;
+  if (!targetTermId || targetTermId === "ALL") {
+    try {
+      const activeTerm = await academicTermService.getCurrentAcademicTerm();
+      targetTermId = activeTerm?._id || null;
+    } catch {}
+  }
+
   // Tìm hồ sơ thực tập của sinh viên (ưu tiên hồ sơ theo kỳ nếu có, hoặc mới nhất)
   const internshipQuery = {
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
   };
 
-  if (academicTermId && academicTermId !== "ALL") {
-    internshipQuery.academicTermId = academicTermId;
+  if (targetTermId && targetTermId !== "ALL") {
+    internshipQuery.academicTermId = targetTermId;
   }
 
   const populateSupervisor = {
@@ -615,7 +681,7 @@ export const getStudentGuides = async (
     .populate("companyId", "name code address")
     .sort({ createdAt: -1 });
 
-  if (!internship && academicTermId) {
+  if (!internship && targetTermId) {
     internship = await Internship.findOne({
       $or: [{ studentId: student._id }, { secondStudentId: student._id }],
     })
@@ -624,72 +690,80 @@ export const getStudentGuides = async (
       .sort({ createdAt: -1 });
   }
 
-  if (!internship) {
-    return {
-      hasInternship: false,
-      internship: null,
-      supervisor: null,
-      documents: [],
-      canSubmit: false,
-      submitBlockReason: "Bạn chưa đăng ký thực tập doanh nghiệp. Vui lòng đăng ký thực tập trước.",
-    };
-  }
-
-  const isApproved = ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status);
-  const isPending =
+  const hasInternship = Boolean(internship);
+  const isApproved = hasInternship && ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status);
+  const isPending = hasInternship && (
     internship.status === "PENDING" ||
-    internship.status === "PENDING_SUPERVISOR_ACCEPTANCE";
+    internship.status === "PENDING_SUPERVISOR_ACCEPTANCE"
+  );
+  const hasSupervisor = Boolean(isApproved && internship?.lecturerId);
 
   let submitBlockReason = "";
-  if (!isApproved) {
+  if (!hasInternship) {
+    submitBlockReason = "Bạn chưa đăng ký thực tập doanh nghiệp. Vui lòng đăng ký thực tập trước.";
+  } else if (!isApproved) {
     if (isPending) {
-      submitBlockReason =
-        "Hồ sơ thực tập của bạn đang chờ phê duyệt. Bạn chỉ có thể nộp tài liệu sau khi hồ sơ được duyệt.";
+      submitBlockReason = "Hồ sơ thực tập của bạn đang chờ phê duyệt. Bạn chỉ có thể nộp tài liệu sau khi hồ sơ được duyệt.";
     } else {
-      submitBlockReason =
-        "Hồ sơ thực tập của bạn không ở trạng thái hợp lệ để nộp tài liệu.";
+      submitBlockReason = "Hồ sơ thực tập của bạn không ở trạng thái hợp lệ để nộp tài liệu.";
     }
+  } else if (!internship?.lecturerId) {
+    submitBlockReason = "Hồ sơ thực tập của bạn chưa được phân công Giảng viên giám sát.";
   }
 
-  if (!internship.lecturerId || !isApproved) {
-    return {
-      hasInternship: true,
-      internship: {
-        _id: internship._id,
-        companyName: internship.companyId?.name || "Chưa có",
-        position: internship.position || "Thực tập sinh",
-        status: internship.status,
-      },
-      supervisor: internship.lecturerId || null,
-      documents: [],
-      canSubmit: false,
-      submitBlockReason,
+  // Xây dựng điều kiện truy vấn tài liệu:
+  // 1. Phải là tài liệu hướng dẫn / biểu mẫu chung hoặc riêng (không lấy file nộp bài SUBMISSION)
+  const guideTypeFilter = {
+    documentType: { $in: ["GUIDE", "DEPARTMENT", null] },
+  };
+
+  // 2. Phân quyền hiển thị theo phạm vi:
+  // - Tài liệu chung (scope: ALL, hoặc supervisorId null, hoặc documentType DEPARTMENT) -> sinh viên nào thuộc kỳ cũng xem được
+  // - Tài liệu riêng do GVGS tải lên -> sinh viên được GVGS đó hướng dẫn xem được
+  let scopeFilter;
+  if (hasSupervisor) {
+    scopeFilter = {
+      $or: [
+        { scope: "ALL" },
+        { supervisorId: null },
+        { documentType: "DEPARTMENT" },
+        { supervisorId: internship.lecturerId._id, internshipId: internship._id },
+        { supervisorId: internship.lecturerId._id, scope: "ALL" },
+      ],
+    };
+  } else {
+    scopeFilter = {
+      $or: [
+        { scope: "ALL" },
+        { supervisorId: null },
+        { documentType: "DEPARTMENT" },
+      ],
     };
   }
 
-  const query = {
-    supervisorId: internship.lecturerId._id,
-    documentType: "GUIDE",
-    $or: [{ scope: "ALL" }, { internshipId: internship._id }],
-  };
+  const queryConditions = [guideTypeFilter, scopeFilter];
 
-  if (typeof search === "string" && search.trim()) {
-    const searchRegex = { $regex: search.trim(), $options: "i" };
-    query.$and = [
-      { $or: query.$or },
-      {
-        $or: [
-          { fileName: searchRegex },
-          { title: searchRegex },
-          { description: searchRegex },
-          { category: searchRegex },
-        ],
-      },
-    ];
-    delete query.$or;
+  // 3. Lọc theo học kỳ (nếu có, hoặc tài liệu dùng chung toàn trường không gắn kỳ)
+  if (targetTermId && targetTermId !== "ALL") {
+    queryConditions.push({
+      $or: [{ academicTermId: targetTermId }, { academicTermId: null }],
+    });
   }
 
-  const docs = await InternshipDocument.find(query)
+  // 4. Tìm kiếm từ khóa nếu người dùng nhập
+  if (typeof search === "string" && search.trim()) {
+    const searchRegex = { $regex: search.trim(), $options: "i" };
+    queryConditions.push({
+      $or: [
+        { fileName: searchRegex },
+        { title: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+      ],
+    });
+  }
+
+  const docs = await InternshipDocument.find({ $and: queryConditions })
     .populate({
       path: "supervisorId",
       populate: { path: "userId", select: "fullName email" },
@@ -699,17 +773,19 @@ export const getStudentGuides = async (
     .sort({ createdAt: -1 });
 
   return {
-    hasInternship: true,
-    internship: {
-      _id: internship._id,
-      companyName: internship.companyId?.name || "Chưa có",
-      position: internship.position || "Thực tập sinh",
-      status: internship.status,
-    },
-    supervisor: internship.lecturerId,
+    hasInternship,
+    internship: internship
+      ? {
+          _id: internship._id,
+          companyName: internship.companyId?.name || "Chưa có",
+          position: internship.position || "Thực tập sinh",
+          status: internship.status,
+        }
+      : null,
+    supervisor: internship?.lecturerId || null,
     documents: docs,
-    canSubmit: true,
-    submitBlockReason: "",
+    canSubmit: hasSupervisor,
+    submitBlockReason,
   };
 };
 

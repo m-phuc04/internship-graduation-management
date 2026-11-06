@@ -173,11 +173,11 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
                 <span className="text-slate-400">Trạng thái PRETEST:</span>
                 {internship.pretest?.isPassed ? (
                   <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 text-[11px]">
-                    ĐÃ PASS PRETEST
+                    PASS PRETEST
                   </span>
                 ) : (
                   <span className="text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 text-[11px]">
-                    Chưa xác nhận
+                    CHƯA PASS
                   </span>
                 )}
               </div>
