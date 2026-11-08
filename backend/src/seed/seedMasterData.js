@@ -229,46 +229,21 @@ const seedData = async () => {
       },
     ];
 
-    // Also ensure company user accounts exist
-    let compUser = await User.findOne({ email: "company@tdsouth.com" });
-    if (!compUser) {
-      compUser = await User.create({
-        fullName: "Đại diện TDSouth Tech",
-        email: "company@tdsouth.com",
-        password: defaultPasswordHash,
-        phone: "02837155666",
-        role: "COMPANY",
-        isActive: true,
-      });
-      console.log("Created Company user: company@tdsouth.com / 1111");
-    } else {
-      compUser.password = defaultPasswordHash;
-      await compUser.save();
-    }
-
-    let comp2User = await User.findOne({ email: "company2@vietai.vn" });
-    if (!comp2User) {
-      comp2User = await User.create({
-        fullName: "Đại diện VietAI Labs",
-        email: "company2@vietai.vn",
-        password: defaultPasswordHash,
-        phone: "02838221199",
-        role: "COMPANY",
-        isActive: true,
-      });
-      console.log("Created Company 2 user: company2@vietai.vn / 1111");
-    } else {
-      comp2User.password = defaultPasswordHash;
-      await comp2User.save();
-    }
-
     for (const item of companiesData) {
       let comp = await Company.findOne({ code: item.code });
-      let assignedUserId = item.code === "TDSOUTH" ? compUser._id : item.code === "FPTSOFT" ? comp2User._id : null;
       if (!comp) {
-        await Company.create({ ...item, userId: assignedUserId });
-      } else if (assignedUserId) {
-        comp.userId = assignedUserId;
+        await Company.create({ ...item, userId: null });
+      } else {
+        comp.name = item.name;
+        comp.address = item.address;
+        comp.email = item.email;
+        comp.phone = item.phone;
+        comp.website = item.website;
+        comp.contactPerson = item.contactPerson;
+        comp.contactEmail = item.contactEmail;
+        comp.description = item.description;
+        comp.status = item.status;
+        comp.userId = null;
         await comp.save();
       }
     }
@@ -438,10 +413,9 @@ const seedData = async () => {
     console.log("\n=======================================================");
     console.log("MASTER DATA SEEDED SUCCESSFULLY!");
     console.log("Accounts ready for testing:");
-    console.log("1. TBM:      tbm@iuh.edu.vn / 123456");
-    console.log("2. Lecturer: lecturer@iuh.edu.vn / 123456");
-    console.log("3. Student:  student@iuh.edu.vn / 123456");
-    console.log("4. Company:  company@tdsouth.com / 123456");
+    console.log("1. TBM:      tbm@iuh.edu.vn / 1111");
+    console.log("2. Lecturer: lecturer@iuh.edu.vn / 1111");
+    console.log("3. Student:  student@iuh.edu.vn / 1111");
     console.log("=======================================================\n");
 
     process.exit(0);

@@ -28,8 +28,6 @@ const researchFieldSchema = new mongoose.Schema(
   }
 );
 
-researchFieldSchema.index({ name: 1 }, { unique: true });
-
 const ResearchField = mongoose.model("ResearchField", researchFieldSchema);
 
 export default ResearchField;

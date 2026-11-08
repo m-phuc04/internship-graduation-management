@@ -1,3 +1,5 @@
+import path from "path";
+import { fileURLToPath } from "url";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
@@ -6,6 +8,9 @@ import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import authService from "../services/authService.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config();
 
 const testLogin = async () => {
@@ -13,7 +18,7 @@ const testLogin = async () => {
   console.log("🔍 KIỂM TRA ĐĂNG NHẬP VÀ DỮ LIỆU TÀI KHOẢN MẪU");
   console.log("==========================================\n");
 
-  const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/internship_management";
+  const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/internship-graduation-management";
   await mongoose.connect(mongoUri);
 
   try {
