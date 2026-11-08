@@ -3,6 +3,7 @@ import Internship from "../models/Internship.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
+import AcademicTerm from "../models/AcademicTerm.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 import {
@@ -82,8 +83,17 @@ const createReport = async ({
       );
     }
 
-    // 2. Kiểm tra chu kỳ nộp nhật ký của GVGS
-    const cycle = internship.reportCycle || 1;
+    // 2. Kiểm tra chu kỳ nộp nhật ký của GVGS (theo học kỳ)
+    let cycle = internship.reportCycle || 1;
+    if (internship.academicTermId) {
+      const termDoc = await AcademicTerm.findById(
+        internship.academicTermId._id || internship.academicTermId
+      ).lean();
+      if (termDoc?.internship?.reportCycle) {
+        cycle = termDoc.internship.reportCycle;
+      }
+    }
+
     if (validWeek % cycle !== 0) {
       throw new AppError(
         `Tuần ${validWeek} không thuộc chu kỳ nộp nhật ký (${cycle} tuần/lần) do Giảng viên Giám sát thiết lập`,
@@ -488,6 +498,15 @@ const getReportsForStudent = async (userId) => {
 
   let reports = [];
   if (internship) {
+    if (internship.academicTermId) {
+      const termDoc = await AcademicTerm.findById(
+        internship.academicTermId._id || internship.academicTermId
+      ).lean();
+      if (termDoc?.internship?.reportCycle) {
+        internship.reportCycle = termDoc.internship.reportCycle;
+      }
+    }
+
     reports = await InternshipReport.find({
       internshipId: internship._id,
     })

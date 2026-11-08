@@ -202,7 +202,7 @@ const createInternship = async ({
     startDate: start,
     endDate: end,
     durationInWeeks: calculatedWeeks,
-    reportCycle: 1,
+    reportCycle: activeTerm.internship?.reportCycle || 1,
     mentorName: mentorName ? mentorName.trim() : null,
     mentorPosition: mentorPosition ? mentorPosition.trim() : null,
     mentorEmail: mentorEmail ? mentorEmail.trim().toLowerCase() : null,
@@ -806,6 +806,15 @@ const getMyInternship = async (userId, academicTermId = null) => {
   const hasActiveInternship =
     internship && ACTIVE_STATUSES.includes(internship.status);
 
+  if (internship && internship.academicTermId) {
+    const termDoc = await AcademicTerm.findById(
+      internship.academicTermId._id || internship.academicTermId
+    ).lean();
+    if (termDoc?.internship?.reportCycle) {
+      internship.reportCycle = termDoc.internship.reportCycle;
+    }
+  }
+
   let diaryStatus = null;
   if (internship) {
     const reports = await InternshipReport.find({ internshipId: internship._id }).lean();
@@ -927,9 +936,18 @@ const getSupervisedInternships = async (
     reportMap.get(key).push(rep);
   });
 
+  let currentAcademicTerm = null;
+  if (academicTermId && academicTermId !== "ALL") {
+    currentAcademicTerm = await AcademicTerm.findById(academicTermId).lean();
+  } else {
+    currentAcademicTerm = await AcademicTerm.findOne({ status: "ACTIVE" }).lean();
+  }
+  const commonReportCycle = currentAcademicTerm?.internship?.reportCycle || 1;
+
   const enrichedInternships = internships.map((item) => {
     const reports = reportMap.get(item._id.toString()) || [];
-    const diaryStatus = checkInternshipDiaryCompletion(item, reports);
+    const itemWithCycle = { ...item, reportCycle: commonReportCycle };
+    const diaryStatus = checkInternshipDiaryCompletion(itemWithCycle, reports);
     const pretestPassed = Boolean(item.pretest?.isPassed);
     const reportFileSubmitted = Boolean(item.reportFile?.fileUrl);
 
@@ -972,6 +990,8 @@ const getSupervisedInternships = async (
 
   return {
     lecturer,
+    reportCycle: commonReportCycle,
+    academicTerm: currentAcademicTerm,
     data: enrichedInternships,
     stats: {
       totalAssigned: total,
@@ -1161,7 +1181,58 @@ const getSupervisionConfirmationDocument = async ({
 };
 
 // ====================
-// Lecturer / TBM Updates Report Cycle (1, 2, or 3 weeks/time)
+// Lecturer / TBM Updates Report Cycle for Academic Term (Common for all TTDN students)
+// ====================
+const updateAcademicTermReportCycle = async (termId, requestingUser, reportCycle) => {
+  const cycle = Number(reportCycle);
+  if (![1, 2, 3].includes(cycle)) {
+    throw new AppError("Chu kỳ nộp nhật ký chỉ được phép là 1, 2 hoặc 3 tuần/lần", 400);
+  }
+
+  // Access control: LECTURER, TBM, ADMIN
+  if (requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({
+      userId: requestingUser.userId || requestingUser._id || requestingUser.id,
+    });
+    if (!lecturer) {
+      throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
+    }
+  } else if (!["TBM", "ADMIN"].includes(requestingUser.role)) {
+    throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
+  }
+
+  let term = null;
+  if (termId && termId !== "ALL") {
+    term = await AcademicTerm.findById(termId);
+  }
+  if (!term) {
+    term = await AcademicTerm.findOne({ status: "ACTIVE" });
+  }
+  if (!term) {
+    throw new AppError("Không tìm thấy học kỳ hợp lệ để thiết lập chu kỳ nộp nhật ký", 404);
+  }
+
+  if (!term.internship) {
+    term.internship = {};
+  }
+  term.internship.reportCycle = cycle;
+  await term.save();
+
+  // Unified update to all internship records of this term
+  await Internship.updateMany(
+    { academicTermId: term._id },
+    { $set: { reportCycle: cycle } }
+  );
+
+  return {
+    academicTermId: term._id,
+    termName: term.name,
+    reportCycle: cycle,
+  };
+};
+
+// ====================
+// Lecturer / TBM Updates Report Cycle (Syncs with Academic Term)
 // ====================
 const updateReportCycle = async (internshipId, requestingUser, reportCycle) => {
   const cycle = Number(reportCycle);
@@ -1174,17 +1245,25 @@ const updateReportCycle = async (internshipId, requestingUser, reportCycle) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
-  // Access control: Only the assigned supervisor lecturer or TBM/Admin can configure cycle
+  // Access control
   if (requestingUser.role === "LECTURER") {
-    const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
-    if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
-      throw new AppError("Bạn không phải là Giảng viên Giám sát của hồ sơ thực tập này", 403);
+    const lecturer = await Lecturer.findOne({
+      userId: requestingUser.userId || requestingUser._id || requestingUser.id,
+    });
+    if (!lecturer) {
+      throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
     }
   } else if (!["TBM", "ADMIN"].includes(requestingUser.role)) {
     throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
   }
 
+  const termId = internship.academicTermId?._id || internship.academicTermId;
+  const termResult = await updateAcademicTermReportCycle(termId, requestingUser, cycle);
+
   internship.reportCycle = cycle;
+  if (!internship.academicTermId && termResult?.academicTermId) {
+    internship.academicTermId = termResult.academicTermId;
+  }
   await internship.save();
 
   return await Internship.findById(internship._id)
@@ -1386,6 +1465,7 @@ export default {
   getActiveCompanies,
   completeInternship,
   updateReportCycle,
+  updateAcademicTermReportCycle,
   uploadReportFile,
   updatePretestStatus,
   getReportFile,

@@ -1652,28 +1652,15 @@ const gradeInternshipByLecturer = async ({
   internship.evaluation = evaluation._id;
   await internship.save();
 
-  // Scores remain unpublished until TBM publishes them
+  // Scores remain unpublished until officially published
   evaluation.isScorePublished = false;
   await evaluation.save();
 
   internship.isScorePublished = false;
   await internship.save();
 
-  // Notify Student that lecturer graded (do NOT reveal score yet)
-  const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
-  if (student?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: student.userId._id,
-      type: "INTERNSHIP",
-      title: isUpdate
-        ? "Giảng viên Giám sát đã cập nhật điểm thực tập"
-        : "Giảng viên Giám sát đã hoàn thành chấm điểm",
-      message: `Giảng viên Giám sát ${lecturer.userId.fullName} đã ${isUpdate ? "cập nhật" : "hoàn thành"} đánh giá thực tập doanh nghiệp của bạn. Kết quả sẽ được Trưởng Bộ Môn công bố.`,
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship",
-    });
-  }
+  // Yêu cầu nghiệp vụ: Không gửi thông báo cho sinh viên khi GVGS nhập hoặc cập nhật điểm.
+  // Chỉ gửi thông báo khi thao tác Công bố điểm được thực hiện chính thức.
 
   return {
     evaluation,
@@ -1684,9 +1671,9 @@ const gradeInternshipByLecturer = async ({
 
 
 // ==========================================
-// TBM: Publish Single Internship Score
+// TBM / Lecturer: Publish Single Internship Score
 // ==========================================
-const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
+const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser }) => {
   if (!internshipId) {
     throw new AppError("Mã hồ sơ thực tập là bắt buộc", 400);
   }
@@ -1699,6 +1686,16 @@ const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  // Access control: If requesting user is LECTURER, must be assigned supervisor
+  if (requestingUser && requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({
+      userId: requestingUser.userId || requestingUser._id || requestingUser.id,
+    });
+    if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
+      throw new AppError("Bạn không phải là Giảng viên Giám sát của hồ sơ thực tập này", 403);
+    }
+  }
+
   const evaluation = await Evaluation.findOne({
     evaluationType: "INTERNSHIP",
     targetId: internship._id,
@@ -1709,6 +1706,8 @@ const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
   }
 
   const now = new Date();
+  const wasAlreadyPublished = Boolean(evaluation.isScorePublished);
+
   evaluation.isScorePublished = true;
   evaluation.publishedAt = now;
   evaluation.publishedBy = tbmUserId;
@@ -1719,18 +1718,20 @@ const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
   internship.scorePublishedBy = tbmUserId;
   await internship.save();
 
-  // Send Notification to Student
-  const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
-  if (student?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: student.userId._id,
-      type: "INTERNSHIP",
-      title: "Công bố điểm Thực tập Doanh nghiệp",
-      message: "Bạn đã có điểm Thực tập Doanh nghiệp",
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship?view=evaluation",
-    });
+  // Send Notification to Student ONLY when officially published and not a duplicate
+  if (!wasAlreadyPublished) {
+    const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+    if (student?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: student.userId._id,
+        type: "INTERNSHIP",
+        title: "Công bố điểm Thực tập Doanh nghiệp",
+        message: "Điểm đánh giá Thực tập Doanh nghiệp của bạn đã được công bố chính thức. Bạn có thể truy cập hệ thống để xem kết quả đánh giá chi tiết.",
+        referenceId: internship._id,
+        referenceModel: "Internship",
+        link: "/student/internship?view=evaluation",
+      });
+    }
   }
 
   return {
@@ -1769,6 +1770,8 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
         continue;
       }
 
+      const wasAlreadyPublished = Boolean(evaluation.isScorePublished);
+
       evaluation.isScorePublished = true;
       evaluation.publishedAt = now;
       evaluation.publishedBy = tbmUserId;
@@ -1779,18 +1782,20 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
       internship.scorePublishedBy = tbmUserId;
       await internship.save();
 
-      // Notify Student
-      const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
-      if (student?.userId?._id) {
-        await notificationService.createNotification({
-          recipientId: student.userId._id,
-          type: "INTERNSHIP",
-          title: "Công bố điểm Thực tập Doanh nghiệp",
-          message: "Bạn đã có điểm Thực tập Doanh nghiệp",
-          referenceId: internship._id,
-          referenceModel: "Internship",
-          link: "/student/internship?view=evaluation",
-        });
+      // Notify Student ONLY when not already published (prevent duplicate notifications)
+      if (!wasAlreadyPublished) {
+        const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+        if (student?.userId?._id) {
+          await notificationService.createNotification({
+            recipientId: student.userId._id,
+            type: "INTERNSHIP",
+            title: "Công bố điểm Thực tập Doanh nghiệp",
+            message: "Điểm đánh giá Thực tập Doanh nghiệp của bạn đã được công bố chính thức. Bạn có thể truy cập hệ thống để xem kết quả đánh giá chi tiết.",
+            referenceId: internship._id,
+            referenceModel: "Internship",
+            link: "/student/internship?view=evaluation",
+          });
+        }
       }
 
       publishedCount++;

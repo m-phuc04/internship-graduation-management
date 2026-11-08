@@ -178,7 +178,7 @@ const StudentReportPage = () => {
     return Number(internship?.reportCycle) || 1;
   }, [internship?.reportCycle]);
 
-  // Calculate weeks to display (Strictly totalWeeks cards: 10 or 12 cards)
+  // Calculate weeks to display (Chỉ hiển thị các tuần thuộc chu kỳ nộp nhật ký)
   const weeks = useMemo(() => {
     if (!isApprovedByTBM || totalWeeks === 0) {
       return [];
@@ -189,7 +189,10 @@ const StudentReportPage = () => {
     const hasValidStart = start && !isNaN(start.getTime());
 
     for (let i = 1; i <= totalWeeks; i++) {
-      const isCycleWeek = i % cycle === 0;
+      // Ẩn hoàn toàn các tuần không thuộc chu kỳ nộp nhật ký
+      if (i % cycle !== 0) {
+        continue;
+      }
 
       let defaultStart = null;
       let defaultEnd = null;
@@ -207,7 +210,7 @@ const StudentReportPage = () => {
       result.push({
         weekNumber: i,
         label: `Tuần ${i}`,
-        isCycleWeek,
+        isCycleWeek: true,
         defaultStartDate: defaultStart,
         defaultEndDate: defaultEnd,
       });
@@ -236,8 +239,7 @@ const StudentReportPage = () => {
           if (deadline) deadline.setHours(23, 59, 59, 999);
           const isEnded = deadline ? new Date().getTime() > deadline.getTime() : false;
           if (isEnded) return 6; // Đã kết thúc
-          if (item.isCycleWeek) return 1; // Cần làm -> ưu tiên lên đầu
-          return 5; // Ngoài chu kỳ
+          return 1; // Cần làm -> ưu tiên lên đầu
         }
         if (r.status === 'NEEDS_REVISION') return 1;
         if (r.status === 'WAITING_STUDENT_2') return 2;
@@ -406,7 +408,7 @@ const StudentReportPage = () => {
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
               <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Đã hoàn thành</span>
               <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">
-                {completedWeeks}/{weeks.filter(w => w.isCycleWeek).length || Math.ceil(getDurationWeeks(internship) / cycle)} kỳ nộp
+                {completedWeeks}/{weeks.length} kỳ nộp
               </span>
             </div>
           </div>
@@ -436,7 +438,7 @@ const StudentReportPage = () => {
               <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
                 <Calendar className="w-4 h-4 text-[#123891]" />
                 <span>
-                  Danh Sách Nhật Ký Thực Tập ({totalWeeks} Tuần • Chu kỳ {cycle} tuần/lần)
+                  Danh Sách Nhật Ký Thực Tập ({weeks.length} Kỳ nộp • Chu kỳ {cycle} tuần/lần)
                 </span>
               </h2>
               <p className="text-[11px] text-slate-500 mt-0.5">
@@ -517,12 +519,6 @@ const StudentReportPage = () => {
                         >
                           {week.label}
                         </span>
-
-                        {!week.isCycleWeek && (
-                          <span className="text-[10.5px] font-semibold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg">
-                            Ngoài chu kỳ
-                          </span>
-                        )}
 
                         <span className="text-xs font-semibold text-slate-700 font-mono flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -710,8 +706,6 @@ const StudentReportPage = () => {
                         <div className="py-2 text-xs text-slate-400 italic">
                           {isLocked
                             ? 'Tuần thực tập đã kết thúc. Nhật ký của tuần này đã bị khóa, không thể tạo mới hoặc nộp bổ sung.'
-                            : !week.isCycleWeek
-                            ? `Tuần này không thuộc chu kỳ nộp báo cáo (Định kỳ nộp: mỗi ${cycle} tuần/lần).`
                             : 'Chưa có nhật ký cho tuần này. Nhấn "Viết nhật ký" hoặc "Tải lên tệp" để cập nhật nội dung công việc.'}
                         </div>
                       )}

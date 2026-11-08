@@ -176,6 +176,20 @@ router.patch(
   internshipController.completeInternship,
 );
 
+// Lecturer / TBM / Admin: Update report cycle for whole term
+router.put(
+  "/report-cycle",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  internshipController.updateTermReportCycle,
+);
+router.patch(
+  "/report-cycle",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  internshipController.updateTermReportCycle,
+);
+
 // Lecturer / TBM / Admin: Update report cycle (1, 2, or 3 weeks/time)
 router.patch(
   "/:id/report-cycle",

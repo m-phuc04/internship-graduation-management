@@ -74,7 +74,11 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
           
           <div className="flex justify-between py-1 border-b border-slate-200/60">
             <span className="text-slate-500">Học hàm / Học vị:</span>
-            <span className="font-semibold text-slate-800">{lecturer.academicTitle || 'Thạc sĩ'}</span>
+            <span className="font-semibold text-slate-800">
+              {lecturer.academicTitle === 'NCS' || lecturer.academicTitle === 'NCS.'
+                ? 'Nghiên cứu sinh (NCS)'
+                : (lecturer.academicTitle || 'Thạc sĩ')}
+            </span>
           </div>
           <div className="flex justify-between py-1 border-b border-slate-200/60">
             <span className="text-slate-500">Chuyên môn chính:</span>

@@ -362,13 +362,15 @@ const gradeInternship = async (req, res, next) => {
 };
 
 
-// TBM: Publish Single Score
+// TBM / Lecturer: Publish Single Score
 const publishScore = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const userId = req.user.userId || req.user._id || req.user.id;
     const result = await evaluationService.publishInternshipScore({
       internshipId: id,
-      tbmUserId: req.user._id,
+      tbmUserId: userId,
+      requestingUser: req.user,
     });
     res.status(200).json({
       success: true,

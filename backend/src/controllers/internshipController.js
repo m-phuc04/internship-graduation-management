@@ -372,6 +372,28 @@ const completeInternship = async (req, res, next) => {
 // ====================
 // Lecturer / TBM Updates Report Cycle
 // ====================
+// ====================
+// Lecturer / TBM Updates Report Cycle for Entire Academic Term
+// ====================
+const updateTermReportCycle = async (req, res, next) => {
+  try {
+    const { academicTermId, reportCycle } = req.body;
+    const result = await internshipService.updateAcademicTermReportCycle(
+      academicTermId,
+      req.user,
+      reportCycle,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: `Cập nhật chu kỳ nộp nhật ký thành công: ${result.reportCycle} tuần/lần cho toàn bộ sinh viên trong học kỳ`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateReportCycle = async (req, res, next) => {
   try {
     const { reportCycle } = req.body;
@@ -474,6 +496,7 @@ export default {
   getInternshipById,
   exportInternships,
   updateReportCycle,
+  updateTermReportCycle,
   uploadReportFile,
   updatePretestStatus,
   getReportFile,

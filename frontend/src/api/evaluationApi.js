@@ -31,9 +31,12 @@ export const evaluationApi = {
   tbmDeleteEvaluation: (id) =>
     axiosClient.delete(`/evaluations/tbm/${id}`),
 
-  // TBM: Publish single internship score
+  // TBM / Lecturer: Publish single internship score
   tbmPublishScore: (id) =>
     axiosClient.post(`/evaluations/tbm/publish/${id}`),
+
+  publishScore: (id) =>
+    axiosClient.post(`/evaluations/publish/${id}`),
 
   // TBM: Publish bulk internship scores
   tbmPublishScoresBulk: (data) =>

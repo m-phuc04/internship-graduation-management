@@ -38,6 +38,10 @@ export const internshipApi = {
   updateReportCycle: (id, reportCycle) =>
     axiosClient.patch(`/internships/${id}/report-cycle`, { reportCycle }),
 
+  // Lecturer (GVGS) updates common report cycle for entire academic term
+  updateTermReportCycle: (academicTermId, reportCycle) =>
+    axiosClient.put('/internships/report-cycle', { academicTermId, reportCycle }),
+
   // Lecturer (GVGS) confirms or updates PASS PRETEST status (Prompt 2 - Requirement 3)
   updatePretestStatus: (id, isPassed = true, note = '') =>
     axiosClient.patch(`/internships/${id}/pass-pretest`, { isPassed, note }),

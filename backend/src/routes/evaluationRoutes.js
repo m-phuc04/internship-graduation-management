@@ -65,11 +65,18 @@ router.get(
 );
 
 
-// TBM: Publish Single Score
+// TBM / Lecturer: Publish Single Score
 router.post(
   "/tbm/publish/:id",
   authMiddleware,
-  authorizeRoles("TBM", "ADMIN"),
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
+  evaluationController.publishScore,
+);
+
+router.post(
+  "/publish/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
   evaluationController.publishScore,
 );
 

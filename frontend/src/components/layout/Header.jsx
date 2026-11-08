@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Calendar, Menu } from 'lucide-react';
+import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Menu } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
-import ScheduleModal from '../common/ScheduleModal';
 import AcademicTermSelector from '../common/AcademicTermSelector';
 
 const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
@@ -11,7 +10,6 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   // Map path to title
   const getPageTitle = () => {
@@ -91,16 +89,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
           </button>
         )}
 
-        {/* Schedule Trigger Button */}
-        <button
-          type="button"
-          onClick={() => setScheduleModalOpen(true)}
-          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
-          title="Lịch trình & Kế hoạch đào tạo"
-        >
-          <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-
+        {/* Notification Bell */}
         <NotificationDropdown />
 
         {/* User Dropdown */}
@@ -156,17 +145,6 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
-                      setScheduleModalOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
-                  >
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Lịch & Kế hoạch</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setDropdownOpen(false);
                       navigate('/tbm/profile');
                     }}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
@@ -188,12 +166,6 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
           )}
         </div>
       </div>
-
-      {/* Schedule Modal */}
-      <ScheduleModal
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-      />
     </header>
   );
 };

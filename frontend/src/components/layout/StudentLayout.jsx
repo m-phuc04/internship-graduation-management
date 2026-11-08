@@ -4,7 +4,6 @@ import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from './StudentSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
 import Modal from '../common/Modal';
-import ScheduleModal from '../common/ScheduleModal';
 import Footer from './Footer';
 import {
   GraduationCap,
@@ -13,7 +12,6 @@ import {
   User,
   Menu,
   X,
-  Calendar,
   Clock,
   CheckCircle2,
   AlertCircle,
@@ -29,7 +27,6 @@ const StudentLayout = () => {
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -70,7 +67,6 @@ const StudentLayout = () => {
       >
         <StudentSidebar
           onToggleCollapse={toggleSidebar}
-          onOpenScheduleModal={() => setScheduleModalOpen(true)}
         />
       </div>
 
@@ -84,7 +80,6 @@ const StudentLayout = () => {
           <div className="relative w-64 bg-white z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <StudentSidebar
               onCloseMobile={() => setMobileDrawerOpen(false)}
-              onOpenScheduleModal={() => setScheduleModalOpen(true)}
             />
           </div>
         </div>
@@ -203,18 +198,6 @@ const StudentLayout = () => {
 
                           <button
                             type="button"
-                            onClick={() => {
-                              setDropdownOpen(false);
-                              setScheduleModalOpen(true);
-                            }}
-                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-xl transition text-left"
-                          >
-                            <Calendar className="w-4 h-4 text-slate-400" />
-                            <span>Lịch & Kế hoạch đào tạo</span>
-                          </button>
-
-                          <button
-                            type="button"
                             onClick={handleLogout}
                             className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition text-left"
                           >
@@ -237,12 +220,6 @@ const StudentLayout = () => {
         </main>
         <Footer />
       </div>
-
-      {/* Training Milestones & Schedule Modal */}
-      <ScheduleModal
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-      />
     </div>
   );
 };

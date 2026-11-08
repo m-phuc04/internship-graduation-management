@@ -172,6 +172,7 @@ const LecturerFormModal = ({
               <option value="TS.">Tiến sĩ (TS.)</option>
               <option value="PGS.TS.">Phó Giáo sư, Tiến sĩ (PGS.TS.)</option>
               <option value="GS.TS.">Giáo sư, Tiến sĩ (GS.TS.)</option>
+              <option value="NCS">Nghiên cứu sinh (NCS)</option>
               <option value="CN.">Cử nhân / Kỹ sư (CN./KS.)</option>
             </select>
           </div>
