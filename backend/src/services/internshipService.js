@@ -6,6 +6,7 @@ import User from "../models/User.js";
 import Evaluation from "../models/Evaluation.js";
 import AcademicTerm from "../models/AcademicTerm.js";
 import InternshipReport from "../models/InternshipReport.js";
+import InternshipDocument from "../models/InternshipDocument.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -944,12 +945,58 @@ const getSupervisedInternships = async (
   }
   const commonReportCycle = currentAcademicTerm?.internship?.reportCycle || 1;
 
+  // Lấy danh sách tài liệu Báo cáo thực tập từ InternshipDocument để đồng bộ trạng thái nộp
+  const studentIds = internships
+    .map((i) => i.studentId?._id || i.studentId)
+    .filter(Boolean);
+
+  const reportDocs = await InternshipDocument.find({
+    documentType: "SUBMISSION",
+    $or: [
+      { internshipId: { $in: internshipIds } },
+      { studentId: { $in: studentIds } },
+    ],
+    category: { $regex: /báo cáo/i },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const docMap = new Map();
+  reportDocs.forEach((d) => {
+    if (d.internshipId) {
+      const key = d.internshipId.toString();
+      if (!docMap.has(key)) docMap.set(key, d);
+    }
+    if (d.studentId) {
+      const sKey = d.studentId.toString();
+      if (!docMap.has(sKey)) docMap.set(sKey, d);
+    }
+  });
+
   const enrichedInternships = internships.map((item) => {
     const reports = reportMap.get(item._id.toString()) || [];
     const itemWithCycle = { ...item, reportCycle: commonReportCycle };
     const diaryStatus = checkInternshipDiaryCompletion(itemWithCycle, reports);
     const pretestPassed = Boolean(item.pretest?.isPassed);
-    const reportFileSubmitted = Boolean(item.reportFile?.fileUrl);
+
+    // Chuẩn hóa và fallback file báo cáo nếu chưa có trong internship.reportFile
+    let reportFile = item.reportFile;
+    const fallbackDoc =
+      docMap.get(item._id.toString()) ||
+      (item.studentId?._id ? docMap.get(item.studentId._id.toString()) : null);
+
+    if ((!reportFile || !reportFile.fileUrl) && fallbackDoc?.fileUrl) {
+      reportFile = {
+        originalName: fallbackDoc.title || fallbackDoc.fileName,
+        fileName: fallbackDoc.fileName,
+        fileUrl: fallbackDoc.fileUrl,
+        fileSize: fallbackDoc.fileSize || 0,
+        fileType: fallbackDoc.fileType || null,
+        uploadedAt: fallbackDoc.createdAt || new Date(),
+      };
+    }
+
+    const reportFileSubmitted = Boolean(reportFile?.fileUrl);
 
     // 3 conditions check before grading (Requirement 4)
     const gradingBlockReasons = [];
@@ -969,6 +1016,7 @@ const getSupervisedInternships = async (
 
     return {
       ...item,
+      reportFile,
       evaluation: evalMap.get(item._id.toString()) || null,
       diaryStatus,
       pretestPassed,
@@ -1375,6 +1423,47 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
     });
   }
 
+  // Đồng bộ sang InternshipDocument để tab Tài liệu sinh viên hiển thị đầy đủ
+  try {
+    let doc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    });
+    if (!doc) {
+      await InternshipDocument.create({
+        academicTermId: internship.academicTermId || null,
+        supervisorId: internship.lecturerId || null,
+        internshipId: internship._id,
+        studentId: student._id,
+        documentType: "SUBMISSION",
+        scope: "SPECIFIC",
+        title: file.originalname,
+        fileName: file.filename,
+        fileUrl,
+        fileSize: file.size,
+        fileType: file.mimetype,
+        category: "Báo cáo thực tập",
+        description: "File báo cáo thực tập tải lên từ trang Thông tin thực tập",
+        status: "SUBMITTED",
+        uploadedBy: userId,
+      });
+    } else {
+      doc.fileName = file.filename;
+      doc.title = file.originalname;
+      doc.fileUrl = fileUrl;
+      doc.fileSize = file.size;
+      doc.fileType = file.mimetype;
+      doc.uploadedBy = userId;
+      doc.supervisorId = internship.lecturerId || doc.supervisorId;
+      doc.academicTermId = internship.academicTermId || doc.academicTermId;
+      doc.status = "SUBMITTED";
+      await doc.save();
+    }
+  } catch (syncDocErr) {
+    console.warn("[uploadReportFile] Failed to sync InternshipDocument:", syncDocErr.message);
+  }
+
   return internship;
 };
 
@@ -1443,6 +1532,25 @@ const getReportFile = async (internshipId, requestingUser) => {
   }
 
   if (!internship.reportFile || !internship.reportFile.fileUrl) {
+    const doc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    }).sort({ createdAt: -1 });
+
+    if (doc?.fileUrl) {
+      internship.reportFile = {
+        originalName: doc.title || doc.fileName,
+        fileName: doc.fileName,
+        fileUrl: doc.fileUrl,
+        fileSize: doc.fileSize || 0,
+        fileType: doc.fileType || null,
+        uploadedAt: doc.createdAt || new Date(),
+      };
+      await internship.save();
+      return internship.reportFile;
+    }
+
     throw new AppError("Sinh viên chưa nộp file báo cáo thực tập", 404);
   }
 

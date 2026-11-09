@@ -7,6 +7,7 @@ import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import Company from "../models/Company.js";
 import User from "../models/User.js";
+import InternshipReport from "../models/InternshipReport.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 
@@ -545,6 +546,60 @@ export const getLecturerSubmissions = async (
     .populate("academicTermId", "termName code")
     .sort({ createdAt: -1 });
 
+  // Đồng bộ hai chiều: Đảm bảo các hồ sơ thực tập đã có file báo cáo (reportFile) xuất hiện đầy đủ trong submissions
+  for (const i of supervisedInternships) {
+    if (i.reportFile?.fileUrl) {
+      const alreadyInDocs = submissions.some(
+        (s) =>
+          (s.internshipId?._id && s.internshipId._id.toString() === i._id.toString()) ||
+          (s.studentId?._id && i.studentId?._id && s.studentId._id.toString() === i.studentId._id.toString())
+      );
+
+      if (!alreadyInDocs) {
+        try {
+          const newDoc = await InternshipDocument.create({
+            academicTermId: i.academicTermId || null,
+            supervisorId: lecturer._id,
+            internshipId: i._id,
+            studentId: i.studentId?._id || null,
+            documentType: "SUBMISSION",
+            scope: "SPECIFIC",
+            title: i.reportFile.originalName || "Báo cáo thực tập",
+            fileName: i.reportFile.fileName || i.reportFile.originalName || "bao_cao_thuc_tap.docx",
+            fileUrl: i.reportFile.fileUrl,
+            fileSize: i.reportFile.fileSize || 0,
+            fileType: i.reportFile.fileType || "application/octet-stream",
+            category: "Báo cáo thực tập",
+            description: "File báo cáo thực tập đồng bộ từ hồ sơ thực tập",
+            status: "SUBMITTED",
+            uploadedBy: i.studentId?.userId?._id || null,
+            createdAt: i.reportFile.uploadedAt || new Date(),
+          });
+
+          const populatedNewDoc = await InternshipDocument.findById(newDoc._id)
+            .populate({
+              path: "studentId",
+              populate: { path: "userId", select: "fullName email phone" },
+              select: "studentCode className userId",
+            })
+            .populate({
+              path: "internshipId",
+              populate: { path: "companyId", select: "name" },
+              select: "position companyId",
+            })
+            .populate("uploadedBy", "fullName email")
+            .populate("academicTermId", "termName code");
+
+          if (populatedNewDoc) {
+            submissions.unshift(populatedNewDoc);
+          }
+        } catch (syncErr) {
+          console.warn("[getLecturerSubmissions] Auto-sync doc error:", syncErr.message);
+        }
+      }
+    }
+  }
+
   // Lọc theo search (nếu có)
   if (search && search.trim()) {
     const q = search.trim().toLowerCase();
@@ -830,6 +885,43 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     .populate("uploadedBy", "fullName email")
     .sort({ createdAt: -1 });
 
+  // Tự động đồng bộ: nếu hồ sơ thực tập đã có file báo cáo nhưng chưa có trong danh sách tài liệu nộp
+  if (internship.reportFile?.fileUrl) {
+    const hasReportDoc = submissions.some((s) => /báo cáo/i.test(s.category || ""));
+    if (!hasReportDoc) {
+      try {
+        const newDoc = await InternshipDocument.create({
+          academicTermId: internship.academicTermId || null,
+          supervisorId: internship.lecturerId || null,
+          internshipId: internship._id,
+          studentId: student._id,
+          documentType: "SUBMISSION",
+          scope: "SPECIFIC",
+          title: internship.reportFile.originalName || "Báo cáo thực tập",
+          fileName: internship.reportFile.fileName || internship.reportFile.originalName || "bao_cao_thuc_tap.docx",
+          fileUrl: internship.reportFile.fileUrl,
+          fileSize: internship.reportFile.fileSize || 0,
+          fileType: internship.reportFile.fileType || "application/octet-stream",
+          category: "Báo cáo thực tập",
+          description: "File báo cáo thực tập đồng bộ từ hồ sơ thực tập",
+          status: "SUBMITTED",
+          uploadedBy: userId,
+          createdAt: internship.reportFile.uploadedAt || new Date(),
+        });
+        const populated = await InternshipDocument.findById(newDoc._id)
+          .populate({
+            path: "studentId",
+            populate: { path: "userId", select: "fullName email" },
+            select: "studentCode className userId",
+          })
+          .populate("uploadedBy", "fullName email");
+        if (populated) submissions.unshift(populated);
+      } catch (e) {
+        console.warn("[getStudentSubmissions] Auto-sync doc error:", e.message);
+      }
+    }
+  }
+
   return submissions;
 };
 
@@ -913,6 +1005,60 @@ export const createStudentSubmission = async ({
     uploadedBy: userId,
   });
 
+  // Đồng bộ sang Internship.reportFile và InternshipReport (FINAL) nếu tài liệu thuộc loại Báo cáo thực tập
+  const isReportCategory = /báo cáo/i.test(safeCategory);
+  if (isReportCategory) {
+    try {
+      internship.reportFile = {
+        originalName: file.originalname,
+        fileName: file.filename,
+        fileUrl,
+        fileSize: file.size,
+        fileType: file.mimetype,
+        uploadedAt: new Date(),
+      };
+      await internship.save();
+
+      let finalReport = await InternshipReport.findOne({
+        internshipId: internship._id,
+        reportType: "FINAL",
+      });
+      if (finalReport) {
+        finalReport.file = {
+          originalName: file.originalname,
+          fileName: file.filename,
+          fileUrl,
+          mimeType: file.mimetype,
+          size: file.size,
+          uploadedAt: new Date(),
+        };
+        finalReport.status = "SUBMITTED";
+        finalReport.submittedAt = new Date();
+        await finalReport.save();
+      } else {
+        await InternshipReport.create({
+          internshipId: internship._id,
+          studentId: student._id,
+          reportType: "FINAL",
+          title: "Báo cáo thực tập doanh nghiệp (Bản chính thức)",
+          content: "File báo cáo tổng kết thực tập doanh nghiệp đã nộp bởi sinh viên",
+          file: {
+            originalName: file.originalname,
+            fileName: file.filename,
+            fileUrl,
+            mimeType: file.mimetype,
+            size: file.size,
+            uploadedAt: new Date(),
+          },
+          status: "SUBMITTED",
+          submittedAt: new Date(),
+        });
+      }
+    } catch (syncErr) {
+      console.warn("[createStudentSubmission] Sync reportFile error:", syncErr.message);
+    }
+  }
+
   // Gửi thông báo đến Giảng viên giám sát
   try {
     if (internship.lecturerId) {
@@ -965,8 +1111,48 @@ export const deleteStudentSubmission = async (id, userId) => {
     throw new AppError("Bạn không có quyền xóa file do sinh viên khác nộp", 403);
   }
 
+  const deletedCategory = doc.category;
+  const targetInternshipId = doc.internshipId;
+
   unlinkFileSafe(doc.fileUrl);
   await InternshipDocument.findByIdAndDelete(id);
+
+  // Nếu file bị xóa là Báo cáo thực tập, đồng bộ lại Internship.reportFile
+  if (/báo cáo/i.test(deletedCategory || "") && targetInternshipId) {
+    try {
+      const internship = await Internship.findById(targetInternshipId);
+      if (internship) {
+        const remainingReportDoc = await InternshipDocument.findOne({
+          internshipId: targetInternshipId,
+          documentType: "SUBMISSION",
+          category: { $regex: /báo cáo/i },
+        }).sort({ createdAt: -1 });
+
+        if (remainingReportDoc) {
+          internship.reportFile = {
+            originalName: remainingReportDoc.title || remainingReportDoc.fileName,
+            fileName: remainingReportDoc.fileName,
+            fileUrl: remainingReportDoc.fileUrl,
+            fileSize: remainingReportDoc.fileSize || 0,
+            fileType: remainingReportDoc.fileType || null,
+            uploadedAt: remainingReportDoc.createdAt || new Date(),
+          };
+        } else {
+          internship.reportFile = {
+            originalName: null,
+            fileName: null,
+            fileUrl: null,
+            fileSize: 0,
+            fileType: null,
+            uploadedAt: null,
+          };
+        }
+        await internship.save();
+      }
+    } catch (syncErr) {
+      console.warn("[deleteStudentSubmission] Sync reportFile error:", syncErr.message);
+    }
+  }
 
   return { success: true, message: "Đã gỡ file tài liệu nộp thành công" };
 };
