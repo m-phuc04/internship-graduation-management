@@ -1546,7 +1546,10 @@ const gradeInternshipByLecturer = async ({
   }
 
   // ==========================================
-  // Prompt 2 - Requirement 4: Ràng buộc đầy đủ 3 điều kiện trước khi chấm điểm
+  // Điều kiện chấm điểm TTDN: Chỉ cần đáp ứng đồng thời 2 điều kiện:
+  // 1. Sinh viên đã nộp file báo cáo thực tập hợp lệ
+  // 2. Sinh viên đã đạt trạng thái PASS PRETEST
+  // Không bắt buộc phải hoàn thành đầy đủ nhật ký thực tập mới được chấm điểm.
   // ==========================================
 
   // Điều kiện 1: PASS PRETEST
@@ -1554,17 +1557,7 @@ const gradeInternshipByLecturer = async ({
     throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa được GVGS xác nhận PASS PRETEST.", 400);
   }
 
-  // Điều kiện 2: Hoàn thành nhật ký thực tập (tất cả các tuần bắt buộc theo chu kỳ)
-  const reports = await InternshipReport.find({ internshipId: internship._id }).lean();
-  const diaryStatus = checkInternshipDiaryCompletion(internship, reports);
-  if (!diaryStatus.isCompleted) {
-    throw new AppError(
-      `Chưa đủ điều kiện chấm điểm: Sinh viên chưa hoàn thành nhật ký thực tập (còn thiếu tuần ${diaryStatus.missingWeeks.join(", ")}).`,
-      400,
-    );
-  }
-
-  // Điều kiện 3: Nộp file báo cáo thực tập
+  // Điều kiện 2: Nộp file báo cáo thực tập hợp lệ
   if (!internship.reportFile || !internship.reportFile.fileUrl) {
     throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa nộp file báo cáo thực tập.", 400);
   }

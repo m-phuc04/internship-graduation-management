@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams, useLocation } from 'react-router-dom';
 import internshipDocumentApi from '../../api/internshipDocumentApi';
+import internshipApi from '../../api/internshipApi';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { useToast } from '../../context/ToastContext';
 import SearchInput from '../../components/common/SearchInput';
@@ -75,12 +77,24 @@ const GUIDE_CATEGORY_OPTIONS = [
   'Biểu mẫu khác',
 ];
 
+const REMOVE_REPORT_REASONS = [
+  'Sinh viên nộp nhầm file',
+  'File không đúng nội dung báo cáo thực tập',
+  'File bị lỗi hoặc không mở được',
+  'Sinh viên yêu cầu thay thế file',
+  'Lý do khác',
+];
+
 const LecturerInternshipDocumentsPage = () => {
   const { currentTerm } = useAcademicTerm();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const [activeTab, setActiveTab] = useState('GUIDES'); // 'GUIDES' | 'SUBMISSIONS'
   const [submissionViewMode, setSubmissionViewMode] = useState('FILES'); // 'FILES' | 'STUDENTS'
+  const [highlightedDocId, setHighlightedDocId] = useState(null);
+  const [notificationWarning, setNotificationWarning] = useState(null);
 
   // Internships list for selection
   const [internshipsList, setInternshipsList] = useState([]);
@@ -124,6 +138,13 @@ const LecturerInternshipDocumentsPage = () => {
   const [deletingDoc, setDeletingDoc] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
+  // GVGS Remove Student Report Modal State
+  const [removeReportModalOpen, setRemoveReportModalOpen] = useState(false);
+  const [targetSubmission, setTargetSubmission] = useState(null);
+  const [removeReason, setRemoveReason] = useState('');
+  const [removingReport, setRemovingReport] = useState(false);
+  const [removeError, setRemoveError] = useState('');
+
   // Fetch supervised internships for dropdown
   const fetchSupervisedInternships = useCallback(async () => {
     try {
@@ -154,6 +175,38 @@ const LecturerInternshipDocumentsPage = () => {
     }
   }, [currentTerm?._id, search, filterInternshipId, showToast]);
 
+  // Sync state from URL Query Params / Navigation State
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') || location.state?.activeTab;
+    if (tabParam && tabParam.toLowerCase() === 'submissions') {
+      setActiveTab('SUBMISSIONS');
+      setSubmissionViewMode('FILES');
+    }
+
+    const searchParam =
+      searchParams.get('search') ||
+      location.state?.search ||
+      location.state?.studentCode ||
+      searchParams.get('studentCode');
+    if (searchParam) {
+      setSearch(searchParam);
+    }
+
+    const internshipIdParam = searchParams.get('internshipId') || location.state?.internshipId;
+    if (internshipIdParam) {
+      setFilterInternshipId(internshipIdParam);
+    }
+
+    const docIdParam =
+      searchParams.get('docId') ||
+      location.state?.docId ||
+      searchParams.get('referenceId') ||
+      location.state?.referenceId;
+    if (docIdParam) {
+      setHighlightedDocId(docIdParam);
+    }
+  }, [searchParams, location.state]);
+
   // Fetch Submissions
   const fetchSubmissions = useCallback(async () => {
     try {
@@ -163,14 +216,49 @@ const LecturerInternshipDocumentsPage = () => {
         internshipId: filterInternshipId,
       });
       if (res?.success) {
-        setSubmissions(res.data || []);
+        const subsData = res.data || [];
+        setSubmissions(subsData);
         if (res.stats) setStats(res.stats);
         if (res.studentsStatus) setStudentsStatus(res.studentsStatus);
+
+        // Kiểm tra tính tồn tại của file khi điều hướng từ thông báo
+        const targetDoc = searchParams.get('docId') || location.state?.docId;
+        const targetStudent = searchParams.get('search') || location.state?.studentCode || location.state?.search;
+        if (targetDoc || targetStudent) {
+          const found = subsData.some(
+            (s) =>
+              (targetDoc && s._id === targetDoc) ||
+              (targetStudent &&
+                (s.studentId?.studentCode === targetStudent ||
+                  s.studentId?.userId?.fullName?.toLowerCase().includes(targetStudent.toLowerCase()))),
+          );
+          if (!found) {
+            setNotificationWarning(
+              `Tệp tài liệu hoặc báo cáo của sinh viên ${targetStudent ? `(${targetStudent})` : ''} không còn tồn tại hoặc đã được gỡ bỏ.`,
+            );
+          } else {
+            setNotificationWarning(null);
+          }
+        }
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải danh sách file sinh viên nộp', 'error');
     }
-  }, [currentTerm?._id, search, filterInternshipId, showToast]);
+  }, [currentTerm?._id, search, filterInternshipId, showToast, searchParams, location.state]);
+
+  // Scroll to highlighted submission row
+  useEffect(() => {
+    if (highlightedDocId && submissions.length > 0) {
+      const el = document.getElementById(`submission-row-${highlightedDocId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      const timer = setTimeout(() => {
+        setHighlightedDocId(null);
+      }, 7000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedDocId, submissions]);
 
   // Load all data
   const loadData = useCallback(async () => {
@@ -376,6 +464,48 @@ const LecturerInternshipDocumentsPage = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const handleOpenRemoveReport = (sub) => {
+    setTargetSubmission(sub);
+    setRemoveReason('');
+    setRemoveError('');
+    setRemoveReportModalOpen(true);
+  };
+
+  const handleConfirmRemoveReport = async (e) => {
+    if (e) e.preventDefault();
+    const trimmedReason = typeof removeReason === 'string' ? removeReason.trim() : '';
+    if (!trimmedReason) {
+      setRemoveError('Vui lòng nhập lý do gỡ file báo cáo');
+      return;
+    }
+    if (!targetSubmission) return;
+
+    setRemovingReport(true);
+    setRemoveError('');
+    try {
+      const internshipId =
+        targetSubmission.internshipId?._id || targetSubmission.internshipId;
+      if (!internshipId) {
+        throw new Error('Không tìm thấy mã hồ sơ thực tập tương ứng');
+      }
+
+      const res = await internshipApi.deleteReportFile(internshipId, trimmedReason);
+      if (res?.success) {
+        showToast('Đã gỡ file báo cáo thực tập của sinh viên thành công!', 'success');
+        setRemoveReportModalOpen(false);
+        setTargetSubmission(null);
+        setRemoveReason('');
+        await loadData();
+      }
+    } catch (err) {
+      setRemoveError(
+        err.response?.data?.message || err.message || 'Không thể gỡ file báo cáo',
+      );
+    } finally {
+      setRemovingReport(false);
+    }
   };
 
   return (
@@ -638,6 +768,24 @@ const LecturerInternshipDocumentsPage = () => {
         {/* ================= TAB 2: TÀI LIỆU SINH VIÊN NỘP ================= */}
         {activeTab === 'SUBMISSIONS' && (
           <div className="space-y-4">
+            {/* Warning banner if notification file was removed */}
+            {notificationWarning && (
+              <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3 shadow-2xs">
+                <div className="flex items-center gap-2.5">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <span className="font-medium">{notificationWarning}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNotificationWarning(null)}
+                  className="text-amber-700 hover:text-amber-900 p-1 rounded-lg hover:bg-amber-100/60 transition cursor-pointer"
+                  title="Đóng thông báo"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
             {/* Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
@@ -780,8 +928,21 @@ const LecturerInternshipDocumentsPage = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">
-                        {submissions.map((sub, idx) => (
-                          <tr key={sub._id} className="hover:bg-slate-50/60 transition group">
+                        {submissions.map((sub, idx) => {
+                          const isHighlighted =
+                            highlightedDocId &&
+                            (sub._id === highlightedDocId ||
+                              sub.referenceId === highlightedDocId);
+                          return (
+                          <tr
+                            key={sub._id}
+                            id={`submission-row-${sub._id}`}
+                            className={`transition duration-500 group ${
+                              isHighlighted
+                                ? 'bg-blue-50/90 ring-2 ring-[#123891] shadow-xs'
+                                : 'hover:bg-slate-50/60'
+                            }`}
+                          >
                             {/* STT */}
                             <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
                               {idx + 1}
@@ -790,8 +951,13 @@ const LecturerInternshipDocumentsPage = () => {
                             {/* Sinh viên */}
                             <td className="py-3.5 px-4 pl-6">
                               <div className="min-w-0">
-                                <div className="font-bold text-slate-900 group-hover:text-[#123891] transition">
-                                  {sub.studentId?.userId?.fullName || sub.uploadedBy?.fullName || 'Sinh viên'}
+                                <div className="font-bold text-slate-900 group-hover:text-[#123891] transition flex items-center gap-2">
+                                  <span>{sub.studentId?.userId?.fullName || sub.uploadedBy?.fullName || 'Sinh viên'}</span>
+                                  {isHighlighted && (
+                                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#123891] text-white shrink-0 animate-pulse">
+                                      Mới nộp
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="text-[11px] text-slate-500 flex items-center gap-2 mt-0.5">
                                   {sub.studentId?.studentCode && (
@@ -847,7 +1013,7 @@ const LecturerInternshipDocumentsPage = () => {
 
                             {/* Thao tác */}
                             <td className="py-3.5 px-4 pr-6 text-right">
-                              <div className="flex items-center justify-end">
+                              <div className="flex items-center justify-end gap-1.5">
                                 <button
                                   type="button"
                                   onClick={() => handleDownload(sub)}
@@ -857,10 +1023,24 @@ const LecturerInternshipDocumentsPage = () => {
                                   <Download className="w-3.5 h-3.5" />
                                   <span>Tải về</span>
                                 </button>
+
+                                {/* Nút Gỡ file dành cho GVGS đối với file Báo cáo thực tập */}
+                                {/báo cáo/i.test(sub.category || '') && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenRemoveReport(sub)}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition shadow-2xs cursor-pointer"
+                                    title="Gỡ file báo cáo thực tập của sinh viên này"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    <span>Gỡ file</span>
+                                  </button>
+                                )}
                               </div>
                             </td>
                           </tr>
-                        ))}
+                        );
+                      })}
                       </tbody>
                     </table>
                   </div>
@@ -1424,6 +1604,133 @@ const LecturerInternshipDocumentsPage = () => {
                   </>
                 ) : (
                   <span>Xóa tài liệu</span>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: GVGS GỠ FILE BÁO CÁO CỦA SINH VIÊN */}
+      {removeReportModalOpen && targetSubmission && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Gỡ File Báo Cáo Thực Tập Của Sinh Viên
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Hồ sơ sẽ chuyển về trạng thái Chưa nộp và cho phép sinh viên tải lại file mới
+                </p>
+              </div>
+            </div>
+
+            {/* Thông tin sinh viên & file */}
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 text-xs space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Sinh viên:</span>
+                <strong className="text-slate-900 font-bold">
+                  {targetSubmission.studentId?.userId?.fullName || targetSubmission.uploadedBy?.fullName || 'Sinh viên'}
+                </strong>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Mã số sinh viên (MSSV):</span>
+                <span className="font-mono font-bold text-[#123891]">
+                  {targetSubmission.studentId?.studentCode || '—'}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
+                <span className="text-slate-500">File sắp gỡ:</span>
+                <strong className="text-rose-700 font-mono truncate max-w-[260px]" title={targetSubmission.title || targetSubmission.fileName}>
+                  {targetSubmission.title || targetSubmission.fileName}
+                </strong>
+              </div>
+            </div>
+
+            {/* Lý do gỡ file */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-800">
+                Lý do gỡ file báo cáo <span className="text-rose-500">(*)</span>:
+              </label>
+
+              {/* Quick select reasons */}
+              <div className="flex flex-wrap gap-1.5">
+                {REMOVE_REPORT_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => {
+                      setRemoveReason(r === 'Lý do khác' ? '' : r);
+                      if (removeError) setRemoveError('');
+                    }}
+                    className={`px-2.5 py-1 text-[11px] rounded-lg border transition cursor-pointer font-medium ${
+                      removeReason === r
+                        ? 'bg-rose-50 border-rose-300 text-rose-700 font-bold'
+                        : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+
+              <textarea
+                rows={3}
+                value={removeReason}
+                onChange={(e) => {
+                  setRemoveReason(e.target.value);
+                  if (removeError) setRemoveError('');
+                }}
+                placeholder="Nhập chi tiết lý do gỡ file báo cáo (bắt buộc)..."
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition resize-none"
+              />
+              {removeError && (
+                <p className="text-xs text-rose-600 font-semibold flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{removeError}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 leading-relaxed">
+              Thao tác này sẽ xóa file báo cáo hiện tại và được ghi nhận vào lịch sử hệ thống. Hệ thống sẽ gửi thông báo đến sinh viên để nộp lại file mới.
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                disabled={removingReport}
+                onClick={() => {
+                  setRemoveReportModalOpen(false);
+                  setTargetSubmission(null);
+                  setRemoveReason('');
+                  setRemoveError('');
+                }}
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={removingReport || !removeReason.trim()}
+                onClick={handleConfirmRemoveReport}
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {removingReport ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang gỡ file...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Xác nhận gỡ file</span>
+                  </>
                 )}
               </button>
             </div>

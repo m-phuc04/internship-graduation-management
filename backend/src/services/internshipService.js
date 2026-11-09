@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import Internship from "../models/Internship.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
@@ -7,6 +10,7 @@ import Evaluation from "../models/Evaluation.js";
 import AcademicTerm from "../models/AcademicTerm.js";
 import InternshipReport from "../models/InternshipReport.js";
 import InternshipDocument from "../models/InternshipDocument.js";
+import Log from "../models/Log.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -14,6 +18,26 @@ import {
   calculateInternshipWeeks,
   checkInternshipDiaryCompletion,
 } from "../utils/internshipDateUtils.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Helper to remove physical file safely
+const unlinkFileSafe = (fileUrl) => {
+  if (!fileUrl) return;
+  try {
+    const diskPath = path.join(
+      __dirname,
+      "../../public",
+      fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`,
+    );
+    if (fs.existsSync(diskPath)) {
+      fs.unlinkSync(diskPath);
+    }
+  } catch (err) {
+    console.warn("Could not remove file from disk:", err.message);
+  }
+};
 
 // ====================
 // Active Internship Statuses
@@ -998,15 +1022,10 @@ const getSupervisedInternships = async (
 
     const reportFileSubmitted = Boolean(reportFile?.fileUrl);
 
-    // 3 conditions check before grading (Requirement 4)
+    // Điều kiện chấm điểm TTDN: Chỉ cần đồng thời 2 điều kiện: PASS PRETEST & Đã nộp file báo cáo
     const gradingBlockReasons = [];
     if (!pretestPassed) {
       gradingBlockReasons.push("Chưa PASS PRETEST");
-    }
-    if (!diaryStatus.isCompleted) {
-      gradingBlockReasons.push(
-        `Chưa đủ nhật ký (Thiếu tuần ${diaryStatus.missingWeeks.join(", ")})`,
-      );
     }
     if (!reportFileSubmitted) {
       gradingBlockReasons.push("Chưa nộp file báo cáo thực tập");
@@ -1373,6 +1392,18 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
     throw new AppError("Bạn không có quyền nộp file báo cáo cho hồ sơ thực tập này", 403);
   }
 
+  // Quy tắc nộp báo cáo: Không cho phép tải thêm khi file cũ vẫn còn tồn tại.
+  // Nếu muốn thay thế báo cáo, sinh viên phải thực hiện gỡ file cũ trước rồi mới được tải file mới.
+  if (internship.reportFile && internship.reportFile.fileUrl) {
+    if (file.filename) {
+      unlinkFileSafe(`/uploads/internship-reports/${file.filename}`);
+    }
+    throw new AppError(
+      "Hồ sơ thực tập đã có file báo cáo đang có hiệu lực. Vui lòng gỡ file cũ trước khi nộp file mới.",
+      400,
+    );
+  }
+
   const fileUrl = `/uploads/internship-reports/${file.filename}`;
 
   internship.reportFile = {
@@ -1460,11 +1491,253 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
       doc.status = "SUBMITTED";
       await doc.save();
     }
+
+    // Gửi thông báo đến Giảng viên giám sát
+    if (internship.lecturerId) {
+      const supervisor = await Lecturer.findById(internship.lecturerId).populate("userId", "fullName");
+      if (supervisor?.userId?._id) {
+        const studentUser = await User.findById(userId).select("fullName");
+        const studentName = studentUser?.fullName || "Sinh viên";
+        const studentCode = student.studentCode ? ` (${student.studentCode})` : "";
+        const notifTitle = `Sinh viên ${studentName} đã nộp 1 tài liệu`;
+        const notifMessage = `Sinh viên ${studentName}${studentCode} đã nộp file tài liệu thực tập: "${file.originalname}".`;
+        const targetDocId = doc?._id || internship._id;
+        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${targetDocId}&search=${student.studentCode || ""}`;
+
+        await notificationService.createNotification({
+          recipientId: supervisor.userId._id,
+          senderId: userId,
+          type: "INTERNSHIP",
+          title: notifTitle,
+          message: notifMessage,
+          referenceId: targetDocId,
+          referenceModel: "InternshipDocument",
+          link: targetLink,
+          metadata: {
+            studentId: student._id,
+            studentCode: student.studentCode,
+            studentName,
+            internshipId: internship._id,
+            fileId: targetDocId,
+            docId: targetDocId,
+            fileName: file.originalname,
+            submittedAt: new Date(),
+          },
+        });
+      }
+    }
   } catch (syncDocErr) {
-    console.warn("[uploadReportFile] Failed to sync InternshipDocument:", syncDocErr.message);
+    console.warn("[uploadReportFile] Failed to sync InternshipDocument / notify:", syncDocErr.message);
   }
 
   return internship;
+};
+
+// ====================
+// Student & Lecturer (GVGS) Deletes / Removes Internship Report File
+// ====================
+const deleteReportFile = async ({ internshipId = null, userId, reason = "" }) => {
+  // 1. Xác thực người dùng thực hiện
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError("Không tìm thấy thông tin người dùng", 404);
+  }
+
+  // 2. Tìm hồ sơ thực tập tương ứng
+  let internship;
+  let student = null;
+  if (internshipId) {
+    internship = await Internship.findById(internshipId)
+      .populate({
+        path: "studentId",
+        populate: { path: "userId", select: "fullName email studentCode" },
+      })
+      .populate("academicTermId");
+  } else if (user.role === "STUDENT") {
+    student = await Student.findOne({ userId });
+    if (!student) {
+      throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+    }
+    internship = await Internship.findOne({
+      studentId: student._id,
+      status: { $ne: "CANCELLED" },
+    })
+      .populate({
+        path: "studentId",
+        populate: { path: "userId", select: "fullName email studentCode" },
+      })
+      .populate("academicTermId")
+      .sort({ createdAt: -1 });
+  }
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  // 3. Phân quyền chặt chẽ giữa Sinh viên và GVGS:
+  let actorRole = user.role;
+  let actorName = user.fullName || "Người dùng";
+  let finalReason = typeof reason === "string" ? reason.trim() : "";
+
+  if (actorRole === "STUDENT") {
+    if (!student) {
+      student = await Student.findOne({ userId });
+    }
+    const isOwner =
+      internship.studentId?._id?.toString() === student?._id?.toString() ||
+      internship.studentId?.toString() === student?._id?.toString() ||
+      (internship.secondStudentId &&
+        internship.secondStudentId.toString() === student?._id?.toString());
+    if (!isOwner) {
+      throw new AppError("Bạn không có quyền gỡ file báo cáo của hồ sơ thực tập này", 403);
+    }
+    if (!finalReason) {
+      finalReason = "Sinh viên tự gỡ file báo cáo để nộp lại";
+    }
+  } else if (actorRole === "LECTURER") {
+    const lecturer = await Lecturer.findOne({ userId });
+    if (!lecturer) {
+      throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+    }
+    const isSupervising =
+      internship.lecturerId &&
+      internship.lecturerId.toString() === lecturer._id.toString();
+    if (!isSupervising) {
+      throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho sinh viên này", 403);
+    }
+    if (!finalReason) {
+      throw new AppError("Vui lòng nhập lý do gỡ file báo cáo của sinh viên", 400);
+    }
+    actorName = lecturer.academicTitle
+      ? `${lecturer.academicTitle} ${user.fullName}`
+      : user.fullName;
+  } else if (actorRole === "TBM" || actorRole === "ADMIN") {
+    if (!finalReason) {
+      throw new AppError("Vui lòng nhập lý do gỡ file báo cáo", 400);
+    }
+  } else {
+    throw new AppError("Bạn không có quyền thực hiện thao tác này", 403);
+  }
+
+  if (!internship.reportFile || !internship.reportFile.fileUrl) {
+    throw new AppError("Hồ sơ thực tập hiện tại chưa có file báo cáo nào để gỡ", 400);
+  }
+
+  // 4. Lưu vết lịch sử thao tác gỡ file vào Database (Internship.reportRemovalHistory)
+  const removedFile = {
+    originalName: internship.reportFile.originalName || "",
+    fileName: internship.reportFile.fileName || "",
+    fileUrl: internship.reportFile.fileUrl || "",
+    fileSize: internship.reportFile.fileSize || 0,
+  };
+
+  const studentTarget = internship.studentId;
+  const studentCode = studentTarget?.studentCode || "";
+  const studentName = studentTarget?.userId?.fullName || "";
+
+  const removalRecord = {
+    removedBy: user._id,
+    removerRole: actorRole,
+    removerName: actorName,
+    studentId: studentTarget?._id || studentTarget,
+    studentName,
+    studentCode,
+    fileName: removedFile.originalName || removedFile.fileName,
+    fileUrl: removedFile.fileUrl,
+    reason: finalReason,
+    removedAt: new Date(),
+  };
+
+  if (!Array.isArray(internship.reportRemovalHistory)) {
+    internship.reportRemovalHistory = [];
+  }
+  internship.reportRemovalHistory.push(removalRecord);
+
+  // 5. Ghi vào collection Log hệ thống để phục vụ đối chiếu, thanh tra
+  try {
+    await Log.create({
+      userId: user._id,
+      action: "REMOVE_REPORT_FILE",
+      module: "INTERNSHIP_REPORT",
+      description: `${actorName} (${actorRole}) đã gỡ file báo cáo "${removalRecord.fileName}" của sinh viên ${studentName} (${studentCode}). Lý do: ${finalReason}`,
+      targetId: internship._id,
+      targetModel: "Internship",
+      method: "DELETE",
+      status: "SUCCESS",
+    });
+  } catch (logErr) {
+    console.warn("[deleteReportFile] Failed to write system Log:", logErr.message);
+  }
+
+  // 6. Xóa file vật lý của internship.reportFile
+  const oldReportUrl = internship.reportFile.fileUrl;
+  unlinkFileSafe(oldReportUrl);
+
+  // 7. Reset trường reportFile trên Internship
+  internship.reportFile = {
+    originalName: null,
+    fileName: null,
+    fileUrl: null,
+    fileSize: 0,
+    fileType: null,
+    uploadedAt: null,
+  };
+  await internship.save();
+
+  // 8. Xóa các bản ghi đồng bộ liên quan trong InternshipDocument (loại Báo cáo thực tập)
+  try {
+    const reportDocs = await InternshipDocument.find({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    });
+    for (const d of reportDocs) {
+      if (d.fileUrl && d.fileUrl !== oldReportUrl) {
+        unlinkFileSafe(d.fileUrl);
+      }
+      await InternshipDocument.findByIdAndDelete(d._id);
+    }
+  } catch (docErr) {
+    console.warn("[deleteReportFile] Sync InternshipDocument error:", docErr.message);
+  }
+
+  // 9. Xóa / cập nhật InternshipReport FINAL
+  try {
+    const finalReport = await InternshipReport.findOne({
+      internshipId: internship._id,
+      reportType: "FINAL",
+    });
+    if (finalReport) {
+      if (finalReport.file?.fileUrl && finalReport.file.fileUrl !== oldReportUrl) {
+        unlinkFileSafe(finalReport.file.fileUrl);
+      }
+      await InternshipReport.findByIdAndDelete(finalReport._id);
+    }
+  } catch (reportErr) {
+    console.warn("[deleteReportFile] Sync InternshipReport error:", reportErr.message);
+  }
+
+  // 10. Gửi thông báo đến sinh viên nếu người gỡ là GVGS
+  if (actorRole === "LECTURER" && studentTarget?.userId?._id) {
+    try {
+      await notificationService.createNotification({
+        recipientId: studentTarget.userId._id,
+        title: "Giảng viên giám sát đã gỡ file báo cáo thực tập",
+        message: `Giảng viên giám sát (${actorName}) đã gỡ file báo cáo thực tập "${removalRecord.fileName}" của bạn. Lý do: "${finalReason}". Vui lòng kiểm tra và tải lên file báo cáo mới.`,
+        type: "WARNING",
+        module: "INTERNSHIP",
+        link: "/student/internship",
+      });
+    } catch (notifErr) {
+      console.warn("[deleteReportFile] Failed to send notification to student:", notifErr.message);
+    }
+  }
+
+  return {
+    success: true,
+    message: "Đã gỡ file báo cáo thực tập thành công",
+    removalRecord,
+  };
 };
 
 // ====================
@@ -1575,6 +1848,7 @@ export default {
   updateReportCycle,
   updateAcademicTermReportCycle,
   uploadReportFile,
+  deleteReportFile,
   updatePretestStatus,
   getReportFile,
 };

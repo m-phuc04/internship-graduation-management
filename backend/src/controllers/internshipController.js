@@ -436,6 +436,30 @@ const uploadReportFile = async (req, res, next) => {
 };
 
 // ====================
+// Student & Lecturer Deletes / Removes Report File
+// ====================
+const deleteReportFile = async (req, res, next) => {
+  try {
+    const internshipId = req.params.id || null;
+    const userId = req.user.userId || req.user._id;
+    const reason = req.body?.reason || req.query?.reason || "";
+    const result = await internshipService.deleteReportFile({
+      internshipId,
+      userId,
+      reason,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: result.message || "Đã gỡ file báo cáo thực tập thành công",
+      data: result.removalRecord || null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
 // Lecturer Updates PASS PRETEST Status (Prompt 2 - Requirement 3)
 // ====================
 const updatePretestStatus = async (req, res, next) => {
@@ -498,6 +522,7 @@ export default {
   updateReportCycle,
   updateTermReportCycle,
   uploadReportFile,
+  deleteReportFile,
   updatePretestStatus,
   getReportFile,
 };

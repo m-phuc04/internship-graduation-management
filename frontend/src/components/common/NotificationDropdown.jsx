@@ -161,6 +161,46 @@ const NotificationDropdown = () => {
     }
 
     if (role === 'LECTURER') {
+      // 0. Sinh viên nộp tài liệu / báo cáo thực tập TTDN
+      const isStudentSubmissionNotif =
+        targetLink?.includes('/lecturer/internship-documents') ||
+        (item.type === 'INTERNSHIP' &&
+          (titleLower.includes('đã nộp') ||
+            titleLower.includes('tài liệu') ||
+            messageLower.includes('nộp file') ||
+            messageLower.includes('nộp tài liệu')));
+
+      if (isStudentSubmissionNotif) {
+        const studentCode =
+          item.metadata?.studentCode ||
+          item.message?.match(/\((\d{8})\)/)?.[1] ||
+          '';
+        const docId = item.metadata?.docId || item.metadata?.fileId || item.referenceId || '';
+        const internshipId = item.metadata?.internshipId || '';
+        const studentId = item.metadata?.studentId || '';
+
+        let linkWithParams = '/lecturer/internship-documents?tab=submissions';
+        if (studentCode) linkWithParams += `&search=${encodeURIComponent(studentCode)}`;
+        if (docId) linkWithParams += `&docId=${docId}`;
+        if (internshipId) linkWithParams += `&internshipId=${internshipId}`;
+        if (studentId) linkWithParams += `&studentId=${studentId}`;
+
+        navigate(linkWithParams, {
+          state: {
+            activeTab: 'SUBMISSIONS',
+            search: studentCode,
+            studentCode,
+            studentId,
+            internshipId,
+            docId,
+            fileName: item.metadata?.fileName || '',
+            notificationId: item._id,
+            refreshedAt: Date.now(),
+          },
+        });
+        return;
+      }
+
       // 1. Phân công phản biện khóa luận (GVPB 1, GVPB 2, PB kín) -> Luôn nhảy vào Phản biện khóa luận và tự động mở bảng tương ứng
       if (
         titleLower.includes('phản biện 1') ||

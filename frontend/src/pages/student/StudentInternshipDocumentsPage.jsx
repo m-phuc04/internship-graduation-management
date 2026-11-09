@@ -231,6 +231,17 @@ const StudentInternshipDocumentsPage = () => {
       return;
     }
 
+    const hasActiveReport =
+      submissions.some((sub) => /báo cáo/i.test(sub.category || '')) ||
+      Boolean(guidesData.internship?.reportFile?.fileUrl);
+
+    if (hasActiveReport && /báo cáo/i.test(safeCategory)) {
+      setFormError(
+        'Hồ sơ thực tập đã có file báo cáo đang có hiệu lực. Vui lòng gỡ file cũ trước khi nộp file mới.',
+      );
+      return;
+    }
+
     const safeDescription =
       typeof description === 'string' ? description.trim() : '';
 
@@ -249,7 +260,7 @@ const StudentInternshipDocumentsPage = () => {
       if (res?.success) {
         showToast('Nộp file tài liệu thực tập thành công!', 'success');
         setSubmitModalOpen(false);
-        fetchSubmissions();
+        loadData();
       }
     } catch (err) {
       setFormError(err.response?.data?.message || err.message || 'Lỗi khi nộp file');
@@ -272,7 +283,7 @@ const StudentInternshipDocumentsPage = () => {
         showToast('Đã gỡ file tài liệu nộp thành công!', 'success');
         setDeleteModalOpen(false);
         setDeletingDoc(null);
-        fetchSubmissions();
+        loadData();
       }
     } catch (err) {
       showToast(err.response?.data?.message || err.message || 'Không thể xóa file', 'error');
@@ -821,6 +832,19 @@ const StudentInternshipDocumentsPage = () => {
                     </option>
                   ))}
                 </select>
+
+                {/* Warning if report file already submitted and student is selecting report category */}
+                {submissions.some((sub) => /báo cáo/i.test(sub.category || '')) && /báo cáo/i.test(category) && (
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1 mt-2">
+                    <div className="font-bold flex items-center gap-1.5 text-amber-950">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Đã có file báo cáo thực tập</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      Hồ sơ thực tập đã có file báo cáo đang có hiệu lực. Bạn không thể nộp thêm file mới khi file cũ vẫn còn tồn tại. Vui lòng gỡ file cũ trước rồi mới nộp file mới.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Description */}
@@ -849,7 +873,12 @@ const StudentInternshipDocumentsPage = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={uploading || !selectedFile}
+                  disabled={
+                    uploading ||
+                    !selectedFile ||
+                    (submissions.some((sub) => /báo cáo/i.test(sub.category || '')) &&
+                      /báo cáo/i.test(category))
+                  }
                   className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer"
                 >
                   {uploading ? (
@@ -880,14 +909,26 @@ const StudentInternshipDocumentsPage = () => {
 
             <div className="text-center space-y-1">
               <h3 className="text-base font-bold text-slate-900">
-                Gỡ file đã nộp?
+                {/báo cáo/i.test(deletingDoc.category || '') ? 'Gỡ file báo cáo thực tập?' : 'Gỡ file đã nộp?'}
               </h3>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Bạn có chắc chắn muốn gỡ tệp{' '}
-                <strong className="text-slate-800">
-                  "{deletingDoc.title || deletingDoc.fileName}"
-                </strong>{' '}
-                khỏi hệ thống? Hành động này không thể hoàn tác.
+                {/báo cáo/i.test(deletingDoc.category || '') ? (
+                  <>
+                    File báo cáo hiện tại sẽ bị gỡ và bạn phải tải lại file mới nếu muốn tiếp tục nộp báo cáo. Bạn có chắc chắn muốn gỡ tệp{' '}
+                    <strong className="text-slate-800">
+                      "{deletingDoc.title || deletingDoc.fileName}"
+                    </strong>{' '}
+                    không?
+                  </>
+                ) : (
+                  <>
+                    Bạn có chắc chắn muốn gỡ tệp{' '}
+                    <strong className="text-slate-800">
+                      "{deletingDoc.title || deletingDoc.fileName}"
+                    </strong>{' '}
+                    khỏi hệ thống? Hành động này không thể hoàn tác.
+                  </>
+                )}
               </p>
             </div>
 

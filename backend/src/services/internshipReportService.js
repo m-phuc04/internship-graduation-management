@@ -57,10 +57,24 @@ const createReport = async ({
     throw new AppError("Hồ sơ thực tập không thuộc về tài khoản này", 403);
   }
 
-  if (!["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) {
+  const isApprovedByTBM =
+    (Boolean(internship.approvedAt) ||
+      ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) &&
+    internship.status !== "CANCELLED" &&
+    internship.status !== "REJECTED" &&
+    !internship.rejectedAt;
+
+  if (!isApprovedByTBM) {
     throw new AppError(
       "Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.",
       403,
+    );
+  }
+
+  if (!internship.lecturerId) {
+    throw new AppError(
+      "Hồ sơ thực tập của bạn chưa được phân công Giảng viên Giám sát. Vui lòng chờ phân công GVGS trước khi nộp nhật ký.",
+      400,
     );
   }
 
@@ -259,10 +273,24 @@ const updateReport = async ({
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
   }
 
-  if (!["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) {
+  const isApprovedByTBM =
+    (Boolean(internship.approvedAt) ||
+      ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) &&
+    internship.status !== "CANCELLED" &&
+    internship.status !== "REJECTED" &&
+    !internship.rejectedAt;
+
+  if (!isApprovedByTBM) {
     throw new AppError(
       "Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.",
       403,
+    );
+  }
+
+  if (!internship.lecturerId) {
+    throw new AppError(
+      "Hồ sơ thực tập của bạn chưa được phân công Giảng viên Giám sát. Vui lòng chờ phân công GVGS trước khi nộp nhật ký.",
+      400,
     );
   }
 

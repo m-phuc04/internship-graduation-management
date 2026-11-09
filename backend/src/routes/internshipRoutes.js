@@ -103,6 +103,21 @@ router.post(
   internshipController.uploadReportFile,
 );
 
+// Student & Lecturer (GVGS): Delete / Remove internship report file
+router.delete(
+  "/my/report-file",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  internshipController.deleteReportFile,
+);
+
+router.delete(
+  "/:id/report-file",
+  authMiddleware,
+  authorizeRoles("STUDENT", "LECTURER", "TBM", "ADMIN"),
+  internshipController.deleteReportFile,
+);
+
 // ==========================================
 // 3. Lecturer Endpoints
 // ==========================================

@@ -162,8 +162,27 @@ const StudentReportPage = () => {
 
   // Check if internship has been approved by TBM
   const isApprovedByTBM = useMemo(() => {
+    if (!internship) return false;
+    if (
+      internship.status === 'CANCELLED' ||
+      internship.status === 'REJECTED' ||
+      Boolean(internship.rejectedAt)
+    ) {
+      return false;
+    }
     return Boolean(
-      internship && ['APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status)
+      internship.approvedAt ||
+      internship.approvedBy ||
+      ['APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status)
+    );
+  }, [internship]);
+
+  // Check if supervisor lecturer is assigned
+  const hasAssignedLecturer = useMemo(() => {
+    return Boolean(
+      internship?.lecturerId ||
+      internship?.supervisorId ||
+      (typeof internship?.lecturerId === 'object' && internship?.lecturerId?._id)
     );
   }, [internship]);
 
@@ -263,6 +282,10 @@ const StudentReportPage = () => {
       showToast('Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.', 'warning');
       return;
     }
+    if (!hasAssignedLecturer) {
+      showToast('Hồ sơ thực tập của bạn chưa được phân công Giảng viên Giám sát. Vui lòng chờ phân công GVGS.', 'warning');
+      return;
+    }
     setTargetWeekForCreate({
       weekNumber: week.weekNumber,
       startDate: existing?.weekStartDate || week.defaultStartDate || null,
@@ -310,7 +333,7 @@ const StudentReportPage = () => {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          {isApprovedByTBM && (
+          {isApprovedByTBM && hasAssignedLecturer && (
             <button
               type="button"
               onClick={() => setExportModalOpen(true)}
@@ -375,10 +398,20 @@ const StudentReportPage = () => {
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              {!isApprovedByTBM && (
+              {!isApprovedByTBM ? (
                 <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-semibold flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-amber-300" />
                   <span>Chờ TBM phê duyệt</span>
+                </span>
+              ) : !hasAssignedLecturer ? (
+                <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-blue-300" />
+                  <span>Chờ phân công GVGS</span>
+                </span>
+              ) : (
+                <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{internship.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đã phân công GVGS'}</span>
                 </span>
               )}
               {hasStudent2 && (
@@ -430,8 +463,23 @@ const StudentReportPage = () => {
         </div>
       )}
 
-      {/* 5. Main Weeks List (Chỉ hiển thị khi hồ sơ đã được TBM phê duyệt) */}
-      {!loading && isApprovedByTBM && (
+      {/* 4b. Notice if internship is approved but waiting for supervisor assignment */}
+      {!loading && internship && isApprovedByTBM && !hasAssignedLecturer && (
+        <div className="p-5 rounded-3xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-3.5 shadow-2xs">
+          <Clock className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-[#123891]">
+              Hồ sơ thực tập đang chờ phân công Giảng viên Giám sát (GVGS)
+            </div>
+            <div className="text-slate-700 text-xs leading-relaxed">
+              Hồ sơ thực tập của bạn đã được Trưởng Bộ Môn phê duyệt thành công. Vui lòng đợi phân công Giảng viên Giám sát để được hướng dẫn ghi nhật ký theo quy định.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5. Main Weeks List (Chỉ hiển thị khi hồ sơ đã được TBM phê duyệt và đã phân công GVGS) */}
+      {!loading && isApprovedByTBM && hasAssignedLecturer && (
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -841,7 +889,7 @@ const StudentReportPage = () => {
         report={selectedReport}
       />
 
-      {isApprovedByTBM && (
+      {isApprovedByTBM && hasAssignedLecturer && (
         <ExportInternshipDiaryModal
           isOpen={exportModalOpen}
           onClose={() => setExportModalOpen(false)}

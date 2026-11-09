@@ -219,6 +219,54 @@ const internshipSchema = new mongoose.Schema(
         default: null,
       },
     },
+
+    // Lịch sử thao tác gỡ file báo cáo thực tập (GVGS / Sinh viên)
+    reportRemovalHistory: [
+      {
+        removedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        removerRole: {
+          type: String,
+          enum: ["STUDENT", "LECTURER", "TBM", "ADMIN"],
+          required: true,
+        },
+        removerName: {
+          type: String,
+          default: "",
+        },
+        studentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Student",
+        },
+        studentName: {
+          type: String,
+          default: "",
+        },
+        studentCode: {
+          type: String,
+          default: "",
+        },
+        fileName: {
+          type: String,
+          default: "",
+        },
+        fileUrl: {
+          type: String,
+          default: "",
+        },
+        reason: {
+          type: String,
+          required: true,
+        },
+        removedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

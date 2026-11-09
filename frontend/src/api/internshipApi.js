@@ -56,6 +56,15 @@ export const internshipApi = {
     });
   },
 
+  // Student & Lecturer (GVGS) removes / deletes internship report file
+  deleteReportFile: (id = null, reason = '') => {
+    const url = id ? `/internships/${id}/report-file` : '/internships/my/report-file';
+    return axiosClient.delete(url, {
+      data: { reason },
+      params: reason ? { reason } : undefined,
+    });
+  },
+
   // Get report file info (Prompt 2 - Requirement 1)
   getReportFile: (id) => axiosClient.get(`/internships/${id}/report-file`),
 

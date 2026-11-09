@@ -17,6 +17,7 @@ const createNotification = async ({
   referenceModel = null,
   link = null,
   priority = "NORMAL",
+  metadata = {},
 }) => {
   let targetRecipientId = recipientId || userId;
   if (!targetRecipientId || !title || !message) {
@@ -52,6 +53,9 @@ const createNotification = async ({
       if (existing) {
         existing.message = message.trim();
         existing.link = link || existing.link;
+        if (metadata && Object.keys(metadata).length > 0) {
+          existing.metadata = { ...(existing.metadata || {}), ...metadata };
+        }
         existing.updatedAt = new Date();
         await existing.save();
         return existing;
@@ -68,6 +72,7 @@ const createNotification = async ({
       referenceModel,
       link,
       priority,
+      metadata: metadata || {},
     });
 
     // Tự động gửi Email thông báo tới người nhận (bất đồng bộ, an toàn không làm fail nghiệp vụ)

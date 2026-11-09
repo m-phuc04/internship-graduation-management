@@ -675,9 +675,6 @@ const LecturerInternshipPage = () => {
 
                           const allReasons = [];
                           if (!item.pretestPassed) allReasons.push('Chưa PASS PRETEST');
-                          if (!item.diaryStatus?.isCompleted) {
-                            allReasons.push(`Chưa đủ nhật ký (thiếu tuần ${item.diaryStatus?.missingWeeks?.join(', ')})`);
-                          }
                           if (!item.reportFileSubmitted) allReasons.push('Chưa nộp file báo cáo thực tập');
                           if (!windowStatus.allowed) allReasons.push(windowStatus.reason);
 

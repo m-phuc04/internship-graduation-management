@@ -600,6 +600,33 @@ export const getLecturerSubmissions = async (
     }
   }
 
+  // Lọc bỏ các bản ghi báo cáo đã bị gỡ
+  const noReportInternshipIds = new Set(
+    supervisedInternships
+      .filter((i) => !i.reportFile || !i.reportFile.fileUrl)
+      .map((i) => i._id.toString()),
+  );
+  submissions = submissions.filter((s) => {
+    const iId = s.internshipId?._id ? s.internshipId._id.toString() : s.internshipId?.toString();
+    if (iId && noReportInternshipIds.has(iId) && /báo cáo/i.test(s.category || "")) {
+      return false;
+    }
+    return true;
+  });
+
+  // Khử trùng lặp file báo cáo cho cùng 1 sinh viên (chỉ giữ bản mới nhất đang có hiệu lực)
+  const seenReportByStudent = new Set();
+  submissions = submissions.filter((s) => {
+    if (/báo cáo/i.test(s.category || "")) {
+      const sId = s.studentId?._id ? s.studentId._id.toString() : s.studentId?.toString();
+      if (sId) {
+        if (seenReportByStudent.has(sId)) return false;
+        seenReportByStudent.add(sId);
+      }
+    }
+    return true;
+  });
+
   // Lọc theo search (nếu có)
   if (search && search.trim()) {
     const q = search.trim().toLowerCase();
@@ -746,8 +773,14 @@ export const getStudentGuides = async (
   }
 
   const hasInternship = Boolean(internship);
-  const isApproved = hasInternship && ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status);
-  const isPending = hasInternship && (
+  const isApproved =
+    hasInternship &&
+    (Boolean(internship.approvedAt) ||
+      ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) &&
+    internship.status !== "CANCELLED" &&
+    internship.status !== "REJECTED" &&
+    !internship.rejectedAt;
+  const isPending = hasInternship && !isApproved && (
     internship.status === "PENDING" ||
     internship.status === "PENDING_SUPERVISOR_ACCEPTANCE"
   );
@@ -852,31 +885,36 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     return [];
   }
 
+  // 1. Tìm hồ sơ thực tập đang hoạt động (không bị hủy hoặc từ chối)
   const internshipQuery = {
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-    status: { $in: ["APPROVED", "INTERNING", "COMPLETED"] },
+    status: { $nin: ["CANCELLED", "REJECTED"] },
   };
 
   if (academicTermId && academicTermId !== "ALL") {
     internshipQuery.academicTermId = academicTermId;
   }
 
-  let internship = await Internship.findOne(internshipQuery);
-  if (!internship && academicTermId) {
+  let internship = await Internship.findOne(internshipQuery).sort({ createdAt: -1 });
+  if (!internship && academicTermId && academicTermId !== "ALL") {
     internship = await Internship.findOne({
       $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-      status: { $in: ["APPROVED", "INTERNING", "COMPLETED"] },
-    });
+      status: { $nin: ["CANCELLED", "REJECTED"] },
+    }).sort({ createdAt: -1 });
   }
 
-  if (!internship) {
-    return [];
+  // 2. Truy vấn danh sách tài liệu sinh viên đã nộp
+  const docConditions = [{ studentId: student._id }, { uploadedBy: userId }];
+  if (internship) {
+    docConditions.push({ internshipId: internship._id });
   }
 
-  const submissions = await InternshipDocument.find({
+  const docQuery = {
     documentType: "SUBMISSION",
-    $or: [{ studentId: student._id }, { internshipId: internship._id }],
-  })
+    $or: docConditions,
+  };
+
+  let submissions = await InternshipDocument.find(docQuery)
     .populate({
       path: "studentId",
       populate: { path: "userId", select: "fullName email" },
@@ -885,9 +923,14 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     .populate("uploadedBy", "fullName email")
     .sort({ createdAt: -1 });
 
-  // Tự động đồng bộ: nếu hồ sơ thực tập đã có file báo cáo nhưng chưa có trong danh sách tài liệu nộp
-  if (internship.reportFile?.fileUrl) {
-    const hasReportDoc = submissions.some((s) => /báo cáo/i.test(s.category || ""));
+  // 3. Tự động đồng bộ: nếu hồ sơ thực tập đã có file báo cáo nhưng chưa có trong danh sách tài liệu nộp
+  if (internship?.reportFile?.fileUrl) {
+    const hasReportDoc = submissions.some(
+      (s) =>
+        /báo cáo/i.test(s.category || "") ||
+        /báo cáo/i.test(s.title || "") ||
+        s.fileUrl === internship.reportFile.fileUrl,
+    );
     if (!hasReportDoc) {
       try {
         const newDoc = await InternshipDocument.create({
@@ -922,6 +965,21 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     }
   }
 
+  // 4. Nếu file báo cáo đã bị gỡ khỏi internship (reportFile rỗng), loại bỏ tài liệu báo cáo cũ để không hiển thị sai
+  if (internship && (!internship.reportFile || !internship.reportFile.fileUrl)) {
+    submissions = submissions.filter((s) => !/báo cáo/i.test(s.category || ""));
+  }
+
+  // 5. Khử trùng lặp file báo cáo (chỉ giữ bản mới nhất)
+  const seenReportUrls = new Set();
+  submissions = submissions.filter((s) => {
+    if (/báo cáo/i.test(s.category || "")) {
+      if (seenReportUrls.has(s.fileUrl)) return false;
+      seenReportUrls.add(s.fileUrl);
+    }
+    return true;
+  });
+
   return submissions;
 };
 
@@ -954,17 +1012,23 @@ export const createStudentSubmission = async ({
     );
   }
 
-  if (
-    anyInternship.status === "PENDING" ||
-    anyInternship.status === "PENDING_SUPERVISOR_ACCEPTANCE"
-  ) {
-    throw new AppError(
-      "Hồ sơ thực tập của bạn đang chờ phê duyệt. Bạn chỉ có thể nộp tài liệu sau khi hồ sơ được duyệt thành công.",
-      403,
-    );
-  }
+  const isApproved =
+    (Boolean(anyInternship.approvedAt) ||
+      ["APPROVED", "INTERNING", "COMPLETED"].includes(anyInternship.status)) &&
+    anyInternship.status !== "CANCELLED" &&
+    anyInternship.status !== "REJECTED" &&
+    !anyInternship.rejectedAt;
 
-  if (!["APPROVED", "INTERNING", "COMPLETED"].includes(anyInternship.status)) {
+  if (!isApproved) {
+    if (
+      anyInternship.status === "PENDING" ||
+      anyInternship.status === "PENDING_SUPERVISOR_ACCEPTANCE"
+    ) {
+      throw new AppError(
+        "Hồ sơ thực tập của bạn đang chờ phê duyệt. Bạn chỉ có thể nộp tài liệu sau khi hồ sơ được duyệt thành công.",
+        403,
+      );
+    }
     throw new AppError(
       "Hồ sơ thực tập của bạn không ở trạng thái hợp lệ để nộp file tài liệu.",
       403,
@@ -984,6 +1048,24 @@ export const createStudentSubmission = async ({
 
   const safeDescription =
     typeof description === "string" ? description.trim() : "";
+
+  const isReportCategory = /báo cáo/i.test(safeCategory);
+  if (isReportCategory) {
+    const existingDoc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    });
+    if (internship.reportFile?.fileUrl || existingDoc) {
+      if (file.filename) {
+        unlinkFileSafe(`/uploads/internship-documents/${file.filename}`);
+      }
+      throw new AppError(
+        "Hồ sơ thực tập đã có file báo cáo đang có hiệu lực. Vui lòng gỡ file cũ trước khi nộp file mới.",
+        400,
+      );
+    }
+  }
 
   const fileUrl = `/uploads/internship-documents/${file.filename}`;
 
@@ -1006,7 +1088,6 @@ export const createStudentSubmission = async ({
   });
 
   // Đồng bộ sang Internship.reportFile và InternshipReport (FINAL) nếu tài liệu thuộc loại Báo cáo thực tập
-  const isReportCategory = /báo cáo/i.test(safeCategory);
   if (isReportCategory) {
     try {
       internship.reportFile = {
@@ -1069,14 +1150,27 @@ export const createStudentSubmission = async ({
         const notifTitle = `Sinh viên ${studentName} đã nộp 1 tài liệu`;
         const notifMessage = `Sinh viên ${studentName}${studentCode} đã nộp file tài liệu thực tập: "${file.originalname}".`;
 
+        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${doc._id}&search=${student.studentCode || ""}`;
+
         await notificationService.createNotification({
           recipientId: supervisor.userId._id,
+          senderId: userId,
           type: "INTERNSHIP",
           title: notifTitle,
           message: notifMessage,
           referenceId: doc._id,
-          referenceModel: "Internship",
-          link: "/lecturer/internship-documents",
+          referenceModel: "InternshipDocument",
+          link: targetLink,
+          metadata: {
+            studentId: student._id,
+            studentCode: student.studentCode,
+            studentName,
+            internshipId: internship._id,
+            fileId: doc._id,
+            docId: doc._id,
+            fileName: file.originalname,
+            submittedAt: new Date(),
+          },
         });
       }
     }
@@ -1146,6 +1240,10 @@ export const deleteStudentSubmission = async (id, userId) => {
             fileType: null,
             uploadedAt: null,
           };
+          await InternshipReport.deleteMany({
+            internshipId: targetInternshipId,
+            reportType: "FINAL",
+          });
         }
         await internship.save();
       }
