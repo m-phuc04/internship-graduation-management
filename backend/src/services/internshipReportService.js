@@ -59,7 +59,8 @@ const createReport = async ({
 
   const isApprovedByTBM =
     (Boolean(internship.approvedAt) ||
-      ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) &&
+      Boolean(internship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(internship.status)) &&
     internship.status !== "CANCELLED" &&
     internship.status !== "REJECTED" &&
     !internship.rejectedAt;
@@ -275,7 +276,8 @@ const updateReport = async ({
 
   const isApprovedByTBM =
     (Boolean(internship.approvedAt) ||
-      ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) &&
+      Boolean(internship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(internship.status)) &&
     internship.status !== "CANCELLED" &&
     internship.status !== "REJECTED" &&
     !internship.rejectedAt;
@@ -589,16 +591,36 @@ const getReportsForLecturer = async (
 
   const internshipIds = supervisedInternships.map((i) => i._id);
 
-  // GVHD can ONLY see reports that are SUBMITTED, REVIEWING, APPROVED, or REJECTED
+  // GVHD can view reports belonging to assigned internships
   const query = {
     internshipId: { $in: internshipIds },
-    status: { $in: ["SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"] },
   };
 
   if (status && status.trim()) {
-    if (["SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"].includes(status.trim())) {
+    const s = status.trim().toUpperCase();
+    if (s === "SUBMITTED") {
+      query.status = "SUBMITTED";
+    } else if (s === "UNSUBMITTED" || s === "DRAFT") {
+      query.status = { $in: ["DRAFT", "WAITING_STUDENT_2"] };
+    } else if (s === "APPROVED" || s === "PROCESSED") {
+      query.status = { $in: ["APPROVED", "REVIEWING"] };
+    } else if (s === "REJECTED" || s === "NEEDS_REVISION") {
+      query.status = { $in: ["REJECTED", "NEEDS_REVISION"] };
+    } else {
       query.status = status.trim();
     }
+  } else {
+    query.status = {
+      $in: [
+        "SUBMITTED",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "NEEDS_REVISION",
+        "DRAFT",
+        "WAITING_STUDENT_2",
+      ],
+    };
   }
 
   if (reportType && reportType.trim()) {

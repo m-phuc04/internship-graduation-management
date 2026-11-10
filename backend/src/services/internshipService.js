@@ -441,6 +441,10 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
   internship.status = "PENDING_SUPERVISOR_ACCEPTANCE";
   internship.assignedAt = new Date();
   internship.assignedBy = tbmUserId || null;
+  if (!internship.approvedAt) {
+    internship.approvedAt = new Date();
+    internship.approvedBy = tbmUserId || null;
+  }
   await internship.save();
 
   // Send Notification strictly to assigned Lecturer

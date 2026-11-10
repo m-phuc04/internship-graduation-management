@@ -21,18 +21,26 @@ import {
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Chờ chấm' },
-  { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'REJECTED', label: 'Yêu cầu sửa' },
-  { value: 'REVIEWING', label: 'Đang xem xét' },
+  { value: 'SUBMITTED', label: 'Đã nộp' },
+  { value: 'UNSUBMITTED', label: 'Chưa nộp' },
+  { value: 'APPROVED', label: 'Đã xử lý' },
+  { value: 'REJECTED', label: 'Yêu cầu chỉnh sửa' },
 ];
 
 const TYPE_OPTIONS = [
-  { value: '', label: 'Tất cả loại báo cáo' },
-  { value: 'WEEKLY', label: 'Báo cáo Tuần' },
-  { value: 'MONTHLY', label: 'Báo cáo Tháng' },
-  { value: 'FINAL', label: 'Báo cáo Tổng kết' },
+  { value: '', label: 'Tất cả nhật ký' },
+  { value: 'WEEKLY', label: 'Nhật ký theo tuần' },
 ];
+
+const REPORT_STATUS_CONFIG = {
+  SUBMITTED: { label: 'Đã nộp', variant: 'info' },
+  APPROVED: { label: 'Đã xử lý', variant: 'success' },
+  REJECTED: { label: 'Yêu cầu chỉnh sửa', variant: 'danger' },
+  NEEDS_REVISION: { label: 'Yêu cầu chỉnh sửa', variant: 'danger' },
+  REVIEWING: { label: 'Đang xem xét', variant: 'warning' },
+  DRAFT: { label: 'Chưa nộp (Bản nháp)', variant: 'default' },
+  WAITING_STUDENT_2: { label: 'Chờ SV2 xác nhận', variant: 'warning' },
+};
 
 const LecturerReportPage = () => {
   const { user } = useAuth();
@@ -138,7 +146,7 @@ const LecturerReportPage = () => {
         <SearchInput
           value={search}
           onChange={(val) => handleFilterChange(setSearch, val)}
-          placeholder="Tìm theo MSSV, Tên SV, Tiêu đề báo cáo..."
+          placeholder="Tìm theo MSSV, Tên SV, Tiêu đề nhật ký..."
           className="w-full"
         />
       </div>
@@ -225,11 +233,7 @@ const LecturerReportPage = () => {
                     {/* Report Type */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
-                        {report.reportType === 'WEEKLY'
-                          ? `Tuần ${report.weekNumber}`
-                          : report.reportType === 'MONTHLY'
-                          ? `Tháng ${report.monthNumber}`
-                          : 'Tổng kết'}
+                        {report.weekNumber ? `Tuần ${report.weekNumber}` : 'Nhật ký'}
                       </span>
                     </td>
 
@@ -264,7 +268,12 @@ const LecturerReportPage = () => {
 
                     {/* Status */}
                     <td className="py-3.5 px-4 pr-6 whitespace-nowrap">
-                      <StatusBadge status={report.status} size="sm" />
+                      <StatusBadge
+                        status={report.status}
+                        label={REPORT_STATUS_CONFIG[report.status]?.label || report.status}
+                        variant={REPORT_STATUS_CONFIG[report.status]?.variant}
+                        size="sm"
+                      />
                     </td>
                   </tr>
                 ))}

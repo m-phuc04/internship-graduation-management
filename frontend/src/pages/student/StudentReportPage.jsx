@@ -173,7 +173,8 @@ const StudentReportPage = () => {
     return Boolean(
       internship.approvedAt ||
       internship.approvedBy ||
-      ['APPROVED', 'INTERNING', 'COMPLETED'].includes(internship.status)
+      internship.lecturerId ||
+      ['APPROVED', 'INTERNING', 'PENDING_SUPERVISOR_ACCEPTANCE', 'COMPLETED'].includes(internship.status)
     );
   }, [internship]);
 

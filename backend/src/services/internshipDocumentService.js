@@ -776,14 +776,12 @@ export const getStudentGuides = async (
   const isApproved =
     hasInternship &&
     (Boolean(internship.approvedAt) ||
-      ["APPROVED", "INTERNING", "COMPLETED"].includes(internship.status)) &&
+      Boolean(internship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(internship.status)) &&
     internship.status !== "CANCELLED" &&
     internship.status !== "REJECTED" &&
     !internship.rejectedAt;
-  const isPending = hasInternship && !isApproved && (
-    internship.status === "PENDING" ||
-    internship.status === "PENDING_SUPERVISOR_ACCEPTANCE"
-  );
+  const isPending = hasInternship && !isApproved && internship.status === "PENDING";
   const hasSupervisor = Boolean(isApproved && internship?.lecturerId);
 
   let submitBlockReason = "";
@@ -1014,16 +1012,14 @@ export const createStudentSubmission = async ({
 
   const isApproved =
     (Boolean(anyInternship.approvedAt) ||
-      ["APPROVED", "INTERNING", "COMPLETED"].includes(anyInternship.status)) &&
+      Boolean(anyInternship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(anyInternship.status)) &&
     anyInternship.status !== "CANCELLED" &&
     anyInternship.status !== "REJECTED" &&
     !anyInternship.rejectedAt;
 
   if (!isApproved) {
-    if (
-      anyInternship.status === "PENDING" ||
-      anyInternship.status === "PENDING_SUPERVISOR_ACCEPTANCE"
-    ) {
+    if (anyInternship.status === "PENDING") {
       throw new AppError(
         "Hồ sơ thực tập của bạn đang chờ phê duyệt. Bạn chỉ có thể nộp tài liệu sau khi hồ sơ được duyệt thành công.",
         403,
