@@ -731,66 +731,7 @@ const seedUsersAndLecturers = async () => {
     }
 
     // ==========================================
-    // 7. SEED HỒ SƠ THỰC TẬP MẪU TTDN (CHO SV 22635271 TẠI KỲ HIỆN TẠI)
-    // ==========================================
-    console.log("\n=== 7. SEED HỒ SƠ THỰC TẬP TTDN MẪU (KỲ HIỆN TẠI) ===");
-    const stAn = await Student.findOne({ studentCode: "22635271" });
-    const lecKhoa = await Lecturer.findOne({ lecturerCode: "20240002" });
-    const compTDS = await Company.findOne({ code: "TDSOUTH" });
-
-    if (stAn && lecKhoa && compTDS && currentTerm) {
-      let sampleInternship = await Internship.findOne({ studentId: stAn._id });
-      const startDate = new Date("2026-09-01");
-      const endDate = new Date("2026-11-10");
-
-      if (!sampleInternship) {
-        sampleInternship = await Internship.create({
-          academicTermId: currentTerm._id,
-          studentId: stAn._id,
-          lecturerId: lecKhoa._id,
-          companyId: compTDS._id,
-          position: "Kỹ sư Thực tập Phát triển Phần mềm",
-          startDate: startDate,
-          endDate: endDate,
-          durationInWeeks: 10,
-          reportCycle: currentTerm.internship?.reportCycle || 2,
-          mentorName: "Nguyễn Vũ Minh",
-          mentorPosition: "Technical Lead",
-          mentorEmail: "minh.nguyen@tdsouth.com",
-          mentorPhone: "0909123456",
-          status: "INTERNING",
-          pretest: {
-            isPassed: true,
-            passedAt: new Date(),
-            passedBy: lecKhoa.userId,
-            note: "Đã hoàn thành pretest và được duyệt vào thực tập",
-          },
-        });
-        console.log(`✓ Tạo mới hồ sơ TTDN mẫu cho SV 22635271 ở kỳ hiện tại HK1-2026-2027 (GVGS: TS. Trần Thị Minh Khoa - PASS PRETEST: Đạt)`);
-      } else {
-        sampleInternship.academicTermId = currentTerm._id;
-        sampleInternship.lecturerId = lecKhoa._id;
-        sampleInternship.companyId = compTDS._id;
-        sampleInternship.reportCycle = currentTerm.internship?.reportCycle || 2;
-        sampleInternship.durationInWeeks = 10;
-        if (!sampleInternship.pretest || typeof sampleInternship.pretest.isPassed === "undefined") {
-          sampleInternship.pretest = {
-            isPassed: true,
-            passedAt: new Date(),
-            passedBy: lecKhoa.userId,
-            note: "Đã hoàn thành pretest và được duyệt vào thực tập",
-          };
-        }
-        await sampleInternship.save();
-        console.log(`- Đồng bộ hồ sơ TTDN mẫu cho SV 22635271 ở kỳ hiện tại HK1-2026-2027 (Chu kỳ: ${sampleInternship.reportCycle} tuần/lần, PASS PRETEST: ${sampleInternship.pretest?.isPassed ? "Đạt" : "Chưa đạt"})`);
-      }
-
-      stAn.internshipRegistered = true;
-      await stAn.save();
-    }
-
-    // ==========================================
-    // 8. TỔNG KẾT
+    // 7. TỔNG KẾT
     // ==========================================
     console.log("\n==========================================");
     console.log("📊 KẾT QUẢ SEED DỮ LIỆU:");

@@ -10,6 +10,7 @@ import Student from "../models/Student.js";
 import User from "../models/User.js";
 import AcademicTerm from "../models/AcademicTerm.js";
 import InternshipReport from "../models/InternshipReport.js";
+import InternshipDocument from "../models/InternshipDocument.js";
 import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
 import { checkInternshipDiaryCompletion } from "../utils/internshipDateUtils.js";
@@ -1559,7 +1560,25 @@ const gradeInternshipByLecturer = async ({
 
   // Điều kiện 2: Nộp file báo cáo thực tập hợp lệ
   if (!internship.reportFile || !internship.reportFile.fileUrl) {
-    throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa nộp file báo cáo thực tập.", 400);
+    const doc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    }).sort({ createdAt: -1 });
+
+    if (doc?.fileUrl) {
+      internship.reportFile = {
+        originalName: doc.title || doc.fileName,
+        fileName: doc.fileName,
+        fileUrl: doc.fileUrl,
+        fileSize: doc.fileSize || 0,
+        fileType: doc.fileType || null,
+        uploadedAt: doc.createdAt || new Date(),
+      };
+      await internship.save();
+    } else {
+      throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa nộp file báo cáo thực tập.", 400);
+    }
   }
 
   // Validate Grading Window for current academic term

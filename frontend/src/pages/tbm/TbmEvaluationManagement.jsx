@@ -9,8 +9,6 @@ import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import EvaluationDetailModal from '../../components/evaluations/EvaluationDetailModal';
-import InternshipEvaluationDoc from '../../components/documents/InternshipEvaluationDoc';
-import DocumentViewerModal from '../../components/documents/DocumentViewerModal';
 
 import {
   Award,
@@ -21,7 +19,6 @@ import {
   Clock,
   Filter,
   CheckCircle2,
-  Printer,
   Trash2,
   Send,
   CheckSquare,
@@ -54,7 +51,6 @@ const TbmEvaluationManagement = () => {
   // Modals
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
-  const [docModalOpen, setDocModalOpen] = useState(false);
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [targetInternship, setTargetInternship] = useState(null);
   const [deleteEvalModalOpen, setDeleteEvalModalOpen] = useState(false);
@@ -156,39 +152,6 @@ const TbmEvaluationManagement = () => {
     fetchEvaluations();
   }, [fetchEvaluations]);
 
-  // Single Publish Handler
-  const handlePublishSingle = async (item) => {
-    const hasValidScore = Boolean(
-      item.evaluation?.score !== undefined &&
-      item.evaluation?.score !== null &&
-      !isNaN(item.evaluation?.score)
-    );
-
-    if (!hasValidScore) {
-      showToast('Sinh viên chưa có điểm đánh giá từ Giảng viên Giám sát. Không thể công bố điểm!', 'error');
-      return;
-    }
-
-    try {
-      setActionLoading(true);
-      const res = await evaluationApi.tbmPublishScore(item._id);
-      if (res?.success || res?.status === 200) {
-        showToast(`Đã công bố điểm cho sinh viên ${item.studentId?.userId?.fullName || 'thành công'}!`, 'success');
-        setEvaluations((prev) =>
-          prev.map((it) =>
-            String(it._id) === String(item._id)
-              ? { ...it, isScorePublished: true, scorePublishedAt: new Date() }
-              : it
-          )
-        );
-      }
-    } catch (err) {
-      showToast(err.response?.data?.message || err.message || 'Không thể công bố điểm', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   // Open Bulk Publish Modal
   const handleOpenPublishAllModal = async () => {
     setPublishAllModalOpen(true);
@@ -270,6 +233,10 @@ const TbmEvaluationManagement = () => {
     }).length;
   }, [allTermInternships]);
 
+  const ineligibleCount = useMemo(() => {
+    return allTermInternships.length - eligibleCount;
+  }, [allTermInternships, eligibleCount]);
+
   const toggleSelectPublish = (id, hasScore) => {
     if (!hasScore) return; // Do not allow interaction
     setSelectedPublishIds((prev) =>
@@ -291,7 +258,7 @@ const TbmEvaluationManagement = () => {
 
   const handleConfirmBulkPublish = async () => {
     if (selectedPublishIds.length === 0) {
-      showToast('Vui lòng chọn ít nhất một sinh viên có điểm để công bố.', 'error');
+      showToast('Vui lòng chọn ít nhất một sinh viên đủ điều kiện để công bố điểm.', 'error');
       return;
     }
 
@@ -302,10 +269,13 @@ const TbmEvaluationManagement = () => {
       });
 
       if (res?.success || res?.status === 200) {
-        showToast(
-          res?.message || `Đã công bố điểm cho ${res?.data?.publishedCount || selectedPublishIds.length} sinh viên thành công!`,
-          'success'
-        );
+        const pubCount = res?.data?.publishedCount ?? selectedPublishIds.length;
+        const skipCount = res?.data?.skippedCount ?? 0;
+        let successMsg = `Đã công bố điểm cho ${pubCount} sinh viên đủ điều kiện thành công!`;
+        if (skipCount > 0) {
+          successMsg += ` (Bỏ qua ${skipCount} sinh viên chưa có điểm)`;
+        }
+        showToast(successMsg, 'success');
         setPublishAllModalOpen(false);
         fetchEvaluations();
       }
@@ -565,18 +535,9 @@ const TbmEvaluationManagement = () => {
                               <span>Đã công bố</span>
                             </span>
                           ) : (
-                            <button
-                              type="button"
-                              onClick={() => handlePublishSingle(item)}
-                              className={`p-2 text-xs font-bold rounded-xl transition inline-flex items-center justify-center shadow-2xs cursor-pointer ${
-                                hasValidScore
-                                  ? 'bg-[#123891] hover:bg-[#102d7d] text-white'
-                                  : 'bg-slate-100 hover:bg-slate-200 text-slate-400'
-                              }`}
-                              title={hasValidScore ? 'Công bố điểm cho sinh viên này' : 'Chưa có điểm — Nhấn để xem cảnh báo'}
-                            >
-                              <Send className="w-4 h-4" />
-                            </button>
+                            <span className="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200 inline-flex items-center gap-1">
+                              <span>Chưa công bố</span>
+                            </span>
                           )}
                         </td>
 
@@ -597,20 +558,6 @@ const TbmEvaluationManagement = () => {
                             >
                               <Eye className="w-4 h-4" />
                             </button>
-
-                            {hasValidScore && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setSelectedInternship(item);
-                                  setDocModalOpen(true);
-                                }}
-                                className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition cursor-pointer"
-                                title="Xem và in biểu mẫu"
-                              >
-                                <Printer className="w-4 h-4" />
-                              </button>
-                            )}
 
                             {hasValidScore && item.status !== 'COMPLETED' && (
                               <button
@@ -683,8 +630,8 @@ const TbmEvaluationManagement = () => {
             </div>
 
             {/* Modal Subheader Summary & Controls */}
-            <div className="px-6 py-3.5 bg-slate-50 border-b border-slate-200/80 flex flex-wrap items-center justify-between gap-3 shrink-0 text-xs">
-              <div className="flex items-center gap-2">
+            <div className="px-6 py-3.5 bg-slate-50 border-b border-slate-200/80 shrink-0 text-xs space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <button
                   type="button"
                   onClick={toggleSelectAllEligible}
@@ -695,13 +642,30 @@ const TbmEvaluationManagement = () => {
                   ) : (
                     <Square className="w-4 h-4 text-slate-400" />
                   )}
-                  <span>Chọn tất cả đề tài có điểm</span>
+                  <span>Chọn tất cả sinh viên có điểm</span>
                 </button>
+
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100/70 text-emerald-800 font-semibold">
+                    Đủ điều kiện có điểm: <strong>{eligibleCount}</strong>
+                  </span>
+                  <span className="px-2.5 py-1 rounded-lg bg-rose-100/70 text-rose-800 font-semibold">
+                    Chưa có điểm: <strong>{ineligibleCount}</strong>
+                  </span>
+                  <span className="text-slate-600 ml-1">
+                    (Đã chọn <strong className="text-emerald-700 font-bold">{selectedPublishIds.length}</strong>)
+                  </span>
+                </div>
               </div>
 
-              <div className="text-slate-600">
-                Đã chọn <strong className="text-emerald-700 font-bold">{selectedPublishIds.length}</strong> / <strong>{eligibleCount}</strong> sinh viên đủ điều kiện có điểm
-              </div>
+              {ineligibleCount > 0 && (
+                <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-[11px] leading-relaxed">
+                    Có <strong>{ineligibleCount}</strong> sinh viên chưa có điểm đánh giá từ Giảng viên Giám sát. Hệ thống chỉ công bố cho sinh viên đã có điểm và bỏ qua các trường hợp chưa đủ điều kiện.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Modal Body: List of Students */}
@@ -786,8 +750,9 @@ const TbmEvaluationManagement = () => {
                             )}
                           </div>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-lg text-[10.5px] font-semibold bg-slate-200 text-slate-500 border border-slate-300">
-                            Chưa có điểm — Vô hiệu hóa
+                          <span className="px-2.5 py-1 rounded-lg text-[10.5px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 inline-flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-rose-500" />
+                            <span>Chưa có điểm — Không thể công bố</span>
                           </span>
                         )}
                       </div>
@@ -850,21 +815,7 @@ const TbmEvaluationManagement = () => {
         />
       )}
 
-      {/* 2. Document Viewer Modal */}
-      {docModalOpen && selectedInternship && (
-        <DocumentViewerModal
-          isOpen={docModalOpen}
-          onClose={() => {
-            setDocModalOpen(false);
-            setSelectedInternship(null);
-          }}
-          title="Phiếu Đánh Giá Thực Tập Doanh Nghiệp"
-        >
-          <InternshipEvaluationDoc internship={selectedInternship} />
-        </DocumentViewerModal>
-      )}
-
-      {/* 3. Complete / Lock Confirmation Modal */}
+      {/* 2. Complete / Lock Confirmation Modal */}
       {completeModalOpen && targetInternship && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
