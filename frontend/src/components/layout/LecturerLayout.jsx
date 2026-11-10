@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import notificationApi from '../../api/notificationApi';
 import LecturerSidebar from './LecturerSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
 
 import {
@@ -15,6 +16,7 @@ import {
   LogOut,
   ChevronDown,
   Sparkles,
+  Mail,
 } from 'lucide-react';
 
 const LecturerLayout = () => {
@@ -22,6 +24,7 @@ const LecturerLayout = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchUnreadNotifications = async () => {
@@ -221,6 +224,18 @@ const LecturerLayout = () => {
                       <span>Hồ sơ cá nhân</span>
                     </Link>
 
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setEmailModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#123891] transition text-left cursor-pointer"
+                    >
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      <span>Đăng ký nhận email thông báo</span>
+                    </button>
+
                     <Link
                       to="/"
                       onClick={() => setUserMenuOpen(false)}
@@ -245,6 +260,14 @@ const LecturerLayout = () => {
               )}
             </div>
           </div>
+
+          {/* Email Notification Settings Modal (TTDN) */}
+          {emailModalOpen && (
+            <EmailNotificationModal
+              isOpen={emailModalOpen}
+              onClose={() => setEmailModalOpen(false)}
+            />
+          )}
         </header>
 
         {/* Content Outlet */}

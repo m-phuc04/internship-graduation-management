@@ -78,18 +78,37 @@ const createNotification = async ({
     // Tự động gửi Email thông báo tới người nhận (bất đồng bộ, an toàn không làm fail nghiệp vụ)
     (async () => {
       try {
-        const recipientUser = await User.findById(targetRecipientId).select("email fullName").lean();
-        if (recipientUser && recipientUser.email && recipientUser.email.trim()) {
-          await emailService.sendNotificationEmail({
-            to: recipientUser.email.trim(),
-            recipientName: recipientUser.fullName || "Quý Thầy/Cô và Sinh viên",
-            title: title.trim(),
-            message: message.trim(),
-            link,
-            priority,
-            type,
-          });
+        const recipientUser = await User.findById(targetRecipientId)
+          .select("email fullName emailNotificationEnabled")
+          .lean();
+
+        if (!recipientUser || !recipientUser.email || !recipientUser.email.trim()) {
+          return;
         }
+
+        // Nhận diện thông báo thuộc module Thực tập Doanh nghiệp (TTDN)
+        const isInternshipNotification =
+          ["INTERNSHIP", "INTERNSHIP_REPORT", "EVALUATION"].includes(type) ||
+          ["Internship", "InternshipDocument", "InternshipReport"].includes(referenceModel) ||
+          (metadata && metadata.module === "INTERNSHIP") ||
+          (link && (link.includes("/internship") || link.includes("view=evaluation")));
+
+        if (isInternshipNotification) {
+          // Chỉ gửi email nếu người dùng đã bật chức năng đăng ký nhận email thông báo TTDN
+          if (!recipientUser.emailNotificationEnabled) {
+            return;
+          }
+        }
+
+        await emailService.sendNotificationEmail({
+          to: recipientUser.email.trim(),
+          recipientName: recipientUser.fullName || "Quý Thầy/Cô và Sinh viên",
+          title: title.trim(),
+          message: message.trim(),
+          link,
+          priority,
+          type,
+        });
       } catch (emailErr) {
         console.error("[NotificationService] Background email dispatch error:", emailErr.message);
       }

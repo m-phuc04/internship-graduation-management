@@ -4,6 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from './StudentSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
 import Modal from '../common/Modal';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
 import {
   GraduationCap,
@@ -18,6 +19,7 @@ import {
   FileText,
   Briefcase,
   BookOpen,
+  Mail,
 } from 'lucide-react';
 
 const StudentLayout = () => {
@@ -26,6 +28,7 @@ const StudentLayout = () => {
   const location = useLocation();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
 
   const handleLogout = async () => {
@@ -198,6 +201,18 @@ const StudentLayout = () => {
 
                           <button
                             type="button"
+                            onClick={() => {
+                              setDropdownOpen(false);
+                              setEmailModalOpen(true);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123891] rounded-xl transition text-left cursor-pointer"
+                          >
+                            <Mail className="w-4 h-4 text-slate-400" />
+                            <span>Đăng ký nhận email thông báo</span>
+                          </button>
+
+                          <button
+                            type="button"
                             onClick={handleLogout}
                             className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition text-left"
                           >
@@ -213,6 +228,14 @@ const StudentLayout = () => {
             </div>
           </div>
         </header>
+
+        {/* Email Notification Settings Modal (TTDN) */}
+        {emailModalOpen && (
+          <EmailNotificationModal
+            isOpen={emailModalOpen}
+            onClose={() => setEmailModalOpen(false)}
+          />
+        )}
 
         {/* Main Content Router View */}
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 w-full max-w-full min-w-0">

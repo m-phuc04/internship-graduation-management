@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Menu } from 'lucide-react';
+import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Menu, Mail } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
 import AcademicTermSelector from '../common/AcademicTermSelector';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 
 const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   // Map path to title
   const getPageTitle = () => {
@@ -154,6 +156,18 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
                   </button>
 
                   <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      setEmailModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123891] rounded-lg transition text-left cursor-pointer"
+                  >
+                    <Mail className="w-4 h-4 text-slate-400" />
+                    <span>Đăng ký nhận email thông báo</span>
+                  </button>
+
+                  <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition"
                   >
@@ -166,6 +180,14 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
           )}
         </div>
       </div>
+
+      {/* Email Notification Settings Modal (TTDN) */}
+      {emailModalOpen && (
+        <EmailNotificationModal
+          isOpen={emailModalOpen}
+          onClose={() => setEmailModalOpen(false)}
+        />
+      )}
     </header>
   );
 };

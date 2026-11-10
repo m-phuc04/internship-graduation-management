@@ -687,6 +687,7 @@ const getPublicUserProfile = async (targetId) => {
       avatar: user.avatar || null,
       role: user.role,
       isActive: user.isActive,
+      emailNotificationEnabled: Boolean(user.emailNotificationEnabled),
     },
     lecturer: lecturer
       ? {

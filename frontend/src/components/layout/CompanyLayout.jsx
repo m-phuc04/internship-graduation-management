@@ -9,14 +9,17 @@ import {
   Users,
   LayoutDashboard,
   User,
+  Mail,
 } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
 
 const CompanyLayout = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -128,6 +131,18 @@ const CompanyLayout = () => {
                         </NavLink>
 
                         <button
+                          type="button"
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            setEmailModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123891] rounded-xl transition text-left cursor-pointer"
+                        >
+                          <Mail className="w-4 h-4 text-slate-400" />
+                          <span>Đăng ký nhận email thông báo</span>
+                        </button>
+
+                        <button
                           onClick={handleLogout}
                           className="w-full flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition"
                         >
@@ -142,6 +157,14 @@ const CompanyLayout = () => {
             </div>
           </div>
         </div>
+
+        {/* Email Notification Settings Modal (TTDN) */}
+        {emailModalOpen && (
+          <EmailNotificationModal
+            isOpen={emailModalOpen}
+            onClose={() => setEmailModalOpen(false)}
+          />
+        )}
       </header>
 
       {/* Main Content View */}
