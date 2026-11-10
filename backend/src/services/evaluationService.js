@@ -1547,10 +1547,10 @@ const gradeInternshipByLecturer = async ({
   }
 
   // ==========================================
-  // Điều kiện chấm điểm TTDN: Chỉ cần đáp ứng đồng thời 2 điều kiện:
-  // 1. Sinh viên đã nộp file báo cáo thực tập hợp lệ
-  // 2. Sinh viên đã đạt trạng thái PASS PRETEST
-  // Không bắt buộc phải hoàn thành đầy đủ nhật ký thực tập mới được chấm điểm.
+  // Điều kiện chấm điểm TTDN: Bắt buộc đáp ứng đầy đủ cả 3 điều kiện:
+  // 1. Sinh viên đã đạt trạng thái PASS PRETEST
+  // 2. Sinh viên đã nộp file báo cáo thực tập hợp lệ
+  // 3. Sinh viên đã hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp được áp dụng
   // ==========================================
 
   // Điều kiện 1: PASS PRETEST
@@ -1581,8 +1581,33 @@ const gradeInternshipByLecturer = async ({
     }
   }
 
-  // Validate Grading Window for current academic term
+  // Điều kiện 3: Hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp
   const term = await resolveAcademicTermForInternship(internship);
+  const commonReportCycle = [1, 2, 3].includes(Number(internship.reportCycle))
+    ? Number(internship.reportCycle)
+    : [1, 2, 3].includes(Number(term?.internship?.reportCycle))
+    ? Number(term.internship.reportCycle)
+    : 1;
+
+  const weeklyReports = await InternshipReport.find({
+    internshipId: internship._id,
+    reportType: "WEEKLY",
+  }).lean();
+
+  const internshipWithCycle = {
+    ...(internship.toObject ? internship.toObject() : internship),
+    reportCycle: commonReportCycle,
+  };
+
+  const diaryStatus = checkInternshipDiaryCompletion(internshipWithCycle, weeklyReports);
+  if (!diaryStatus.isCompleted) {
+    const missingText = diaryStatus.missingWeeks?.length > 0
+      ? ` (Còn thiếu tuần: ${diaryStatus.missingWeeks.join(", ")})`
+      : "";
+    throw new AppError(`Chưa đủ điều kiện chấm điểm: Sinh viên chưa hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp${missingText}.`, 400);
+  }
+
+  // Validate Grading Window for current academic term
   validateInternshipGradingWindow(term, new Date());
 
   // Find or create Evaluation record

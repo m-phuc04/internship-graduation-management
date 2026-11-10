@@ -495,7 +495,6 @@ const LecturerInternshipPage = () => {
                   <th className="py-3.5 px-4 pl-6">MSSV</th>
                   <th className="py-3.5 px-4">Tên sinh viên</th>
                   <th className="py-3.5 px-4">Doanh nghiệp</th>
-                  <th className="py-3.5 px-4 text-center whitespace-nowrap">Chu kỳ nộp</th>
                   <th className="py-3.5 px-4 text-center">PASS PRETEST</th>
                   <th className="py-3.5 px-4 text-center">Nhật ký</th>
                   <th className="py-3.5 px-4 text-center">Báo cáo</th>
@@ -521,17 +520,12 @@ const LecturerInternshipPage = () => {
 
                     {/* Student Name */}
                     <td className="py-3.5 px-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#102d7d] font-bold text-xs flex items-center justify-center shrink-0">
-                          {item.studentId?.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
+                      <div className="min-w-0">
+                        <div className="font-semibold text-slate-900 text-xs">
+                          {item.studentId?.userId?.fullName || 'Chưa cập nhật'}
                         </div>
-                        <div className="min-w-0">
-                          <div className="font-semibold text-slate-900 text-xs">
-                            {item.studentId?.userId?.fullName || 'Chưa cập nhật'}
-                          </div>
-                          <div className="text-[11px] text-slate-400 font-mono">
-                            {item.studentId?.className} • {item.studentId?.userId?.phone || '—'}
-                          </div>
+                        <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          {item.studentId?.className} • {item.studentId?.userId?.phone || '—'}
                         </div>
                       </div>
                     </td>
@@ -544,20 +538,6 @@ const LecturerInternshipPage = () => {
                       <div className="text-[11px] text-slate-400 truncate">
                         {item.position}
                       </div>
-                    </td>
-
-                    {/* Report Cycle (Chung toàn học kỳ) */}
-                    <td
-                      className="py-3.5 px-4 text-center whitespace-nowrap"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold"
-                        title={`Chu kỳ nộp nhật ký của học kỳ: ${item.reportCycle || termReportCycle || 1} tuần/lần`}
-                      >
-                        <Clock className="w-3.5 h-3.5 text-slate-500" />
-                        <span>{item.reportCycle || termReportCycle || 1} tuần/lần</span>
-                      </span>
                     </td>
 
                     {/* PASS PRETEST (Prompt Bổ Sung: Đảo trạng thái 2 chiều) */}
@@ -676,10 +656,21 @@ const LecturerInternshipPage = () => {
                           const allReasons = [];
                           if (!item.pretestPassed) allReasons.push('Chưa PASS PRETEST');
                           if (!item.reportFileSubmitted) allReasons.push('Chưa nộp file báo cáo thực tập');
+                          if (!item.diaryStatus?.isCompleted) {
+                            allReasons.push(
+                              item.diaryStatus?.missingWeeks?.length > 0
+                                ? `Còn thiếu nhật ký thực tập (tuần: ${item.diaryStatus.missingWeeks.join(', ')})`
+                                : 'Chưa hoàn thành đủ nhật ký thực tập theo chu kỳ'
+                            );
+                          }
                           if (!windowStatus.allowed) allReasons.push(windowStatus.reason);
 
                           const isEligibleToGrade =
-                            item.canGrade && windowStatus.allowed;
+                            Boolean(item.canGrade) &&
+                            item.pretestPassed &&
+                            item.reportFileSubmitted &&
+                            Boolean(item.diaryStatus?.isCompleted) &&
+                            windowStatus.allowed;
 
                           if (!hasScore) {
                             // Chấm điểm lần đầu (Prompt 2 - Requirement 4)

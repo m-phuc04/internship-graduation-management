@@ -125,21 +125,29 @@ const LecturerInternshipGradingModal = ({
 
   // ==========================================
   // Điều kiện chấm điểm TTDN:
-  // CHỈ CẦN đáp ứng đồng thời 2 điều kiện:
+  // Bắt buộc đáp ứng đầy đủ cả 3 điều kiện:
   // 1. Đã PASS PRETEST
   // 2. Đã nộp file báo cáo thực tập hợp lệ
-  // KHÔNG bắt buộc phải nộp đầy đủ nhật ký thực tập.
+  // 3. Đã hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp
   // ==========================================
   const isPretestPassed = Boolean(internship?.pretest?.isPassed || internship?.pretestPassed);
   const effectiveReport = reportFile || (internship?.reportFile?.fileUrl ? internship.reportFile : null);
   const hasReport = Boolean(effectiveReport?.fileUrl);
+  const isDiaryCompleted = Boolean(internship?.diaryStatus?.isCompleted);
   const isWindowAllowed = Boolean(windowStatus.allowed);
 
-  const canSubmitGrading = isPretestPassed && hasReport && isWindowAllowed;
+  const canSubmitGrading = isPretestPassed && hasReport && isDiaryCompleted && isWindowAllowed;
 
   const gradingBlockReasons = [];
   if (!isPretestPassed) gradingBlockReasons.push('Chưa đạt PASS PRETEST');
   if (!hasReport) gradingBlockReasons.push('Chưa nộp file báo cáo thực tập');
+  if (!isDiaryCompleted) {
+    gradingBlockReasons.push(
+      internship?.diaryStatus?.missingWeeks?.length > 0
+        ? `Chưa hoàn thành đủ nhật ký thực tập (Còn thiếu tuần: ${internship.diaryStatus.missingWeeks.join(', ')})`
+        : 'Chưa hoàn thành đủ nhật ký thực tập theo chu kỳ'
+    );
+  }
   if (!isWindowAllowed) gradingBlockReasons.push(windowStatus.reason || 'Ngoài thời hạn chấm điểm');
 
   const handleSubmit = async (e) => {
@@ -233,17 +241,32 @@ const LecturerInternshipGradingModal = ({
             </div>
           </div>
 
-          {/* PRETEST Status Pill */}
-          <div className="shrink-0 text-right">
+          {/* Status Pills */}
+          <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1.5 text-right">
             {isPretestPassed ? (
-              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-xs shadow-2xs">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] shadow-2xs">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                 <span>Đã PASS PRETEST</span>
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs">
-                <AlertCircle className="w-3.5 h-3.5 text-rose-500" />
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-[11px]">
+                <AlertCircle className="w-3 h-3 text-rose-500" />
                 <span>Chưa PASS PRETEST</span>
+              </span>
+            )}
+
+            {isDiaryCompleted ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] shadow-2xs">
+                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                <span>Đủ nhật ký</span>
+              </span>
+            ) : (
+              <span
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 border border-amber-200 font-bold text-[11px]"
+                title={internship?.diaryStatus?.missingWeeks?.length > 0 ? `Thiếu tuần: ${internship.diaryStatus.missingWeeks.join(', ')}` : 'Chưa đủ nhật ký'}
+              >
+                <AlertCircle className="w-3 h-3 text-amber-600" />
+                <span>Thiếu nhật ký{internship?.diaryStatus?.missingWeeks?.length > 0 ? ` (${internship.diaryStatus.missingWeeks.join(', ')})` : ''}</span>
               </span>
             )}
           </div>

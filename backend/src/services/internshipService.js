@@ -1022,13 +1022,23 @@ const getSupervisedInternships = async (
 
     const reportFileSubmitted = Boolean(reportFile?.fileUrl);
 
-    // Điều kiện chấm điểm TTDN: Chỉ cần đồng thời 2 điều kiện: PASS PRETEST & Đã nộp file báo cáo
+    // Điều kiện chấm điểm TTDN: Bắt buộc đáp ứng đầy đủ cả 3 điều kiện:
+    // 1. PASS PRETEST
+    // 2. Đã nộp file báo cáo thực tập hợp lệ
+    // 3. Đã hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp
     const gradingBlockReasons = [];
     if (!pretestPassed) {
       gradingBlockReasons.push("Chưa PASS PRETEST");
     }
     if (!reportFileSubmitted) {
       gradingBlockReasons.push("Chưa nộp file báo cáo thực tập");
+    }
+    if (!diaryStatus.isCompleted) {
+      gradingBlockReasons.push(
+        diaryStatus.missingWeeks?.length > 0
+          ? `Chưa hoàn thành đủ nhật ký thực tập (Còn thiếu tuần: ${diaryStatus.missingWeeks.join(", ")})`
+          : "Chưa hoàn thành đủ nhật ký thực tập theo chu kỳ"
+      );
     }
 
     const canGrade = gradingBlockReasons.length === 0;
