@@ -612,6 +612,7 @@ const getAllEvaluationsForTbm = async ({
       populate: { path: "userId", select: "fullName email phone" },
     })
     .populate("academicTermId")
+    .populate("publishHistory.performedBy", "fullName email")
     .lean();
 
   const internshipIds = internships.map((i) => i._id);
@@ -619,6 +620,7 @@ const getAllEvaluationsForTbm = async ({
     evaluationType: "INTERNSHIP",
     targetId: { $in: internshipIds },
   })
+    .populate("publishHistory.performedBy", "fullName email")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -632,11 +634,28 @@ const getAllEvaluationsForTbm = async ({
   let enriched = internships.map((intern) => {
     const ev = evalMap.get(intern._id.toString());
     const evalResult = computeInternshipEvaluationResult(intern, ev, intern.academicTermId);
+
+    // Determine 3-state score publish status (PUBLISHED, HIDDEN, UNPUBLISHED)
+    const isHidden = intern.scorePublishStatus === "HIDDEN" || ev?.scorePublishStatus === "HIDDEN";
+    const isPublished = !isHidden && Boolean(
+      intern.scorePublishStatus === "PUBLISHED" ||
+      ev?.scorePublishStatus === "PUBLISHED" ||
+      intern.isScorePublished ||
+      ev?.isScorePublished
+    );
+    const scorePublishStatus = isHidden ? "HIDDEN" : isPublished ? "PUBLISHED" : "UNPUBLISHED";
+
+    const publishHistory = (intern.publishHistory && intern.publishHistory.length > 0)
+      ? intern.publishHistory
+      : (ev?.publishHistory || []);
+
     return {
       ...intern,
       evaluation: ev || null,
       evaluationStatus: ev ? ev.status : "UNASSESSED",
-      isScorePublished: Boolean(intern.isScorePublished || ev?.isScorePublished),
+      isScorePublished: isPublished,
+      scorePublishStatus,
+      publishHistory,
       scorePublishedAt: intern.scorePublishedAt || ev?.publishedAt || null,
       evaluationResult: evalResult.result,
       isPass: evalResult.isPass,
@@ -652,6 +671,12 @@ const getAllEvaluationsForTbm = async ({
   if (status && status.trim()) {
     if (status === "UNASSESSED") {
       enriched = enriched.filter((i) => !i.evaluation);
+    } else if (status === "PUBLISHED") {
+      enriched = enriched.filter((i) => i.scorePublishStatus === "PUBLISHED");
+    } else if (status === "HIDDEN") {
+      enriched = enriched.filter((i) => i.scorePublishStatus === "HIDDEN");
+    } else if (status === "UNPUBLISHED") {
+      enriched = enriched.filter((i) => i.scorePublishStatus === "UNPUBLISHED");
     } else {
       enriched = enriched.filter((i) => i.evaluation?.status === status);
     }
@@ -823,7 +848,15 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
 
   const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
 
-  const isScorePublished = Boolean(internship.isScorePublished || evaluation?.isScorePublished);
+  const isHidden = internship.scorePublishStatus === "HIDDEN" || evaluation?.scorePublishStatus === "HIDDEN";
+  const isScorePublished = !isHidden && Boolean(
+    internship.scorePublishStatus === "PUBLISHED" ||
+    evaluation?.scorePublishStatus === "PUBLISHED" ||
+    internship.isScorePublished ||
+    evaluation?.isScorePublished
+  );
+  const scorePublishStatus = isHidden ? "HIDDEN" : isScorePublished ? "PUBLISHED" : "UNPUBLISHED";
+
   const hasLecturerGraded = Boolean(
     evaluation &&
     evaluation.score !== null &&
@@ -837,6 +870,7 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
       _id: evaluation._id,
       status: evaluation.status,
       isScorePublished: false,
+      scorePublishStatus,
       hasGraded: true,
       evaluatorRole: evaluation.evaluatorRole,
       evaluatorInfo: evaluation.evaluatorInfo,
@@ -858,12 +892,14 @@ const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
     internship: {
       ...(internship.toObject ? internship.toObject() : internship),
       isScorePublished,
+      scorePublishStatus,
       finalScore: isScorePublished ? internship.finalScore : null,
       score: isScorePublished ? internship.score : null,
     },
     request,
     evaluation: sanitizedEvaluation,
     isScorePublished,
+    scorePublishStatus,
     hasGraded: hasLecturerGraded,
     isEvaluationDeletedByTbm,
     evaluationResult: isScorePublished ? evalResult.result : (hasLecturerGraded ? "PENDING_PUBLISH" : evalResult.result),
@@ -1743,16 +1779,35 @@ const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser 
   }
 
   const now = new Date();
-  const wasAlreadyPublished = Boolean(evaluation.isScorePublished);
+  const wasAlreadyPublished = Boolean(
+    evaluation.scorePublishStatus === "PUBLISHED" ||
+    (!evaluation.scorePublishStatus && evaluation.isScorePublished) ||
+    (Array.isArray(evaluation.publishHistory) && evaluation.publishHistory.some((h) => h.action === "PUBLISH"))
+  );
+  const action = wasAlreadyPublished ? "REPUBLISH" : "PUBLISH";
 
   evaluation.isScorePublished = true;
+  evaluation.scorePublishStatus = "PUBLISHED";
   evaluation.publishedAt = now;
   evaluation.publishedBy = tbmUserId;
+  if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+  evaluation.publishHistory.push({
+    action,
+    performedBy: tbmUserId,
+    performedAt: now,
+  });
   await evaluation.save();
 
   internship.isScorePublished = true;
+  internship.scorePublishStatus = "PUBLISHED";
   internship.scorePublishedAt = now;
   internship.scorePublishedBy = tbmUserId;
+  if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+  internship.publishHistory.push({
+    action,
+    performedBy: tbmUserId,
+    performedAt: now,
+  });
   await internship.save();
 
   // Send Notification to Student ONLY when officially published and not a duplicate
@@ -1807,16 +1862,35 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
         continue;
       }
 
-      const wasAlreadyPublished = Boolean(evaluation.isScorePublished);
+      const wasAlreadyPublished = Boolean(
+        evaluation.scorePublishStatus === "PUBLISHED" ||
+        (!evaluation.scorePublishStatus && evaluation.isScorePublished) ||
+        (Array.isArray(evaluation.publishHistory) && evaluation.publishHistory.some((h) => h.action === "PUBLISH"))
+      );
+      const action = wasAlreadyPublished ? "REPUBLISH" : "PUBLISH";
 
       evaluation.isScorePublished = true;
+      evaluation.scorePublishStatus = "PUBLISHED";
       evaluation.publishedAt = now;
       evaluation.publishedBy = tbmUserId;
+      if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+      evaluation.publishHistory.push({
+        action,
+        performedBy: tbmUserId,
+        performedAt: now,
+      });
       await evaluation.save();
 
       internship.isScorePublished = true;
+      internship.scorePublishStatus = "PUBLISHED";
       internship.scorePublishedAt = now;
       internship.scorePublishedBy = tbmUserId;
+      if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+      internship.publishHistory.push({
+        action,
+        performedBy: tbmUserId,
+        performedAt: now,
+      });
       await internship.save();
 
       // Notify Student ONLY when not already published (prevent duplicate notifications)
@@ -1848,10 +1922,201 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
   };
 };
 
+// ==========================================
+// TBM: Hide Published Internship Score
+// ==========================================
+const hideInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
+  const internship = await Internship.findById(id).populate("studentId");
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  const evaluation = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (!evaluation) {
+    throw new AppError("Hồ sơ này chưa có phiếu đánh giá", 400);
+  }
+
+  const isCurrentlyPublished = Boolean(
+    internship.scorePublishStatus === "PUBLISHED" ||
+    (!internship.scorePublishStatus && (internship.isScorePublished || evaluation.isScorePublished))
+  );
+
+  if (!isCurrentlyPublished) {
+    throw new AppError("Chỉ có thể ẩn điểm của những sinh viên đã được công bố điểm.", 400);
+  }
+
+  const now = new Date();
+  const cleanReason = reason ? String(reason).trim() : null;
+
+  evaluation.isScorePublished = false;
+  evaluation.scorePublishStatus = "HIDDEN";
+  if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+  evaluation.publishHistory.push({
+    action: "HIDE",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await evaluation.save();
+
+  internship.isScorePublished = false;
+  internship.scorePublishStatus = "HIDDEN";
+  if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+  internship.publishHistory.push({
+    action: "HIDE",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await internship.save();
+
+  return {
+    internship,
+    evaluation,
+    message: "Đã ẩn điểm đánh giá thành công",
+  };
+};
+
+// ==========================================
+// TBM: Hide Bulk Internship Scores
+// ==========================================
+const hideInternshipScoresBulk = async ({ internshipIds, tbmUserId, reason = "" }) => {
+  if (!Array.isArray(internshipIds) || internshipIds.length === 0) {
+    throw new AppError("Vui lòng chọn ít nhất một hồ sơ thực tập để ẩn điểm", 400);
+  }
+
+  const now = new Date();
+  const cleanReason = reason ? String(reason).trim() : null;
+  let hiddenCount = 0;
+  let skippedCount = 0;
+
+  for (const id of internshipIds) {
+    try {
+      const internship = await Internship.findById(id);
+      if (!internship) {
+        skippedCount++;
+        continue;
+      }
+      const evaluation = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      });
+      if (!evaluation) {
+        skippedCount++;
+        continue;
+      }
+
+      const isCurrentlyPublished = Boolean(
+        internship.scorePublishStatus === "PUBLISHED" ||
+        (!internship.scorePublishStatus && (internship.isScorePublished || evaluation.isScorePublished))
+      );
+
+      if (!isCurrentlyPublished) {
+        skippedCount++;
+        continue;
+      }
+
+      evaluation.isScorePublished = false;
+      evaluation.scorePublishStatus = "HIDDEN";
+      if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+      evaluation.publishHistory.push({
+        action: "HIDE",
+        performedBy: tbmUserId,
+        performedAt: now,
+        reason: cleanReason,
+      });
+      await evaluation.save();
+
+      internship.isScorePublished = false;
+      internship.scorePublishStatus = "HIDDEN";
+      if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+      internship.publishHistory.push({
+        action: "HIDE",
+        performedBy: tbmUserId,
+        performedAt: now,
+        reason: cleanReason,
+      });
+      await internship.save();
+
+      hiddenCount++;
+    } catch {
+      skippedCount++;
+    }
+  }
+
+  return {
+    hiddenCount,
+    skippedCount,
+    totalRequested: internshipIds.length,
+  };
+};
+
+// ==========================================
+// TBM: Republish Single Internship Score
+// ==========================================
+const republishInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
+  const internship = await Internship.findById(id).populate("studentId");
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  const evaluation = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (!evaluation || evaluation.score === null || evaluation.score === undefined || isNaN(evaluation.score)) {
+    throw new AppError("Hồ sơ này chưa có điểm đánh giá, không thể công bố.", 400);
+  }
+
+  const now = new Date();
+  const cleanReason = reason ? String(reason).trim() : null;
+
+  evaluation.isScorePublished = true;
+  evaluation.scorePublishStatus = "PUBLISHED";
+  evaluation.publishedAt = now;
+  evaluation.publishedBy = tbmUserId;
+  if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+  evaluation.publishHistory.push({
+    action: "REPUBLISH",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await evaluation.save();
+
+  internship.isScorePublished = true;
+  internship.scorePublishStatus = "PUBLISHED";
+  internship.scorePublishedAt = now;
+  internship.scorePublishedBy = tbmUserId;
+  if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+  internship.publishHistory.push({
+    action: "REPUBLISH",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await internship.save();
+
+  // "Không gửi thông báo công bố điểm mới khi chỉ thực hiện thao tác hiện lại điểm"
+  return {
+    internship,
+    evaluation,
+    message: "Đã công bố lại điểm đánh giá thành công",
+  };
+};
+
 export default {
   gradeInternshipByLecturer,
   publishInternshipScore,
   publishInternshipScoresBulk,
+  hideInternshipScore,
+  hideInternshipScoresBulk,
+  republishInternshipScore,
   getCompanyInternships,
   createOrUpdateEvaluation,
   getEvaluationById,

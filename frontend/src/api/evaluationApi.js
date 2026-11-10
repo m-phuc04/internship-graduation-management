@@ -41,6 +41,18 @@ export const evaluationApi = {
   // TBM: Publish bulk internship scores
   tbmPublishScoresBulk: (data) =>
     axiosClient.post('/evaluations/tbm/publish-bulk', data),
+
+  // TBM: Hide published internship score (single)
+  tbmHideScore: (id, data) =>
+    axiosClient.post(`/evaluations/tbm/hide/${id}`, data),
+
+  // TBM: Hide published internship scores (bulk)
+  tbmHideScoresBulk: (data) =>
+    axiosClient.post('/evaluations/tbm/hide-bulk', data),
+
+  // TBM: Republish hidden internship score (single)
+  tbmRepublishScore: (id, data) =>
+    axiosClient.post(`/evaluations/tbm/republish/${id}`, data),
 };
 
 export default evaluationApi;

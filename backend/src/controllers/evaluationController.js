@@ -386,9 +386,10 @@ const publishScore = async (req, res, next) => {
 const publishScoresBulk = async (req, res, next) => {
   try {
     const { internshipIds } = req.body;
+    const userId = req.user.userId || req.user._id || req.user.id;
     const result = await evaluationService.publishInternshipScoresBulk({
       internshipIds,
-      tbmUserId: req.user._id,
+      tbmUserId: userId,
     });
     res.status(200).json({
       success: true,
@@ -400,10 +401,75 @@ const publishScoresBulk = async (req, res, next) => {
   }
 };
 
+// TBM: Hide Published Score
+const hideScore = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.userId || req.user._id || req.user.id;
+    const result = await evaluationService.hideInternshipScore({
+      id,
+      tbmUserId: userId,
+      reason,
+    });
+    res.status(200).json({
+      success: true,
+      message: "Ẩn điểm đánh giá thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM: Hide Bulk Scores
+const hideScoresBulk = async (req, res, next) => {
+  try {
+    const { internshipIds, reason } = req.body;
+    const userId = req.user.userId || req.user._id || req.user.id;
+    const result = await evaluationService.hideInternshipScoresBulk({
+      internshipIds,
+      tbmUserId: userId,
+      reason,
+    });
+    res.status(200).json({
+      success: true,
+      message: `Đã ẩn điểm cho ${result.hiddenCount} sinh viên`,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// TBM: Republish Score
+const republishScore = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const userId = req.user.userId || req.user._id || req.user.id;
+    const result = await evaluationService.republishInternshipScore({
+      id,
+      tbmUserId: userId,
+      reason,
+    });
+    res.status(200).json({
+      success: true,
+      message: "Công bố lại điểm đánh giá thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   gradeInternship,
   publishScore,
   publishScoresBulk,
+  hideScore,
+  hideScoresBulk,
+  republishScore,
   getCompanyInternships,
   createOrUpdateEvaluation,
   getEvaluationById,

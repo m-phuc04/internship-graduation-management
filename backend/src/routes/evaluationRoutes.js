@@ -88,6 +88,30 @@ router.post(
   evaluationController.publishScoresBulk,
 );
 
+// TBM: Hide Published Score
+router.post(
+  "/tbm/hide/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.hideScore,
+);
+
+// TBM: Hide Bulk Scores
+router.post(
+  "/tbm/hide-bulk",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.hideScoresBulk,
+);
+
+// TBM: Republish Score
+router.post(
+  "/tbm/republish/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.republishScore,
+);
+
 // TBM: Delete evaluation result
 router.delete(
   "/tbm/:id",

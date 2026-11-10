@@ -155,6 +155,12 @@ const internshipSchema = new mongoose.Schema(
       default: false,
     },
 
+    scorePublishStatus: {
+      type: String,
+      enum: ["UNPUBLISHED", "PUBLISHED", "HIDDEN"],
+      default: "UNPUBLISHED",
+    },
+
     scorePublishedAt: {
       type: Date,
       default: null,
@@ -165,6 +171,31 @@ const internshipSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
+    // Lịch sử thao tác công bố, ẩn, công bố lại điểm
+    publishHistory: [
+      {
+        action: {
+          type: String,
+          enum: ["PUBLISH", "HIDE", "REPUBLISH"],
+          required: true,
+        },
+        performedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        performedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        reason: {
+          type: String,
+          default: null,
+          trim: true,
+        },
+      },
+    ],
 
     // File báo cáo thực tập doanh nghiệp (Yêu cầu Prompt 2)
     reportFile: {
