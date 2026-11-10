@@ -246,35 +246,35 @@ const StudentReportPage = () => {
     ).length;
   }, [reportMap]);
 
-  // Sorting state (Default chronological 1 -> N)
-  const [sortByPendingFirst, setSortByPendingFirst] = useState(false);
+  // Sorting state (Mặc định: đưa các tuần đã nộp xuống cuối, tuần chưa nộp lên đầu)
+  const [sortByChronological, setSortByChronological] = useState(false);
 
   const displayedWeeks = useMemo(() => {
-    if (!sortByPendingFirst) return weeks;
-    return [...weeks].sort((a, b) => {
-      const getPriority = (item) => {
-        const r = reportMap[item.weekNumber];
-        if (!r) {
-          const deadline = item.defaultEndDate ? new Date(item.defaultEndDate) : null;
-          if (deadline) deadline.setHours(23, 59, 59, 999);
-          const isEnded = deadline ? new Date().getTime() > deadline.getTime() : false;
-          if (isEnded) return 6; // Đã kết thúc
-          return 1; // Cần làm -> ưu tiên lên đầu
-        }
-        if (r.status === 'NEEDS_REVISION') return 1;
-        if (r.status === 'WAITING_STUDENT_2') return 2;
-        if (r.status === 'DRAFT') return 3;
-        if (['SUBMITTED', 'REVIEWING'].includes(r.status)) return 4;
-        if (r.status === 'APPROVED') return 5;
-        return 4;
-      };
+    if (sortByChronological) {
+      // Thứ tự tuần từ 1 -> N
+      return [...weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+    }
 
-      const pA = getPriority(a);
-      const pB = getPriority(b);
-      if (pA !== pB) return pA - pB;
+    // Mặc định: Tuần chưa nộp lên đầu, tuần đã nộp đi xuống cuối
+    return [...weeks].sort((a, b) => {
+      const isSubmittedA = Boolean(
+        reportMap[a.weekNumber] &&
+        ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(reportMap[a.weekNumber]?.status)
+      );
+      const isSubmittedB = Boolean(
+        reportMap[b.weekNumber] &&
+        ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(reportMap[b.weekNumber]?.status)
+      );
+
+      // Chưa nộp (false) lên trước, Đã nộp (true) xuống cuối
+      if (isSubmittedA !== isSubmittedB) {
+        return isSubmittedA ? 1 : -1;
+      }
+
+      // Trong cùng nhóm: sắp xếp tăng dần theo số tuần (1 -> N)
       return a.weekNumber - b.weekNumber;
     });
-  }, [weeks, sortByPendingFirst, reportMap]);
+  }, [weeks, sortByChronological, reportMap]);
 
   const [autoOpenFileForCreate, setAutoOpenFileForCreate] = useState(false);
 
@@ -499,18 +499,23 @@ const StudentReportPage = () => {
 
             <button
               type="button"
-              onClick={() => setSortByPendingFirst(!sortByPendingFirst)}
+              onClick={() => setSortByChronological(!sortByChronological)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
-                sortByPendingFirst
+                !sortByChronological
                   ? 'bg-blue-50 border-blue-200 text-[#102d7d]'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
+              title={
+                !sortByChronological
+                  ? 'Đang ưu tiên tuần chưa nộp lên đầu, tuần đã nộp xuống cuối. Bấm để đổi sang thứ tự tuần 1 → N'
+                  : 'Đang sắp xếp theo thứ tự tuần 1 → N. Bấm để đưa tuần đã nộp xuống cuối'
+              }
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span>
-                {sortByPendingFirst
-                  ? 'Ưu tiên tuần cần làm lên đầu'
-                  : 'Sắp xếp theo thứ tự tuần (1 → N)'}
+                {!sortByChronological
+                  ? 'Tuần đã nộp ở cuối (Mặc định)'
+                  : 'Thứ tự tuần (1 → N)'}
               </span>
             </button>
           </div>
