@@ -1516,7 +1516,7 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
         const notifTitle = `Sinh viên ${studentName} đã nộp 1 tài liệu`;
         const notifMessage = `Sinh viên ${studentName}${studentCode} đã nộp file tài liệu thực tập: "${file.originalname}".`;
         const targetDocId = doc?._id || internship._id;
-        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${targetDocId}&search=${student.studentCode || ""}`;
+        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${targetDocId}`;
 
         await notificationService.createNotification({
           recipientId: supervisor.userId._id,

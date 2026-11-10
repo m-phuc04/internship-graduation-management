@@ -27,6 +27,7 @@ const createReport = async ({
   weekEndDate,
   monthNumber,
   file,
+  fileCategory,
   status = "SUBMITTED",
 }) => {
   const student = await Student.findOne({ userId }).populate({
@@ -185,6 +186,7 @@ const createReport = async ({
     weekEndDate: weekEndDate ? new Date(weekEndDate) : null,
     monthNumber: validMonth,
     file: file || null,
+    fileCategory: file?.category || fileCategory || (reportType === "WEEKLY" ? "Báo cáo tuần" : null),
     status: initialStatus,
     student2Status: initialStudent2Status,
     submittedAt: initialStatus === "SUBMITTED" || initialStatus === "WAITING_STUDENT_2" ? new Date() : null,
@@ -239,6 +241,7 @@ const updateReport = async ({
   title,
   content,
   file,
+  fileCategory,
   status = "SUBMITTED",
   weekStartDate,
   weekEndDate,
@@ -316,7 +319,12 @@ const updateReport = async ({
 
   if (title !== undefined) report.title = title.trim();
   if (content !== undefined) report.content = content;
-  if (file !== undefined && file !== null) report.file = file;
+  if (file !== undefined && file !== null) {
+    report.file = file;
+    report.fileCategory = file.category || fileCategory || report.fileCategory || null;
+  } else if (fileCategory !== undefined) {
+    report.fileCategory = fileCategory;
+  }
   if (weekStartDate !== undefined) report.weekStartDate = weekStartDate ? new Date(weekStartDate) : null;
   if (weekEndDate !== undefined) report.weekEndDate = weekEndDate ? new Date(weekEndDate) : null;
 
@@ -574,7 +582,7 @@ const getReportsForStudent = async (userId) => {
 // ====================
 const getReportsForLecturer = async (
   userId,
-  { page = 1, limit = 10, search = "", status = "", reportType = "" } = {},
+  { page = 1, limit = 10, search = "", status = "", reportType = "", fileCategory = "" } = {},
 ) => {
   const lecturer = await Lecturer.findOne({ userId }).populate({
     path: "userId",
@@ -627,6 +635,43 @@ const getReportsForLecturer = async (
     query.reportType = reportType.trim();
   }
 
+  const andConditions = [];
+
+  // Lọc theo Phân loại tài liệu đính kèm (Metadata thực tế trong DB)
+  if (fileCategory && fileCategory.trim()) {
+    const cat = fileCategory.trim();
+    if (cat === "Báo cáo tuần") {
+      // Đối với Báo cáo tuần: bao gồm các nhật ký có file đính kèm là Báo cáo tuần,
+      // hoặc các bản ghi nhật ký tuần (reportType: "WEEKLY") chưa bị gán loại tài liệu khác
+      andConditions.push({
+        $or: [
+          { "file.category": "Báo cáo tuần" },
+          { fileCategory: "Báo cáo tuần" },
+          { category: "Báo cáo tuần" },
+          {
+            reportType: "WEEKLY",
+            $or: [
+              { file: null },
+              { "file.category": null },
+              { "file.category": "Báo cáo tuần" },
+              { "file.category": { $exists: false } },
+              { "file.fileUrl": null },
+            ],
+          },
+        ],
+      });
+    } else {
+      andConditions.push({
+        "file.fileUrl": { $ne: null },
+        $or: [
+          { "file.category": cat },
+          { fileCategory: cat },
+          { category: cat },
+        ],
+      });
+    }
+  }
+
   if (search && search.trim()) {
     const searchRegex = { $regex: search.trim(), $options: "i" };
     const matchingUsers = await User.find({ fullName: searchRegex }).select("_id");
@@ -637,11 +682,17 @@ const getReportsForLecturer = async (
       ],
     }).select("_id");
 
-    query.$or = [
-      { studentId: { $in: matchingStudents.map((s) => s._id) } },
-      { secondStudentId: { $in: matchingStudents.map((s) => s._id) } },
-      { title: searchRegex },
-    ];
+    andConditions.push({
+      $or: [
+        { studentId: { $in: matchingStudents.map((s) => s._id) } },
+        { secondStudentId: { $in: matchingStudents.map((s) => s._id) } },
+        { title: searchRegex },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    query.$and = andConditions;
   }
 
   const skip = (Number(page) - 1) * Number(limit);

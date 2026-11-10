@@ -19,6 +19,17 @@ import {
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.zip', '.rar'];
 
+const DOCUMENT_CATEGORIES = [
+  'Báo cáo thực tập',
+  'Báo cáo tuần',
+  'Đề cương thực tập',
+  'Phiếu khảo sát',
+  'Báo cáo tiến độ',
+  'Báo cáo tổng kết',
+  'Tài liệu minh chứng',
+  'Khác',
+];
+
 const formatDateForInput = (d) => {
   if (!d) return '';
   const date = new Date(d);
@@ -45,6 +56,7 @@ const StudentReportModal = ({
   const [content, setContent] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [existingFile, setExistingFile] = useState(null);
+  const [fileCategory, setFileCategory] = useState('Báo cáo tuần');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -60,6 +72,7 @@ const StudentReportModal = ({
         setTitle(editingReport.title || `Nhật ký tuần ${editingReport.weekNumber || 1}`);
         setContent(editingReport.content || '');
         setExistingFile(editingReport.file || null);
+        setFileCategory(editingReport.file?.category || editingReport.fileCategory || 'Báo cáo tuần');
         setSelectedFile(null);
       } else if (targetWeek) {
         setWeekNumber(targetWeek.weekNumber);
@@ -68,6 +81,7 @@ const StudentReportModal = ({
         setTitle(`Nhật ký tuần ${targetWeek.weekNumber}`);
         setContent('');
         setExistingFile(null);
+        setFileCategory('Báo cáo tuần');
         setSelectedFile(null);
       } else {
         setWeekNumber(1);
@@ -76,6 +90,7 @@ const StudentReportModal = ({
         setTitle('Nhật ký tuần 1');
         setContent('');
         setExistingFile(null);
+        setFileCategory('Báo cáo tuần');
         setSelectedFile(null);
       }
       setError('');
@@ -187,6 +202,10 @@ const StudentReportModal = ({
 
       if (selectedFile) {
         formData.append('file', selectedFile);
+      }
+      if (selectedFile || existingFile) {
+        formData.append('category', fileCategory);
+        formData.append('fileCategory', fileCategory);
       }
 
       if (editingReport) {
@@ -356,29 +375,48 @@ const StudentReportModal = ({
           </label>
 
           {selectedFile || existingFile ? (
-            <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0">
-                  <FileCheck className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-[#123891] truncate">
-                    {selectedFile ? selectedFile.name : existingFile.originalName}
+            <div className="space-y-3">
+              <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-[#123891] text-white flex items-center justify-center shrink-0">
+                    <FileCheck className="w-4 h-4" />
                   </div>
-                  <div className="text-[10px] text-[#123891] font-mono">
-                    {selectedFile ? formatFileSize(selectedFile.size) : formatFileSize(existingFile.size)}
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-[#123891] truncate">
+                      {selectedFile ? selectedFile.name : existingFile.originalName}
+                    </div>
+                    <div className="text-[10px] text-[#123891] font-mono">
+                      {selectedFile ? formatFileSize(selectedFile.size) : formatFileSize(existingFile.size)}
+                    </div>
                   </div>
                 </div>
+
+                <button
+                  type="button"
+                  onClick={handleRemoveFile}
+                  className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
+                  title="Gỡ bỏ file"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={handleRemoveFile}
-                className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer"
-                title="Gỡ bỏ file"
-              >
-                <X className="w-4 h-4" />
-              </button>
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                  Phân loại tài liệu đính kèm:
+                </label>
+                <select
+                  value={fileCategory}
+                  onChange={(e) => setFileCategory(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                >
+                  {DOCUMENT_CATEGORIES.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           ) : (
             <div

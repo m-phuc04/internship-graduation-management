@@ -59,10 +59,22 @@ const internshipReportSchema = new mongoose.Schema(
         default: null,
       },
 
+      category: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+
       uploadedAt: {
         type: Date,
         default: null,
       },
+    },
+
+    fileCategory: {
+      type: String,
+      trim: true,
+      default: null,
     },
 
     weekNumber: {

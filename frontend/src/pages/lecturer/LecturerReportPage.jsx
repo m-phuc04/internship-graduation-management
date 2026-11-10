@@ -27,9 +27,16 @@ const STATUS_OPTIONS = [
   { value: 'REJECTED', label: 'Yêu cầu chỉnh sửa' },
 ];
 
-const TYPE_OPTIONS = [
-  { value: '', label: 'Tất cả nhật ký' },
-  { value: 'WEEKLY', label: 'Nhật ký theo tuần' },
+const DOCUMENT_CATEGORY_OPTIONS = [
+  { value: '', label: 'Tất cả phân loại' },
+  { value: 'Báo cáo thực tập', label: 'Báo cáo thực tập' },
+  { value: 'Báo cáo tuần', label: 'Báo cáo tuần' },
+  { value: 'Đề cương thực tập', label: 'Đề cương thực tập' },
+  { value: 'Phiếu khảo sát', label: 'Phiếu khảo sát' },
+  { value: 'Báo cáo tiến độ', label: 'Báo cáo tiến độ' },
+  { value: 'Báo cáo tổng kết', label: 'Báo cáo tổng kết' },
+  { value: 'Tài liệu minh chứng', label: 'Tài liệu minh chứng' },
+  { value: 'Khác', label: 'Khác' },
 ];
 
 const REPORT_STATUS_CONFIG = {
@@ -52,7 +59,7 @@ const LecturerReportPage = () => {
   // Search & Filter
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [reportType, setReportType] = useState('');
+  const [fileCategory, setFileCategory] = useState('');
   const [page, setPage] = useState(1);
 
   // Modal
@@ -83,7 +90,7 @@ const LecturerReportPage = () => {
         limit: 10,
         search,
         status,
-        reportType,
+        fileCategory,
       });
 
       if (res.success) {
@@ -95,7 +102,7 @@ const LecturerReportPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, status, reportType, showToast]);
+  }, [page, search, status, fileCategory, showToast]);
 
   useEffect(() => {
     fetchReports();
@@ -151,7 +158,7 @@ const LecturerReportPage = () => {
         />
       </div>
 
-      {/* 2. Hàng dưới: Thanh công cụ lọc trạng thái và loại báo cáo tách rời ở hàng dưới */}
+      {/* 2. Hàng dưới: Thanh công cụ gồm 2 bộ lọc: Trạng thái và Phân loại tài liệu */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <select
@@ -169,11 +176,11 @@ const LecturerReportPage = () => {
 
         <div>
           <select
-            value={reportType}
-            onChange={(e) => handleFilterChange(setReportType, e.target.value)}
+            value={fileCategory}
+            onChange={(e) => handleFilterChange(setFileCategory, e.target.value)}
             className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer shadow-2xs"
           >
-            {TYPE_OPTIONS.map((opt) => (
+            {DOCUMENT_CATEGORY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -247,9 +254,14 @@ const LecturerReportPage = () => {
                           {report.internshipId?.companyId?.name || 'Doanh nghiệp'}
                         </span>
                         {report.file?.originalName && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-[130px]">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-[220px]">
                             <Paperclip className="w-3 h-3 shrink-0" />
                             <span className="truncate">{report.file.originalName}</span>
+                            {(report.file?.category || report.fileCategory) && (
+                              <span className="ml-1 text-[9px] font-normal px-1.5 py-0.2 bg-blue-100 text-[#0d2a75] rounded-sm shrink-0">
+                                {report.file?.category || report.fileCategory}
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>

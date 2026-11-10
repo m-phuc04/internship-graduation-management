@@ -16,7 +16,6 @@ import {
   AlertCircle,
   ExternalLink,
   Download,
-  Eye,
   RefreshCw,
 } from 'lucide-react';
 
@@ -46,7 +45,6 @@ const LecturerInternshipGradingModal = ({
   const [reportLoading, setReportLoading] = useState(false);
   const [reportFile, setReportFile] = useState(null);
   const [reportError, setReportError] = useState('');
-  const [showInlinePreview, setShowInlinePreview] = useState(false);
 
   const isEditing = Boolean(
     internship?.evaluation &&
@@ -68,7 +66,6 @@ const LecturerInternshipGradingModal = ({
       setReportFile(null);
       setReportLoading(false);
       setReportError('');
-      setShowInlinePreview(false);
       return;
     }
 
@@ -300,90 +297,74 @@ const LecturerInternshipGradingModal = ({
           </div>
 
           {/* Report Details & Actions */}
-          {hasReport && effectiveReport ? (
-            <div className="space-y-3">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-9 h-9 rounded-xl bg-blue-100 text-[#123891] flex items-center justify-center shrink-0">
-                    <FileText className="w-4 h-4" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="font-bold text-slate-900 text-xs truncate" title={effectiveReport.originalName || effectiveReport.fileName}>
-                      {effectiveReport.originalName || effectiveReport.fileName || 'Báo cáo thực tập doanh nghiệp'}
+          {hasReport && effectiveReport ? (() => {
+            const fileName = effectiveReport.originalName || effectiveReport.fileName || '';
+            const isPdf = Boolean(fileName.toLowerCase().endsWith('.pdf') || (effectiveReport.fileUrl || '').toLowerCase().endsWith('.pdf'));
+
+            return (
+              <div className="space-y-3">
+                <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-blue-100 text-[#123891] flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4" />
                     </div>
-                    <div className="text-[10px] text-slate-500 mt-0.5 flex items-center gap-2">
-                      {effectiveReport.fileSize ? (
-                        <span>Dung lượng: <strong>{formatFileSize(effectiveReport.fileSize)}</strong></span>
-                      ) : null}
-                      {effectiveReport.uploadedAt ? (
-                        <>
-                          <span>•</span>
-                          <span>Nộp lúc: {formatDateVN(effectiveReport.uploadedAt, true)}</span>
-                        </>
-                      ) : null}
+                    <div className="min-w-0">
+                      <div className="font-bold text-slate-900 text-xs truncate" title={fileName || 'Báo cáo thực tập doanh nghiệp'}>
+                        {fileName || 'Báo cáo thực tập doanh nghiệp'}
+                      </div>
+                      <div className="text-[10px] text-slate-500 mt-0.5 flex flex-wrap items-center gap-2">
+                        {effectiveReport.fileSize ? (
+                          <span>Dung lượng: <strong>{formatFileSize(effectiveReport.fileSize)}</strong></span>
+                        ) : null}
+                        {effectiveReport.uploadedAt ? (
+                          <>
+                            <span>•</span>
+                            <span>Nộp lúc: {formatDateVN(effectiveReport.uploadedAt, true)}</span>
+                          </>
+                        ) : null}
+                        {!isPdf && (
+                          <>
+                            <span>•</span>
+                            <span className="text-amber-700 font-medium">(File Word - Tải về để mở)</span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* View / Download Actions */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => setShowInlinePreview((prev) => !prev)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs shadow-2xs transition cursor-pointer"
-                    title="Xem trước file báo cáo trực tiếp trong cửa sổ này"
-                  >
-                    <Eye className="w-3.5 h-3.5" />
-                    <span>{showInlinePreview ? 'Thu gọn' : 'Xem báo cáo'}</span>
-                  </button>
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isPdf && (
+                      <a
+                        href={getFileUrl(effectiveReport.fileUrl)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
+                        title="Mở xem file PDF trong tab trình duyệt mới"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Xem ở tab mới</span>
+                      </a>
+                    )}
 
-                  <a
-                    href={getFileUrl(effectiveReport.fileUrl)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
-                    title="Mở file báo cáo trong tab trình duyệt mới"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Mở tab mới</span>
-                  </a>
-
-                  <a
-                    href={getFileUrl(effectiveReport.fileUrl)}
-                    download={effectiveReport.originalName || 'BaoCaoThucTap.pdf'}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition"
-                    title="Tải file báo cáo về máy tính"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Tải về</span>
-                  </a>
+                    <a
+                      href={getFileUrl(effectiveReport.fileUrl)}
+                      download={fileName || 'BaoCaoThucTap'}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition shadow-2xs ${
+                        isPdf
+                          ? 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          : 'bg-[#123891] hover:bg-[#102d7d] text-white'
+                      }`}
+                      title="Tải file báo cáo về máy tính"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>Tải về</span>
+                    </a>
+                  </div>
                 </div>
               </div>
-
-              {/* Inline PDF Preview */}
-              {showInlinePreview && (
-                <div className="p-3 bg-slate-900 rounded-2xl border border-slate-700 space-y-2 animate-in fade-in-50">
-                  <div className="flex items-center justify-between text-white text-xs px-1">
-                    <span className="font-semibold truncate">Xem trước: {effectiveReport.originalName || effectiveReport.fileName}</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowInlinePreview(false)}
-                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] cursor-pointer"
-                    >
-                      Đóng xem trước
-                    </button>
-                  </div>
-                  <div className="w-full h-80 bg-slate-100 rounded-xl overflow-hidden shadow-inner">
-                    <iframe
-                      src={getFileUrl(effectiveReport.fileUrl)}
-                      title="Xem trước báo cáo thực tập"
-                      className="w-full h-full border-0"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
+            );
+          })() : (
             <div className="p-3 bg-amber-50/60 rounded-xl border border-amber-200 text-amber-900 flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
               <div className="leading-relaxed">

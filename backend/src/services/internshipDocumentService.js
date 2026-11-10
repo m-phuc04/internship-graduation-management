@@ -1146,7 +1146,7 @@ export const createStudentSubmission = async ({
         const notifTitle = `Sinh viên ${studentName} đã nộp 1 tài liệu`;
         const notifMessage = `Sinh viên ${studentName}${studentCode} đã nộp file tài liệu thực tập: "${file.originalname}".`;
 
-        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${doc._id}&search=${student.studentCode || ""}`;
+        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${doc._id}`;
 
         await notificationService.createNotification({
           recipientId: supervisor.userId._id,

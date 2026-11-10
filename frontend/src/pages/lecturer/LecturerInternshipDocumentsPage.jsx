@@ -183,15 +183,6 @@ const LecturerInternshipDocumentsPage = () => {
       setSubmissionViewMode('FILES');
     }
 
-    const searchParam =
-      searchParams.get('search') ||
-      location.state?.search ||
-      location.state?.studentCode ||
-      searchParams.get('studentCode');
-    if (searchParam) {
-      setSearch(searchParam);
-    }
-
     const internshipIdParam = searchParams.get('internshipId') || location.state?.internshipId;
     if (internshipIdParam) {
       setFilterInternshipId(internshipIdParam);

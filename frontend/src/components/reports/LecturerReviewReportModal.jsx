@@ -124,8 +124,13 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
                   <div className="font-semibold text-slate-900 text-xs truncate">
                     {report.file.originalName || report.file.fileName || 'Tài liệu báo cáo'}
                   </div>
-                  <div className="text-[10px] text-slate-400">
-                    File đính kèm chính thức
+                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
+                    <span>File đính kèm</span>
+                    {(report.file?.category || report.fileCategory) && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-[#0d2a75] font-semibold text-[10px]">
+                        Phân loại: {report.file?.category || report.fileCategory}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

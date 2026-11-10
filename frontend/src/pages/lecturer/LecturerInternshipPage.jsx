@@ -498,7 +498,7 @@ const LecturerInternshipPage = () => {
                   <th className="py-3.5 px-4 text-center">PASS PRETEST</th>
                   <th className="py-3.5 px-4 text-center">Nhật ký</th>
                   <th className="py-3.5 px-4 text-center">Báo cáo</th>
-                  <th className="py-3.5 px-4">Điểm ĐG</th>
+                  <th className="py-3.5 px-4">Điểm</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
                   <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
                 </tr>
