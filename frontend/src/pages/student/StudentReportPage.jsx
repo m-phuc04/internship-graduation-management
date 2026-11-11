@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import reportApi from '../../api/reportApi';
 import internshipApi from '../../api/internshipApi';
 import { useToast } from '../../context/ToastContext';
@@ -20,11 +21,13 @@ import {
   User,
   Users,
   CheckCircle2,
+  Check,
   Clock,
   AlertTriangle,
   FileText,
   Paperclip,
   Download,
+  ExternalLink,
   Eye,
   Edit3,
   ShieldCheck,
@@ -32,40 +35,40 @@ import {
   RefreshCw,
   Award,
   ChevronRight,
+  Lock,
+  PlusCircle,
+  ArrowUpDown,
 } from 'lucide-react';
 
-const DEFAULT_WEEKS_COUNT = 12;
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
 
-/**
- * Creates 12 default weeks for internship.
- * If internship start date is available, provides suggested 7-day ranges.
- * Students can freely enter or adjust dates when writing/editing reports.
- */
-const generateDefaultWeeks = (startDateStr) => {
-  const weeks = [];
-  const start = startDateStr ? new Date(startDateStr) : null;
-  const hasValidStart = start && !isNaN(start.getTime());
+const isWeekEnded = (date) => {
+  if (!date) return false;
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return false;
+  const endOfDay = new Date(d);
+  endOfDay.setHours(23, 59, 59, 999);
+  return new Date().getTime() > endOfDay.getTime();
+};
 
-  for (let i = 1; i <= DEFAULT_WEEKS_COUNT; i++) {
-    let defaultStart = null;
-    let defaultEnd = null;
-
-    if (hasValidStart) {
-      defaultStart = new Date(start);
-      defaultStart.setDate(defaultStart.getDate() + (i - 1) * 7);
-
-      defaultEnd = new Date(defaultStart);
-      defaultEnd.setDate(defaultEnd.getDate() + 6);
-    }
-
-    weeks.push({
-      weekNumber: i,
-      defaultStartDate: defaultStart,
-      defaultEndDate: defaultEnd,
-    });
+const getDurationWeeks = (internship) => {
+  if (!internship) return 0;
+  if (internship?.durationInWeeks && (internship.durationInWeeks === 10 || internship.durationInWeeks === 12)) {
+    return internship.durationInWeeks;
   }
-
-  return weeks;
+  if (internship?.startDate && internship?.endDate) {
+    const diff = new Date(internship.endDate) - new Date(internship.startDate);
+    const weeks = Math.round(diff / (1000 * 60 * 60 * 24 * 7));
+    if (weeks === 10) return 10;
+    if (weeks === 12) return 12;
+  }
+  return 12;
 };
 
 const StudentReportPage = () => {
@@ -146,11 +149,6 @@ const StudentReportPage = () => {
 
   const hasStudent2 = !!internship?.secondStudentId;
 
-  // Always default to 12 weeks
-  const weeks = useMemo(() => {
-    return generateDefaultWeeks(internship?.startDate);
-  }, [internship?.startDate]);
-
   // Map existing reports by weekNumber
   const reportMap = useMemo(() => {
     const map = {};
@@ -162,28 +160,152 @@ const StudentReportPage = () => {
     return map;
   }, [reports]);
 
+  // Check if internship has been approved by TBM
+  const isApprovedByTBM = useMemo(() => {
+    if (!internship) return false;
+    if (
+      internship.status === 'CANCELLED' ||
+      internship.status === 'REJECTED' ||
+      Boolean(internship.rejectedAt)
+    ) {
+      return false;
+    }
+    return Boolean(
+      internship.approvedAt ||
+      internship.approvedBy ||
+      internship.lecturerId ||
+      ['APPROVED', 'INTERNING', 'PENDING_SUPERVISOR_ACCEPTANCE', 'COMPLETED'].includes(internship.status)
+    );
+  }, [internship]);
+
+  // Check if supervisor lecturer is assigned
+  const hasAssignedLecturer = useMemo(() => {
+    return Boolean(
+      internship?.lecturerId ||
+      internship?.supervisorId ||
+      (typeof internship?.lecturerId === 'object' && internship?.lecturerId?._id)
+    );
+  }, [internship]);
+
+  // Total duration: 10 or 12 weeks according to registered duration
+  const totalWeeks = useMemo(() => {
+    if (!internship || !isApprovedByTBM) return 0;
+    return getDurationWeeks(internship);
+  }, [internship, isApprovedByTBM]);
+
+  // Report cycle configured by GVGS (1, 2, or 3 weeks/time)
+  const cycle = useMemo(() => {
+    return Number(internship?.reportCycle) || 1;
+  }, [internship?.reportCycle]);
+
+  // Calculate weeks to display (Chỉ hiển thị các tuần thuộc chu kỳ nộp nhật ký)
+  const weeks = useMemo(() => {
+    if (!isApprovedByTBM || totalWeeks === 0) {
+      return [];
+    }
+
+    const result = [];
+    const start = internship?.startDate ? new Date(internship.startDate) : null;
+    const hasValidStart = start && !isNaN(start.getTime());
+
+    for (let i = 1; i <= totalWeeks; i++) {
+      // Ẩn hoàn toàn các tuần không thuộc chu kỳ nộp nhật ký
+      if (i % cycle !== 0) {
+        continue;
+      }
+
+      let defaultStart = null;
+      let defaultEnd = null;
+
+      if (hasValidStart) {
+        defaultStart = new Date(start);
+        defaultStart.setDate(defaultStart.getDate() + (i - 1) * 7);
+        defaultStart.setHours(0, 0, 0, 0);
+
+        defaultEnd = new Date(start);
+        defaultEnd.setDate(defaultEnd.getDate() + (i * 7 - 1));
+        defaultEnd.setHours(23, 59, 59, 999);
+      }
+
+      result.push({
+        weekNumber: i,
+        label: `Tuần ${i}`,
+        isCycleWeek: true,
+        defaultStartDate: defaultStart,
+        defaultEndDate: defaultEnd,
+      });
+    }
+
+    return result;
+  }, [isApprovedByTBM, totalWeeks, internship?.startDate, cycle]);
+
   // Statistics
-  const totalWeeks = DEFAULT_WEEKS_COUNT;
   const completedWeeks = useMemo(() => {
     return Object.values(reportMap).filter(
       (r) => ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(r.status),
     ).length;
   }, [reportMap]);
 
-  const isReady =
-    internship &&
-    ['APPROVED', 'INTERNING', 'PENDING_SUPERVISOR_ACCEPTANCE', 'COMPLETED'].includes(
-      internship.status,
-    );
+  // Sắp xếp danh sách nhật ký:
+  // 1. Ưu tiên trạng thái: Các tuần Chưa nộp hiển thị trước, Đã nộp hiển thị phía dưới
+  // 2. Nhóm Chưa nộp: Sắp xếp tuần tăng dần (ASC: Tuần nhỏ làm trước, tuần lớn làm sau, ví dụ Tuần 2 rồi đến Tuần 3)
+  // 3. Nhóm Đã nộp: Sắp xếp tuần giảm dần (DESC: Tuần lớn / mới nhất nộp nằm trên, ví dụ Tuần 9 rồi đến Tuần 6)
+  const [sortAscending, setSortAscending] = useState(false);
 
-  const handleOpenCreateForWeek = (week, existing = null) => {
+  const displayedWeeks = useMemo(() => {
+    return [...weeks].sort((a, b) => {
+      const reportA = reportMap[a.weekNumber];
+      const reportB = reportMap[b.weekNumber];
+
+      const isSubmittedA = Boolean(
+        reportA && reportA.status !== 'DRAFT' && reportA.status !== 'NOT_SUBMITTED'
+      );
+      const isSubmittedB = Boolean(
+        reportB && reportB.status !== 'DRAFT' && reportB.status !== 'NOT_SUBMITTED'
+      );
+
+      // 1. Ưu tiên trạng thái: Chưa nộp (false) lên trước, Đã nộp (true) xuống dưới
+      if (isSubmittedA !== isSubmittedB) {
+        return isSubmittedA ? 1 : -1;
+      }
+
+      // 2. Nếu là nhóm CHƯA NỘP: Mặc định sắp xếp tăng dần (tuần nhỏ làm trước: Tuần 2 -> Tuần 3)
+      if (!isSubmittedA) {
+        return sortAscending
+          ? b.weekNumber - a.weekNumber
+          : a.weekNumber - b.weekNumber;
+      }
+
+      // 3. Nếu là nhóm ĐÃ NỘP: Mặc định sắp xếp giảm dần (tuần mới nhất trên cùng: Tuần 9 -> Tuần 6)
+      return sortAscending
+        ? a.weekNumber - b.weekNumber
+        : b.weekNumber - a.weekNumber;
+    });
+  }, [weeks, reportMap, sortAscending]);
+
+  const [autoOpenFileForCreate, setAutoOpenFileForCreate] = useState(false);
+
+  const handleOpenCreateForWeek = (week, existing = null, autoFile = false) => {
+    if (!isApprovedByTBM) {
+      showToast('Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.', 'warning');
+      return;
+    }
+    if (!hasAssignedLecturer) {
+      showToast('Hồ sơ thực tập của bạn chưa được phân công Giảng viên Giám sát. Vui lòng chờ phân công GVGS.', 'warning');
+      return;
+    }
     setTargetWeekForCreate({
       weekNumber: week.weekNumber,
       startDate: existing?.weekStartDate || week.defaultStartDate || null,
       endDate: existing?.weekEndDate || week.defaultEndDate || null,
     });
     setEditingReport(existing);
+    setAutoOpenFileForCreate(autoFile);
     setCreateModalOpen(true);
+  };
+
+  const handleOpenUploadForWeek = (week) => {
+    handleOpenCreateForWeek(week, null, true);
   };
 
   const handleOpenConfirm = (report) => {
@@ -219,7 +341,7 @@ const StudentReportPage = () => {
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
 
-          {isReady && (
+          {isApprovedByTBM && hasAssignedLecturer && (
             <button
               type="button"
               onClick={() => setExportModalOpen(true)}
@@ -232,8 +354,41 @@ const StudentReportPage = () => {
         </div>
       </div>
 
-      {/* Internship Overview Summary Card */}
-      {internship && (
+      {/* 1. Loading State */}
+      {loading && (
+        <div className="p-6 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
+          <LoadingSkeleton rows={4} cols={4} />
+        </div>
+      )}
+
+      {/* 2. Unregistered Student Guidance Card */}
+      {!loading && !internship && (
+        <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 text-center shadow-2xs space-y-4">
+          <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#123891] flex items-center justify-center mx-auto shadow-inner">
+            <Briefcase className="w-8 h-8" />
+          </div>
+          <div className="max-w-md mx-auto space-y-2">
+            <h2 className="text-lg font-bold text-slate-800">
+              Bạn Chưa Đăng Ký Thực Tập Doanh Nghiệp
+            </h2>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Bạn chưa có hồ sơ thực tập doanh nghiệp trong hệ thống. Vui lòng đăng ký thực tập và chờ Trưởng Bộ Môn (TBM) phê duyệt trước khi sử dụng chức năng ghi nhật ký thực tập.
+            </p>
+          </div>
+          <div className="pt-2">
+            <Link
+              to="/student/internship/register"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-sm transition cursor-pointer"
+            >
+              <Briefcase className="w-4 h-4 text-blue-200" />
+              <span>Đăng ký thực tập ngay</span>
+            </Link>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Registered Internship Overview Summary Card */}
+      {!loading && internship && (
         <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#123891] to-[#102d7d] text-white shadow-md border border-blue-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-blue-800/60">
             <div>
@@ -250,14 +405,32 @@ const StudentReportPage = () => {
               </div>
             </div>
 
-            {hasStudent2 && (
-              <div className="px-3 py-1.5 rounded-xl bg-[#123891]/60 border border-[#123891]/60 text-xs flex items-center gap-1.5">
-                <Users className="w-4 h-4 text-blue-300" />
-                <span>
-                  Nhóm 2 SV: <strong>{isSV1 ? 'Bạn là SV1' : isSV2 ? 'Bạn là SV2' : 'Nhóm 2 SV'}</strong>
+            <div className="flex items-center gap-2 flex-wrap">
+              {!isApprovedByTBM ? (
+                <span className="px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-200 text-xs font-semibold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Chờ TBM phê duyệt</span>
                 </span>
-              </div>
-            )}
+              ) : !hasAssignedLecturer ? (
+                <span className="px-3 py-1.5 rounded-xl bg-blue-500/20 border border-blue-400/40 text-blue-200 text-xs font-semibold flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-blue-300" />
+                  <span>Chờ phân công GVGS</span>
+                </span>
+              ) : (
+                <span className="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>{internship.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đã phân công GVGS'}</span>
+                </span>
+              )}
+              {hasStudent2 && (
+                <div className="px-3 py-1.5 rounded-xl bg-[#123891]/60 border border-[#123891]/60 text-xs flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-blue-300" />
+                  <span>
+                    Nhóm 2 SV: <strong>{isSV1 ? 'Bạn là SV1' : isSV2 ? 'Bạn là SV2' : 'Nhóm 2 SV'}</strong>
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -270,280 +443,429 @@ const StudentReportPage = () => {
               <span className="font-bold text-sm text-white mt-0.5 block font-mono">{formatDate(internship.endDate)}</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
-              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Tổng số tuần</span>
-              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{totalWeeks} tuần</span>
+              <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Thời lượng & Chu kỳ</span>
+              <span className="font-bold text-sm text-blue-300 mt-0.5 block font-mono">{getDurationWeeks(internship)} tuần • {cycle} tuần/lần</span>
             </div>
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
               <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Đã hoàn thành</span>
-              <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">{completedWeeks}/{totalWeeks} tuần</span>
+              <span className="font-bold text-sm text-emerald-400 mt-0.5 block font-mono">
+                {completedWeeks}/{weeks.length} kỳ nộp
+              </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Warning if internship is not approved yet */}
-      {!loading && !isReady && (
-        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
+      {/* 4. Warning if internship is not approved yet */}
+      {!loading && internship && !isApprovedByTBM && (
+        <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3.5 shadow-2xs">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-          <div>
-            <div className="font-bold text-sm">Hồ sơ thực tập chưa sẵn sàng ghi nhật ký</div>
-            <div className="text-amber-800 text-[11px] mt-0.5 leading-relaxed">
-              Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt (Trạng thái APPROVED hoặc INTERNING).
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-amber-900">
+              Hồ sơ thực tập đang chờ Trưởng Bộ Môn phê duyệt
+            </div>
+            <div className="text-amber-800 text-xs leading-relaxed">
+              Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Weeks List */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-[#123891]" />
-            Danh Sách Nhật Ký Hàng Tuần ({totalWeeks} Tuần)
-          </h2>
-          <span className="text-xs text-slate-500 font-medium">
-            Mặc định 12 tuần thực tập
-          </span>
+      {/* 4b. Notice if internship is approved but waiting for supervisor assignment */}
+      {!loading && internship && isApprovedByTBM && !hasAssignedLecturer && (
+        <div className="p-5 rounded-3xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-3.5 shadow-2xs">
+          <Clock className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <div className="font-bold text-sm text-[#123891]">
+              Hồ sơ thực tập đang chờ phân công Giảng viên Giám sát (GVGS)
+            </div>
+            <div className="text-slate-700 text-xs leading-relaxed">
+              Hồ sơ thực tập của bạn đã được Trưởng Bộ Môn phê duyệt thành công. Vui lòng đợi phân công Giảng viên Giám sát để được hướng dẫn ghi nhật ký theo quy định.
+            </div>
+          </div>
         </div>
+      )}
 
-        {loading ? (
-          <div className="p-6 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
-            <LoadingSkeleton rows={4} cols={4} />
+      {/* 5. Main Weeks List (Chỉ hiển thị khi hồ sơ đã được TBM phê duyệt và đã phân công GVGS) */}
+      {!loading && isApprovedByTBM && hasAssignedLecturer && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#123891]" />
+                <span>
+                  Danh Sách Nhật Ký Thực Tập ({weeks.length} Kỳ nộp • Chu kỳ {cycle} tuần/lần)
+                </span>
+              </h2>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                {cycle === 1
+                  ? 'Nộp định kỳ mỗi tuần theo thời lượng thực tập đã đăng ký.'
+                  : `Nộp định kỳ mỗi ${cycle} tuần một lần theo thiết lập của Giảng viên Giám sát.`}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSortAscending(!sortAscending)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
+                !sortAscending
+                  ? 'bg-blue-50 border-blue-200 text-[#102d7d]'
+                  : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+              }`}
+              title={
+                !sortAscending
+                  ? 'Mặc định: Chưa nộp (Tuần 1 → N) • Đã nộp (Tuần mới nhất). Bấm để đảo thứ tự'
+                  : 'Đang đảo thứ tự hiển thị. Bấm để trở về mặc định'
+              }
+            >
+              <ArrowUpDown className="w-3.5 h-3.5" />
+              <span>
+                {!sortAscending
+                  ? 'Chưa nộp (Tuần 1 → N)'
+                  : 'Đảo thứ tự tuần'}
+              </span>
+            </button>
           </div>
-        ) : weeks.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs">
-            <EmptyState
-              title="Chưa có dữ liệu tuần thực tập"
-              description="Hồ sơ thực tập chưa được thiết lập ngày bắt đầu và kết thúc hợp lệ để tạo danh sách tuần."
-            />
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead>
-                  <tr className="border-b border-slate-200/80 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 pl-6 text-center w-24">Tuần</th>
-                    <th className="py-3.5 px-4 w-48">Thời gian</th>
-                    <th className="py-3.5 px-4 min-w-[240px]">Nội dung</th>
-                    <th className="py-3.5 px-4 w-44">File đính kèm</th>
-                    <th className="py-3.5 px-4 w-48">Trạng thái</th>
-                    <th className="py-3.5 px-4 pr-6 text-right w-44"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 text-sm">
-                  {weeks.map((week) => {
-                    const report = reportMap[week.weekNumber];
-                    const status = report ? report.status : 'NOT_SUBMITTED';
 
-                    const displayStartDate = report?.weekStartDate || week.defaultStartDate;
-                    const displayEndDate = report?.weekEndDate || week.defaultEndDate;
+          {displayedWeeks.length === 0 ? (
+            <div className="bg-white rounded-3xl border border-slate-200/80 p-8 shadow-2xs">
+              <EmptyState
+                title="Chưa có dữ liệu tuần thực tập"
+                description="Hồ sơ thực tập chưa được thiết lập ngày bắt đầu và kết thúc hợp lệ để tạo danh sách tuần."
+              />
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {displayedWeeks.map((week) => {
+                const report = reportMap[week.weekNumber];
+                const status = report ? report.status : 'NOT_SUBMITTED';
 
-                    const fileName = report?.file?.originalName || report?.file?.fileName;
-                    const fileUrl = report?.file?.fileUrl ? getFileUrl(report.file.fileUrl) : '';
+                const displayStartDate = report?.weekStartDate || week.defaultStartDate;
+                const displayEndDate = report?.weekEndDate || week.defaultEndDate;
+                const isLocked = isWeekEnded(displayEndDate);
 
-                    return (
-                      <tr
-                        key={week.weekNumber}
-                        className={`hover:bg-slate-50/80 transition-colors ${
-                          status === 'APPROVED'
-                            ? 'bg-emerald-50/20'
-                            : status === 'WAITING_STUDENT_2'
-                            ? 'bg-amber-50/20'
-                            : status === 'NEEDS_REVISION'
-                            ? 'bg-rose-50/20'
-                            : ''
-                        }`}
-                      >
-                        {/* 1. Tuần */}
-                        <td className="py-4 px-4 pl-6 text-center whitespace-nowrap">
-                          <span className="inline-flex items-center justify-center font-black text-xs px-2.5 py-1 rounded-xl bg-[#123891] text-white font-mono shadow-2xs">
-                            Tuần {week.weekNumber}
+                const fileName = report?.file?.originalName || report?.file?.fileName;
+                const fileUrl = report?.file?.fileUrl ? getFileUrl(report.file.fileUrl) : '';
+
+                const isWaitingStudent2 = status === 'WAITING_STUDENT_2';
+                const isNeedsRevision = status === 'NEEDS_REVISION';
+                const isApproved = status === 'APPROVED';
+
+                return (
+                  <div
+                    key={week.weekNumber}
+                    className={`p-5 rounded-3xl bg-white border transition-all shadow-2xs ${
+                      isWaitingStudent2
+                        ? 'border-amber-300 ring-2 ring-amber-100'
+                        : isNeedsRevision
+                        ? 'border-rose-300 ring-2 ring-rose-100'
+                        : isApproved
+                        ? 'border-emerald-200 hover:border-emerald-300'
+                        : report
+                        ? 'border-slate-200/90 hover:border-blue-200'
+                        : isLocked
+                        ? 'border-slate-200/60 bg-slate-50/40 opacity-80'
+                        : 'border-dashed border-slate-200 hover:border-slate-300 bg-slate-50/40'
+                    }`}
+                  >
+                    {/* 1. Card Header: Week Title & Status Badges */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <span
+                          className={`text-xs font-bold px-3 py-1 rounded-xl border ${
+                            report
+                              ? 'bg-blue-50 text-[#102d7d] border-blue-200 font-mono'
+                              : 'bg-slate-100 text-slate-600 border-slate-200 font-mono'
+                          }`}
+                        >
+                          {week.label}
+                        </span>
+
+                        <span className="text-xs font-semibold text-slate-700 font-mono flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>
+                            {displayStartDate && displayEndDate
+                              ? `${formatDate(displayStartDate)} — ${formatDate(displayEndDate)}`
+                              : displayStartDate
+                              ? formatDate(displayStartDate)
+                              : 'Chưa cập nhật ngày'}
                           </span>
-                        </td>
+                        </span>
+                      </div>
 
-                        {/* 2. Thời gian */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          <div className="text-xs font-semibold text-slate-700 flex items-center gap-1.5 font-mono">
-                            <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            <span>
-                              {displayStartDate && displayEndDate
-                                ? `${formatDate(displayStartDate)} — ${formatDate(displayEndDate)}`
-                                : displayStartDate
-                                ? formatDate(displayStartDate)
-                                : 'Chưa cập nhật ngày'}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {/* Tag 1: Trạng thái nộp / kết quả chấm */}
+                        {report?.lecturerScore !== null && report?.lecturerScore !== undefined ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <Award className="w-3 h-3 text-emerald-600" />
+                            <span>GVGS đã chấm: {report.lecturerScore}/10</span>
+                          </span>
+                        ) : status === 'APPROVED' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Đạt yêu cầu</span>
+                          </span>
+                        ) : status === 'SUBMITTED' || status === 'REVIEWING' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                            <CheckCircle2 className="w-3 h-3 text-blue-600" />
+                            <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVGS' : 'Đã nộp'}</span>
+                          </span>
+                        ) : status === 'WAITING_STUDENT_2' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock className="w-3 h-3 text-amber-600" />
+                            <span>Chờ SV2 xác nhận</span>
+                          </span>
+                        ) : status === 'NEEDS_REVISION' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <AlertTriangle className="w-3 h-3 text-rose-600" />
+                            <span>Cần chỉnh sửa</span>
+                          </span>
+                        ) : status === 'REJECTED' ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            <AlertTriangle className="w-3 h-3 text-rose-600" />
+                            <span>GVGS yêu cầu sửa</span>
+                          </span>
+                        ) : status === 'DRAFT' ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            Bản nháp
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            Chưa nộp
+                          </span>
+                        )}
+
+                        {/* Tag 2: Thời hạn (Đúng hạn / Quá hạn / Đã khóa / Còn hạn) */}
+                        {(() => {
+                          const deadline = displayEndDate ? new Date(displayEndDate) : null;
+                          if (deadline) deadline.setHours(23, 59, 59, 999);
+                          const now = new Date();
+                          const isEnded = deadline ? now.getTime() > deadline.getTime() : false;
+
+                          if (report?.submittedAt) {
+                            const isLate = deadline ? new Date(report.submittedAt) > deadline : false;
+                            return isLate ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                Nộp trễ
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                Đúng hạn
+                              </span>
+                            );
+                          }
+
+                          if (isEnded) {
+                            return (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                <Lock className="w-3 h-3" /> Đã kết thúc
+                              </span>
+                            );
+                          }
+
+                          return (
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#123891] border border-blue-200">
+                              Còn hạn nộp
                             </span>
-                          </div>
-                          {report?.submittedAt && (
-                            <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                              Nộp: {formatDate(report.submittedAt)}
-                            </div>
-                          )}
-                        </td>
+                          );
+                        })()}
+                      </div>
+                    </div>
 
-                        {/* 3. Nội dung */}
-                        <td className="py-4 px-4">
-                          {report ? (
-                            <div className="space-y-1 max-w-md">
-                              <div className="font-bold text-slate-900 text-xs line-clamp-1" title={report.title}>
-                                {report.title}
+                    {/* 2. Body Content */}
+                    <div className="py-2.5 space-y-2.5">
+                      {report ? (
+                        <>
+                          <h4 className="text-sm font-bold text-slate-900 line-clamp-1" title={report.title}>
+                            {report.title}
+                          </h4>
+                          {report.content ? (
+                            <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap line-clamp-3" title={report.content}>
+                              {report.content}
+                            </p>
+                          ) : (
+                            <p className="text-xs text-slate-400 italic">
+                              (Không có nội dung mô tả, xem tệp đính kèm)
+                            </p>
+                          )}
+
+                          {/* File Attachment */}
+                          {fileName && (
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#102d7d] bg-blue-50/60 px-3.5 py-2 rounded-2xl border border-blue-100">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Paperclip className="w-4 h-4 shrink-0 text-[#123891]" />
+                                <span className="truncate font-semibold max-w-[260px] sm:max-w-md" title={fileName}>
+                                  {fileName}
+                                </span>
+                                {report.file?.size && (
+                                  <span className="text-[11px] text-[#123891] font-mono">
+                                    ({formatFileSize(report.file.size)})
+                                  </span>
+                                )}
                               </div>
-                              {report.content ? (
-                                <p className="text-[11px] text-slate-600 line-clamp-2 leading-relaxed" title={report.content}>
-                                  {report.content}
-                                </p>
-                              ) : null}
-                              {status === 'NEEDS_REVISION' && report.student2RejectedReason && (
-                                <div className="text-[10px] text-rose-700 bg-rose-50 border border-rose-200/70 px-2 py-0.5 rounded-md inline-block">
-                                  <strong>Lý do SV2 từ chối:</strong> {report.student2RejectedReason}
+
+                              {fileUrl && (
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-white hover:bg-[#123891] hover:text-white border border-blue-200 rounded-lg text-xs font-semibold text-[#102d7d] transition cursor-pointer"
+                                  >
+                                    <ExternalLink className="w-3 h-3" />
+                                    <span>Xem file</span>
+                                  </a>
+                                  <a
+                                    href={fileUrl}
+                                    download={fileName}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-[#123891] hover:bg-[#102d7d] text-white rounded-lg text-xs font-semibold transition cursor-pointer"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    <span>Tải về</span>
+                                  </a>
                                 </div>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-xs text-slate-400 italic">
-                              Chưa nộp nhật ký tuần này
-                            </span>
                           )}
-                        </td>
 
-                        {/* 4. File đính kèm */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          {fileName ? (
-                            fileUrl ? (
-                              <a
-                                href={fileUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="inline-flex items-center gap-1.5 text-xs text-[#123891] hover:text-[#102d7d] hover:underline font-semibold max-w-[180px] group/file"
-                                title={`Xem/tải file: ${fileName}`}
-                              >
-                                <Paperclip className="w-3.5 h-3.5 text-blue-500 shrink-0 group-hover/file:scale-110 transition-transform" />
-                                <span className="truncate">{fileName}</span>
-                              </a>
-                            ) : (
-                              <div className="inline-flex items-center gap-1.5 text-xs text-slate-600 max-w-[180px]" title={fileName}>
-                                <Paperclip className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                                <span className="truncate">{fileName}</span>
+                          {/* SV2 Rejection Notice Alert */}
+                          {isNeedsRevision && report.student2RejectedReason && (
+                            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1">
+                              <div className="flex items-center gap-1.5 font-bold text-rose-700">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span>Lý do SV2 yêu cầu chỉnh sửa:</span>
                               </div>
-                            )
-                          ) : (
-                            <span className="text-slate-300 font-mono text-xs">—</span>
+                              <p className="leading-relaxed pl-5 font-medium">
+                                "{report.student2RejectedReason}"
+                              </p>
+                            </div>
                           )}
-                        </td>
 
-                        {/* 5. Trạng thái */}
-                        <td className="py-4 px-4 whitespace-nowrap">
-                          {status === 'NOT_SUBMITTED' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
-                              Chưa nộp
-                            </span>
+                          {/* SV2 Confirmation Info */}
+                          {report.student2Status === 'CONFIRMED' && (
+                            <div className="text-[11px] text-emerald-700 flex items-center gap-1 font-medium bg-emerald-50/50 px-2.5 py-1 rounded-xl border border-emerald-100 w-fit">
+                              <Check className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>
+                                Thành viên nhóm (SV2) đã xác nhận lúc {formatDate(report.student2ConfirmedAt)}
+                              </span>
+                            </div>
                           )}
-                          {status === 'DRAFT' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-lg">
-                              Bản nháp
-                            </span>
-                          )}
-                          {status === 'WAITING_STUDENT_2' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100/70 border border-amber-200 px-2.5 py-1 rounded-lg">
-                              <Clock className="w-3 h-3" />
-                              <span>Chờ SV2 xác nhận</span>
-                            </span>
-                          )}
-                          {status === 'NEEDS_REVISION' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                              <AlertTriangle className="w-3 h-3" />
-                              <span>Cần chỉnh sửa</span>
-                            </span>
-                          )}
-                          {(status === 'SUBMITTED' || status === 'REVIEWING') && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#102d7d] bg-blue-100/70 border border-blue-200 px-2.5 py-1 rounded-lg">
-                              <CheckCircle2 className="w-3 h-3" />
-                              <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVGS' : 'Đã gửi GVGS'}</span>
-                            </span>
-                          )}
-                          {status === 'APPROVED' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2.5 py-1 rounded-lg">
-                              <Award className="w-3 h-3" />
-                              <span>GVGS đã chấm: {report.lecturerScore !== null ? `${report.lecturerScore}/10` : 'Đạt'}</span>
-                            </span>
-                          )}
-                          {status === 'REJECTED' && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100/70 border border-rose-200 px-2.5 py-1 rounded-lg">
-                              <span>GVGS yêu cầu sửa</span>
-                            </span>
-                          )}
-                        </td>
 
-                        {/* 6. Thao tác */}
-                        <td className="py-4 px-4 pr-6 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {/* Case A: Not submitted yet */}
-                            {!report && isReady && (
+                          {/* Lecturer Comment */}
+                          {report.lecturerComment && (
+                            <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-slate-50 border-slate-200 text-slate-900">
+                              <div className="flex items-center justify-between font-bold text-[11px] uppercase tracking-wider text-[#123891]">
+                                <span>Nhận xét của Giảng viên Giám sát</span>
+                              </div>
+                              <p className="leading-relaxed mt-1 text-[11px]">
+                                {report.lecturerComment}
+                              </p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="py-2 text-xs text-slate-400 italic">
+                          {isLocked
+                            ? 'Tuần thực tập đã kết thúc. Nhật ký của tuần này đã bị khóa, không thể tạo mới hoặc nộp bổ sung.'
+                            : 'Chưa có nhật ký cho tuần này. Nhấn "Viết nhật ký" hoặc "Tải lên tệp" để cập nhật nội dung công việc.'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 3. Card Actions Footer */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
+                      <div>
+                        {report ? (
+                          <span>
+                            Người nộp:{' '}
+                            <strong className="text-slate-600">
+                              {report.studentId?.userId?.fullName || student?.userId?.fullName || 'Sinh viên'}
+                            </strong>
+                            {report.submittedAt ? ` • Nộp lúc: ${formatDate(report.submittedAt)}` : ''}
+                          </span>
+                        ) : (
+                          <span>
+                            {isLocked
+                              ? 'Đã hết thời hạn ghi nhận'
+                              : week.isCycleWeek
+                              ? `Hạn nộp định kỳ: ${formatDate(displayEndDate)}`
+                              : `Không yêu cầu nộp (Chu kỳ ${cycle} tuần/lần)`}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-auto flex-wrap">
+                        {/* Khi CHƯA nộp: Hiển thị "Tải lên tệp" & "Viết nhật ký" nếu còn hạn và thuộc chu kỳ */}
+                        {!report && isApprovedByTBM && (
+                          !isLocked && week.isCycleWeek ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => handleOpenUploadForWeek(week)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 transition cursor-pointer text-xs"
+                              >
+                                <Paperclip className="w-3.5 h-3.5 text-[#123891]" />
+                                <span>Tải lên tệp</span>
+                              </button>
                               <button
                                 type="button"
                                 onClick={() => handleOpenCreateForWeek(week)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+                                className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
                               >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Viết báo cáo</span>
+                                <PlusCircle className="w-3.5 h-3.5" />
+                                <span>Viết nhật ký</span>
                               </button>
-                            )}
+                            </>
+                          ) : null
+                        )}
 
-                            {/* Case B: Draft, Needs Revision, or Rejected by GVGS */}
-                            {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenCreateForWeek(week, report)}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>{report.status === 'REJECTED' ? 'Viết lại' : 'Chỉnh sửa'}</span>
-                              </button>
-                            )}
+                        {/* Khi ĐÃ có nhật ký: Chỉnh sửa nếu cho phép & chưa khóa */}
+                        {report && (report.status === 'DRAFT' || report.status === 'NEEDS_REVISION' || report.status === 'REJECTED') && (
+                          !isLocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenCreateForWeek(week, report)}
+                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>{report.status === 'REJECTED' ? 'Viết lại' : 'Chỉnh sửa'}</span>
+                            </button>
+                          ) : null
+                        )}
 
-                            {/* Case C: Waiting for SV2 */}
-                            {report && report.status === 'WAITING_STUDENT_2' && (
-                              <>
-                                {isSV2 ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenConfirm(report)}
-                                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-                                  >
-                                    <ShieldCheck className="w-3.5 h-3.5" />
-                                    <span>Xác nhận</span>
-                                  </button>
-                                ) : (
-                                  <span className="text-[11px] text-amber-700 font-semibold italic">
-                                    Chờ SV2
-                                  </span>
-                                )}
-                              </>
-                            )}
+                        {/* SV2 Xác nhận */}
+                        {report && report.status === 'WAITING_STUDENT_2' && isSV2 && !isLocked && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenConfirm(report)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            <span>Xác nhận</span>
+                          </button>
+                        )}
 
-                            {/* Case D: View Details */}
-                            {report && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDetail(report)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
-                                title="Xem chi tiết nhật ký"
-                              >
-                                <Eye className="w-3.5 h-3.5 text-slate-500" />
-                                <span>Chi tiết</span>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        {/* Xem chi tiết */}
+                        {report && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetail(report)}
+                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                            title="Xem chi tiết nhật ký"
+                          >
+                            <Eye className="w-3.5 h-3.5 text-slate-500" />
+                            <span>Xem chi tiết</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {/* Modals */}
       <StudentReportModal
@@ -552,10 +874,12 @@ const StudentReportPage = () => {
           setCreateModalOpen(false);
           setTargetWeekForCreate(null);
           setEditingReport(null);
+          setAutoOpenFileForCreate(false);
         }}
         internship={internship}
         targetWeek={targetWeekForCreate}
         editingReport={editingReport}
+        autoOpenFile={autoOpenFileForCreate}
         onCreated={fetchReports}
       />
 
@@ -578,21 +902,23 @@ const StudentReportPage = () => {
         report={selectedReport}
       />
 
-      <ExportInternshipDiaryModal
-        isOpen={exportModalOpen}
-        onClose={() => setExportModalOpen(false)}
-        student={student}
-        internship={internship}
-        weeks={weeks.map((w) => {
-          const r = reportMap[w.weekNumber];
-          return {
-            weekNumber: w.weekNumber,
-            startDate: r?.weekStartDate || w.defaultStartDate,
-            endDate: r?.weekEndDate || w.defaultEndDate,
-          };
-        })}
-        reports={reports}
-      />
+      {isApprovedByTBM && hasAssignedLecturer && (
+        <ExportInternshipDiaryModal
+          isOpen={exportModalOpen}
+          onClose={() => setExportModalOpen(false)}
+          student={student}
+          internship={internship}
+          weeks={weeks.map((w) => {
+            const r = reportMap[w.weekNumber];
+            return {
+              weekNumber: w.weekNumber,
+              startDate: r?.weekStartDate || w.defaultStartDate,
+              endDate: r?.weekEndDate || w.defaultEndDate,
+            };
+          })}
+          reports={reports}
+        />
+      )}
     </div>
   );
 };

@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
-import crypto from "crypto";
 import Evaluation from "../models/Evaluation.js";
-import CompanyEvaluationRequest from "../models/CompanyEvaluationRequest.js";
 import Notification from "../models/Notification.js";
 import Internship from "../models/Internship.js";
 import Company from "../models/Company.js";
@@ -9,8 +7,11 @@ import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import AcademicTerm from "../models/AcademicTerm.js";
+import InternshipReport from "../models/InternshipReport.js";
+import InternshipDocument from "../models/InternshipDocument.js";
 import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
+import { checkInternshipDiaryCompletion } from "../utils/internshipDateUtils.js";
 
 // ====================
 // Helper: Resolve Academic Term for Internship
@@ -244,220 +245,6 @@ export const computeInternshipEvaluationResult = (internship, evaluation, term, 
 };
 
 // ====================
-// Company Gets Internships with Evaluation Status
-// ====================
-const getCompanyInternships = async (
-  userId,
-  { page = 1, limit = 10, search = "", status = "" } = {},
-) => {
-  const company = await Company.findOne({ userId }).populate({
-    path: "userId",
-    select: "fullName email phone",
-  });
-  if (!company) {
-    throw new AppError("Không tìm thấy thông tin doanh nghiệp", 404);
-  }
-
-  const query = {
-    companyId: company._id,
-    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
-  };
-
-  if (search && search.trim()) {
-    const searchRegex = { $regex: search.trim(), $options: "i" };
-    const matchingUsers = await User.find({ fullName: searchRegex }).select("_id");
-    const matchingStudents = await Student.find({
-      $or: [
-        { studentCode: searchRegex },
-        { userId: { $in: matchingUsers.map((u) => u._id) } },
-      ],
-    }).select("_id");
-
-    query.$or = [
-      { studentId: { $in: matchingStudents.map((s) => s._id) } },
-      { position: searchRegex },
-    ];
-  }
-
-  const skip = (Number(page) - 1) * Number(limit);
-  const total = await Internship.countDocuments(query);
-
-  const internships = await Internship.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(Number(limit))
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate({
-      path: "lecturerId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .lean();
-
-  // Attach evaluation status to each internship
-  const internshipIds = internships.map((i) => i._id);
-  const evaluations = await Evaluation.find({
-    evaluationType: "INTERNSHIP",
-    targetId: { $in: internshipIds },
-  }).lean();
-
-  const evalMap = new Map();
-  evaluations.forEach((ev) => {
-    evalMap.set(ev.targetId.toString(), ev);
-  });
-
-  let enrichedData = internships.map((intern) => {
-    const ev = evalMap.get(intern._id.toString());
-    return {
-      ...intern,
-      evaluation: ev || null,
-      evaluationStatus: ev ? ev.status : "UNASSESSED", // UNASSESSED / DRAFT / SUBMITTED
-    };
-  });
-
-  if (status && status.trim()) {
-    if (status === "UNASSESSED") {
-      enrichedData = enrichedData.filter((i) => !i.evaluation);
-    } else {
-      enrichedData = enrichedData.filter((i) => i.evaluation?.status === status);
-    }
-  }
-
-  return {
-    company,
-    data: enrichedData,
-    pagination: {
-      total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / Number(limit)) || 1,
-    },
-  };
-};
-
-// ====================
-// Company Creates or Updates Evaluation
-// ====================
-const createOrUpdateEvaluation = async (userId, userRole, data) => {
-  if (userRole !== "COMPANY") {
-    throw new AppError("Chỉ có tài khoản Doanh nghiệp mới có quyền tạo phiếu đánh giá", 403);
-  }
-
-  const company = await Company.findOne({ userId });
-  if (!company) {
-    throw new AppError("Không tìm thấy thông tin doanh nghiệp", 404);
-  }
-
-  const {
-    internshipId,
-    score,
-    comments,
-    evaluatorInfo,
-    companyInfo,
-    workFields,
-    workFieldOther,
-    requirements,
-    teamworkEvaluation,
-    teamworkOther,
-    status = "SUBMITTED",
-  } = data;
-
-  if (!internshipId) {
-    throw new AppError("Hồ sơ thực tập (internshipId) là bắt buộc", 400);
-  }
-
-  const internship = await Internship.findById(internshipId);
-  if (!internship) {
-    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
-  }
-
-  // CRITICAL RBAC: Company A CANNOT evaluate student of Company B
-  if (internship.companyId.toString() !== company._id.toString()) {
-    throw new AppError(
-      "Doanh nghiệp không có quyền đánh giá sinh viên thực tập tại doanh nghiệp khác",
-      403,
-    );
-  }
-
-  // LOCK: Permanent lock if internship is COMPLETED
-  if (internship.status === "COMPLETED") {
-    throw new AppError(
-      "Phiếu đánh giá thực tập đã ở trạng thái HOÀN THÀNH (COMPLETED) và bị khóa, không thể chỉnh sửa",
-      400,
-    );
-  }
-
-  if (
-    score !== undefined &&
-    score !== null &&
-    (Number(score) < 0 || Number(score) > 10)
-  ) {
-    throw new AppError("Điểm đánh giá phải từ 0 đến 10", 400);
-  }
-
-  const finalStatus = ["DRAFT", "SUBMITTED"].includes(status) ? status : "SUBMITTED";
-
-  let evaluation = await Evaluation.findOne({
-    evaluationType: "INTERNSHIP",
-    targetId: internship._id,
-  });
-
-  if (evaluation) {
-    evaluation.score = score !== undefined ? Number(score) : evaluation.score;
-    evaluation.comments = comments !== undefined ? comments : evaluation.comments;
-    if (evaluatorInfo) {
-      evaluation.evaluatorInfo = {
-        name: evaluatorInfo.name || evaluation.evaluatorInfo?.name || null,
-        position: evaluatorInfo.position || evaluation.evaluatorInfo?.position || null,
-        email: evaluatorInfo.email || evaluation.evaluatorInfo?.email || null,
-        phone: evaluatorInfo.phone || evaluation.evaluatorInfo?.phone || null,
-      };
-    }
-    evaluation.companyInfo = companyInfo || evaluation.companyInfo;
-    evaluation.workFields = workFields || evaluation.workFields;
-    evaluation.workFieldOther = workFieldOther !== undefined ? workFieldOther : evaluation.workFieldOther;
-    evaluation.requirements = requirements || evaluation.requirements;
-    evaluation.teamworkEvaluation = teamworkEvaluation || evaluation.teamworkEvaluation;
-    evaluation.teamworkOther = teamworkOther !== undefined ? teamworkOther : evaluation.teamworkOther;
-    evaluation.status = finalStatus;
-    if (finalStatus === "SUBMITTED") {
-      evaluation.submittedAt = new Date();
-    }
-    await evaluation.save();
-  } else {
-    evaluation = await Evaluation.create({
-      evaluationType: "INTERNSHIP",
-      targetId: internship._id,
-      evaluatorId: userId,
-      evaluatorRole: "COMPANY",
-      evaluatorInfo: {
-        name: evaluatorInfo?.name || company.contactPerson || "Người đánh giá doanh nghiệp",
-        position: evaluatorInfo?.position || "Cán bộ quản lý thực tập",
-        email: evaluatorInfo?.email || company.email || null,
-        phone: evaluatorInfo?.phone || company.phone || null,
-      },
-      score: score !== undefined && score !== null ? Number(score) : 0,
-      comments: comments || null,
-      companyInfo: companyInfo || {
-        businessField: company.name,
-        companySize: "Vừa và nhỏ",
-      },
-      workFields: workFields || [],
-      workFieldOther: workFieldOther || null,
-      requirements: requirements || {},
-      teamworkEvaluation: teamworkEvaluation || "Tốt",
-      teamworkOther: teamworkOther || null,
-      status: finalStatus,
-      submittedAt: finalStatus === "SUBMITTED" ? new Date() : null,
-    });
-  }
-
-  return evaluation;
-};
-
-// ====================
 // Get Evaluation By ID with RBAC
 // ====================
 const getEvaluationById = async (evaluationId, requestingUser) => {
@@ -482,12 +269,7 @@ const getEvaluationById = async (evaluationId, requestingUser) => {
   }
 
   // Access Control
-  if (requestingUser.role === "COMPANY") {
-    const company = await Company.findOne({ userId: requestingUser.userId });
-    if (!company || internship.companyId._id.toString() !== company._id.toString()) {
-      throw new AppError("Bạn không có quyền xem đánh giá của doanh nghiệp khác", 403);
-    }
-  } else if (requestingUser.role === "LECTURER") {
+  if (requestingUser.role === "LECTURER") {
     const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
     if (
       !lecturer ||
@@ -609,6 +391,7 @@ const getAllEvaluationsForTbm = async ({
       populate: { path: "userId", select: "fullName email phone" },
     })
     .populate("academicTermId")
+    .populate("publishHistory.performedBy", "fullName email")
     .lean();
 
   const internshipIds = internships.map((i) => i._id);
@@ -616,6 +399,7 @@ const getAllEvaluationsForTbm = async ({
     evaluationType: "INTERNSHIP",
     targetId: { $in: internshipIds },
   })
+    .populate("publishHistory.performedBy", "fullName email")
     .sort({ createdAt: -1 })
     .lean();
 
@@ -629,11 +413,28 @@ const getAllEvaluationsForTbm = async ({
   let enriched = internships.map((intern) => {
     const ev = evalMap.get(intern._id.toString());
     const evalResult = computeInternshipEvaluationResult(intern, ev, intern.academicTermId);
+
+    // Determine 3-state score publish status (PUBLISHED, HIDDEN, UNPUBLISHED)
+    const isHidden = intern.scorePublishStatus === "HIDDEN" || ev?.scorePublishStatus === "HIDDEN";
+    const isPublished = !isHidden && Boolean(
+      intern.scorePublishStatus === "PUBLISHED" ||
+      ev?.scorePublishStatus === "PUBLISHED" ||
+      intern.isScorePublished ||
+      ev?.isScorePublished
+    );
+    const scorePublishStatus = isHidden ? "HIDDEN" : isPublished ? "PUBLISHED" : "UNPUBLISHED";
+
+    const publishHistory = (intern.publishHistory && intern.publishHistory.length > 0)
+      ? intern.publishHistory
+      : (ev?.publishHistory || []);
+
     return {
       ...intern,
       evaluation: ev || null,
       evaluationStatus: ev ? ev.status : "UNASSESSED",
-      isScorePublished: Boolean(intern.isScorePublished || ev?.isScorePublished),
+      isScorePublished: isPublished,
+      scorePublishStatus,
+      publishHistory,
       scorePublishedAt: intern.scorePublishedAt || ev?.publishedAt || null,
       evaluationResult: evalResult.result,
       isPass: evalResult.isPass,
@@ -649,6 +450,12 @@ const getAllEvaluationsForTbm = async ({
   if (status && status.trim()) {
     if (status === "UNASSESSED") {
       enriched = enriched.filter((i) => !i.evaluation);
+    } else if (status === "PUBLISHED") {
+      enriched = enriched.filter((i) => i.scorePublishStatus === "PUBLISHED");
+    } else if (status === "HIDDEN") {
+      enriched = enriched.filter((i) => i.scorePublishStatus === "HIDDEN");
+    } else if (status === "UNPUBLISHED") {
+      enriched = enriched.filter((i) => i.scorePublishStatus === "UNPUBLISHED");
     } else {
       enriched = enriched.filter((i) => i.evaluation?.status === status);
     }
@@ -666,790 +473,7 @@ const getAllEvaluationsForTbm = async ({
 };
 
 // ==========================================
-// 5. Student: Create or Retrieve Evaluation Link
-// ==========================================
-const createStudentEvaluationLink = async (userId, academicTermId = null) => {
-  const student = await Student.findOne({ userId }).populate("userId");
-  if (!student) {
-    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
-  }
-
-  const query = {
-    studentId: student._id,
-    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
-  };
-
-  if (academicTermId && academicTermId !== "ALL") {
-    query.academicTermId = academicTermId;
-  }
-
-  // Active internship of this student (sorted by most recent)
-  const internship = await Internship.findOne(query)
-    .sort({ createdAt: -1 })
-    .populate("companyId")
-    .populate("academicTermId");
-
-  if (!internship) {
-    throw new AppError("Bạn chưa có đợt thực tập hợp lệ nào được duyệt.", 400);
-  }
-
-  // Enforce evaluation time window at backend
-  const term = await resolveAcademicTermForInternship(internship, academicTermId);
-  if (term && !internship.academicTermId) {
-    internship.academicTermId = term._id;
-    await internship.save().catch(() => {});
-  }
-  validateInternshipEvaluationWindow(term, new Date());
-
-  // Check if evaluation request already exists
-  let existingRequest = await CompanyEvaluationRequest.findOne({
-    studentId: student._id,
-    internshipId: internship._id,
-  });
-
-  if (existingRequest) {
-    const existingEval = await Evaluation.findOne({
-      evaluationType: "INTERNSHIP",
-      targetId: internship._id,
-    });
-
-    const isEvalDeletedByTbm = Boolean(existingRequest.status === "SUBMITTED" && !existingEval);
-
-    if (
-      (existingRequest.allowRecreate && existingRequest.recreateStatus === "APPROVED") ||
-      isEvalDeletedByTbm
-    ) {
-      // Re-create permission granted by TBM or evaluation deleted by TBM: remove old request and clean up old evaluation
-      await CompanyEvaluationRequest.findByIdAndDelete(existingRequest._id);
-      await Evaluation.deleteMany({
-        evaluationType: "INTERNSHIP",
-        targetId: internship._id,
-      });
-      if (internship.evaluation) {
-        internship.evaluation = null;
-        await internship.save();
-      }
-    } else if (existingRequest.status === "SUBMITTED") {
-      throw new AppError("Doanh nghiệp đã hoàn thành đánh giá cho đợt thực tập này. Nếu cần tạo lại link, vui lòng gửi yêu cầu tới Trưởng Bộ Môn.", 400);
-    } else if (existingRequest.status === "PENDING") {
-      return {
-        message: "Bạn đã tạo link đánh giá cho đợt thực tập này.",
-        request: existingRequest,
-        token: existingRequest.token,
-        isExisting: true,
-      };
-    } else {
-      throw new AppError(
-        "Bạn đã sử dụng quyền tạo link đánh giá cho đợt thực tập này. Nếu cần tạo lại link, vui lòng gửi yêu cầu tới Trưởng Bộ Môn.",
-        403,
-      );
-    }
-  }
-
-  // Generate secure random token (48 chars hex)
-  const token = crypto.randomBytes(24).toString("hex");
-
-  const newRequest = await CompanyEvaluationRequest.create({
-    token,
-    studentId: student._id,
-    internshipId: internship._id,
-    companyId: internship.companyId._id,
-    status: "PENDING",
-    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-  });
-
-  return {
-    message: "Tạo link đánh giá thực tập thành công!",
-    request: newRequest,
-    token: newRequest.token,
-    isExisting: false,
-  };
-};
-
-// ==========================================
-// 6. Student: Get My Evaluation Request & Result
-// ==========================================
-const getStudentEvaluationRequest = async (userId, academicTermId = null) => {
-  const student = await Student.findOne({ userId });
-  if (!student) {
-    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
-  }
-
-  const query = {
-    studentId: student._id,
-    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
-  };
-
-  if (academicTermId && academicTermId !== "ALL") {
-    query.academicTermId = academicTermId;
-  }
-
-  const internship = await Internship.findOne(query)
-    .sort({ createdAt: -1 })
-    .populate("companyId", "companyName address email phone website contactPerson")
-    .populate({
-      path: "lecturerId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate("academicTermId");
-
-  if (!internship) {
-    return { hasInternship: false };
-  }
-
-  const request = await CompanyEvaluationRequest.findOne({
-    studentId: student._id,
-    internshipId: internship._id,
-  });
-
-  let evaluation = null;
-  if (internship) {
-    evaluation = await Evaluation.findOne({
-      evaluationType: "INTERNSHIP",
-      targetId: internship._id,
-      evaluatorRole: "COMPANY",
-    }).sort({ createdAt: -1 });
-
-    if (!evaluation) {
-      evaluation = await Evaluation.findOne({
-        evaluationType: "INTERNSHIP",
-        targetId: internship._id,
-      }).sort({ createdAt: -1 });
-    }
-  }
-
-  const isEvaluationDeletedByTbm = Boolean(request && request.status === "SUBMITTED" && !evaluation);
-
-  const isScorePublished = Boolean(internship.isScorePublished || evaluation?.isScorePublished);
-  const hasLecturerGraded = Boolean(
-    evaluation &&
-    evaluation.score !== null &&
-    evaluation.score !== undefined &&
-    !isNaN(evaluation.score)
-  );
-
-  let sanitizedEvaluation = evaluation;
-  if (evaluation && !isScorePublished) {
-    sanitizedEvaluation = {
-      _id: evaluation._id,
-      status: evaluation.status,
-      isScorePublished: false,
-      hasGraded: true,
-      evaluatorRole: evaluation.evaluatorRole,
-      evaluatorInfo: evaluation.evaluatorInfo,
-      createdAt: evaluation.createdAt,
-    };
-  }
-
-  const term = await resolveAcademicTermForInternship(internship, academicTermId);
-
-  const evalResult = computeInternshipEvaluationResult(
-    internship,
-    isScorePublished ? evaluation : null,
-    term,
-    new Date()
-  );
-
-  return {
-    hasInternship: true,
-    internship: {
-      ...(internship.toObject ? internship.toObject() : internship),
-      isScorePublished,
-      finalScore: isScorePublished ? internship.finalScore : null,
-      score: isScorePublished ? internship.score : null,
-    },
-    request,
-    evaluation: sanitizedEvaluation,
-    isScorePublished,
-    hasGraded: hasLecturerGraded,
-    isEvaluationDeletedByTbm,
-    evaluationResult: isScorePublished ? evalResult.result : (hasLecturerGraded ? "PENDING_PUBLISH" : evalResult.result),
-    isPass: isScorePublished ? evalResult.isPass : false,
-    isFail: isScorePublished ? evalResult.isFail : false,
-    hasValidScore: isScorePublished ? evalResult.hasValidScore : false,
-    isExpired: evalResult.isExpired,
-    isNotOpen: evalResult.isNotOpen,
-    startDate: evalResult.startDate,
-    endDate: evalResult.endDate,
-    term: term
-      ? {
-          _id: term._id,
-          name: term.name,
-          code: term.code,
-          internship: term.internship,
-        }
-      : null,
-  };
-};
-
-// ==========================================
-// 7. Public: Get Evaluation Form Metadata by Token (No Login)
-// ==========================================
-const getPublicEvaluationByToken = async (token) => {
-  if (!token || !token.trim()) {
-    throw new AppError("Token đánh giá không hợp lệ.", 400);
-  }
-
-  const request = await CompanyEvaluationRequest.findOne({ token: token.trim() })
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate({
-      path: "internshipId",
-      populate: {
-        path: "lecturerId",
-        populate: { path: "userId", select: "fullName email phone" },
-      },
-    })
-    .populate("companyId", "name companyName address email phone website contactPerson");
-
-  if (!request) {
-    throw new AppError("Không tìm thấy phiếu đánh giá hoặc liên kết không hợp lệ.", 404);
-  }
-
-  if (request.status === "CANCELLED") {
-    throw new AppError("Liên kết đánh giá này đã bị hủy.", 400);
-  }
-
-  if (request.expiresAt && request.expiresAt < new Date()) {
-    if (request.status !== "EXPIRED") {
-      request.status = "EXPIRED";
-      await request.save();
-    }
-    throw new AppError("Liên kết đánh giá này đã hết hạn.", 400);
-  }
-
-  if (request.status === "SUBMITTED") {
-    const evaluation = await Evaluation.findOne({
-      evaluationType: "INTERNSHIP",
-      $or: [
-        { evaluationRequestId: request._id },
-        { targetId: request.internshipId?._id || request.internshipId },
-      ],
-    });
-
-    return {
-      status: "SUBMITTED",
-      submittedAt: request.submittedAt,
-      message: "Phiếu đánh giá này đã được gửi.",
-      student: {
-        ...request.studentId?.toObject?.(),
-        fullName: request.studentId?.userId?.fullName || request.studentId?.fullName,
-        studentCode: request.studentId?.studentCode,
-        className: request.studentId?.className,
-        email: request.studentId?.userId?.email,
-        phone: request.studentId?.userId?.phone,
-      },
-      company: {
-        ...request.companyId?.toObject?.(),
-        companyName: request.companyId?.companyName || request.companyId?.name,
-      },
-      internship: request.internshipId,
-      evaluation: evaluation || null,
-    };
-  }
-
-  return {
-    status: "PENDING",
-    request: {
-      _id: request._id,
-      token: request.token,
-      expiresAt: request.expiresAt,
-    },
-    student: {
-      fullName: request.studentId?.userId?.fullName,
-      studentCode: request.studentId?.studentCode,
-      className: request.studentId?.className,
-      email: request.studentId?.userId?.email,
-      phone: request.studentId?.userId?.phone,
-    },
-    company: {
-      companyName: request.companyId?.companyName || request.companyId?.name,
-      address: request.companyId?.address,
-      contactPerson: request.companyId?.contactPerson,
-      phone: request.companyId?.phone,
-    },
-    internship: {
-      _id: request.internshipId?._id,
-      position: request.internshipId?.position,
-      startDate: request.internshipId?.startDate,
-      endDate: request.internshipId?.endDate,
-      mentorName: request.internshipId?.mentorName,
-      mentorPosition: request.internshipId?.mentorPosition,
-      mentorEmail: request.internshipId?.mentorEmail,
-      mentorPhone: request.internshipId?.mentorPhone,
-    },
-    supervisor: {
-      fullName: request.internshipId?.lecturerId?.userId?.fullName || "Chưa phân công",
-      email: request.internshipId?.lecturerId?.userId?.email || "—",
-      phone: request.internshipId?.lecturerId?.userId?.phone || "—",
-    },
-  };
-};
-
-// ==========================================
-// 8. Public: Submit Evaluation Form (No Login)
-// ==========================================
-const submitPublicEvaluation = async (token, payload) => {
-  if (!token || !token.trim()) {
-    throw new AppError("Token đánh giá không hợp lệ.", 400);
-  }
-
-  const request = await CompanyEvaluationRequest.findOne({ token: token.trim() })
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate({
-      path: "internshipId",
-      populate: {
-        path: "lecturerId",
-        populate: { path: "userId", select: "fullName email phone" },
-      },
-    })
-    .populate("companyId");
-
-  if (!request) {
-    throw new AppError("Không tìm thấy phiếu đánh giá.", 404);
-  }
-
-  if (request.status === "SUBMITTED") {
-    throw new AppError("Phiếu đánh giá này đã được gửi trước đó.", 400);
-  }
-
-  if (request.status === "CANCELLED") {
-    throw new AppError("Liên kết đánh giá này đã bị hủy.", 400);
-  }
-
-  if (request.status === "SUBMITTED" || request.internshipId?.status === "COMPLETED") {
-    throw new AppError(
-      "Phiếu đánh giá này đã được gửi hoặc kỳ thực tập đã hoàn thành và bị khóa, không thể gửi lại.",
-      400,
-    );
-  }
-
-  if (request.expiresAt && request.expiresAt < new Date()) {
-    throw new AppError("Liên kết đánh giá này đã hết hạn.", 400);
-  }
-
-  const {
-    evaluatorInfo = {},
-    workFields = [],
-    workFieldOther = null,
-    requirements = {},
-    teamworkEvaluation = "Tốt",
-    teamworkOther = null,
-    score = 10,
-    comments = "",
-  } = payload;
-
-  if (Number(score) < 0 || Number(score) > 10) {
-    throw new AppError("Điểm đánh giá phải từ 0 đến 10.", 400);
-  }
-
-  // Create Evaluation
-  const evaluation = await Evaluation.create({
-    evaluationType: "INTERNSHIP",
-    targetId: request.internshipId._id,
-    evaluationRequestId: request._id,
-    evaluatorRole: "COMPANY",
-    evaluatorInfo: {
-      name: evaluatorInfo.name || request.companyId?.contactPerson || "Người đánh giá doanh nghiệp",
-      position: evaluatorInfo.position || "Cán bộ quản lý thực tập",
-      email: evaluatorInfo.email || request.companyId?.email || null,
-      phone: evaluatorInfo.phone || request.companyId?.phone || null,
-    },
-    workFields,
-    workFieldOther,
-    requirements: {
-      endUserRequirements: requirements.endUserRequirements || null,
-      leaderRequirements: requirements.leaderRequirements || null,
-      peo1: requirements.peo1 || null,
-      peo2: requirements.peo2 || null,
-      peo3: requirements.peo3 || null,
-    },
-    teamworkEvaluation,
-    teamworkOther,
-    score: Number(score),
-    comments: comments || null,
-    status: "SUBMITTED",
-    submittedAt: new Date(),
-  });
-
-  // Update request status
-  request.status = "SUBMITTED";
-  request.recreateStatus = "NONE";
-  request.recreateReason = "";
-  request.allowRecreate = false;
-  request.submittedAt = new Date();
-  await request.save();
-
-  // Create notifications
-  try {
-    const studentUser = request.studentId?.userId;
-    const lecturerUser = request.internshipId?.lecturerId?.userId;
-    const compName = request.companyId?.companyName || "Doanh nghiệp";
-
-    // 1. Notify Lecturer (GVHD)
-    if (lecturerUser?._id) {
-      await Notification.create({
-        recipientId: lecturerUser._id,
-        title: "Đánh giá Thực tập Doanh nghiệp",
-        message: `Doanh nghiệp ${compName} đã hoàn thành đánh giá thực tập của sinh viên ${studentUser?.fullName} (${request.studentId?.studentCode}).`,
-        type: "INTERNSHIP",
-        referenceId: evaluation._id,
-      });
-    }
-
-    // 2. Notify Student
-    if (studentUser?._id) {
-      await Notification.create({
-        recipientId: studentUser._id,
-        title: "Doanh nghiệp đã gửi đánh giá",
-        message: `Doanh nghiệp ${compName} đã gửi phiếu đánh giá thực tập cho bạn.`,
-        type: "INTERNSHIP",
-        referenceId: evaluation._id,
-      });
-    }
-  } catch (notiErr) {
-    console.error("Lỗi khi gửi thông báo đánh giá:", notiErr.message);
-  }
-
-  return {
-    message: "Gửi phiếu đánh giá thực tập thành công!",
-    evaluation,
-  };
-};
-
-// ==========================================
-// 9. TBM: Reset / Allow Recreating Evaluation Request
-// ==========================================
-const tbmResetEvaluationRequest = async (requestId) => {
-  const request = await CompanyEvaluationRequest.findById(requestId).populate({
-    path: "studentId",
-    populate: { path: "userId", select: "fullName" },
-  });
-
-  if (!request) {
-    throw new AppError("Không tìm thấy yêu cầu đánh giá.", 404);
-  }
-
-  // Delete the old request record so student can create a clean new request without compound unique index conflict
-  await CompanyEvaluationRequest.findByIdAndDelete(requestId);
-
-  // Notify student
-  if (request.studentId?.userId?._id) {
-    await Notification.create({
-      recipientId: request.studentId.userId._id,
-      title: "Cấp quyền tạo lại link đánh giá",
-      message: "Trưởng Bộ Môn đã cấp quyền cho phép bạn tạo lại link đánh giá thực tập mới.",
-      type: "INTERNSHIP",
-    });
-  }
-
-  return {
-    message: "Đã cho phép sinh viên tạo lại link đánh giá.",
-  };
-};
-
-// ==========================================
-// 10. TBM: Get All Evaluation Requests with Status
-// ==========================================
-const tbmGetAllEvaluationRequests = async ({
-  page = 1,
-  limit = 10,
-  search = "",
-  status = "",
-} = {}) => {
-  const query = {};
-
-  if (status && status.trim()) {
-    query.status = status.trim();
-  }
-
-  if (search && search.trim()) {
-    const searchRegex = { $regex: search.trim(), $options: "i" };
-    const matchingUsers = await User.find({ fullName: searchRegex }).select("_id");
-    const matchingStudents = await Student.find({
-      $or: [
-        { studentCode: searchRegex },
-        { userId: { $in: matchingUsers.map((u) => u._id) } },
-      ],
-    }).select("_id");
-
-    const matchingCompanies = await Company.find({ companyName: searchRegex }).select("_id");
-
-    query.$or = [
-      { studentId: { $in: matchingStudents.map((s) => s._id) } },
-      { companyId: { $in: matchingCompanies.map((c) => c._id) } },
-    ];
-  }
-
-  const skip = (Number(page) - 1) * Number(limit);
-  const total = await CompanyEvaluationRequest.countDocuments(query);
-
-  const requests = await CompanyEvaluationRequest.find(query)
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(Number(limit))
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate("companyId", "companyName address email phone contactPerson")
-    .populate({
-      path: "internshipId",
-      populate: {
-        path: "lecturerId",
-        populate: { path: "userId", select: "fullName email phone" },
-      },
-    })
-    .lean();
-
-  return {
-    data: requests,
-    pagination: {
-      total,
-      page: Number(page),
-      limit: Number(limit),
-      totalPages: Math.ceil(total / Number(limit)) || 1,
-    },
-  };
-};
-
-// ==========================================
-// 11. Student: Request Re-creation of Evaluation Link
-// ==========================================
-const studentRequestRecreateLink = async (userId, { reason } = {}) => {
-  if (!reason || !reason.trim()) {
-    throw new AppError("Vui lòng nhập lý do yêu cầu tạo lại link đánh giá.", 400);
-  }
-
-  const student = await Student.findOne({ userId }).populate({
-    path: "userId",
-    select: "fullName email",
-  });
-  if (!student) {
-    throw new AppError("Không tìm thấy thông tin sinh viên.", 404);
-  }
-
-  // Try to find existing CompanyEvaluationRequest for this student first
-  let request = await CompanyEvaluationRequest.findOne({
-    studentId: student._id,
-  }).sort({ createdAt: -1 });
-
-  let internship = null;
-  if (request?.internshipId) {
-    internship = await Internship.findById(request.internshipId);
-  }
-
-  if (!internship) {
-    internship = await Internship.findOne({
-      studentId: student._id,
-      status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
-    }).sort({ createdAt: -1 });
-  }
-
-  if (internship?.status === "COMPLETED") {
-    throw new AppError("Đợt thực tập đã hoàn tất, không thể yêu cầu tạo lại link đánh giá.", 400);
-  }
-
-  if (!request) {
-    if (!internship) {
-      throw new AppError("Không tìm thấy đợt thực tập hợp lệ của bạn.", 404);
-    }
-    const token = crypto.randomBytes(24).toString("hex");
-    request = await CompanyEvaluationRequest.create({
-      token,
-      studentId: student._id,
-      internshipId: internship._id,
-      companyId: internship.companyId,
-      status: "SUBMITTED",
-      recreateStatus: "PENDING",
-      recreateReason: reason.trim(),
-      recreateRequestedAt: new Date(),
-    });
-  } else {
-    request.recreateStatus = "PENDING";
-    request.recreateReason = reason.trim();
-    request.recreateRequestedAt = new Date();
-    await request.save();
-  }
-
-  // Send notification to TBM only (excluding ADMIN)
-  const studentName = student.userId?.fullName || "Sinh viên";
-  const studentCode = student.studentCode || "";
-  const tbmUsers = await User.find({ role: "TBM", isActive: true }).select("_id");
-  if (tbmUsers && tbmUsers.length > 0) {
-    await Promise.all(
-      tbmUsers.map((tbm) =>
-        notificationService.createNotification({
-          recipientId: tbm._id,
-          senderId: userId,
-          type: "EVALUATION_RECREATE",
-          title: "Yêu cầu tạo lại link đánh giá",
-          message: `Sinh viên ${studentName} (${studentCode}) đã yêu cầu tạo lại link đánh giá thực tập doanh nghiệp. Lý do: ${reason.trim()}.`,
-          referenceId: request._id,
-          referenceModel: "CompanyEvaluationRequest",
-          link: "/tbm/evaluations",
-        }),
-      ),
-    );
-  }
-
-  return {
-    message: "Gửi yêu cầu tạo lại link đánh giá thành công. Vui lòng chờ Trưởng Bộ Môn xét duyệt.",
-    request,
-  };
-};
-
-// ==========================================
-// 12. TBM: Get Re-creation Requests
-// ==========================================
-const tbmGetRecreateRequests = async ({ search = "", status = "" } = {}) => {
-  const query = {
-    recreateStatus: { $in: ["PENDING", "APPROVED", "REJECTED"] },
-  };
-
-  if (status && status.trim() && status !== "ALL") {
-    query.recreateStatus = status.trim().toUpperCase();
-  }
-
-  const requests = await CompanyEvaluationRequest.find(query)
-    .sort({ recreateRequestedAt: -1, updatedAt: -1 })
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate("companyId", "name companyName address email phone contactPerson")
-    .populate({
-      path: "internshipId",
-      populate: {
-        path: "lecturerId",
-        populate: { path: "userId", select: "fullName email phone" },
-      },
-    })
-    .lean();
-
-  const result = await Promise.all(
-    requests.map(async (req) => {
-      let evaluation = null;
-      if (req.internshipId?._id || req.internshipId) {
-        evaluation = await Evaluation.findOne({
-          evaluationType: "INTERNSHIP",
-          targetId: req.internshipId?._id || req.internshipId,
-        }).select("score comments submittedAt status");
-      }
-      return {
-        _id: req._id,
-        internshipId: req.internshipId?._id || req.internshipId,
-        studentId: req.studentId?._id,
-        studentCode: req.studentId?.studentCode || "—",
-        studentName: req.studentId?.userId?.fullName || req.studentId?.fullName || "Sinh viên",
-        className: req.studentId?.className || "—",
-        companyName: req.companyId?.companyName || req.companyId?.name || "Doanh nghiệp",
-        position: req.internshipId?.position || "Thực tập sinh",
-        score: evaluation?.score ?? null,
-        evaluationDate: evaluation?.submittedAt || req.submittedAt || req.createdAt,
-        reason: req.recreateReason || "—",
-        rejectReason: req.recreateRejectReason || "",
-        status: req.recreateStatus,
-        createdAt: req.recreateRequestedAt || req.updatedAt || req.createdAt,
-      };
-    })
-  );
-
-  let filtered = result;
-  if (search && search.trim()) {
-    const q = search.toLowerCase().trim();
-    filtered = filtered.filter(
-      (r) =>
-        r.studentName?.toLowerCase().includes(q) ||
-        r.studentCode?.toLowerCase().includes(q) ||
-        r.companyName?.toLowerCase().includes(q) ||
-        r.reason?.toLowerCase().includes(q)
-    );
-  }
-
-  return {
-    data: filtered,
-    total: filtered.length,
-  };
-};
-
-// ==========================================
-// 13. TBM: Approve Re-creation Request
-// ==========================================
-const tbmApproveRecreateRequest = async (requestId) => {
-  const request = await CompanyEvaluationRequest.findById(requestId).populate({
-    path: "studentId",
-    populate: { path: "userId", select: "fullName _id" },
-  });
-
-  if (!request) {
-    throw new AppError("Không tìm thấy yêu cầu tạo lại link.", 404);
-  }
-
-  request.recreateStatus = "APPROVED";
-  request.allowRecreate = true;
-  request.recreateApprovedAt = new Date();
-  await request.save();
-
-  // Send notification to student
-  if (request.studentId?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: request.studentId.userId._id,
-      title: "Duyệt yêu cầu tạo lại link đánh giá",
-      message: "Trưởng Bộ Môn đã phê duyệt yêu cầu tạo lại link đánh giá của bạn. Bạn có thể tạo link đánh giá mới ngay bây giờ.",
-      type: "EVALUATION",
-      link: "/student/internship",
-    });
-  }
-
-  return {
-    message: "Đã phê duyệt yêu cầu tạo lại link đánh giá thành công.",
-    request,
-  };
-};
-
-// ==========================================
-// 14. TBM: Reject Re-creation Request
-// ==========================================
-const tbmRejectRecreateRequest = async (requestId, { rejectReason } = {}) => {
-  const request = await CompanyEvaluationRequest.findById(requestId).populate({
-    path: "studentId",
-    populate: { path: "userId", select: "fullName _id" },
-  });
-
-  if (!request) {
-    throw new AppError("Không tìm thấy yêu cầu tạo lại link.", 404);
-  }
-
-  request.recreateStatus = "REJECTED";
-  request.recreateRejectReason = (rejectReason || "").trim() || "Trưởng Bộ Môn không chấp thuận yêu cầu.";
-  request.recreateRejectedAt = new Date();
-  await request.save();
-
-  // Send notification to student
-  if (request.studentId?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: request.studentId.userId._id,
-      title: "Từ chối yêu cầu tạo lại link đánh giá",
-      message: `Trưởng Bộ Môn đã từ chối yêu cầu tạo lại link đánh giá. Lý do: ${request.recreateRejectReason}`,
-      type: "EVALUATION",
-      link: "/student/internship",
-    });
-  }
-
-  return {
-    message: "Đã từ chối yêu cầu tạo lại link đánh giá.",
-    request,
-  };
-};
-
-// ==========================================
-// 15. TBM: Delete Evaluation Result
+// TBM: Delete Evaluation Result
 // ==========================================
 const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
   if (!targetIdOrEvalId) {
@@ -1492,12 +516,6 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
       await internship.save();
     }
   }
-
-  // Update company evaluation request to allow recreate immediately
-  await CompanyEvaluationRequest.updateMany(
-    { internshipId },
-    { allowRecreate: true, recreateStatus: "APPROVED" }
-  );
 
   return {
     message: "Đã xóa kết quả đánh giá của sinh viên thành công.",
@@ -1543,8 +561,68 @@ const gradeInternshipByLecturer = async ({
     throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
   }
 
-  // Validate Grading Window for current academic term
+  // ==========================================
+  // Điều kiện chấm điểm TTDN: Bắt buộc đáp ứng đầy đủ cả 3 điều kiện:
+  // 1. Sinh viên đã đạt trạng thái PASS PRETEST
+  // 2. Sinh viên đã nộp file báo cáo thực tập hợp lệ
+  // 3. Sinh viên đã hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp được áp dụng
+  // ==========================================
+
+  // Điều kiện 1: PASS PRETEST
+  if (!internship.pretest?.isPassed) {
+    throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa được GVGS xác nhận PASS PRETEST.", 400);
+  }
+
+  // Điều kiện 2: Nộp file báo cáo thực tập hợp lệ
+  if (!internship.reportFile || !internship.reportFile.fileUrl) {
+    const doc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    }).sort({ createdAt: -1 });
+
+    if (doc?.fileUrl) {
+      internship.reportFile = {
+        originalName: doc.title || doc.fileName,
+        fileName: doc.fileName,
+        fileUrl: doc.fileUrl,
+        fileSize: doc.fileSize || 0,
+        fileType: doc.fileType || null,
+        uploadedAt: doc.createdAt || new Date(),
+      };
+      await internship.save();
+    } else {
+      throw new AppError("Chưa đủ điều kiện chấm điểm: Sinh viên chưa nộp file báo cáo thực tập.", 400);
+    }
+  }
+
+  // Điều kiện 3: Hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp
   const term = await resolveAcademicTermForInternship(internship);
+  const commonReportCycle = [1, 2, 3].includes(Number(internship.reportCycle))
+    ? Number(internship.reportCycle)
+    : [1, 2, 3].includes(Number(term?.internship?.reportCycle))
+    ? Number(term.internship.reportCycle)
+    : 1;
+
+  const weeklyReports = await InternshipReport.find({
+    internshipId: internship._id,
+    reportType: "WEEKLY",
+  }).lean();
+
+  const internshipWithCycle = {
+    ...(internship.toObject ? internship.toObject() : internship),
+    reportCycle: commonReportCycle,
+  };
+
+  const diaryStatus = checkInternshipDiaryCompletion(internshipWithCycle, weeklyReports);
+  if (!diaryStatus.isCompleted) {
+    const missingText = diaryStatus.missingWeeks?.length > 0
+      ? ` (Còn thiếu tuần: ${diaryStatus.missingWeeks.join(", ")})`
+      : "";
+    throw new AppError(`Chưa đủ điều kiện chấm điểm: Sinh viên chưa hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp${missingText}.`, 400);
+  }
+
+  // Validate Grading Window for current academic term
   validateInternshipGradingWindow(term, new Date());
 
   // Find or create Evaluation record
@@ -1552,6 +630,11 @@ const gradeInternshipByLecturer = async ({
     evaluationType: "INTERNSHIP",
     targetId: internship._id,
   });
+
+  // Prompt 2 - Requirement 5.3: Tuân thủ trạng thái khóa nếu điểm đã được công bố
+  if (evaluation && (evaluation.isScorePublished || internship.isScorePublished)) {
+    throw new AppError("Kết quả đánh giá thực tập đã được công bố, không thể chỉnh sửa điểm.", 400);
+  }
 
   const evaluatorInfo = {
     name: lecturer.userId.fullName,
@@ -1568,7 +651,23 @@ const gradeInternshipByLecturer = async ({
         { name: "Báo cáo thực tập & nhật ký công việc", score: Number((numericScore * 0.3).toFixed(2)) },
       ];
 
+  const isUpdate = Boolean(evaluation);
+
   if (evaluation) {
+    // Prompt 2 - Requirement 5.4: Lưu vết lịch sử chỉnh sửa điểm
+    if (!Array.isArray(evaluation.editHistory)) {
+      evaluation.editHistory = [];
+    }
+    evaluation.editHistory.push({
+      editedBy: lecturer.userId._id,
+      editedAt: new Date(),
+      previousScore: evaluation.score,
+      newScore: numericScore,
+      previousComments: evaluation.comments || null,
+      newComments: comments ? comments.trim() : null,
+      action: "UPDATE",
+    });
+
     evaluation.score = numericScore;
     evaluation.comments = comments ? comments.trim() : null;
     evaluation.criteria = formattedCriteria;
@@ -1586,6 +685,17 @@ const gradeInternshipByLecturer = async ({
       score: numericScore,
       comments: comments ? comments.trim() : null,
       criteria: formattedCriteria,
+      editHistory: [
+        {
+          editedBy: lecturer.userId._id,
+          editedAt: new Date(),
+          previousScore: 0,
+          newScore: numericScore,
+          previousComments: null,
+          newComments: comments ? comments.trim() : null,
+          action: "CREATE",
+        },
+      ],
     });
   }
 
@@ -1594,38 +704,28 @@ const gradeInternshipByLecturer = async ({
   internship.evaluation = evaluation._id;
   await internship.save();
 
-  // Scores remain unpublished until TBM publishes them
+  // Scores remain unpublished until officially published
   evaluation.isScorePublished = false;
   await evaluation.save();
 
   internship.isScorePublished = false;
   await internship.save();
 
-  // Notify Student that lecturer graded (do NOT reveal score yet)
-  const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
-  if (student?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: student.userId._id,
-      type: "INTERNSHIP",
-      title: "Giảng viên Giám sát đã hoàn thành chấm điểm",
-      message: `Giảng viên Giám sát ${lecturer.userId.fullName} đã hoàn thành đánh giá thực tập doanh nghiệp của bạn. Kết quả sẽ được Trưởng Bộ Môn công bố.`,
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship",
-    });
-  }
+  // Yêu cầu nghiệp vụ: Không gửi thông báo cho sinh viên khi GVGS nhập hoặc cập nhật điểm.
+  // Chỉ gửi thông báo khi thao tác Công bố điểm được thực hiện chính thức.
 
   return {
     evaluation,
     internship,
+    isUpdate,
   };
 };
 
 
 // ==========================================
-// TBM: Publish Single Internship Score
+// TBM / Lecturer: Publish Single Internship Score
 // ==========================================
-const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
+const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser }) => {
   if (!internshipId) {
     throw new AppError("Mã hồ sơ thực tập là bắt buộc", 400);
   }
@@ -1638,6 +738,16 @@ const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  // Access control: If requesting user is LECTURER, must be assigned supervisor
+  if (requestingUser && requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({
+      userId: requestingUser.userId || requestingUser._id || requestingUser.id,
+    });
+    if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
+      throw new AppError("Bạn không phải là Giảng viên Giám sát của hồ sơ thực tập này", 403);
+    }
+  }
+
   const evaluation = await Evaluation.findOne({
     evaluationType: "INTERNSHIP",
     targetId: internship._id,
@@ -1648,28 +758,51 @@ const publishInternshipScore = async ({ internshipId, tbmUserId }) => {
   }
 
   const now = new Date();
+  const wasAlreadyPublished = Boolean(
+    evaluation.scorePublishStatus === "PUBLISHED" ||
+    (!evaluation.scorePublishStatus && evaluation.isScorePublished) ||
+    (Array.isArray(evaluation.publishHistory) && evaluation.publishHistory.some((h) => h.action === "PUBLISH"))
+  );
+  const action = wasAlreadyPublished ? "REPUBLISH" : "PUBLISH";
+
   evaluation.isScorePublished = true;
+  evaluation.scorePublishStatus = "PUBLISHED";
   evaluation.publishedAt = now;
   evaluation.publishedBy = tbmUserId;
+  if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+  evaluation.publishHistory.push({
+    action,
+    performedBy: tbmUserId,
+    performedAt: now,
+  });
   await evaluation.save();
 
   internship.isScorePublished = true;
+  internship.scorePublishStatus = "PUBLISHED";
   internship.scorePublishedAt = now;
   internship.scorePublishedBy = tbmUserId;
+  if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+  internship.publishHistory.push({
+    action,
+    performedBy: tbmUserId,
+    performedAt: now,
+  });
   await internship.save();
 
-  // Send Notification to Student
-  const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
-  if (student?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: student.userId._id,
-      type: "INTERNSHIP",
-      title: "Công bố điểm Thực tập Doanh nghiệp",
-      message: "Bạn đã có điểm Thực tập Doanh nghiệp",
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship?view=evaluation",
-    });
+  // Send Notification to Student ONLY when officially published and not a duplicate
+  if (!wasAlreadyPublished) {
+    const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+    if (student?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: student.userId._id,
+        type: "INTERNSHIP",
+        title: "Công bố điểm Thực tập Doanh nghiệp",
+        message: "Điểm đánh giá Thực tập Doanh nghiệp của bạn đã được công bố chính thức. Bạn có thể truy cập hệ thống để xem kết quả đánh giá chi tiết.",
+        referenceId: internship._id,
+        referenceModel: "Internship",
+        link: "/student/internship?view=evaluation",
+      });
+    }
   }
 
   return {
@@ -1708,28 +841,51 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
         continue;
       }
 
+      const wasAlreadyPublished = Boolean(
+        evaluation.scorePublishStatus === "PUBLISHED" ||
+        (!evaluation.scorePublishStatus && evaluation.isScorePublished) ||
+        (Array.isArray(evaluation.publishHistory) && evaluation.publishHistory.some((h) => h.action === "PUBLISH"))
+      );
+      const action = wasAlreadyPublished ? "REPUBLISH" : "PUBLISH";
+
       evaluation.isScorePublished = true;
+      evaluation.scorePublishStatus = "PUBLISHED";
       evaluation.publishedAt = now;
       evaluation.publishedBy = tbmUserId;
+      if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+      evaluation.publishHistory.push({
+        action,
+        performedBy: tbmUserId,
+        performedAt: now,
+      });
       await evaluation.save();
 
       internship.isScorePublished = true;
+      internship.scorePublishStatus = "PUBLISHED";
       internship.scorePublishedAt = now;
       internship.scorePublishedBy = tbmUserId;
+      if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+      internship.publishHistory.push({
+        action,
+        performedBy: tbmUserId,
+        performedAt: now,
+      });
       await internship.save();
 
-      // Notify Student
-      const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
-      if (student?.userId?._id) {
-        await notificationService.createNotification({
-          recipientId: student.userId._id,
-          type: "INTERNSHIP",
-          title: "Công bố điểm Thực tập Doanh nghiệp",
-          message: "Bạn đã có điểm Thực tập Doanh nghiệp",
-          referenceId: internship._id,
-          referenceModel: "Internship",
-          link: "/student/internship?view=evaluation",
-        });
+      // Notify Student ONLY when not already published (prevent duplicate notifications)
+      if (!wasAlreadyPublished) {
+        const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
+        if (student?.userId?._id) {
+          await notificationService.createNotification({
+            recipientId: student.userId._id,
+            type: "INTERNSHIP",
+            title: "Công bố điểm Thực tập Doanh nghiệp",
+            message: "Điểm đánh giá Thực tập Doanh nghiệp của bạn đã được công bố chính thức. Bạn có thể truy cập hệ thống để xem kết quả đánh giá chi tiết.",
+            referenceId: internship._id,
+            referenceModel: "Internship",
+            link: "/student/internship?view=evaluation",
+          });
+        }
       }
 
       publishedCount++;
@@ -1745,25 +901,204 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
   };
 };
 
+// ==========================================
+// TBM: Hide Published Internship Score
+// ==========================================
+const hideInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
+  const internship = await Internship.findById(id).populate("studentId");
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  const evaluation = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (!evaluation) {
+    throw new AppError("Hồ sơ này chưa có phiếu đánh giá", 400);
+  }
+
+  const isCurrentlyPublished = Boolean(
+    internship.scorePublishStatus === "PUBLISHED" ||
+    (!internship.scorePublishStatus && (internship.isScorePublished || evaluation.isScorePublished))
+  );
+
+  if (!isCurrentlyPublished) {
+    throw new AppError("Chỉ có thể ẩn điểm của những sinh viên đã được công bố điểm.", 400);
+  }
+
+  const now = new Date();
+  const cleanReason = reason ? String(reason).trim() : null;
+
+  evaluation.isScorePublished = false;
+  evaluation.scorePublishStatus = "HIDDEN";
+  if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+  evaluation.publishHistory.push({
+    action: "HIDE",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await evaluation.save();
+
+  internship.isScorePublished = false;
+  internship.scorePublishStatus = "HIDDEN";
+  if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+  internship.publishHistory.push({
+    action: "HIDE",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await internship.save();
+
+  return {
+    internship,
+    evaluation,
+    message: "Đã ẩn điểm đánh giá thành công",
+  };
+};
+
+// ==========================================
+// TBM: Hide Bulk Internship Scores
+// ==========================================
+const hideInternshipScoresBulk = async ({ internshipIds, tbmUserId, reason = "" }) => {
+  if (!Array.isArray(internshipIds) || internshipIds.length === 0) {
+    throw new AppError("Vui lòng chọn ít nhất một hồ sơ thực tập để ẩn điểm", 400);
+  }
+
+  const now = new Date();
+  const cleanReason = reason ? String(reason).trim() : null;
+  let hiddenCount = 0;
+  let skippedCount = 0;
+
+  for (const id of internshipIds) {
+    try {
+      const internship = await Internship.findById(id);
+      if (!internship) {
+        skippedCount++;
+        continue;
+      }
+      const evaluation = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      });
+      if (!evaluation) {
+        skippedCount++;
+        continue;
+      }
+
+      const isCurrentlyPublished = Boolean(
+        internship.scorePublishStatus === "PUBLISHED" ||
+        (!internship.scorePublishStatus && (internship.isScorePublished || evaluation.isScorePublished))
+      );
+
+      if (!isCurrentlyPublished) {
+        skippedCount++;
+        continue;
+      }
+
+      evaluation.isScorePublished = false;
+      evaluation.scorePublishStatus = "HIDDEN";
+      if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+      evaluation.publishHistory.push({
+        action: "HIDE",
+        performedBy: tbmUserId,
+        performedAt: now,
+        reason: cleanReason,
+      });
+      await evaluation.save();
+
+      internship.isScorePublished = false;
+      internship.scorePublishStatus = "HIDDEN";
+      if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+      internship.publishHistory.push({
+        action: "HIDE",
+        performedBy: tbmUserId,
+        performedAt: now,
+        reason: cleanReason,
+      });
+      await internship.save();
+
+      hiddenCount++;
+    } catch {
+      skippedCount++;
+    }
+  }
+
+  return {
+    hiddenCount,
+    skippedCount,
+    totalRequested: internshipIds.length,
+  };
+};
+
+// ==========================================
+// TBM: Republish Single Internship Score
+// ==========================================
+const republishInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
+  const internship = await Internship.findById(id).populate("studentId");
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  const evaluation = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (!evaluation || evaluation.score === null || evaluation.score === undefined || isNaN(evaluation.score)) {
+    throw new AppError("Hồ sơ này chưa có điểm đánh giá, không thể công bố.", 400);
+  }
+
+  const now = new Date();
+  const cleanReason = reason ? String(reason).trim() : null;
+
+  evaluation.isScorePublished = true;
+  evaluation.scorePublishStatus = "PUBLISHED";
+  evaluation.publishedAt = now;
+  evaluation.publishedBy = tbmUserId;
+  if (!Array.isArray(evaluation.publishHistory)) evaluation.publishHistory = [];
+  evaluation.publishHistory.push({
+    action: "REPUBLISH",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await evaluation.save();
+
+  internship.isScorePublished = true;
+  internship.scorePublishStatus = "PUBLISHED";
+  internship.scorePublishedAt = now;
+  internship.scorePublishedBy = tbmUserId;
+  if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
+  internship.publishHistory.push({
+    action: "REPUBLISH",
+    performedBy: tbmUserId,
+    performedAt: now,
+    reason: cleanReason,
+  });
+  await internship.save();
+
+  // "Không gửi thông báo công bố điểm mới khi chỉ thực hiện thao tác hiện lại điểm"
+  return {
+    internship,
+    evaluation,
+    message: "Đã công bố lại điểm đánh giá thành công",
+  };
+};
+
 export default {
   gradeInternshipByLecturer,
   publishInternshipScore,
   publishInternshipScoresBulk,
-  getCompanyInternships,
-  createOrUpdateEvaluation,
+  hideInternshipScore,
+  hideInternshipScoresBulk,
+  republishInternshipScore,
   getEvaluationById,
   getEvaluationsForLecturer,
   getAllEvaluationsForTbm,
-  createStudentEvaluationLink,
-  getStudentEvaluationRequest,
-  getPublicEvaluationByToken,
-  submitPublicEvaluation,
-  tbmResetEvaluationRequest,
-  tbmGetAllEvaluationRequests,
-  studentRequestRecreateLink,
-  tbmGetRecreateRequests,
-  tbmApproveRecreateRequest,
-  tbmRejectRecreateRequest,
   tbmDeleteEvaluation,
 };
 

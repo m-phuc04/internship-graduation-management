@@ -3,6 +3,7 @@ import express from "express";
 import internshipController from "../controllers/internshipController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import authorizeRoles from "../middlewares/roleMiddleware.js";
+import { uploadInternshipReportFile } from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
@@ -85,6 +86,38 @@ router.post(
   internshipController.createInternship,
 );
 
+// Student: Upload internship report file (Prompt 2 - Requirement 1)
+router.post(
+  "/my/report-file",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  uploadInternshipReportFile.single("file"),
+  internshipController.uploadReportFile,
+);
+
+router.post(
+  "/:id/report-file",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  uploadInternshipReportFile.single("file"),
+  internshipController.uploadReportFile,
+);
+
+// Student & Lecturer (GVGS): Delete / Remove internship report file
+router.delete(
+  "/my/report-file",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  internshipController.deleteReportFile,
+);
+
+router.delete(
+  "/:id/report-file",
+  authMiddleware,
+  authorizeRoles("STUDENT", "LECTURER", "TBM", "ADMIN"),
+  internshipController.deleteReportFile,
+);
+
 // ==========================================
 // 3. Lecturer Endpoints
 // ==========================================
@@ -121,9 +154,27 @@ router.patch(
   internshipController.supervisorRejectInternship,
 );
 
+// Lecturer (GVGS): Confirm PASS PRETEST (Prompt 2 - Requirement 3)
+router.patch(
+  "/:id/pass-pretest",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  internshipController.updatePretestStatus,
+);
+
 // Lecturer / TBM / Admin: Complete internship and permanently lock evaluation
-// Lecturer (GVGS): Grade Internship
+// Lecturer (GVGS): Grade Internship & Edit Score (Prompt 2 - Requirement 5)
 router.post(
+  "/:id/grade",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  (req, res, next) => {
+    req.body.internshipId = req.params.id;
+    return evaluationController.gradeInternship(req, res, next);
+  },
+);
+
+router.put(
   "/:id/grade",
   authMiddleware,
   authorizeRoles("LECTURER", "TBM", "ADMIN"),
@@ -140,9 +191,38 @@ router.patch(
   internshipController.completeInternship,
 );
 
+// Lecturer / TBM / Admin: Update report cycle for whole term
+router.put(
+  "/report-cycle",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  internshipController.updateTermReportCycle,
+);
+router.patch(
+  "/report-cycle",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  internshipController.updateTermReportCycle,
+);
+
+// Lecturer / TBM / Admin: Update report cycle (1, 2, or 3 weeks/time)
+router.patch(
+  "/:id/report-cycle",
+  authMiddleware,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  internshipController.updateReportCycle,
+);
+
 // ==========================================
-// 4. Shared Detail Endpoint
+// 4. Shared Detail & File Endpoints
 // ==========================================
+
+// Get report file info & access check
+router.get(
+  "/:id/report-file",
+  authMiddleware,
+  internshipController.getReportFile,
+);
 
 // Get internship by document ID (Secured with role & ownership check)
 router.get(

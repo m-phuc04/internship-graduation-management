@@ -21,18 +21,33 @@ import {
 
 const STATUS_OPTIONS = [
   { value: '', label: 'Tất cả trạng thái' },
-  { value: 'SUBMITTED', label: 'Chờ chấm' },
-  { value: 'APPROVED', label: 'Đã duyệt' },
-  { value: 'REJECTED', label: 'Yêu cầu sửa' },
-  { value: 'REVIEWING', label: 'Đang xem xét' },
+  { value: 'SUBMITTED', label: 'Đã nộp' },
+  { value: 'UNSUBMITTED', label: 'Chưa nộp' },
+  { value: 'APPROVED', label: 'Đã xử lý' },
+  { value: 'REJECTED', label: 'Yêu cầu chỉnh sửa' },
 ];
 
-const TYPE_OPTIONS = [
-  { value: '', label: 'Tất cả loại báo cáo' },
-  { value: 'WEEKLY', label: 'Báo cáo Tuần' },
-  { value: 'MONTHLY', label: 'Báo cáo Tháng' },
-  { value: 'FINAL', label: 'Báo cáo Tổng kết' },
+const DOCUMENT_CATEGORY_OPTIONS = [
+  { value: '', label: 'Tất cả phân loại' },
+  { value: 'Báo cáo thực tập', label: 'Báo cáo thực tập' },
+  { value: 'Báo cáo tuần', label: 'Báo cáo tuần' },
+  { value: 'Đề cương thực tập', label: 'Đề cương thực tập' },
+  { value: 'Phiếu khảo sát', label: 'Phiếu khảo sát' },
+  { value: 'Báo cáo tiến độ', label: 'Báo cáo tiến độ' },
+  { value: 'Báo cáo tổng kết', label: 'Báo cáo tổng kết' },
+  { value: 'Tài liệu minh chứng', label: 'Tài liệu minh chứng' },
+  { value: 'Khác', label: 'Khác' },
 ];
+
+const REPORT_STATUS_CONFIG = {
+  SUBMITTED: { label: 'Đã nộp', variant: 'info' },
+  APPROVED: { label: 'Đã xử lý', variant: 'success' },
+  REJECTED: { label: 'Yêu cầu chỉnh sửa', variant: 'danger' },
+  NEEDS_REVISION: { label: 'Yêu cầu chỉnh sửa', variant: 'danger' },
+  REVIEWING: { label: 'Đang xem xét', variant: 'warning' },
+  DRAFT: { label: 'Chưa nộp (Bản nháp)', variant: 'default' },
+  WAITING_STUDENT_2: { label: 'Chờ SV2 xác nhận', variant: 'warning' },
+};
 
 const LecturerReportPage = () => {
   const { user } = useAuth();
@@ -44,7 +59,7 @@ const LecturerReportPage = () => {
   // Search & Filter
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
-  const [reportType, setReportType] = useState('');
+  const [fileCategory, setFileCategory] = useState('');
   const [page, setPage] = useState(1);
 
   // Modal
@@ -75,7 +90,7 @@ const LecturerReportPage = () => {
         limit: 10,
         search,
         status,
-        reportType,
+        fileCategory,
       });
 
       if (res.success) {
@@ -87,7 +102,7 @@ const LecturerReportPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, status, reportType, showToast]);
+  }, [page, search, status, fileCategory, showToast]);
 
   useEffect(() => {
     fetchReports();
@@ -138,12 +153,12 @@ const LecturerReportPage = () => {
         <SearchInput
           value={search}
           onChange={(val) => handleFilterChange(setSearch, val)}
-          placeholder="Tìm theo MSSV, Tên SV, Tiêu đề báo cáo..."
+          placeholder="Tìm theo MSSV, Tên SV, Tiêu đề nhật ký..."
           className="w-full"
         />
       </div>
 
-      {/* 2. Hàng dưới: Thanh công cụ lọc trạng thái và loại báo cáo tách rời ở hàng dưới */}
+      {/* 2. Hàng dưới: Thanh công cụ gồm 2 bộ lọc: Trạng thái và Phân loại tài liệu */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <select
@@ -161,11 +176,11 @@ const LecturerReportPage = () => {
 
         <div>
           <select
-            value={reportType}
-            onChange={(e) => handleFilterChange(setReportType, e.target.value)}
+            value={fileCategory}
+            onChange={(e) => handleFilterChange(setFileCategory, e.target.value)}
             className="w-full py-2.5 px-3 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer shadow-2xs"
           >
-            {TYPE_OPTIONS.map((opt) => (
+            {DOCUMENT_CATEGORY_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -225,11 +240,7 @@ const LecturerReportPage = () => {
                     {/* Report Type */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
-                        {report.reportType === 'WEEKLY'
-                          ? `Tuần ${report.weekNumber}`
-                          : report.reportType === 'MONTHLY'
-                          ? `Tháng ${report.monthNumber}`
-                          : 'Tổng kết'}
+                        {report.weekNumber ? `Tuần ${report.weekNumber}` : 'Nhật ký'}
                       </span>
                     </td>
 
@@ -243,9 +254,14 @@ const LecturerReportPage = () => {
                           {report.internshipId?.companyId?.name || 'Doanh nghiệp'}
                         </span>
                         {report.file?.originalName && (
-                          <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-[130px]">
+                          <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-0.5 rounded-md truncate max-w-[220px]">
                             <Paperclip className="w-3 h-3 shrink-0" />
                             <span className="truncate">{report.file.originalName}</span>
+                            {(report.file?.category || report.fileCategory) && (
+                              <span className="ml-1 text-[9px] font-normal px-1.5 py-0.2 bg-blue-100 text-[#0d2a75] rounded-sm shrink-0">
+                                {report.file?.category || report.fileCategory}
+                              </span>
+                            )}
                           </span>
                         )}
                       </div>
@@ -264,7 +280,12 @@ const LecturerReportPage = () => {
 
                     {/* Status */}
                     <td className="py-3.5 px-4 pr-6 whitespace-nowrap">
-                      <StatusBadge status={report.status} size="sm" />
+                      <StatusBadge
+                        status={report.status}
+                        label={REPORT_STATUS_CONFIG[report.status]?.label || report.status}
+                        variant={REPORT_STATUS_CONFIG[report.status]?.variant}
+                        size="sm"
+                      />
                     </td>
                   </tr>
                 ))}

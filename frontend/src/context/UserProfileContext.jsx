@@ -24,8 +24,6 @@ export const UserProfileProvider = ({ children }) => {
         return '/lecturer/profile';
       case 'STUDENT':
         return '/student/profile';
-      case 'COMPANY':
-        return '/company/profile';
       default:
         return '/profile';
     }

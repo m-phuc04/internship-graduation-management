@@ -12,7 +12,6 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import TbmLayout from './components/layout/TbmLayout';
 import StudentLayout from './components/layout/StudentLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
-import CompanyLayout from './components/layout/CompanyLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
@@ -22,9 +21,7 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AcademicTermManagement from './pages/admin/AcademicTermManagement';
 import StudentManagement from './pages/tbm/StudentManagement';
 import LecturerManagement from './pages/tbm/LecturerManagement';
-import CompanyManagement from './pages/tbm/CompanyManagement';
 import InternshipManagement from './pages/tbm/InternshipManagement';
-import TbmInternshipDocumentsPage from './pages/tbm/TbmInternshipDocumentsPage';
 import TbmEvaluationManagement from './pages/tbm/TbmEvaluationManagement';
 import TbmThesisManagement from './pages/tbm/TbmThesisManagement';
 import TbmThesisEvaluationManagement from './pages/tbm/TbmThesisEvaluationManagement';
@@ -40,6 +37,8 @@ import RegisterThesisPage from './pages/student/RegisterThesisPage';
 import StudentThesisProgressPage from './pages/student/StudentThesisProgressPage';
 import StudentDashboard from './pages/student/StudentDashboard';
 import LecturerInternshipPage from './pages/lecturer/LecturerInternshipPage';
+import LecturerInternshipDossiersPage from './pages/lecturer/LecturerInternshipDossiersPage';
+import LecturerInternshipDocumentsPage from './pages/lecturer/LecturerInternshipDocumentsPage';
 import LecturerReportPage from './pages/lecturer/LecturerReportPage';
 import LecturerThesesPage from './pages/lecturer/LecturerThesesPage';
 import LecturerThesisDocumentsPage from './pages/lecturer/LecturerThesisDocumentsPage';
@@ -47,8 +46,6 @@ import LecturerThesisProgressPage from './pages/lecturer/LecturerThesisProgressP
 import LecturerThesisEvaluationDetailPage from './pages/lecturer/LecturerThesisEvaluationDetailPage';
 import LecturerDashboard from './pages/lecturer/LecturerDashboard';
 import LecturerNewsManagement from './pages/lecturer/LecturerNewsManagement';
-import CompanyEvaluationPage from './pages/company/CompanyEvaluationPage';
-import CompanyDashboard from './pages/company/CompanyDashboard';
 import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import HomePage from './pages/HomePage';
@@ -66,8 +63,6 @@ const RoleBasedProfileRedirect = () => {
       return <Navigate to="/lecturer/profile" replace />;
     case 'STUDENT':
       return <Navigate to="/student/profile" replace />;
-    case 'COMPANY':
-      return <Navigate to="/company/profile" replace />;
     default:
       return <Navigate to="/login" replace />;
   }
@@ -159,8 +154,7 @@ function App() {
                 <Route path="dashboard" element={<TbmDashboard />} />
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="lecturers" element={<LecturerManagement />} />
-                <Route path="companies" element={<CompanyManagement />} />
-                <Route path="internship-documents" element={<TbmInternshipDocumentsPage />} />
+                <Route path="internship-documents" element={<Navigate to="/tbm/internships" replace />} />
                 <Route path="internships" element={<InternshipManagement />} />
                 <Route path="evaluations" element={<TbmEvaluationManagement />} />
                 <Route path="theses" element={<TbmThesisManagement />} />
@@ -204,6 +198,8 @@ function App() {
               <Route index element={<Navigate to="/lecturer/dashboard" replace />} />
               <Route path="dashboard" element={<LecturerDashboard />} />
               <Route path="internships" element={<LecturerInternshipPage />} />
+              <Route path="internship-documents" element={<LecturerInternshipDocumentsPage />} />
+              <Route path="internship-dossiers" element={<LecturerInternshipDossiersPage />} />
               <Route path="reports" element={<LecturerReportPage />} />
               <Route path="theses" element={<LecturerThesesPage />} />
               <Route path="theses/documents" element={<LecturerThesisDocumentsPage />} />
@@ -211,21 +207,6 @@ function App() {
               <Route path="theses/:id" element={<LecturerThesisEvaluationDetailPage />} />
               <Route path="theses/progress" element={<LecturerThesisProgressPage />} />
               <Route path="news" element={<LecturerNewsManagement />} />
-              <Route path="profile" element={<ProfilePage />} />
-            </Route>
-
-            {/* Company Evaluation Routes (Protected with COMPANY role) */}
-            <Route
-              path="/company"
-              element={
-                <ProtectedRoute allowedRoles={['COMPANY']}>
-                  <CompanyLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/company/dashboard" replace />} />
-              <Route path="dashboard" element={<CompanyDashboard />} />
-              <Route path="evaluations" element={<CompanyEvaluationPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

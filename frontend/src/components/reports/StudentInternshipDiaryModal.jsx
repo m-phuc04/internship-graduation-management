@@ -116,6 +116,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
             <div className="text-left sm:text-right text-xs text-slate-500 shrink-0">
               <div>Đơn vị: <strong className="text-slate-900">{companyName}</strong></div>
               <div>Vị trí: <strong className="text-slate-800">{position}</strong></div>
+              <div>Chu kỳ nộp: <strong className="text-[#102d7d]">{internship.reportCycle || 1} tuần/lần</strong></div>
               <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
                 {formatDate(internship.startDate)} — {formatDate(internship.endDate)}
               </div>

@@ -11,7 +11,6 @@ const NotFoundPage = () => {
     if (user?.role === 'TBM') return '/tbm/dashboard';
     if (user?.role === 'LECTURER') return '/lecturer/dashboard';
     if (user?.role === 'STUDENT') return '/student/dashboard';
-    if (user?.role === 'COMPANY') return '/company/dashboard';
     return '/';
   };
 

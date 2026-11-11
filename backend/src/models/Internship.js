@@ -49,6 +49,18 @@ const internshipSchema = new mongoose.Schema(
       required: [true, "Ngày kết thúc thực tập là bắt buộc"],
     },
 
+    durationInWeeks: {
+      type: Number,
+      enum: [10, 12],
+      default: null,
+    },
+
+    reportCycle: {
+      type: Number,
+      enum: [1, 2, 3],
+      default: 1,
+    },
+
     mentorName: {
       type: String,
       trim: true,
@@ -143,6 +155,12 @@ const internshipSchema = new mongoose.Schema(
       default: false,
     },
 
+    scorePublishStatus: {
+      type: String,
+      enum: ["UNPUBLISHED", "PUBLISHED", "HIDDEN"],
+      default: "UNPUBLISHED",
+    },
+
     scorePublishedAt: {
       type: Date,
       default: null,
@@ -153,6 +171,133 @@ const internshipSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
+    // Lịch sử thao tác công bố, ẩn, công bố lại điểm
+    publishHistory: [
+      {
+        action: {
+          type: String,
+          enum: ["PUBLISH", "HIDE", "REPUBLISH"],
+          required: true,
+        },
+        performedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        performedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        reason: {
+          type: String,
+          default: null,
+          trim: true,
+        },
+      },
+    ],
+
+    // File báo cáo thực tập doanh nghiệp (Yêu cầu Prompt 2)
+    reportFile: {
+      originalName: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      fileName: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      fileUrl: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      fileSize: {
+        type: Number,
+        default: 0,
+      },
+      fileType: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+      uploadedAt: {
+        type: Date,
+        default: null,
+      },
+    },
+
+    // Trạng thái PASS PRETEST trước khi chấm điểm (Yêu cầu Prompt 2)
+    pretest: {
+      isPassed: {
+        type: Boolean,
+        default: false,
+      },
+      passedAt: {
+        type: Date,
+        default: null,
+      },
+      passedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+        default: null,
+      },
+      note: {
+        type: String,
+        trim: true,
+        default: null,
+      },
+    },
+
+    // Lịch sử thao tác gỡ file báo cáo thực tập (GVGS / Sinh viên)
+    reportRemovalHistory: [
+      {
+        removedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        removerRole: {
+          type: String,
+          enum: ["STUDENT", "LECTURER", "TBM", "ADMIN"],
+          required: true,
+        },
+        removerName: {
+          type: String,
+          default: "",
+        },
+        studentId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Student",
+        },
+        studentName: {
+          type: String,
+          default: "",
+        },
+        studentCode: {
+          type: String,
+          default: "",
+        },
+        fileName: {
+          type: String,
+          default: "",
+        },
+        fileUrl: {
+          type: String,
+          default: "",
+        },
+        reason: {
+          type: String,
+          required: true,
+        },
+        removedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   {
     timestamps: true,

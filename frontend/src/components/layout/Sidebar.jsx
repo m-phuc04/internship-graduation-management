@@ -42,12 +42,6 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
   // 2. Dành cho TBM: Nhóm Thực tập Doanh nghiệp (TTDN)
   const tbmInternshipItems = [
     {
-      to: '/tbm/internship-documents',
-      label: 'Quản lí Tài liệu thực tập',
-      icon: FileText,
-      badge: 'TL',
-    },
-    {
       to: '/tbm/internships',
       label: 'Quản lý Thực tập',
       icon: Briefcase,

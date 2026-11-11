@@ -22,4 +22,8 @@ router.patch("/:id/read", notificationController.markAsRead);
 // Notify lecturers when assigned to council
 router.post("/notify-council", notificationController.notifyCouncilAssignment);
 
+// Email notification settings (TTDN)
+router.get("/email-settings", notificationController.getEmailSettings);
+router.put("/email-settings", notificationController.updateEmailSettings);
+
 export default router;

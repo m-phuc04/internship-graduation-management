@@ -27,7 +27,20 @@ import {
   FileText,
   Printer,
   Award,
+  UploadCloud,
+  ExternalLink,
+  File,
+  Check,
+  Trash2,
 } from 'lucide-react';
+
+const formatFileSize = (bytes) => {
+  if (!bytes || bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+};
 
 const MyInternshipPage = () => {
   const { currentTerm } = useAcademicTerm();
@@ -37,6 +50,12 @@ const MyInternshipPage = () => {
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [evalData, setEvalData] = useState(null);
   const { showToast } = useToast();
+
+  // Report File Upload & Delete State
+  const [reportFileToUpload, setReportFileToUpload] = useState(null);
+  const [uploadingReport, setUploadingReport] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingReport, setDeletingReport] = useState(false);
 
   const fetchMyInternship = useCallback(async () => {
     setLoading(true);
@@ -205,6 +224,68 @@ const MyInternshipPage = () => {
     });
   };
 
+  const handleUploadReportFile = async (e) => {
+    e.preventDefault();
+    if (!reportFileToUpload) {
+      showToast('Vui lòng chọn file báo cáo trước khi nộp', 'warning');
+      return;
+    }
+
+    const allowedExtensions = ['.pdf', '.doc', '.docx'];
+    const ext = '.' + reportFileToUpload.name.split('.').pop().toLowerCase();
+    if (!allowedExtensions.includes(ext)) {
+      showToast('Chỉ chấp nhận các tệp định dạng .pdf, .doc, .docx', 'error');
+      return;
+    }
+
+    if (reportFileToUpload.size > 15 * 1024 * 1024) {
+      showToast('Dung lượng file không được vượt quá 15MB', 'error');
+      return;
+    }
+
+    setUploadingReport(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', reportFileToUpload);
+
+      const targetId = internship?._id || null;
+      const res = await internshipApi.uploadReportFile(formData, targetId);
+      if (res?.success) {
+        showToast('Nộp file báo cáo thực tập thành công!', 'success');
+        setReportFileToUpload(null);
+        fetchMyInternship();
+      }
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || err.message || 'Không thể tải lên file báo cáo',
+        'error',
+      );
+    } finally {
+      setUploadingReport(false);
+    }
+  };
+
+  const handleConfirmDeleteReport = async () => {
+    setDeletingReport(true);
+    try {
+      const targetId = internship?._id || null;
+      const res = await internshipApi.deleteReportFile(targetId);
+      if (res?.success) {
+        showToast('Đã gỡ file báo cáo thực tập thành công!', 'success');
+        setDeleteConfirmOpen(false);
+        setReportFileToUpload(null);
+        fetchMyInternship();
+      }
+    } catch (err) {
+      showToast(
+        err.response?.data?.message || err.message || 'Không thể gỡ file báo cáo',
+        'error',
+      );
+    } finally {
+      setDeletingReport(false);
+    }
+  };
+
   const hasAssignedLecturer = Boolean(
     internship?.lecturerId ||
     internship?.supervisorId ||
@@ -268,7 +349,7 @@ const MyInternshipPage = () => {
           </p>
 
           <Link
-            to="/student/register-internship"
+            to="/student/internship/register"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-sm rounded-2xl shadow-sm transition"
           >
             <span>Đăng ký Thực tập ngay</span>
@@ -460,6 +541,122 @@ const MyInternshipPage = () => {
               )}
             </div>
           </div>
+
+          {/* Section 3: File Báo Cáo Thực Tập Doanh Nghiệp (Prompt 2 - Requirement 1) */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#123891]" />
+                <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                  3. Báo cáo thực tập doanh nghiệp (File Báo Cáo)
+                </h3>
+              </div>
+
+              {internship.reportFile?.fileUrl ? (
+                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>ĐÃ NỘP BÁO CÁO</span>
+                </span>
+              ) : (
+                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-600" />
+                  <span>CHƯA NỘP FILE BÁO CÁO</span>
+                </span>
+              )}
+            </div>
+
+            {/* Display submitted file or upload form */}
+            {internship.reportFile?.fileUrl ? (
+              <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-emerald-200 text-rose-500 flex items-center justify-center shadow-2xs shrink-0">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 text-xs truncate max-w-sm">
+                        {internship.reportFile.originalName || internship.reportFile.fileName}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                        Dung lượng: {formatFileSize(internship.reportFile.fileSize)} • Ngày nộp:{' '}
+                        {internship.reportFile.uploadedAt
+                          ? new Date(internship.reportFile.uploadedAt).toLocaleString('vi-VN')
+                          : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={internship.reportFile.fileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-white hover:bg-emerald-100 rounded-xl transition border border-emerald-200 shadow-2xs cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Xem file</span>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirmOpen(true)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-white hover:bg-rose-50 rounded-xl transition border border-rose-200 cursor-pointer shadow-2xs"
+                      title="Gỡ file báo cáo hiện tại"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Gỡ file</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleUploadReportFile} className="space-y-4">
+                <div className="border-2 border-dashed border-slate-200 hover:border-[#123891] rounded-2xl p-6 text-center transition bg-slate-50/50">
+                  <input
+                    type="file"
+                    id="internship-report-file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => setReportFileToUpload(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="internship-report-file"
+                    className="cursor-pointer flex flex-col items-center justify-center gap-2"
+                  >
+                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shadow-2xs">
+                      <UploadCloud className="w-6 h-6" />
+                    </div>
+                    <div className="text-xs font-bold text-slate-800">
+                      {reportFileToUpload ? (
+                        <span className="text-[#123891]">
+                          Đã chọn: {reportFileToUpload.name} ({formatFileSize(reportFileToUpload.size)})
+                        </span>
+                      ) : (
+                        <span>Nhấn để chọn tệp báo cáo thực tập (.pdf, .doc, .docx)</span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-400">
+                      Dung lượng tối đa 15MB. File báo cáo tổng kết thực tập doanh nghiệp.
+                    </p>
+                  </label>
+                </div>
+
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="submit"
+                    disabled={!reportFileToUpload || uploadingReport}
+                    className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition shadow-sm disabled:opacity-50 cursor-pointer"
+                  >
+                    {uploadingReport ? (
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Check className="w-3.5 h-3.5" />
+                    )}
+                    <span>{uploadingReport ? 'Đang tải lên...' : 'Xác nhận nộp file báo cáo'}</span>
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
         </div>
 
         {/* Right Column (1 Col): Supervisor Lecturer & Evaluation Outcome */}
@@ -625,6 +822,56 @@ const MyInternshipPage = () => {
         >
           <InternshipConfirmationDoc docData={docData} />
         </DocumentViewerModal>
+      )}
+
+      {/* Delete Report File Confirmation Modal */}
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Xác nhận gỡ file báo cáo</h3>
+                <p className="text-xs text-slate-500">Thao tác này sẽ gỡ file báo cáo đã nộp</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-amber-50/80 border border-amber-200/80 text-xs text-amber-900 space-y-2">
+              <p className="font-semibold text-amber-950">
+                File báo cáo hiện tại sẽ bị gỡ khỏi hệ thống và bạn phải tải lại file mới nếu muốn tiếp tục nộp báo cáo.
+              </p>
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                Tệp đang nộp: <strong className="font-bold text-slate-900">{internship?.reportFile?.originalName || internship?.reportFile?.fileName}</strong>
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={deletingReport}
+                onClick={() => setDeleteConfirmOpen(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={deletingReport}
+                onClick={handleConfirmDeleteReport}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50"
+              >
+                {deletingReport ? (
+                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Trash2 className="w-3.5 h-3.5" />
+                )}
+                <span>{deletingReport ? 'Đang gỡ file...' : 'Xác nhận gỡ file'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

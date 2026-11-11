@@ -13,16 +13,21 @@ const createReport = async (req, res, next) => {
         fileUrl: `/uploads/internship-reports/${req.file.filename}`,
         mimeType: req.file.mimetype,
         size: req.file.size,
+        category: req.body.category || req.body.fileCategory || null,
         uploadedAt: new Date(),
       };
     } else if (req.body.file && typeof req.body.file === "object") {
-      fileMeta = req.body.file;
+      fileMeta = {
+        ...req.body.file,
+        category: req.body.category || req.body.fileCategory || req.body.file.category || null,
+      };
     }
 
     const report = await internshipReportService.createReport({
       userId: req.user.userId,
       ...req.body,
       file: fileMeta,
+      fileCategory: req.body.category || req.body.fileCategory || fileMeta?.category || null,
     });
 
     res.status(201).json({
@@ -53,10 +58,14 @@ const updateReport = async (req, res, next) => {
         fileUrl: `/uploads/internship-reports/${req.file.filename}`,
         mimeType: req.file.mimetype,
         size: req.file.size,
+        category: req.body.category || req.body.fileCategory || null,
         uploadedAt: new Date(),
       };
     } else if (req.body.file && typeof req.body.file === "object") {
-      fileMeta = req.body.file;
+      fileMeta = {
+        ...req.body.file,
+        category: req.body.category || req.body.fileCategory || req.body.file.category || null,
+      };
     }
 
     const report = await internshipReportService.updateReport({
@@ -64,6 +73,7 @@ const updateReport = async (req, res, next) => {
       userId: req.user.userId,
       ...req.body,
       file: fileMeta,
+      fileCategory: req.body.category || req.body.fileCategory || fileMeta?.category || undefined,
     });
 
     res.status(200).json({
@@ -133,7 +143,7 @@ const getMyReports = async (req, res, next) => {
 // ====================
 const getReportsForLecturer = async (req, res, next) => {
   try {
-    const { page, limit, search, status, reportType } = req.query;
+    const { page, limit, search, status, reportType, fileCategory, category } = req.query;
 
     const result = await internshipReportService.getReportsForLecturer(
       req.user.userId,
@@ -143,6 +153,7 @@ const getReportsForLecturer = async (req, res, next) => {
         search: search || "",
         status: status || "",
         reportType: reportType || "",
+        fileCategory: (fileCategory || category || "").trim(),
       },
     );
 

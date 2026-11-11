@@ -27,6 +27,8 @@ const authMiddleware = (req, res, next) => {
     const payload = verifyAccessToken(token);
 
     req.user = {
+      _id: payload.userId,
+      id: payload.userId,
       userId: payload.userId,
       role: payload.role,
     };

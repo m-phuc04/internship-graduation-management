@@ -3,8 +3,15 @@ import Internship from "../models/Internship.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
+import AcademicTerm from "../models/AcademicTerm.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
+import {
+  calculateInternshipWeeks,
+  getWeekEndDate,
+  isWeekEnded,
+  getInternshipTotalWeeks,
+} from "../utils/internshipDateUtils.js";
 
 // ====================
 // Student Creates or Submits Report
@@ -20,6 +27,7 @@ const createReport = async ({
   weekEndDate,
   monthNumber,
   file,
+  fileCategory,
   status = "SUBMITTED",
 }) => {
   const student = await Student.findOne({ userId }).populate({
@@ -50,14 +58,25 @@ const createReport = async ({
     throw new AppError("Hồ sơ thực tập không thuộc về tài khoản này", 403);
   }
 
-  if (
-    !["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(
-      internship.status,
-    )
-  ) {
+  const isApprovedByTBM =
+    (Boolean(internship.approvedAt) ||
+      Boolean(internship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(internship.status)) &&
+    internship.status !== "CANCELLED" &&
+    internship.status !== "REJECTED" &&
+    !internship.rejectedAt;
+
+  if (!isApprovedByTBM) {
     throw new AppError(
-      `Chưa thể nộp nhật ký khi hồ sơ thực tập đang ở trạng thái ${internship.status}. Hồ sơ phải được duyệt (APPROVED/INTERNING).`,
-      409,
+      "Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.",
+      403,
+    );
+  }
+
+  if (!internship.lecturerId) {
+    throw new AppError(
+      "Hồ sơ thực tập của bạn chưa được phân công Giảng viên Giám sát. Vui lòng chờ phân công GVGS trước khi nộp nhật ký.",
+      400,
     );
   }
 
@@ -70,6 +89,42 @@ const createReport = async ({
       throw new AppError("Báo cáo tuần (WEEKLY) bắt buộc phải có số tuần (từ 1 đến 52)", 400);
     }
     validWeek = Number(weekNumber);
+
+    // 1. Kiểm tra không vượt quá tổng thời lượng thực tập
+    const totalWeeks = getInternshipTotalWeeks(internship);
+    if (validWeek > totalWeeks) {
+      throw new AppError(
+        `Tuần ${validWeek} vượt quá tổng thời gian thực tập đã đăng ký (${totalWeeks} tuần)`,
+        400,
+      );
+    }
+
+    // 2. Kiểm tra chu kỳ nộp nhật ký của GVGS (theo học kỳ)
+    let cycle = internship.reportCycle || 1;
+    if (internship.academicTermId) {
+      const termDoc = await AcademicTerm.findById(
+        internship.academicTermId._id || internship.academicTermId
+      ).lean();
+      if (termDoc?.internship?.reportCycle) {
+        cycle = termDoc.internship.reportCycle;
+      }
+    }
+
+    if (validWeek % cycle !== 0) {
+      throw new AppError(
+        `Tuần ${validWeek} không thuộc chu kỳ nộp nhật ký (${cycle} tuần/lần) do Giảng viên Giám sát thiết lập`,
+        400,
+      );
+    }
+
+    // 3. Khóa nhật ký khi tuần thực tập đã kết thúc
+    const weekEnd = getWeekEndDate(internship.startDate, validWeek, weekEndDate);
+    if (isWeekEnded(weekEnd)) {
+      throw new AppError(
+        `Tuần thực tập số ${validWeek} đã kết thúc. Nhật ký của tuần này đã bị khóa, không thể tạo mới hoặc nộp bổ sung.`,
+        400,
+      );
+    }
   } else if (reportType === "MONTHLY") {
     if (!monthNumber || Number(monthNumber) < 1 || Number(monthNumber) > 12) {
       throw new AppError("Báo cáo tháng (MONTHLY) bắt buộc phải có số tháng (từ 1 đến 12)", 400);
@@ -131,6 +186,7 @@ const createReport = async ({
     weekEndDate: weekEndDate ? new Date(weekEndDate) : null,
     monthNumber: validMonth,
     file: file || null,
+    fileCategory: file?.category || fileCategory || (reportType === "WEEKLY" ? "Báo cáo tuần" : null),
     status: initialStatus,
     student2Status: initialStudent2Status,
     submittedAt: initialStatus === "SUBMITTED" || initialStatus === "WAITING_STUDENT_2" ? new Date() : null,
@@ -185,6 +241,7 @@ const updateReport = async ({
   title,
   content,
   file,
+  fileCategory,
   status = "SUBMITTED",
   weekStartDate,
   weekEndDate,
@@ -220,6 +277,39 @@ const updateReport = async ({
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
   }
 
+  const isApprovedByTBM =
+    (Boolean(internship.approvedAt) ||
+      Boolean(internship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(internship.status)) &&
+    internship.status !== "CANCELLED" &&
+    internship.status !== "REJECTED" &&
+    !internship.rejectedAt;
+
+  if (!isApprovedByTBM) {
+    throw new AppError(
+      "Bạn chỉ có thể tạo và nộp nhật ký thực tập từng tuần sau khi hồ sơ thực tập đã được Trưởng Bộ Môn (TBM) phê duyệt.",
+      403,
+    );
+  }
+
+  if (!internship.lecturerId) {
+    throw new AppError(
+      "Hồ sơ thực tập của bạn chưa được phân công Giảng viên Giám sát. Vui lòng chờ phân công GVGS trước khi nộp nhật ký.",
+      400,
+    );
+  }
+
+  // Khóa nhật ký khi tuần thực tập đã kết thúc
+  if (report.reportType === "WEEKLY" && report.weekNumber) {
+    const weekEnd = getWeekEndDate(internship.startDate, report.weekNumber, report.weekEndDate);
+    if (isWeekEnded(weekEnd)) {
+      throw new AppError(
+        `Tuần thực tập số ${report.weekNumber} đã kết thúc. Nhật ký của tuần này đã bị khóa, không thể chỉnh sửa hoặc nộp lại.`,
+        400,
+      );
+    }
+  }
+
   if (!["DRAFT", "NEEDS_REVISION", "REJECTED"].includes(report.status)) {
     throw new AppError(
       `Không thể chỉnh sửa báo cáo khi đang ở trạng thái "${report.status}"`,
@@ -229,7 +319,12 @@ const updateReport = async ({
 
   if (title !== undefined) report.title = title.trim();
   if (content !== undefined) report.content = content;
-  if (file !== undefined && file !== null) report.file = file;
+  if (file !== undefined && file !== null) {
+    report.file = file;
+    report.fileCategory = file.category || fileCategory || report.fileCategory || null;
+  } else if (fileCategory !== undefined) {
+    report.fileCategory = fileCategory;
+  }
   if (weekStartDate !== undefined) report.weekStartDate = weekStartDate ? new Date(weekStartDate) : null;
   if (weekEndDate !== undefined) report.weekEndDate = weekEndDate ? new Date(weekEndDate) : null;
 
@@ -423,7 +518,6 @@ const getReportsForStudent = async (userId) => {
 
   const internship = await Internship.findOne({
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-    status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"] },
   })
     .sort({ createdAt: -1 })
     .populate("companyId")
@@ -442,6 +536,15 @@ const getReportsForStudent = async (userId) => {
 
   let reports = [];
   if (internship) {
+    if (internship.academicTermId) {
+      const termDoc = await AcademicTerm.findById(
+        internship.academicTermId._id || internship.academicTermId
+      ).lean();
+      if (termDoc?.internship?.reportCycle) {
+        internship.reportCycle = termDoc.internship.reportCycle;
+      }
+    }
+
     reports = await InternshipReport.find({
       internshipId: internship._id,
     })
@@ -479,7 +582,7 @@ const getReportsForStudent = async (userId) => {
 // ====================
 const getReportsForLecturer = async (
   userId,
-  { page = 1, limit = 10, search = "", status = "", reportType = "" } = {},
+  { page = 1, limit = 10, search = "", status = "", reportType = "", fileCategory = "" } = {},
 ) => {
   const lecturer = await Lecturer.findOne({ userId }).populate({
     path: "userId",
@@ -496,20 +599,77 @@ const getReportsForLecturer = async (
 
   const internshipIds = supervisedInternships.map((i) => i._id);
 
-  // GVHD can ONLY see reports that are SUBMITTED, REVIEWING, APPROVED, or REJECTED
+  // GVHD can view reports belonging to assigned internships
   const query = {
     internshipId: { $in: internshipIds },
-    status: { $in: ["SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"] },
   };
 
   if (status && status.trim()) {
-    if (["SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"].includes(status.trim())) {
+    const s = status.trim().toUpperCase();
+    if (s === "SUBMITTED") {
+      query.status = "SUBMITTED";
+    } else if (s === "UNSUBMITTED" || s === "DRAFT") {
+      query.status = { $in: ["DRAFT", "WAITING_STUDENT_2"] };
+    } else if (s === "APPROVED" || s === "PROCESSED") {
+      query.status = { $in: ["APPROVED", "REVIEWING"] };
+    } else if (s === "REJECTED" || s === "NEEDS_REVISION") {
+      query.status = { $in: ["REJECTED", "NEEDS_REVISION"] };
+    } else {
       query.status = status.trim();
     }
+  } else {
+    query.status = {
+      $in: [
+        "SUBMITTED",
+        "REVIEWING",
+        "APPROVED",
+        "REJECTED",
+        "NEEDS_REVISION",
+        "DRAFT",
+        "WAITING_STUDENT_2",
+      ],
+    };
   }
 
   if (reportType && reportType.trim()) {
     query.reportType = reportType.trim();
+  }
+
+  const andConditions = [];
+
+  // Lọc theo Phân loại tài liệu đính kèm (Metadata thực tế trong DB)
+  if (fileCategory && fileCategory.trim()) {
+    const cat = fileCategory.trim();
+    if (cat === "Báo cáo tuần") {
+      // Đối với Báo cáo tuần: bao gồm các nhật ký có file đính kèm là Báo cáo tuần,
+      // hoặc các bản ghi nhật ký tuần (reportType: "WEEKLY") chưa bị gán loại tài liệu khác
+      andConditions.push({
+        $or: [
+          { "file.category": "Báo cáo tuần" },
+          { fileCategory: "Báo cáo tuần" },
+          { category: "Báo cáo tuần" },
+          {
+            reportType: "WEEKLY",
+            $or: [
+              { file: null },
+              { "file.category": null },
+              { "file.category": "Báo cáo tuần" },
+              { "file.category": { $exists: false } },
+              { "file.fileUrl": null },
+            ],
+          },
+        ],
+      });
+    } else {
+      andConditions.push({
+        "file.fileUrl": { $ne: null },
+        $or: [
+          { "file.category": cat },
+          { fileCategory: cat },
+          { category: cat },
+        ],
+      });
+    }
   }
 
   if (search && search.trim()) {
@@ -522,11 +682,17 @@ const getReportsForLecturer = async (
       ],
     }).select("_id");
 
-    query.$or = [
-      { studentId: { $in: matchingStudents.map((s) => s._id) } },
-      { secondStudentId: { $in: matchingStudents.map((s) => s._id) } },
-      { title: searchRegex },
-    ];
+    andConditions.push({
+      $or: [
+        { studentId: { $in: matchingStudents.map((s) => s._id) } },
+        { secondStudentId: { $in: matchingStudents.map((s) => s._id) } },
+        { title: searchRegex },
+      ],
+    });
+  }
+
+  if (andConditions.length > 0) {
+    query.$and = andConditions;
   }
 
   const skip = (Number(page) - 1) * Number(limit);

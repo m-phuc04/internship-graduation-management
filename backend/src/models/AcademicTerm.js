@@ -59,6 +59,7 @@ const academicTermSchema = new mongoose.Schema(
       evaluationEndDate: { type: Date, default: null },
       evaluationStart: { type: Date, default: null },
       evaluationDeadline: { type: Date, default: null },
+      reportCycle: { type: Number, enum: [1, 2, 3], default: 1 },
     },
 
     // Mốc thời gian Khóa luận Tốt nghiệp (KLTN)

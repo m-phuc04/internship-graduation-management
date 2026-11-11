@@ -107,10 +107,85 @@ const notifyCouncilAssignment = async (req, res, next) => {
   }
 };
 
+// ====================
+// Email Notification Settings (TTDN)
+// ====================
+
+const getEmailSettings = async (req, res, next) => {
+  try {
+    const User = (await import("../models/User.js")).default;
+    const user = await User.findById(req.user.userId).select("email emailNotificationEnabled fullName").lean();
+    if (!user) {
+      const error = new Error("Không tìm thấy thông tin tài khoản");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasValidEmail = Boolean(user.email && emailRegex.test(user.email.trim()));
+
+    res.status(200).json({
+      success: true,
+      message: "Lấy cài đặt nhận email thông báo thành công",
+      data: {
+        email: user.email || "",
+        emailNotificationEnabled: Boolean(user.emailNotificationEnabled),
+        hasValidEmail,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateEmailSettings = async (req, res, next) => {
+  try {
+    const { enabled } = req.body;
+    const User = (await import("../models/User.js")).default;
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      const error = new Error("Không tìm thấy thông tin tài khoản");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const isEnabling = Boolean(enabled);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const hasValidEmail = Boolean(user.email && emailRegex.test(user.email.trim()));
+
+    if (isEnabling && !hasValidEmail) {
+      const error = new Error(
+        "Tài khoản của bạn chưa có địa chỉ email hợp lệ. Vui lòng cập nhật email trong phần Hồ sơ cá nhân trước khi bật nhận email thông báo."
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    user.emailNotificationEnabled = isEnabling;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: isEnabling
+        ? "Đã bật đăng ký nhận email thông báo TTDN thành công."
+        : "Đã tắt chức năng nhận email thông báo TTDN.",
+      data: {
+        email: user.email || "",
+        emailNotificationEnabled: user.emailNotificationEnabled,
+        hasValidEmail,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getMyNotifications,
   markAsRead,
   markAllAsRead,
   getUnreadCount,
   notifyCouncilAssignment,
+  getEmailSettings,
+  updateEmailSettings,
 };

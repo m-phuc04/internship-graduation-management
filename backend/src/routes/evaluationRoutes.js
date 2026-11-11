@@ -6,31 +6,18 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 const router = express.Router();
 
 // ==========================================
-// 1. Company Endpoints
+// 1. Lecturer Endpoints
 // ==========================================
 
-// Company: Get all interning students with evaluation status
-router.get(
-  "/company/internships",
+// Lecturer (GVGS): Grade Internship & Edit Score
+router.post(
+  "/internship/grade",
   authMiddleware,
-  authorizeRoles("COMPANY"),
-  evaluationController.getCompanyInternships,
+  authorizeRoles("LECTURER", "TBM", "ADMIN"),
+  evaluationController.gradeInternship,
 );
 
-// Company: Create or update evaluation
-router.post(
-  "/",
-  authMiddleware,
-  authorizeRoles("COMPANY"),
-  evaluationController.createOrUpdateEvaluation,
-);
-
-// ==========================================
-// 2. Lecturer Endpoints
-// ==========================================
-
-// Lecturer (GVGS): Grade Internship
-router.post(
+router.put(
   "/internship/grade",
   authMiddleware,
   authorizeRoles("LECTURER", "TBM", "ADMIN"),
@@ -46,7 +33,7 @@ router.get(
 );
 
 // ==========================================
-// 3. TBM Endpoints
+// 2. TBM Endpoints
 // ==========================================
 
 // TBM: View all evaluations across companies
@@ -58,11 +45,18 @@ router.get(
 );
 
 
-// TBM: Publish Single Score
+// TBM / Lecturer: Publish Single Score
 router.post(
   "/tbm/publish/:id",
   authMiddleware,
-  authorizeRoles("TBM", "ADMIN"),
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
+  evaluationController.publishScore,
+);
+
+router.post(
+  "/publish/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN", "LECTURER"),
   evaluationController.publishScore,
 );
 
@@ -74,6 +68,30 @@ router.post(
   evaluationController.publishScoresBulk,
 );
 
+// TBM: Hide Published Score
+router.post(
+  "/tbm/hide/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.hideScore,
+);
+
+// TBM: Hide Bulk Scores
+router.post(
+  "/tbm/hide-bulk",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.hideScoresBulk,
+);
+
+// TBM: Republish Score
+router.post(
+  "/tbm/republish/:id",
+  authMiddleware,
+  authorizeRoles("TBM", "ADMIN"),
+  evaluationController.republishScore,
+);
+
 // TBM: Delete evaluation result
 router.delete(
   "/tbm/:id",
@@ -83,19 +101,7 @@ router.delete(
 );
 
 // ==========================================
-// 4. Student Evaluation Status Endpoints
-// ==========================================
-
-// Student: Get my evaluation request and results
-router.get(
-  "/student/my-request",
-  authMiddleware,
-  authorizeRoles("STUDENT"),
-  evaluationController.getStudentEvaluationRequest,
-);
-
-// ==========================================
-// 5. Shared Endpoints
+// 3. Shared Endpoints
 // ==========================================
 
 // Get evaluation by ID (Secured with role & ownership check)

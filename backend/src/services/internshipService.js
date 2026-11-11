@@ -1,3 +1,6 @@
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import Internship from "../models/Internship.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
@@ -5,9 +8,36 @@ import Company from "../models/Company.js";
 import User from "../models/User.js";
 import Evaluation from "../models/Evaluation.js";
 import AcademicTerm from "../models/AcademicTerm.js";
+import InternshipReport from "../models/InternshipReport.js";
+import InternshipDocument from "../models/InternshipDocument.js";
+import Log from "../models/Log.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
+import {
+  calculateInternshipWeeks,
+  checkInternshipDiaryCompletion,
+} from "../utils/internshipDateUtils.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Helper to remove physical file safely
+const unlinkFileSafe = (fileUrl) => {
+  if (!fileUrl) return;
+  try {
+    const diskPath = path.join(
+      __dirname,
+      "../../public",
+      fileUrl.startsWith("/") ? fileUrl : `/${fileUrl}`,
+    );
+    if (fs.existsSync(diskPath)) {
+      fs.unlinkSync(diskPath);
+    }
+  } catch (err) {
+    console.warn("Could not remove file from disk:", err.message);
+  }
+};
 
 // ====================
 // Active Internship Statuses
@@ -31,6 +61,7 @@ const createInternship = async ({
   mentorEmail,
   mentorPhone,
   lecturerId,
+  academicTermId,
 }) => {
   // 1. Identify Student
   let student;
@@ -50,33 +81,7 @@ const createInternship = async ({
     throw new AppError("Không tìm thấy thông tin hồ sơ sinh viên", 404);
   }
 
-  // 2. Identify Current Academic Term automatically (by Date or ACTIVE status)
-  const activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
-
-  // Validate Registration Window (if configured)
-  const now = new Date();
-  if (activeTerm.internship?.registrationStart && now < new Date(activeTerm.internship.registrationStart)) {
-    throw new AppError("Chưa đến thời gian mở cổng đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
-  }
-  if (activeTerm.internship?.registrationEnd && now > new Date(activeTerm.internship.registrationEnd)) {
-    throw new AppError("Đã hết thời gian đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
-  }
-
-  // 3. Check 1 MSSV = 1 Active Internship Rule within active term
-  const activeInternship = await Internship.findOne({
-    studentId: student._id,
-    academicTermId: activeTerm._id,
-    status: { $in: ACTIVE_STATUSES },
-  });
-
-  if (activeInternship) {
-    throw new AppError(
-      `Sinh viên đang có một hồ sơ thực tập ở trạng thái hoạt động (${activeInternship.status}) trong học kỳ ${activeTerm.code}. Không thể đăng ký thêm hồ sơ mới.`,
-      409,
-    );
-  }
-
-  // 4. Validate Position & Dates
+  // 2. Validate Position, Dates & Duration (Ràng buộc thời gian thực tập chỉ được phép 10 tuần hoặc 12 tuần)
   if (!position || !position.trim()) {
     throw new AppError("Vị trí thực tập là bắt buộc", 400);
   }
@@ -94,6 +99,55 @@ const createInternship = async ({
 
   if (start >= end) {
     throw new AppError("Ngày bắt đầu phải trước ngày kết thúc thực tập", 400);
+  }
+
+  const calculatedWeeks = calculateInternshipWeeks(start, end);
+  if (calculatedWeeks !== 10 && calculatedWeeks !== 12) {
+    throw new AppError(
+      `Thời gian thực tập chỉ được phép là 10 tuần hoặc 12 tuần (Thời lượng hiện tại: ${calculatedWeeks ? `${calculatedWeeks} tuần` : "không hợp lệ"}). Vui lòng điều chỉnh lại ngày bắt đầu và kết thúc.`,
+      400,
+    );
+  }
+
+  // 3. Identify Current Academic Term automatically (by explicit term ID, Date, or ACTIVE status)
+  let activeTerm = null;
+  if (academicTermId) {
+    activeTerm = await AcademicTerm.findById(academicTermId).lean();
+  }
+  if (!activeTerm) {
+    activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  }
+
+  // Validate Registration Window (if configured)
+  const now = new Date();
+  if (activeTerm.internship?.registrationStart) {
+    const regStart = new Date(activeTerm.internship.registrationStart);
+    if (now < regStart) {
+      throw new AppError("Chưa đến thời gian mở cổng đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
+    }
+  }
+  if (activeTerm.internship?.registrationEnd) {
+    const regEnd = new Date(activeTerm.internship.registrationEnd);
+    if (regEnd.getUTCHours() === 0 && regEnd.getUTCMinutes() === 0 && regEnd.getUTCSeconds() === 0) {
+      regEnd.setUTCHours(23, 59, 59, 999);
+    }
+    if (now > regEnd) {
+      throw new AppError("Đã hết thời gian đăng ký Thực tập Doanh nghiệp cho học kỳ này.", 400);
+    }
+  }
+
+  // 4. Check 1 MSSV = 1 Active Internship Rule within active term
+  const activeInternship = await Internship.findOne({
+    studentId: student._id,
+    academicTermId: activeTerm._id,
+    status: { $in: ACTIVE_STATUSES },
+  });
+
+  if (activeInternship) {
+    throw new AppError(
+      `Sinh viên đang có một hồ sơ thực tập ở trạng thái hoạt động (${activeInternship.status}) trong học kỳ ${activeTerm.code}. Không thể đăng ký thêm hồ sơ mới.`,
+      409,
+    );
   }
 
   // 5. Handle Company (Existing selection OR New company creation)
@@ -172,6 +226,8 @@ const createInternship = async ({
     position: position.trim(),
     startDate: start,
     endDate: end,
+    durationInWeeks: calculatedWeeks,
+    reportCycle: activeTerm.internship?.reportCycle || 1,
     mentorName: mentorName ? mentorName.trim() : null,
     mentorPosition: mentorPosition ? mentorPosition.trim() : null,
     mentorEmail: mentorEmail ? mentorEmail.trim().toLowerCase() : null,
@@ -385,6 +441,10 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
   internship.status = "PENDING_SUPERVISOR_ACCEPTANCE";
   internship.assignedAt = new Date();
   internship.assignedBy = tbmUserId || null;
+  if (!internship.approvedAt) {
+    internship.approvedAt = new Date();
+    internship.approvedBy = tbmUserId || null;
+  }
   await internship.save();
 
   // Send Notification strictly to assigned Lecturer
@@ -747,7 +807,9 @@ const getMyInternship = async (userId, academicTermId = null) => {
     throw new AppError("Không tìm thấy thông tin hồ sơ sinh viên", 404);
   }
 
-  const query = { studentId: student._id };
+  const query = {
+    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+  };
   if (academicTermId && academicTermId !== "ALL") {
     query.academicTermId = academicTermId;
   }
@@ -773,24 +835,56 @@ const getMyInternship = async (userId, academicTermId = null) => {
   const hasActiveInternship =
     internship && ACTIVE_STATUSES.includes(internship.status);
 
+  if (internship && internship.academicTermId) {
+    const termDoc = await AcademicTerm.findById(
+      internship.academicTermId._id || internship.academicTermId
+    ).lean();
+    if (termDoc?.internship?.reportCycle) {
+      internship.reportCycle = termDoc.internship.reportCycle;
+    }
+  }
+
+  let diaryStatus = null;
+  if (internship) {
+    const reports = await InternshipReport.find({ internshipId: internship._id }).lean();
+    diaryStatus = checkInternshipDiaryCompletion(internship, reports);
+  }
+
   return {
     student,
     internship: internship || null,
     hasActiveInternship: Boolean(hasActiveInternship),
     canRegisterNew: !hasActiveInternship,
+    diaryStatus,
   };
 };
 
 // ====================
 // Lecturer: Get Supervised Internships (AcademicTerm-aware)
 // ====================
-const getSupervisedInternships = async ({
-  userId,
-  page = 1,
-  limit = 10,
-  search = "",
-  academicTermId = "",
-}) => {
+const getSupervisedInternships = async (
+  userIdOrOptions,
+  options = {},
+) => {
+  let userId, page, limit, search, academicTermId;
+  if (typeof userIdOrOptions === "object" && userIdOrOptions !== null && !userIdOrOptions._bsontype) {
+    ({
+      userId,
+      page = 1,
+      limit = 10,
+      search = "",
+      academicTermId = "",
+    } = userIdOrOptions);
+  } else {
+    userId = userIdOrOptions;
+    ({
+      page = 1,
+      limit = 10,
+      search = "",
+      academicTermId = "",
+    } = options);
+  }
+
   const lecturer = await Lecturer.findOne({ userId }).populate({
     path: "userId",
     select: "fullName email phone",
@@ -859,10 +953,111 @@ const getSupervisedInternships = async ({
     evalMap.set(ev.targetId.toString(), ev);
   });
 
-  const enrichedInternships = internships.map((item) => ({
-    ...item,
-    evaluation: evalMap.get(item._id.toString()) || null,
-  }));
+  // Fetch all reports to automatically verify diary completion (Requirement 2 & 4)
+  const allReports = await InternshipReport.find({
+    internshipId: { $in: internshipIds },
+  }).lean();
+
+  const reportMap = new Map();
+  allReports.forEach((rep) => {
+    const key = rep.internshipId.toString();
+    if (!reportMap.has(key)) reportMap.set(key, []);
+    reportMap.get(key).push(rep);
+  });
+
+  let currentAcademicTerm = null;
+  if (academicTermId && academicTermId !== "ALL") {
+    currentAcademicTerm = await AcademicTerm.findById(academicTermId).lean();
+  } else {
+    currentAcademicTerm = await AcademicTerm.findOne({ status: "ACTIVE" }).lean();
+  }
+  const commonReportCycle = currentAcademicTerm?.internship?.reportCycle || 1;
+
+  // Lấy danh sách tài liệu Báo cáo thực tập từ InternshipDocument để đồng bộ trạng thái nộp
+  const studentIds = internships
+    .map((i) => i.studentId?._id || i.studentId)
+    .filter(Boolean);
+
+  const reportDocs = await InternshipDocument.find({
+    documentType: "SUBMISSION",
+    $or: [
+      { internshipId: { $in: internshipIds } },
+      { studentId: { $in: studentIds } },
+    ],
+    category: { $regex: /báo cáo/i },
+  })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  const docMap = new Map();
+  reportDocs.forEach((d) => {
+    if (d.internshipId) {
+      const key = d.internshipId.toString();
+      if (!docMap.has(key)) docMap.set(key, d);
+    }
+    if (d.studentId) {
+      const sKey = d.studentId.toString();
+      if (!docMap.has(sKey)) docMap.set(sKey, d);
+    }
+  });
+
+  const enrichedInternships = internships.map((item) => {
+    const reports = reportMap.get(item._id.toString()) || [];
+    const itemWithCycle = { ...item, reportCycle: commonReportCycle };
+    const diaryStatus = checkInternshipDiaryCompletion(itemWithCycle, reports);
+    const pretestPassed = Boolean(item.pretest?.isPassed);
+
+    // Chuẩn hóa và fallback file báo cáo nếu chưa có trong internship.reportFile
+    let reportFile = item.reportFile;
+    const fallbackDoc =
+      docMap.get(item._id.toString()) ||
+      (item.studentId?._id ? docMap.get(item.studentId._id.toString()) : null);
+
+    if ((!reportFile || !reportFile.fileUrl) && fallbackDoc?.fileUrl) {
+      reportFile = {
+        originalName: fallbackDoc.title || fallbackDoc.fileName,
+        fileName: fallbackDoc.fileName,
+        fileUrl: fallbackDoc.fileUrl,
+        fileSize: fallbackDoc.fileSize || 0,
+        fileType: fallbackDoc.fileType || null,
+        uploadedAt: fallbackDoc.createdAt || new Date(),
+      };
+    }
+
+    const reportFileSubmitted = Boolean(reportFile?.fileUrl);
+
+    // Điều kiện chấm điểm TTDN: Bắt buộc đáp ứng đầy đủ cả 3 điều kiện:
+    // 1. PASS PRETEST
+    // 2. Đã nộp file báo cáo thực tập hợp lệ
+    // 3. Đã hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp
+    const gradingBlockReasons = [];
+    if (!pretestPassed) {
+      gradingBlockReasons.push("Chưa PASS PRETEST");
+    }
+    if (!reportFileSubmitted) {
+      gradingBlockReasons.push("Chưa nộp file báo cáo thực tập");
+    }
+    if (!diaryStatus.isCompleted) {
+      gradingBlockReasons.push(
+        diaryStatus.missingWeeks?.length > 0
+          ? `Chưa hoàn thành đủ nhật ký thực tập (Còn thiếu tuần: ${diaryStatus.missingWeeks.join(", ")})`
+          : "Chưa hoàn thành đủ nhật ký thực tập theo chu kỳ"
+      );
+    }
+
+    const canGrade = gradingBlockReasons.length === 0;
+
+    return {
+      ...item,
+      reportFile,
+      evaluation: evalMap.get(item._id.toString()) || null,
+      diaryStatus,
+      pretestPassed,
+      reportFileSubmitted,
+      canGrade,
+      gradingBlockReasons,
+    };
+  });
 
   const activeQuery = {
     lecturerId: lecturer._id,
@@ -876,6 +1071,8 @@ const getSupervisedInternships = async ({
 
   return {
     lecturer,
+    reportCycle: commonReportCycle,
+    academicTerm: currentAcademicTerm,
     data: enrichedInternships,
     stats: {
       totalAssigned: total,
@@ -1065,6 +1262,105 @@ const getSupervisionConfirmationDocument = async ({
 };
 
 // ====================
+// Lecturer / TBM Updates Report Cycle for Academic Term (Common for all TTDN students)
+// ====================
+const updateAcademicTermReportCycle = async (termId, requestingUser, reportCycle) => {
+  const cycle = Number(reportCycle);
+  if (![1, 2, 3].includes(cycle)) {
+    throw new AppError("Chu kỳ nộp nhật ký chỉ được phép là 1, 2 hoặc 3 tuần/lần", 400);
+  }
+
+  // Access control: LECTURER, TBM, ADMIN
+  if (requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({
+      userId: requestingUser.userId || requestingUser._id || requestingUser.id,
+    });
+    if (!lecturer) {
+      throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
+    }
+  } else if (!["TBM", "ADMIN"].includes(requestingUser.role)) {
+    throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
+  }
+
+  let term = null;
+  if (termId && termId !== "ALL") {
+    term = await AcademicTerm.findById(termId);
+  }
+  if (!term) {
+    term = await AcademicTerm.findOne({ status: "ACTIVE" });
+  }
+  if (!term) {
+    throw new AppError("Không tìm thấy học kỳ hợp lệ để thiết lập chu kỳ nộp nhật ký", 404);
+  }
+
+  if (!term.internship) {
+    term.internship = {};
+  }
+  term.internship.reportCycle = cycle;
+  await term.save();
+
+  // Unified update to all internship records of this term
+  await Internship.updateMany(
+    { academicTermId: term._id },
+    { $set: { reportCycle: cycle } }
+  );
+
+  return {
+    academicTermId: term._id,
+    termName: term.name,
+    reportCycle: cycle,
+  };
+};
+
+// ====================
+// Lecturer / TBM Updates Report Cycle (Syncs with Academic Term)
+// ====================
+const updateReportCycle = async (internshipId, requestingUser, reportCycle) => {
+  const cycle = Number(reportCycle);
+  if (![1, 2, 3].includes(cycle)) {
+    throw new AppError("Chu kỳ nộp nhật ký chỉ được phép là 1, 2 hoặc 3 tuần/lần", 400);
+  }
+
+  const internship = await Internship.findById(internshipId);
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  // Access control
+  if (requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({
+      userId: requestingUser.userId || requestingUser._id || requestingUser.id,
+    });
+    if (!lecturer) {
+      throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
+    }
+  } else if (!["TBM", "ADMIN"].includes(requestingUser.role)) {
+    throw new AppError("Bạn không có quyền thiết lập chu kỳ nộp nhật ký", 403);
+  }
+
+  const termId = internship.academicTermId?._id || internship.academicTermId;
+  const termResult = await updateAcademicTermReportCycle(termId, requestingUser, cycle);
+
+  internship.reportCycle = cycle;
+  if (!internship.academicTermId && termResult?.academicTermId) {
+    internship.academicTermId = termResult.academicTermId;
+  }
+  await internship.save();
+
+  return await Internship.findById(internship._id)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("companyId")
+    .populate({
+      path: "lecturerId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("academicTermId");
+};
+
+// ====================
 // Get Active Companies for Registration Dropdown
 // ====================
 const getActiveCompanies = async () => {
@@ -1072,6 +1368,480 @@ const getActiveCompanies = async () => {
     .select("name code address email phone website contactPerson contactEmail")
     .sort({ name: 1 })
     .lean();
+};
+
+// ====================
+// Student Uploads Internship Report File (Prompt 2 - Requirement 1)
+// ====================
+const uploadReportFile = async ({ internshipId = null, userId, file }) => {
+  if (!file) {
+    throw new AppError("Vui lòng chọn file báo cáo thực tập để tải lên", 400);
+  }
+
+  const student = await Student.findOne({ userId });
+  if (!student) {
+    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+  }
+
+  let internship;
+  if (internshipId) {
+    internship = await Internship.findById(internshipId);
+  } else {
+    internship = await Internship.findOne({
+      studentId: student._id,
+      status: { $ne: "CANCELLED" },
+    }).sort({ createdAt: -1 });
+  }
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập của bạn", 404);
+  }
+
+  // Security check: cannot upload for another student
+  const isOwner =
+    internship.studentId.toString() === student._id.toString() ||
+    (internship.secondStudentId &&
+      internship.secondStudentId.toString() === student._id.toString());
+  if (!isOwner) {
+    throw new AppError("Bạn không có quyền nộp file báo cáo cho hồ sơ thực tập này", 403);
+  }
+
+  // Quy tắc nộp báo cáo: Không cho phép tải thêm khi file cũ vẫn còn tồn tại.
+  // Nếu muốn thay thế báo cáo, sinh viên phải thực hiện gỡ file cũ trước rồi mới được tải file mới.
+  if (internship.reportFile && internship.reportFile.fileUrl) {
+    if (file.filename) {
+      unlinkFileSafe(`/uploads/internship-reports/${file.filename}`);
+    }
+    throw new AppError(
+      "Hồ sơ thực tập đã có file báo cáo đang có hiệu lực. Vui lòng gỡ file cũ trước khi nộp file mới.",
+      400,
+    );
+  }
+
+  const fileUrl = `/uploads/internship-reports/${file.filename}`;
+
+  internship.reportFile = {
+    originalName: file.originalname,
+    fileName: file.filename,
+    fileUrl,
+    fileSize: file.size,
+    fileType: file.mimetype,
+    uploadedAt: new Date(),
+  };
+
+  await internship.save();
+
+  // Keep InternshipReport FINAL in sync
+  let finalReport = await InternshipReport.findOne({
+    internshipId: internship._id,
+    reportType: "FINAL",
+  });
+  if (finalReport) {
+    finalReport.file = {
+      originalName: file.originalname,
+      fileName: file.filename,
+      fileUrl,
+      mimeType: file.mimetype,
+      size: file.size,
+      uploadedAt: new Date(),
+    };
+    finalReport.status = "SUBMITTED";
+    finalReport.submittedAt = new Date();
+    await finalReport.save();
+  } else {
+    await InternshipReport.create({
+      internshipId: internship._id,
+      studentId: student._id,
+      reportType: "FINAL",
+      title: "Báo cáo thực tập doanh nghiệp (Bản chính thức)",
+      content: "File báo cáo tổng kết thực tập doanh nghiệp đã nộp bởi sinh viên",
+      file: {
+        originalName: file.originalname,
+        fileName: file.filename,
+        fileUrl,
+        mimeType: file.mimetype,
+        size: file.size,
+        uploadedAt: new Date(),
+      },
+      status: "SUBMITTED",
+      submittedAt: new Date(),
+    });
+  }
+
+  // Đồng bộ sang InternshipDocument để tab Tài liệu sinh viên hiển thị đầy đủ
+  try {
+    let doc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    });
+    if (!doc) {
+      await InternshipDocument.create({
+        academicTermId: internship.academicTermId || null,
+        supervisorId: internship.lecturerId || null,
+        internshipId: internship._id,
+        studentId: student._id,
+        documentType: "SUBMISSION",
+        scope: "SPECIFIC",
+        title: file.originalname,
+        fileName: file.filename,
+        fileUrl,
+        fileSize: file.size,
+        fileType: file.mimetype,
+        category: "Báo cáo thực tập",
+        description: "File báo cáo thực tập tải lên từ trang Thông tin thực tập",
+        status: "SUBMITTED",
+        uploadedBy: userId,
+      });
+    } else {
+      doc.fileName = file.filename;
+      doc.title = file.originalname;
+      doc.fileUrl = fileUrl;
+      doc.fileSize = file.size;
+      doc.fileType = file.mimetype;
+      doc.uploadedBy = userId;
+      doc.supervisorId = internship.lecturerId || doc.supervisorId;
+      doc.academicTermId = internship.academicTermId || doc.academicTermId;
+      doc.status = "SUBMITTED";
+      await doc.save();
+    }
+
+    // Gửi thông báo đến Giảng viên giám sát
+    if (internship.lecturerId) {
+      const supervisor = await Lecturer.findById(internship.lecturerId).populate("userId", "fullName");
+      if (supervisor?.userId?._id) {
+        const studentUser = await User.findById(userId).select("fullName");
+        const studentName = studentUser?.fullName || "Sinh viên";
+        const studentCode = student.studentCode ? ` (${student.studentCode})` : "";
+        const notifTitle = `Sinh viên ${studentName} đã nộp 1 tài liệu`;
+        const notifMessage = `Sinh viên ${studentName}${studentCode} đã nộp file tài liệu thực tập: "${file.originalname}".`;
+        const targetDocId = doc?._id || internship._id;
+        const targetLink = `/lecturer/internship-documents?tab=submissions&studentId=${student._id}&internshipId=${internship._id}&docId=${targetDocId}`;
+
+        await notificationService.createNotification({
+          recipientId: supervisor.userId._id,
+          senderId: userId,
+          type: "INTERNSHIP",
+          title: notifTitle,
+          message: notifMessage,
+          referenceId: targetDocId,
+          referenceModel: "InternshipDocument",
+          link: targetLink,
+          metadata: {
+            studentId: student._id,
+            studentCode: student.studentCode,
+            studentName,
+            internshipId: internship._id,
+            fileId: targetDocId,
+            docId: targetDocId,
+            fileName: file.originalname,
+            submittedAt: new Date(),
+          },
+        });
+      }
+    }
+  } catch (syncDocErr) {
+    console.warn("[uploadReportFile] Failed to sync InternshipDocument / notify:", syncDocErr.message);
+  }
+
+  return internship;
+};
+
+// ====================
+// Student & Lecturer (GVGS) Deletes / Removes Internship Report File
+// ====================
+const deleteReportFile = async ({ internshipId = null, userId, reason = "" }) => {
+  // 1. Xác thực người dùng thực hiện
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError("Không tìm thấy thông tin người dùng", 404);
+  }
+
+  // 2. Tìm hồ sơ thực tập tương ứng
+  let internship;
+  let student = null;
+  if (internshipId) {
+    internship = await Internship.findById(internshipId)
+      .populate({
+        path: "studentId",
+        populate: { path: "userId", select: "fullName email studentCode" },
+      })
+      .populate("academicTermId");
+  } else if (user.role === "STUDENT") {
+    student = await Student.findOne({ userId });
+    if (!student) {
+      throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+    }
+    internship = await Internship.findOne({
+      studentId: student._id,
+      status: { $ne: "CANCELLED" },
+    })
+      .populate({
+        path: "studentId",
+        populate: { path: "userId", select: "fullName email studentCode" },
+      })
+      .populate("academicTermId")
+      .sort({ createdAt: -1 });
+  }
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  // 3. Phân quyền chặt chẽ giữa Sinh viên và GVGS:
+  let actorRole = user.role;
+  let actorName = user.fullName || "Người dùng";
+  let finalReason = typeof reason === "string" ? reason.trim() : "";
+
+  if (actorRole === "STUDENT") {
+    if (!student) {
+      student = await Student.findOne({ userId });
+    }
+    const isOwner =
+      internship.studentId?._id?.toString() === student?._id?.toString() ||
+      internship.studentId?.toString() === student?._id?.toString() ||
+      (internship.secondStudentId &&
+        internship.secondStudentId.toString() === student?._id?.toString());
+    if (!isOwner) {
+      throw new AppError("Bạn không có quyền gỡ file báo cáo của hồ sơ thực tập này", 403);
+    }
+    if (!finalReason) {
+      finalReason = "Sinh viên tự gỡ file báo cáo để nộp lại";
+    }
+  } else if (actorRole === "LECTURER") {
+    const lecturer = await Lecturer.findOne({ userId });
+    if (!lecturer) {
+      throw new AppError("Không tìm thấy thông tin giảng viên", 404);
+    }
+    const isSupervising =
+      internship.lecturerId &&
+      internship.lecturerId.toString() === lecturer._id.toString();
+    if (!isSupervising) {
+      throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho sinh viên này", 403);
+    }
+    if (!finalReason) {
+      throw new AppError("Vui lòng nhập lý do gỡ file báo cáo của sinh viên", 400);
+    }
+    actorName = lecturer.academicTitle
+      ? `${lecturer.academicTitle} ${user.fullName}`
+      : user.fullName;
+  } else if (actorRole === "TBM" || actorRole === "ADMIN") {
+    if (!finalReason) {
+      throw new AppError("Vui lòng nhập lý do gỡ file báo cáo", 400);
+    }
+  } else {
+    throw new AppError("Bạn không có quyền thực hiện thao tác này", 403);
+  }
+
+  if (!internship.reportFile || !internship.reportFile.fileUrl) {
+    throw new AppError("Hồ sơ thực tập hiện tại chưa có file báo cáo nào để gỡ", 400);
+  }
+
+  // 4. Lưu vết lịch sử thao tác gỡ file vào Database (Internship.reportRemovalHistory)
+  const removedFile = {
+    originalName: internship.reportFile.originalName || "",
+    fileName: internship.reportFile.fileName || "",
+    fileUrl: internship.reportFile.fileUrl || "",
+    fileSize: internship.reportFile.fileSize || 0,
+  };
+
+  const studentTarget = internship.studentId;
+  const studentCode = studentTarget?.studentCode || "";
+  const studentName = studentTarget?.userId?.fullName || "";
+
+  const removalRecord = {
+    removedBy: user._id,
+    removerRole: actorRole,
+    removerName: actorName,
+    studentId: studentTarget?._id || studentTarget,
+    studentName,
+    studentCode,
+    fileName: removedFile.originalName || removedFile.fileName,
+    fileUrl: removedFile.fileUrl,
+    reason: finalReason,
+    removedAt: new Date(),
+  };
+
+  if (!Array.isArray(internship.reportRemovalHistory)) {
+    internship.reportRemovalHistory = [];
+  }
+  internship.reportRemovalHistory.push(removalRecord);
+
+  // 5. Ghi vào collection Log hệ thống để phục vụ đối chiếu, thanh tra
+  try {
+    await Log.create({
+      userId: user._id,
+      action: "REMOVE_REPORT_FILE",
+      module: "INTERNSHIP_REPORT",
+      description: `${actorName} (${actorRole}) đã gỡ file báo cáo "${removalRecord.fileName}" của sinh viên ${studentName} (${studentCode}). Lý do: ${finalReason}`,
+      targetId: internship._id,
+      targetModel: "Internship",
+      method: "DELETE",
+      status: "SUCCESS",
+    });
+  } catch (logErr) {
+    console.warn("[deleteReportFile] Failed to write system Log:", logErr.message);
+  }
+
+  // 6. Xóa file vật lý của internship.reportFile
+  const oldReportUrl = internship.reportFile.fileUrl;
+  unlinkFileSafe(oldReportUrl);
+
+  // 7. Reset trường reportFile trên Internship
+  internship.reportFile = {
+    originalName: null,
+    fileName: null,
+    fileUrl: null,
+    fileSize: 0,
+    fileType: null,
+    uploadedAt: null,
+  };
+  await internship.save();
+
+  // 8. Xóa các bản ghi đồng bộ liên quan trong InternshipDocument (loại Báo cáo thực tập)
+  try {
+    const reportDocs = await InternshipDocument.find({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    });
+    for (const d of reportDocs) {
+      if (d.fileUrl && d.fileUrl !== oldReportUrl) {
+        unlinkFileSafe(d.fileUrl);
+      }
+      await InternshipDocument.findByIdAndDelete(d._id);
+    }
+  } catch (docErr) {
+    console.warn("[deleteReportFile] Sync InternshipDocument error:", docErr.message);
+  }
+
+  // 9. Xóa / cập nhật InternshipReport FINAL
+  try {
+    const finalReport = await InternshipReport.findOne({
+      internshipId: internship._id,
+      reportType: "FINAL",
+    });
+    if (finalReport) {
+      if (finalReport.file?.fileUrl && finalReport.file.fileUrl !== oldReportUrl) {
+        unlinkFileSafe(finalReport.file.fileUrl);
+      }
+      await InternshipReport.findByIdAndDelete(finalReport._id);
+    }
+  } catch (reportErr) {
+    console.warn("[deleteReportFile] Sync InternshipReport error:", reportErr.message);
+  }
+
+  // 10. Gửi thông báo đến sinh viên nếu người gỡ là GVGS
+  if (actorRole === "LECTURER" && studentTarget?.userId?._id) {
+    try {
+      await notificationService.createNotification({
+        recipientId: studentTarget.userId._id,
+        title: "Giảng viên giám sát đã gỡ file báo cáo thực tập",
+        message: `Giảng viên giám sát (${actorName}) đã gỡ file báo cáo thực tập "${removalRecord.fileName}" của bạn. Lý do: "${finalReason}". Vui lòng kiểm tra và tải lên file báo cáo mới.`,
+        type: "WARNING",
+        module: "INTERNSHIP",
+        link: "/student/internship",
+      });
+    } catch (notifErr) {
+      console.warn("[deleteReportFile] Failed to send notification to student:", notifErr.message);
+    }
+  }
+
+  return {
+    success: true,
+    message: "Đã gỡ file báo cáo thực tập thành công",
+    removalRecord,
+  };
+};
+
+// ====================
+// Lecturer Updates PASS PRETEST Status (Prompt 2 - Requirement 3)
+// ====================
+const updatePretestStatus = async (internshipId, requestingUser, { isPassed = true, note = "" } = {}) => {
+  const internship = await Internship.findById(internshipId);
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  // Permission check
+  if (requestingUser.role === "LECTURER") {
+    const lecturerUserId = requestingUser.userId || requestingUser._id || requestingUser.id;
+    let lecturer = await Lecturer.findOne({ userId: lecturerUserId });
+    if (!lecturer && requestingUser.email) {
+      lecturer = await Lecturer.findOne({ email: requestingUser.email.toLowerCase() });
+    }
+    if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
+      throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
+    }
+  }
+
+  const actorUserId = requestingUser.userId || requestingUser._id || requestingUser.id;
+  internship.pretest = {
+    isPassed: Boolean(isPassed),
+    passedAt: isPassed ? new Date() : null,
+    passedBy: isPassed ? actorUserId : null,
+    note: note ? note.trim() : null,
+  };
+
+  await internship.save();
+  return internship;
+};
+
+// ====================
+// Get Report File with Role Check (Prompt 2 - Requirement 1)
+// ====================
+const getReportFile = async (internshipId, requestingUser) => {
+  const internship = await Internship.findById(internshipId)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("companyId");
+
+  if (!internship) {
+    throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  if (requestingUser.role === "STUDENT") {
+    const student = await Student.findOne({ userId: requestingUser.userId });
+    if (
+      !student ||
+      (internship.studentId?._id?.toString() !== student._id.toString() &&
+        internship.secondStudentId?.toString() !== student._id.toString())
+    ) {
+      throw new AppError("Bạn không có quyền truy cập file báo cáo này", 403);
+    }
+  } else if (requestingUser.role === "LECTURER") {
+    const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
+    if (!lecturer || !internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
+      throw new AppError("Bạn không phải là Giảng viên Giám sát của sinh viên này", 403);
+    }
+  }
+
+  if (!internship.reportFile || !internship.reportFile.fileUrl) {
+    const doc = await InternshipDocument.findOne({
+      internshipId: internship._id,
+      documentType: "SUBMISSION",
+      category: { $regex: /báo cáo/i },
+    }).sort({ createdAt: -1 });
+
+    if (doc?.fileUrl) {
+      internship.reportFile = {
+        originalName: doc.title || doc.fileName,
+        fileName: doc.fileName,
+        fileUrl: doc.fileUrl,
+        fileSize: doc.fileSize || 0,
+        fileType: doc.fileType || null,
+        uploadedAt: doc.createdAt || new Date(),
+      };
+      await internship.save();
+      return internship.reportFile;
+    }
+
+    throw new AppError("Sinh viên chưa nộp file báo cáo thực tập", 404);
+  }
+
+  return internship.reportFile;
 };
 
 export default {
@@ -1089,4 +1859,10 @@ export default {
   getInternshipById,
   getActiveCompanies,
   completeInternship,
+  updateReportCycle,
+  updateAcademicTermReportCycle,
+  uploadReportFile,
+  deleteReportFile,
+  updatePretestStatus,
+  getReportFile,
 };

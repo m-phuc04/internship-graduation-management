@@ -9,6 +9,52 @@ const internshipDocumentSchema = new mongoose.Schema(
       index: true,
     },
 
+    supervisorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lecturer",
+      default: null,
+      index: true,
+    },
+
+    internshipId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Internship",
+      default: null,
+      index: true,
+    },
+
+    documentType: {
+      type: String,
+      enum: ["DEPARTMENT", "GUIDE", "SUBMISSION"],
+      default: "DEPARTMENT",
+      index: true,
+    },
+
+    scope: {
+      type: String,
+      enum: ["ALL", "SPECIFIC"],
+      default: "ALL",
+    },
+
+    studentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Student",
+      default: null,
+      index: true,
+    },
+
+    category: {
+      type: String,
+      trim: true,
+      default: "Tài liệu hướng dẫn",
+    },
+
+    status: {
+      type: String,
+      enum: ["SUBMITTED", "APPROVED", "REJECTED"],
+      default: "SUBMITTED",
+    },
+
     title: {
       type: String,
       trim: true,

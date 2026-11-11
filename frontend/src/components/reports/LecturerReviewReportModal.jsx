@@ -54,9 +54,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
   if (!report) return null;
 
   const getTypeLabel = () => {
-    if (report.reportType === 'WEEKLY') return `Báo cáo Tuần ${report.weekNumber || ''}`;
-    if (report.reportType === 'MONTHLY') return `Báo cáo Tháng ${report.monthNumber || ''}`;
-    return 'Báo cáo Tổng kết (Final)';
+    return report.weekNumber ? `Nhật ký Tuần ${report.weekNumber}` : 'Nhật ký thực tập';
   };
 
   const formatFileSize = (bytes) => {
@@ -73,7 +71,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Đánh giá & Chấm điểm Báo cáo Thực tập"
+      title="Đánh giá & Xem xét Nhật ký Thực tập"
       maxWidth="max-w-2xl"
     >
       <div className="space-y-4 text-xs">
@@ -88,7 +86,17 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
             </div>
           </div>
           <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-[#102d7d]">
-            {report.status}
+            {report.status === 'SUBMITTED'
+              ? 'Đã nộp'
+              : report.status === 'APPROVED'
+              ? 'Đã xử lý'
+              : report.status === 'REJECTED' || report.status === 'NEEDS_REVISION'
+              ? 'Yêu cầu chỉnh sửa'
+              : report.status === 'DRAFT'
+              ? 'Chưa nộp (Bản nháp)'
+              : report.status === 'WAITING_STUDENT_2'
+              ? 'Chờ SV2 xác nhận'
+              : report.status}
           </span>
         </div>
 
@@ -116,8 +124,13 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
                   <div className="font-semibold text-slate-900 text-xs truncate">
                     {report.file.originalName || report.file.fileName || 'Tài liệu báo cáo'}
                   </div>
-                  <div className="text-[10px] text-slate-400">
-                    File đính kèm chính thức
+                  <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
+                    <span>File đính kèm</span>
+                    {(report.file?.category || report.fileCategory) && (
+                      <span className="px-1.5 py-0.5 rounded bg-blue-100 text-[#0d2a75] font-semibold text-[10px]">
+                        Phân loại: {report.file?.category || report.fileCategory}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>

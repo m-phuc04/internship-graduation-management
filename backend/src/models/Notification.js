@@ -52,6 +52,7 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "Internship",
+        "InternshipDocument",
         "InternshipReport",
         "Thesis",
         "ThesisTopic",
@@ -67,6 +68,11 @@ const notificationSchema = new mongoose.Schema(
     link: {
       type: String,
       default: null,
+    },
+
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
 
     isRead: {

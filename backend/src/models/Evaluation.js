@@ -15,7 +15,6 @@ const evaluationSchema = new mongoose.Schema(
 
     evaluationRequestId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CompanyEvaluationRequest",
       default: null,
     },
 
@@ -34,7 +33,7 @@ const evaluationSchema = new mongoose.Schema(
 
     evaluatorRole: {
       type: String,
-      enum: ["COMPANY", "LECTURER", "REVIEWER"],
+      enum: ["LECTURER", "REVIEWER"],
       required: [true, "Vai trò người đánh giá là bắt buộc"],
     },
 
@@ -133,6 +132,12 @@ const evaluationSchema = new mongoose.Schema(
       default: false,
     },
 
+    scorePublishStatus: {
+      type: String,
+      enum: ["UNPUBLISHED", "PUBLISHED", "HIDDEN"],
+      default: "UNPUBLISHED",
+    },
+
     publishedAt: {
       type: Date,
       default: null,
@@ -143,6 +148,67 @@ const evaluationSchema = new mongoose.Schema(
       ref: "User",
       default: null,
     },
+
+    // Lịch sử thao tác công bố, ẩn, công bố lại điểm
+    publishHistory: [
+      {
+        action: {
+          type: String,
+          enum: ["PUBLISH", "HIDE", "REPUBLISH"],
+          required: true,
+        },
+        performedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        performedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        reason: {
+          type: String,
+          default: null,
+          trim: true,
+        },
+      },
+    ],
+
+    // Lịch sử lưu vết chỉnh sửa điểm đánh giá (Yêu cầu Prompt 2)
+    editHistory: [
+      {
+        editedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        editedAt: {
+          type: Date,
+          default: Date.now,
+        },
+        previousScore: {
+          type: Number,
+          required: true,
+        },
+        newScore: {
+          type: Number,
+          required: true,
+        },
+        previousComments: {
+          type: String,
+          default: null,
+        },
+        newComments: {
+          type: String,
+          default: null,
+        },
+        action: {
+          type: String,
+          enum: ["CREATE", "UPDATE"],
+          default: "UPDATE",
+        },
+      },
+    ],
   },
   {
     timestamps: true,

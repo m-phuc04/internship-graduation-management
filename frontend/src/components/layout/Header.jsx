@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Calendar, Menu } from 'lucide-react';
+import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Menu, Mail } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
-import ScheduleModal from '../common/ScheduleModal';
 import AcademicTermSelector from '../common/AcademicTermSelector';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 
 const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
 
   // Map path to title
   const getPageTitle = () => {
@@ -91,16 +91,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
           </button>
         )}
 
-        {/* Schedule Trigger Button */}
-        <button
-          type="button"
-          onClick={() => setScheduleModalOpen(true)}
-          className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
-          title="Lịch trình & Kế hoạch đào tạo"
-        >
-          <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
-        </button>
-
+        {/* Notification Bell */}
         <NotificationDropdown />
 
         {/* User Dropdown */}
@@ -156,23 +147,24 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
-                      setScheduleModalOpen(true);
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
-                  >
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Lịch & Kế hoạch</span>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setDropdownOpen(false);
                       navigate('/tbm/profile');
                     }}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
                   >
                     <User className="w-4 h-4 text-slate-400" />
                     <span>Hồ sơ cá nhân</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      setEmailModalOpen(true);
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123891] rounded-lg transition text-left cursor-pointer"
+                  >
+                    <Mail className="w-4 h-4 text-slate-400" />
+                    <span>Đăng ký nhận email thông báo</span>
                   </button>
 
                   <button
@@ -189,11 +181,13 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
         </div>
       </div>
 
-      {/* Schedule Modal */}
-      <ScheduleModal
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-      />
+      {/* Email Notification Settings Modal (TTDN) */}
+      {emailModalOpen && (
+        <EmailNotificationModal
+          isOpen={emailModalOpen}
+          onClose={() => setEmailModalOpen(false)}
+        />
+      )}
     </header>
   );
 };

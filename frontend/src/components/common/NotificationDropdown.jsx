@@ -157,10 +157,49 @@ const NotificationDropdown = () => {
       if (role === 'TBM') targetLink = '/tbm/evaluations';
       else if (role === 'LECTURER') targetLink = '/lecturer/internships';
       else if (role === 'STUDENT') targetLink = '/student/internship';
-      else if (role === 'COMPANY') targetLink = '/company/evaluations';
     }
 
     if (role === 'LECTURER') {
+      // 0. Sinh viên nộp tài liệu / báo cáo thực tập TTDN
+      const isStudentSubmissionNotif =
+        targetLink?.includes('/lecturer/internship-documents') ||
+        (item.type === 'INTERNSHIP' &&
+          (titleLower.includes('đã nộp') ||
+            titleLower.includes('tài liệu') ||
+            messageLower.includes('nộp file') ||
+            messageLower.includes('nộp tài liệu')));
+
+      if (isStudentSubmissionNotif) {
+        const studentCode =
+          item.metadata?.studentCode ||
+          item.message?.match(/\((\d{8})\)/)?.[1] ||
+          '';
+        const docId = item.metadata?.docId || item.metadata?.fileId || item.referenceId || '';
+        const internshipId = item.metadata?.internshipId || '';
+        const studentId = item.metadata?.studentId || '';
+
+        let linkWithParams = '/lecturer/internship-documents?tab=submissions';
+        if (studentCode) linkWithParams += `&search=${encodeURIComponent(studentCode)}`;
+        if (docId) linkWithParams += `&docId=${docId}`;
+        if (internshipId) linkWithParams += `&internshipId=${internshipId}`;
+        if (studentId) linkWithParams += `&studentId=${studentId}`;
+
+        navigate(linkWithParams, {
+          state: {
+            activeTab: 'SUBMISSIONS',
+            search: studentCode,
+            studentCode,
+            studentId,
+            internshipId,
+            docId,
+            fileName: item.metadata?.fileName || '',
+            notificationId: item._id,
+            refreshedAt: Date.now(),
+          },
+        });
+        return;
+      }
+
       // 1. Phân công phản biện khóa luận (GVPB 1, GVPB 2, PB kín) -> Luôn nhảy vào Phản biện khóa luận và tự động mở bảng tương ứng
       if (
         titleLower.includes('phản biện 1') ||
@@ -290,15 +329,13 @@ const NotificationDropdown = () => {
       if (
         targetLink.startsWith('/tbm/academic-terms') ||
         targetLink.startsWith('/tbm/students') ||
-        targetLink.startsWith('/tbm/lecturers') ||
-        targetLink.startsWith('/tbm/companies')
+        targetLink.startsWith('/tbm/lecturers')
       ) {
         targetLink = targetLink.replace('/tbm/', '/admin/');
       } else if (
         targetLink.startsWith('/tbm/') ||
         targetLink.startsWith('/lecturer/') ||
-        targetLink.startsWith('/student/') ||
-        targetLink.startsWith('/company/')
+        targetLink.startsWith('/student/')
       ) {
         // Do not navigate ADMIN to non-admin operational pages
         return;
@@ -323,8 +360,7 @@ const NotificationDropdown = () => {
         else if (role === 'STUDENT') targetLink = '/student/reports';
         else if (role === 'TBM') targetLink = '/tbm/internships';
       } else if (item.type === 'EVALUATION') {
-        if (role === 'COMPANY') targetLink = '/company/evaluations';
-        else if (role === 'LECTURER') targetLink = '/lecturer/internships';
+        if (role === 'LECTURER') targetLink = '/lecturer/internships';
         else if (role === 'TBM') targetLink = '/tbm/evaluations';
       }
     }

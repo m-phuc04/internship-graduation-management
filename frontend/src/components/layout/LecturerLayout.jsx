@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import notificationApi from '../../api/notificationApi';
 import LecturerSidebar from './LecturerSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
-import ScheduleModal from '../common/ScheduleModal';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
 
 import {
@@ -16,7 +16,7 @@ import {
   LogOut,
   ChevronDown,
   Sparkles,
-  Calendar,
+  Mail,
 } from 'lucide-react';
 
 const LecturerLayout = () => {
@@ -24,7 +24,7 @@ const LecturerLayout = () => {
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchUnreadNotifications = async () => {
@@ -80,7 +80,6 @@ const LecturerLayout = () => {
           onToggleCollapse={toggleSidebar}
           unreadCount={unreadCount}
           onOpenNotifications={() => {}}
-          onOpenScheduleModal={() => setScheduleModalOpen(true)}
         />
       </div>
 
@@ -101,7 +100,6 @@ const LecturerLayout = () => {
             <LecturerSidebar
               onCloseMobile={() => setMobileOpen(false)}
               unreadCount={unreadCount}
-              onOpenScheduleModal={() => setScheduleModalOpen(true)}
             />
           </div>
         </div>
@@ -147,16 +145,6 @@ const LecturerLayout = () => {
 
           {/* Right: Quick actions, Notifications & User Menu */}
           <div className="flex items-center gap-3">
-            {/* Schedule Trigger Button in Header */}
-            <button
-              type="button"
-              onClick={() => setScheduleModalOpen(true)}
-              className="p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition"
-              title="Lịch trình & Kế hoạch học kỳ"
-            >
-              <Calendar className="w-5 h-5" />
-            </button>
-
             {/* Notification Bell Dropdown */}
             <NotificationDropdown />
 
@@ -227,18 +215,6 @@ const LecturerLayout = () => {
                       </Link>
                     )}
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserMenuOpen(false);
-                        setScheduleModalOpen(true);
-                      }}
-                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#ECA124] transition"
-                    >
-                      <Calendar className="w-4 h-4 text-slate-400" />
-                      <span>Lịch & Kế hoạch đào tạo</span>
-                    </button>
-
                     <Link
                       to="/lecturer/profile"
                       onClick={() => setUserMenuOpen(false)}
@@ -247,6 +223,18 @@ const LecturerLayout = () => {
                       <User className="w-4 h-4 text-slate-400" />
                       <span>Hồ sơ cá nhân</span>
                     </Link>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setEmailModalOpen(true);
+                      }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-slate-700 hover:bg-blue-50 hover:text-[#123891] transition text-left cursor-pointer"
+                    >
+                      <Mail className="w-4 h-4 text-slate-400" />
+                      <span>Đăng ký nhận email thông báo</span>
+                    </button>
 
                     <Link
                       to="/"
@@ -272,6 +260,14 @@ const LecturerLayout = () => {
               )}
             </div>
           </div>
+
+          {/* Email Notification Settings Modal (TTDN) */}
+          {emailModalOpen && (
+            <EmailNotificationModal
+              isOpen={emailModalOpen}
+              onClose={() => setEmailModalOpen(false)}
+            />
+          )}
         </header>
 
         {/* Content Outlet */}
@@ -280,12 +276,6 @@ const LecturerLayout = () => {
         </main>
         <Footer />
       </div>
-
-      {/* Training Milestones & Schedule Modal */}
-      <ScheduleModal
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-      />
     </div>
   );
 };

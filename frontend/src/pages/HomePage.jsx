@@ -110,8 +110,6 @@ const HomePage = () => {
         return 'Giảng viên';
       case 'TBM':
         return 'Trưởng Bộ Môn';
-      case 'COMPANY':
-        return 'Doanh nghiệp';
       default:
         return 'Người dùng';
     }
@@ -128,8 +126,6 @@ const HomePage = () => {
         return '/student/dashboard';
       case 'LECTURER':
         return '/lecturer/dashboard';
-      case 'COMPANY':
-        return '/company/dashboard';
       default:
         return '/';
     }
@@ -161,7 +157,6 @@ const HomePage = () => {
       if (loggedUser.role === 'ADMIN') navigate('/admin/permissions');
       else if (loggedUser.role === 'TBM' || loggedUser.role === 'LECTURER') navigate('/lecturer/dashboard');
       else if (loggedUser.role === 'STUDENT') navigate('/student/dashboard');
-      else if (loggedUser.role === 'COMPANY') navigate('/company/dashboard');
     } catch (err) {
       showToast(err.message || 'Mã tài khoản, mật khẩu hoặc mã CAPTCHA không chính xác', 'error');
       loadCaptcha();

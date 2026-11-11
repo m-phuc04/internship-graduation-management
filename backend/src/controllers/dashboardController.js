@@ -54,24 +54,8 @@ const getLecturerDashboard = async (req, res, next) => {
   }
 };
 
-// Company Dashboard
-const getCompanyDashboard = async (req, res, next) => {
-  try {
-    const data = await dashboardService.getCompanyDashboard(req.user.userId);
-
-    res.status(200).json({
-      success: true,
-      message: "Lấy thông tin tổng quan Doanh nghiệp thành công",
-      data,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export default {
   getStudentDashboard,
   getTbmDashboard,
   getLecturerDashboard,
-  getCompanyDashboard,
 };

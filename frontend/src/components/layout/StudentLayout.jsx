@@ -4,7 +4,7 @@ import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from './StudentSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
 import Modal from '../common/Modal';
-import ScheduleModal from '../common/ScheduleModal';
+import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
 import {
   GraduationCap,
@@ -13,13 +13,13 @@ import {
   User,
   Menu,
   X,
-  Calendar,
   Clock,
   CheckCircle2,
   AlertCircle,
   FileText,
   Briefcase,
   BookOpen,
+  Mail,
 } from 'lucide-react';
 
 const StudentLayout = () => {
@@ -28,8 +28,8 @@ const StudentLayout = () => {
   const location = useLocation();
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [mobileDrawerOpen, setMobileDrawerOpen] = useState(false);
-  const [scheduleModalOpen, setScheduleModalOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -70,7 +70,6 @@ const StudentLayout = () => {
       >
         <StudentSidebar
           onToggleCollapse={toggleSidebar}
-          onOpenScheduleModal={() => setScheduleModalOpen(true)}
         />
       </div>
 
@@ -84,7 +83,6 @@ const StudentLayout = () => {
           <div className="relative w-64 bg-white z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <StudentSidebar
               onCloseMobile={() => setMobileDrawerOpen(false)}
-              onOpenScheduleModal={() => setScheduleModalOpen(true)}
             />
           </div>
         </div>
@@ -205,12 +203,12 @@ const StudentLayout = () => {
                             type="button"
                             onClick={() => {
                               setDropdownOpen(false);
-                              setScheduleModalOpen(true);
+                              setEmailModalOpen(true);
                             }}
-                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-xl transition text-left"
+                            className="w-full flex items-center gap-2.5 px-3.5 py-2 font-medium text-slate-700 hover:bg-slate-50 hover:text-[#123891] rounded-xl transition text-left cursor-pointer"
                           >
-                            <Calendar className="w-4 h-4 text-slate-400" />
-                            <span>Lịch & Kế hoạch đào tạo</span>
+                            <Mail className="w-4 h-4 text-slate-400" />
+                            <span>Đăng ký nhận email thông báo</span>
                           </button>
 
                           <button
@@ -231,18 +229,20 @@ const StudentLayout = () => {
           </div>
         </header>
 
+        {/* Email Notification Settings Modal (TTDN) */}
+        {emailModalOpen && (
+          <EmailNotificationModal
+            isOpen={emailModalOpen}
+            onClose={() => setEmailModalOpen(false)}
+          />
+        )}
+
         {/* Main Content Router View */}
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 w-full max-w-full min-w-0">
           <Outlet />
         </main>
         <Footer />
       </div>
-
-      {/* Training Milestones & Schedule Modal */}
-      <ScheduleModal
-        isOpen={scheduleModalOpen}
-        onClose={() => setScheduleModalOpen(false)}
-      />
     </div>
   );
 };

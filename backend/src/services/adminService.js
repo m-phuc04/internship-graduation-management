@@ -1,7 +1,6 @@
 import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
-import Company from "../models/Company.js";
 import Permission from "../models/Permission.js";
 import bcrypt from "bcryptjs";
 import AppError from "../utils/AppError.js";
