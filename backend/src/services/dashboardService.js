@@ -353,54 +353,8 @@ const getLecturerDashboard = async (userId, academicTermId = null) => {
   };
 };
 
-// ====================
-// 4. Company Dashboard
-// ====================
-const getCompanyDashboard = async (userId) => {
-  const company = await Company.findOne({ userId }).populate("userId");
-  if (!company) {
-    throw new AppError("Không tìm thấy thông tin doanh nghiệp", 404);
-  }
-
-  const [internships, evaluations] = await Promise.all([
-    Internship.find({ companyId: company._id })
-      .populate({
-        path: "studentId",
-        populate: { path: "userId", select: "fullName email phone" },
-      })
-      .lean(),
-    Evaluation.find({ companyId: company._id }).lean(),
-  ]);
-
-  const interningStudents = internships.filter((i) =>
-    ["APPROVED", "INTERNING"].includes(i.status),
-  );
-
-  const evaluatedInternshipIds = new Set(
-    evaluations.map((e) => e.internshipId.toString()),
-  );
-
-  const pendingEvaluations = interningStudents.filter(
-    (i) => !evaluatedInternshipIds.has(i._id.toString()),
-  );
-
-  return {
-    company,
-    stats: {
-      totalInterns: internships.length,
-      interningStudentsCount: interningStudents.length,
-      pendingEvaluationsCount: pendingEvaluations.length,
-      completedEvaluationsCount: evaluations.length,
-    },
-    interningStudents: interningStudents.slice(0, 5),
-    pendingEvaluations: pendingEvaluations.slice(0, 5),
-    recentEvaluations: evaluations.slice(0, 5),
-  };
-};
-
 export default {
   getStudentDashboard,
   getTbmDashboard,
   getLecturerDashboard,
-  getCompanyDashboard,
 };

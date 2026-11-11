@@ -12,7 +12,6 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import TbmLayout from './components/layout/TbmLayout';
 import StudentLayout from './components/layout/StudentLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
-import CompanyLayout from './components/layout/CompanyLayout';
 import AdminLayout from './components/layout/AdminLayout';
 import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
@@ -22,7 +21,6 @@ import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AcademicTermManagement from './pages/admin/AcademicTermManagement';
 import StudentManagement from './pages/tbm/StudentManagement';
 import LecturerManagement from './pages/tbm/LecturerManagement';
-import CompanyManagement from './pages/tbm/CompanyManagement';
 import InternshipManagement from './pages/tbm/InternshipManagement';
 import TbmEvaluationManagement from './pages/tbm/TbmEvaluationManagement';
 import TbmThesisManagement from './pages/tbm/TbmThesisManagement';
@@ -48,8 +46,6 @@ import LecturerThesisProgressPage from './pages/lecturer/LecturerThesisProgressP
 import LecturerThesisEvaluationDetailPage from './pages/lecturer/LecturerThesisEvaluationDetailPage';
 import LecturerDashboard from './pages/lecturer/LecturerDashboard';
 import LecturerNewsManagement from './pages/lecturer/LecturerNewsManagement';
-import CompanyEvaluationPage from './pages/company/CompanyEvaluationPage';
-import CompanyDashboard from './pages/company/CompanyDashboard';
 import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import HomePage from './pages/HomePage';
@@ -67,8 +63,6 @@ const RoleBasedProfileRedirect = () => {
       return <Navigate to="/lecturer/profile" replace />;
     case 'STUDENT':
       return <Navigate to="/student/profile" replace />;
-    case 'COMPANY':
-      return <Navigate to="/company/profile" replace />;
     default:
       return <Navigate to="/login" replace />;
   }
@@ -160,7 +154,6 @@ function App() {
                 <Route path="dashboard" element={<TbmDashboard />} />
                 <Route path="students" element={<StudentManagement />} />
                 <Route path="lecturers" element={<LecturerManagement />} />
-                <Route path="companies" element={<CompanyManagement />} />
                 <Route path="internship-documents" element={<Navigate to="/tbm/internships" replace />} />
                 <Route path="internships" element={<InternshipManagement />} />
                 <Route path="evaluations" element={<TbmEvaluationManagement />} />
@@ -214,21 +207,6 @@ function App() {
               <Route path="theses/:id" element={<LecturerThesisEvaluationDetailPage />} />
               <Route path="theses/progress" element={<LecturerThesisProgressPage />} />
               <Route path="news" element={<LecturerNewsManagement />} />
-              <Route path="profile" element={<ProfilePage />} />
-            </Route>
-
-            {/* Company Evaluation Routes (Protected with COMPANY role) */}
-            <Route
-              path="/company"
-              element={
-                <ProtectedRoute allowedRoles={['COMPANY']}>
-                  <CompanyLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Navigate to="/company/dashboard" replace />} />
-              <Route path="dashboard" element={<CompanyDashboard />} />
-              <Route path="evaluations" element={<CompanyEvaluationPage />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 

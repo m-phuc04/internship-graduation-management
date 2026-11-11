@@ -2,7 +2,6 @@ import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
-import Company from "../models/Company.js";
 import Permission from "../models/Permission.js";
 import Thesis from "../models/Thesis.js";
 import captchaService from "./captchaService.js";
@@ -191,22 +190,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     }
   }
 
-  // 3. Check Company by companyCode (code)
-  if (!user) {
-    const company = await Company.findOne({ code: loginIdentifier.toUpperCase() });
-    if (company && company.userId) {
-      user = await User.findById(company.userId);
-      if (user) {
-        extraInfo = {
-          companyId: company._id,
-          companyCode: company.code,
-          companyName: company.name,
-        };
-      }
-    }
-  }
-
-  // 4. Check User by code (e.g. ADMIN001) or email
+  // 3. Check User by code (e.g. ADMIN001) or email
   if (!user) {
     user = await User.findOne({
       $or: [
@@ -419,11 +403,6 @@ const getProfile = async (userId) => {
         remainingQuota: Math.max(0, maxSupervised - currentSupervisedStudents),
       };
     }
-  } else if (user.role === "COMPANY") {
-    const company = await Company.findOne({ userId }).lean();
-    if (company) {
-      roleDetails.company = company;
-    }
   }
 
   return {
@@ -537,19 +516,6 @@ const updateProfile = async (userId, updateData = {}) => {
     }
   }
 
-  // 4. Optional Company Profile Contact Updates
-  if (user.role === "COMPANY") {
-    const company = await Company.findOne({ userId });
-    if (company) {
-      if (updateData.website !== undefined) company.website = updateData.website ? updateData.website.trim() : null;
-      if (updateData.contactPerson !== undefined) company.contactPerson = updateData.contactPerson ? updateData.contactPerson.trim() : null;
-      if (updateData.contactEmail !== undefined) company.contactEmail = updateData.contactEmail ? updateData.contactEmail.trim() : null;
-      if (updateData.contactPhone !== undefined) company.contactPhone = updateData.contactPhone ? updateData.contactPhone.trim() : null;
-      if (updateData.address !== undefined && updateData.address.trim()) company.address = updateData.address.trim();
-      await company.save();
-    }
-  }
-
   return await getProfile(userId);
 };
 
@@ -612,7 +578,6 @@ const getPublicUserProfile = async (targetId) => {
   let user = null;
   let student = null;
   let lecturer = null;
-  let company = null;
 
   try {
     user = await User.findById(targetId)
@@ -646,17 +611,6 @@ const getPublicUserProfile = async (targetId) => {
   }
 
   if (!user) {
-    try {
-      company = await Company.findById(targetId)
-        .populate("userId", "fullName email avatar phone role isActive createdAt")
-        .lean();
-      if (company && company.userId) {
-        user = company.userId;
-      }
-    } catch {}
-  }
-
-  if (!user) {
     const error = new Error("Không tìm thấy người dùng");
     error.statusCode = 404;
     throw error;
@@ -664,7 +618,7 @@ const getPublicUserProfile = async (targetId) => {
 
   const userId = user._id;
 
-  // Populate student / lecturer / company details if not already fetched
+  // Populate student / lecturer details if not already fetched
   if (user.role === "STUDENT" && !student) {
     student = await Student.findOne({ userId })
       .select("studentCode class faculty gpa accumulatedCredits")
@@ -672,10 +626,6 @@ const getPublicUserProfile = async (targetId) => {
   } else if ((user.role === "LECTURER" || user.role === "TBM") && !lecturer) {
     lecturer = await Lecturer.findOne({ userId })
       .select("lecturerCode academicTitle department specialization permissions")
-      .lean();
-  } else if (user.role === "COMPANY" && !company) {
-    company = await Company.findOne({ userId })
-      .select("companyName address website contactPerson contactEmail contactPhone")
       .lean();
   }
 

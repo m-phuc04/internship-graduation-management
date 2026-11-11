@@ -29,12 +29,4 @@ router.get(
   dashboardController.getLecturerDashboard,
 );
 
-// Company Dashboard
-router.get(
-  "/company",
-  authMiddleware,
-  authorizeRoles("COMPANY"),
-  dashboardController.getCompanyDashboard,
-);
-
 export default router;

@@ -361,8 +361,6 @@ const FloatingChatBox = () => {
                         ? 'Giảng Viên'
                         : targetUser?.role === 'STUDENT'
                         ? 'Sinh Viên'
-                        : targetUser?.role === 'COMPANY'
-                        ? 'Doanh Nghiệp'
                         : targetUser?.role === 'TBM'
                         ? 'Trưởng Bộ Môn'
                         : 'Trò chuyện'}

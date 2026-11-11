@@ -15,7 +15,6 @@ const evaluationSchema = new mongoose.Schema(
 
     evaluationRequestId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "CompanyEvaluationRequest",
       default: null,
     },
 
@@ -34,7 +33,7 @@ const evaluationSchema = new mongoose.Schema(
 
     evaluatorRole: {
       type: String,
-      enum: ["COMPANY", "LECTURER", "REVIEWER"],
+      enum: ["LECTURER", "REVIEWER"],
       required: [true, "Vai trò người đánh giá là bắt buộc"],
     },
 

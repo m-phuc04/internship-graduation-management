@@ -157,7 +157,6 @@ const NotificationDropdown = () => {
       if (role === 'TBM') targetLink = '/tbm/evaluations';
       else if (role === 'LECTURER') targetLink = '/lecturer/internships';
       else if (role === 'STUDENT') targetLink = '/student/internship';
-      else if (role === 'COMPANY') targetLink = '/company/evaluations';
     }
 
     if (role === 'LECTURER') {
@@ -330,15 +329,13 @@ const NotificationDropdown = () => {
       if (
         targetLink.startsWith('/tbm/academic-terms') ||
         targetLink.startsWith('/tbm/students') ||
-        targetLink.startsWith('/tbm/lecturers') ||
-        targetLink.startsWith('/tbm/companies')
+        targetLink.startsWith('/tbm/lecturers')
       ) {
         targetLink = targetLink.replace('/tbm/', '/admin/');
       } else if (
         targetLink.startsWith('/tbm/') ||
         targetLink.startsWith('/lecturer/') ||
-        targetLink.startsWith('/student/') ||
-        targetLink.startsWith('/company/')
+        targetLink.startsWith('/student/')
       ) {
         // Do not navigate ADMIN to non-admin operational pages
         return;
@@ -363,8 +360,7 @@ const NotificationDropdown = () => {
         else if (role === 'STUDENT') targetLink = '/student/reports';
         else if (role === 'TBM') targetLink = '/tbm/internships';
       } else if (item.type === 'EVALUATION') {
-        if (role === 'COMPANY') targetLink = '/company/evaluations';
-        else if (role === 'LECTURER') targetLink = '/lecturer/internships';
+        if (role === 'LECTURER') targetLink = '/lecturer/internships';
         else if (role === 'TBM') targetLink = '/tbm/evaluations';
       }
     }

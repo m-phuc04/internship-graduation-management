@@ -43,13 +43,6 @@ const ProfilePage = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [maxSupervisedStudents, setMaxSupervisedStudents] = useState(5);
-  const [companyDetails, setCompanyDetails] = useState({
-    website: '',
-    contactPerson: '',
-    contactEmail: '',
-    contactPhone: '',
-    address: '',
-  });
 
   // Change Password Modal States
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -80,16 +73,6 @@ const ProfilePage = () => {
             res.data.lecturer.maxSupervisedStudents ?? res.data.lecturer.maxStudents ?? 5
           );
         }
-
-        if (res.data.company) {
-          setCompanyDetails({
-            website: res.data.company.website || '',
-            contactPerson: res.data.company.contactPerson || '',
-            contactEmail: res.data.company.contactEmail || '',
-            contactPhone: res.data.company.contactPhone || '',
-            address: res.data.company.address || '',
-          });
-        }
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải thông tin cá nhân', 'error');
@@ -112,15 +95,6 @@ const ProfilePage = () => {
       setMaxSupervisedStudents(
         profileData.lecturer.maxSupervisedStudents ?? profileData.lecturer.maxStudents ?? 5
       );
-    }
-    if (profileData?.company) {
-      setCompanyDetails({
-        website: profileData.company.website || '',
-        contactPerson: profileData.company.contactPerson || '',
-        contactEmail: profileData.company.contactEmail || '',
-        contactPhone: profileData.company.contactPhone || '',
-        address: profileData.company.address || '',
-      });
     }
     setIsEditing(false);
   };
@@ -155,16 +129,6 @@ const ProfilePage = () => {
 
       if (profileData?.user?.role === 'LECTURER' || profileData?.user?.role === 'TBM') {
         payload.maxSupervisedStudents = Number(maxSupervisedStudents);
-      }
-
-      if (profileData?.user?.role === 'COMPANY') {
-        payload.website = companyDetails.website?.trim() || null;
-        payload.contactPerson = companyDetails.contactPerson?.trim() || null;
-        payload.contactEmail = companyDetails.contactEmail?.trim() || null;
-        payload.contactPhone = companyDetails.contactPhone?.trim() || null;
-        if (companyDetails.address?.trim()) {
-          payload.address = companyDetails.address.trim();
-        }
       }
 
       const res = await profileApi.updateProfile(payload);
@@ -234,14 +198,11 @@ const ProfilePage = () => {
   const user = profileData?.user || authUser;
   const student = profileData?.student;
   const lecturer = profileData?.lecturer;
-  const company = profileData?.company;
 
   // Compute Account Code
   const getAccountCode = () => {
     if (user?.role === 'ADMIN') return user.code || 'ADMIN001';
     if (student?.studentCode) return student.studentCode;
-    // lecturer code hidden from account code display
-    if (company?.code) return company.code;
     return user?.code || user?.role || 'N/A';
   };
 
@@ -255,8 +216,6 @@ const ProfilePage = () => {
         return { label: 'Giảng Viên (LECTURER)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'STUDENT':
         return { label: 'Sinh Viên (STUDENT)', color: 'bg-blue-50 text-blue-700 border-blue-200' };
-      case 'COMPANY':
-        return { label: 'Doanh Nghiệp (COMPANY)', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
       default:
         return { label: role, color: 'bg-slate-100 text-slate-700 border-slate-200' };
     }
@@ -404,49 +363,6 @@ const ProfilePage = () => {
                 </div>
               )}
             </div>
-
-            {/* Additional Company Info */}
-            {user?.role === 'COMPANY' && (
-              <>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Website công ty
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="url"
-                      value={companyDetails.website}
-                      onChange={(e) => setCompanyDetails({ ...companyDetails, website: e.target.value })}
-                      placeholder="https://company.com"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                    />
-                  ) : (
-                    <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-medium text-slate-900">
-                      {companyDetails.website || <em className="text-slate-400">Chưa cập nhật</em>}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                    Người đại diện liên hệ
-                  </label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={companyDetails.contactPerson}
-                      onChange={(e) => setCompanyDetails({ ...companyDetails, contactPerson: e.target.value })}
-                      placeholder="Họ tên người liên hệ"
-                      className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
-                    />
-                  ) : (
-                    <div className="px-3.5 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-medium text-slate-900">
-                      {companyDetails.contactPerson || <em className="text-slate-400">Chưa cập nhật</em>}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
           </div>
         </div>
 
@@ -566,35 +482,6 @@ const ProfilePage = () => {
                 <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-semibold text-slate-800 flex items-center justify-between truncate">
                   <span className="truncate">{lecturer.department || 'Công nghệ Thông tin'}</span>
                   <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Company Specific Fields */}
-          {user?.role === 'COMPANY' && company && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Mã doanh nghiệp</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-[#102d7d] font-mono flex items-center justify-between">
-                  <span>{company.code}</span>
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Tên doanh nghiệp</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-bold text-slate-800 flex items-center justify-between truncate">
-                  <span className="truncate">{company.name}</span>
-                  <Lock className="w-3.5 h-3.5 text-slate-400 shrink-0 ml-1" />
-                </div>
-              </div>
-
-              <div>
-                <span className="text-[11px] font-semibold text-slate-400 block mb-1">Mã số thuế</span>
-                <div className="p-3 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-mono font-semibold text-slate-800 flex items-center justify-between">
-                  <span>{company.taxCode || 'Chưa cập nhật'}</span>
-                  <Lock className="w-3.5 h-3.5 text-slate-400" />
                 </div>
               </div>
             </div>

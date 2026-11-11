@@ -5,13 +5,6 @@ export const evaluationApi = {
   gradeInternship: (data) =>
     axiosClient.post('/evaluations/internship/grade', data),
 
-  // Company gets list of internships with evaluation status
-  getCompanyInternships: (params) =>
-    axiosClient.get('/evaluations/company/internships', { params }),
-
-  // Company creates or updates evaluation
-  createOrUpdate: (data) => axiosClient.post('/evaluations', data),
-
   // Get evaluation by ID
   getById: (id) => axiosClient.get(`/evaluations/${id}`),
 
@@ -22,10 +15,6 @@ export const evaluationApi = {
   // TBM gets all evaluations
   getForTbm: (params) =>
     axiosClient.get('/evaluations/tbm/all', { params }),
-
-  // Student: Get my evaluation request and results
-  getStudentEvaluationRequest: (params) =>
-    axiosClient.get('/evaluations/student/my-request', { params }),
 
   // TBM: Delete evaluation result
   tbmDeleteEvaluation: (id) =>

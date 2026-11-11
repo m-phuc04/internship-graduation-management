@@ -95,12 +95,6 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
           bg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           icon: GraduationCap,
         };
-      case 'COMPANY':
-        return {
-          label: 'Doanh Nghiệp (Company)',
-          bg: 'bg-blue-50 text-[#102d7d] border-blue-200',
-          icon: Building2,
-        };
       default:
         return {
           label: 'Thành viên',

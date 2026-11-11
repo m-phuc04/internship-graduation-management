@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -74,8 +74,6 @@ const LoginPage = () => {
         navigate('/lecturer/dashboard', { replace: true });
       } else if (user.role === 'STUDENT') {
         navigate('/student/dashboard', { replace: true });
-      } else if (user.role === 'COMPANY') {
-        navigate('/company/dashboard', { replace: true });
       } else {
         navigate('/unauthorized', { replace: true });
       }

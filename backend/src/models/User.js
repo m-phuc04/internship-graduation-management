@@ -34,7 +34,7 @@ const userSchema = new mongoose.Schema(
     role: {
       type: String,
       required: [true, "Role là bắt buộc"],
-      enum: ["ADMIN", "TBM", "LECTURER", "COMPANY", "STUDENT"],
+      enum: ["ADMIN", "TBM", "LECTURER", "STUDENT"],
     },
 
     phone: {

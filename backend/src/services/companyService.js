@@ -1,6 +1,4 @@
 import Company from "../models/Company.js";
-import User from "../models/User.js";
-import bcrypt from "bcryptjs";
 import Internship from "../models/Internship.js";
 import AppError from "../utils/AppError.js";
 
@@ -138,29 +136,8 @@ const createCompany = async ({
     }
   }
 
-  let userId = null;
-  const companyEmail = email ? email.trim().toLowerCase() : (contactEmail ? contactEmail.trim().toLowerCase() : null);
-
-  if (companyEmail) {
-    const existingUser = await User.findOne({ email: companyEmail });
-    if (!existingUser) {
-      const hashedPassword = await bcrypt.hash("1111", 12);
-      const user = await User.create({
-        fullName: trimmedName,
-        email: companyEmail,
-        password: hashedPassword,
-        phone: phone ? phone.trim() : null,
-        role: "COMPANY",
-        isActive: status !== "INACTIVE",
-      });
-      userId = user._id;
-    } else {
-      userId = existingUser._id;
-    }
-  }
-
   const company = await Company.create({
-    userId,
+    userId: null,
     name: trimmedName,
     code: trimmedCode,
     address: address.trim(),

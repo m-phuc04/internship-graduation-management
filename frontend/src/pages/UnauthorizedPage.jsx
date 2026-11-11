@@ -41,7 +41,6 @@ const UnauthorizedPage = () => {
               else if (user?.role === 'TBM') navigate('/tbm/dashboard');
               else if (user?.role === 'LECTURER') navigate('/lecturer/dashboard');
               else if (user?.role === 'STUDENT') navigate('/student/dashboard');
-              else if (user?.role === 'COMPANY') navigate('/company/dashboard');
               else navigate('/');
             }}
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-sm font-medium rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer"
