@@ -246,35 +246,17 @@ const StudentReportPage = () => {
     ).length;
   }, [reportMap]);
 
-  // Sorting state (Mặc định: đưa các tuần đã nộp xuống cuối, tuần chưa nộp lên đầu)
-  const [sortByChronological, setSortByChronological] = useState(false);
+  // Sắp xếp danh sách theo số thứ tự tuần: Mặc định sắp xếp tuần giảm dần (DESC: lớn nhất -> nhỏ nhất)
+  const [sortAscending, setSortAscending] = useState(false);
 
   const displayedWeeks = useMemo(() => {
-    if (sortByChronological) {
-      // Thứ tự tuần từ 1 -> N
-      return [...weeks].sort((a, b) => a.weekNumber - b.weekNumber);
-    }
-
-    // Mặc định: Tuần chưa nộp lên đầu, tuần đã nộp đi xuống cuối
     return [...weeks].sort((a, b) => {
-      const isSubmittedA = Boolean(
-        reportMap[a.weekNumber] &&
-        ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(reportMap[a.weekNumber]?.status)
-      );
-      const isSubmittedB = Boolean(
-        reportMap[b.weekNumber] &&
-        ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(reportMap[b.weekNumber]?.status)
-      );
-
-      // Chưa nộp (false) lên trước, Đã nộp (true) xuống cuối
-      if (isSubmittedA !== isSubmittedB) {
-        return isSubmittedA ? 1 : -1;
+      if (sortAscending) {
+        return a.weekNumber - b.weekNumber;
       }
-
-      // Trong cùng nhóm: sắp xếp tăng dần theo số tuần (1 -> N)
-      return a.weekNumber - b.weekNumber;
+      return b.weekNumber - a.weekNumber;
     });
-  }, [weeks, sortByChronological, reportMap]);
+  }, [weeks, sortAscending]);
 
   const [autoOpenFileForCreate, setAutoOpenFileForCreate] = useState(false);
 
@@ -499,22 +481,22 @@ const StudentReportPage = () => {
 
             <button
               type="button"
-              onClick={() => setSortByChronological(!sortByChronological)}
+              onClick={() => setSortAscending(!sortAscending)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold transition cursor-pointer ${
-                !sortByChronological
+                !sortAscending
                   ? 'bg-blue-50 border-blue-200 text-[#102d7d]'
                   : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
               title={
-                !sortByChronological
-                  ? 'Đang ưu tiên tuần chưa nộp lên đầu, tuần đã nộp xuống cuối. Bấm để đổi sang thứ tự tuần 1 → N'
-                  : 'Đang sắp xếp theo thứ tự tuần 1 → N. Bấm để đưa tuần đã nộp xuống cuối'
+                !sortAscending
+                  ? 'Đang sắp xếp tuần mới nhất trên cùng (DESC). Bấm để đổi sang thứ tự tuần 1 → N (ASC)'
+                  : 'Đang sắp xếp theo thứ tự tuần 1 → N (ASC). Bấm để đổi sang tuần mới nhất trên cùng (DESC)'
               }
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span>
-                {!sortByChronological
-                  ? 'Tuần đã nộp ở cuối (Mặc định)'
+                {!sortAscending
+                  ? 'Tuần mới nhất (Mặc định)'
                   : 'Thứ tự tuần (1 → N)'}
               </span>
             </button>

@@ -404,7 +404,7 @@ const LecturerInternshipPage = () => {
               </div>
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
                 <span>Giảng viên: <strong className="text-slate-800">{lecturerInfo?.academicTitle} {lecturerInfo?.userId?.fullName}</strong></span>
-                
+
               </div>
             </div>
           </div>
@@ -551,14 +551,14 @@ const LecturerInternshipPage = () => {
                           disabled={pretestTogglingId === item._id}
                           onClick={() => handleTogglePretest(item)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100/90 active:scale-95 text-emerald-700 border border-emerald-200 text-xs font-bold shadow-2xs transition-all cursor-pointer group disabled:opacity-50"
-                          title={`Đã xác nhận PASS PRETEST${item.pretest?.passedAt ? ' lúc ' + new Date(item.pretest.passedAt).toLocaleDateString('vi-VN') : ''} • Bấm để chuyển về CHƯA PASS`}
+                          title={`Đã xác nhận PASS${item.pretest?.passedAt ? ' lúc ' + new Date(item.pretest.passedAt).toLocaleDateString('vi-VN') : ''} • Bấm để chuyển về FAIL`}
                         >
                           {pretestTogglingId === item._id ? (
                             <span className="w-3.5 h-3.5 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
                           ) : (
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 group-hover:scale-110 transition-transform" />
                           )}
-                          <span>PASS PRETEST</span>
+                          <span>PASS</span>
                         </button>
                       ) : (
                         <button
@@ -566,14 +566,14 @@ const LecturerInternshipPage = () => {
                           disabled={pretestTogglingId === item._id}
                           onClick={() => handleTogglePretest(item)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-amber-50 hover:bg-amber-100/90 active:scale-95 text-amber-800 border border-amber-200 text-xs font-bold shadow-2xs transition-all cursor-pointer group disabled:opacity-50"
-                          title="Chưa đạt Pretest • Bấm để xác nhận PASS PRETEST"
+                          title="Chưa đạt Pretest • Bấm để xác nhận PASS"
                         >
                           {pretestTogglingId === item._id ? (
                             <span className="w-3.5 h-3.5 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin" />
                           ) : (
                             <AlertCircle className="w-3.5 h-3.5 text-amber-600 group-hover:scale-110 transition-transform" />
                           )}
-                          <span>CHƯA PASS</span>
+                          <span>FAIL</span>
                         </button>
                       )}
                     </td>
@@ -627,7 +627,7 @@ const LecturerInternshipPage = () => {
                     <td className="py-3.5 px-4 text-xs font-bold">
                       {item.evaluation?.score !== undefined && item.evaluation?.score !== null ? (
                         <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                          {item.evaluation.score} / 10
+                          {item.evaluation.score}
                         </span>
                       ) : (
                         <span className="text-slate-400 text-[11px] font-normal">—</span>
@@ -683,11 +683,10 @@ const LecturerInternshipPage = () => {
                                     handleOpenGrading(item);
                                   }
                                 }}
-                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${
-                                  isEligibleToGrade
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${isEligibleToGrade
                                     ? 'text-white bg-[#123891] hover:bg-[#102d7d] cursor-pointer'
                                     : 'text-slate-400 bg-slate-100 hover:bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
-                                }`}
+                                  }`}
                                 title={
                                   isEligibleToGrade
                                     ? 'Chấm điểm thực tập cho sinh viên này'
@@ -713,17 +712,16 @@ const LecturerInternshipPage = () => {
                                       handleOpenGrading(item);
                                     }
                                   }}
-                                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${
-                                    canEdit
+                                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${canEdit
                                       ? 'text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 cursor-pointer'
                                       : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
-                                  }`}
+                                    }`}
                                   title={
                                     isLocked
                                       ? 'Điểm đã được công bố, không thể chỉnh sửa'
                                       : canEdit
-                                      ? 'Chỉnh sửa điểm đã chấm cho sinh viên này'
-                                      : `Không thể sửa điểm: ${allReasons.join(' • ')}`
+                                        ? 'Chỉnh sửa điểm đã chấm cho sinh viên này'
+                                        : `Không thể sửa điểm: ${allReasons.join(' • ')}`
                                   }
                                 >
                                   <Award className="w-3.5 h-3.5 text-amber-700" />
@@ -1110,11 +1108,10 @@ const LecturerInternshipPage = () => {
                   <label
                     key={option.value}
                     onClick={() => setSelectedCycle(option.value)}
-                    className={`p-3.5 rounded-2xl border text-xs flex items-start gap-3 cursor-pointer transition ${
-                      selectedCycle === option.value
+                    className={`p-3.5 rounded-2xl border text-xs flex items-start gap-3 cursor-pointer transition ${selectedCycle === option.value
                         ? 'bg-blue-50/70 border-[#123891] ring-1 ring-[#123891]'
                         : 'bg-white border-slate-200 hover:bg-slate-50'
-                    }`}
+                      }`}
                   >
                     <input
                       type="radio"
