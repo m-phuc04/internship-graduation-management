@@ -83,7 +83,7 @@ const LecturerInternshipPage = () => {
 
   // Report Cycle Modal State (Cấu hình chung toàn học kỳ)
   const [cycleModalOpen, setCycleModalOpen] = useState(false);
-  const [termReportCycle, setTermReportCycle] = useState(1);
+  const [termReportCycle, setTermReportCycle] = useState(null);
   const [selectedCycle, setSelectedCycle] = useState(1);
   const [cycleLoading, setCycleLoading] = useState(false);
 
@@ -120,11 +120,12 @@ const LecturerInternshipPage = () => {
         setStats(res.stats || null);
         setLecturerInfo(res.lecturer || null);
         setPagination(res.pagination || null);
-        if (res.reportCycle) {
-          setTermReportCycle(res.reportCycle);
-        } else if (res.academicTerm?.internship?.reportCycle) {
-          setTermReportCycle(res.academicTerm.internship.reportCycle);
-        }
+        const resolvedCycle =
+          Number(res.reportCycle) ||
+          Number(res.academicTerm?.internship?.reportCycle) ||
+          Number(res.data?.[0]?.reportCycle) ||
+          1;
+        setTermReportCycle(resolvedCycle);
       }
     } catch (err) {
       showToast(
@@ -453,7 +454,16 @@ const LecturerInternshipPage = () => {
             title="Thiết lập chu kỳ nộp nhật ký thực tập chung cho toàn bộ sinh viên trong học kỳ"
           >
             <Sliders className="w-3.5 h-3.5 text-[#123891]" />
-            <span>Chu kỳ nộp: <strong className="underline decoration-blue-400">{termReportCycle} tuần/lần</strong></span>
+            <span>
+              Chu kỳ nộp:{' '}
+              {loading && termReportCycle === null ? (
+                <span className="italic text-slate-400 font-normal">Đang tải...</span>
+              ) : (
+                <strong className="underline decoration-blue-400">
+                  {termReportCycle || 1} tuần/lần
+                </strong>
+              )}
+            </span>
           </button>
 
           <span className="text-xs font-semibold text-slate-500 ml-1">Học kỳ:</span>
@@ -461,6 +471,7 @@ const LecturerInternshipPage = () => {
             value={currentTerm?._id || ''}
             onChange={(e) => {
               if (setCurrentTerm && e.target.value) {
+                setTermReportCycle(null);
                 setCurrentTerm(e.target.value);
               }
             }}

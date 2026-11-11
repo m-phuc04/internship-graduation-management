@@ -219,6 +219,8 @@ const getSupervisedInternships = async (req, res, next) => {
       stats: result.stats,
       lecturer: result.lecturer,
       pagination: result.pagination,
+      reportCycle: result.reportCycle,
+      academicTerm: result.academicTerm,
     });
   } catch (error) {
     next(error);

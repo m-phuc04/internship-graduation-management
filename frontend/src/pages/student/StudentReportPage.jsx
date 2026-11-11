@@ -246,17 +246,42 @@ const StudentReportPage = () => {
     ).length;
   }, [reportMap]);
 
-  // Sắp xếp danh sách theo số thứ tự tuần: Mặc định sắp xếp tuần giảm dần (DESC: lớn nhất -> nhỏ nhất)
+  // Sắp xếp danh sách nhật ký:
+  // 1. Ưu tiên trạng thái: Các tuần Chưa nộp hiển thị trước, Đã nộp hiển thị phía dưới
+  // 2. Nhóm Chưa nộp: Sắp xếp tuần tăng dần (ASC: Tuần nhỏ làm trước, tuần lớn làm sau, ví dụ Tuần 2 rồi đến Tuần 3)
+  // 3. Nhóm Đã nộp: Sắp xếp tuần giảm dần (DESC: Tuần lớn / mới nhất nộp nằm trên, ví dụ Tuần 9 rồi đến Tuần 6)
   const [sortAscending, setSortAscending] = useState(false);
 
   const displayedWeeks = useMemo(() => {
     return [...weeks].sort((a, b) => {
-      if (sortAscending) {
-        return a.weekNumber - b.weekNumber;
+      const reportA = reportMap[a.weekNumber];
+      const reportB = reportMap[b.weekNumber];
+
+      const isSubmittedA = Boolean(
+        reportA && reportA.status !== 'DRAFT' && reportA.status !== 'NOT_SUBMITTED'
+      );
+      const isSubmittedB = Boolean(
+        reportB && reportB.status !== 'DRAFT' && reportB.status !== 'NOT_SUBMITTED'
+      );
+
+      // 1. Ưu tiên trạng thái: Chưa nộp (false) lên trước, Đã nộp (true) xuống dưới
+      if (isSubmittedA !== isSubmittedB) {
+        return isSubmittedA ? 1 : -1;
       }
-      return b.weekNumber - a.weekNumber;
+
+      // 2. Nếu là nhóm CHƯA NỘP: Mặc định sắp xếp tăng dần (tuần nhỏ làm trước: Tuần 2 -> Tuần 3)
+      if (!isSubmittedA) {
+        return sortAscending
+          ? b.weekNumber - a.weekNumber
+          : a.weekNumber - b.weekNumber;
+      }
+
+      // 3. Nếu là nhóm ĐÃ NỘP: Mặc định sắp xếp giảm dần (tuần mới nhất trên cùng: Tuần 9 -> Tuần 6)
+      return sortAscending
+        ? a.weekNumber - b.weekNumber
+        : b.weekNumber - a.weekNumber;
     });
-  }, [weeks, sortAscending]);
+  }, [weeks, reportMap, sortAscending]);
 
   const [autoOpenFileForCreate, setAutoOpenFileForCreate] = useState(false);
 
@@ -489,15 +514,15 @@ const StudentReportPage = () => {
               }`}
               title={
                 !sortAscending
-                  ? 'Đang sắp xếp tuần mới nhất trên cùng (DESC). Bấm để đổi sang thứ tự tuần 1 → N (ASC)'
-                  : 'Đang sắp xếp theo thứ tự tuần 1 → N (ASC). Bấm để đổi sang tuần mới nhất trên cùng (DESC)'
+                  ? 'Mặc định: Chưa nộp (Tuần 1 → N) • Đã nộp (Tuần mới nhất). Bấm để đảo thứ tự'
+                  : 'Đang đảo thứ tự hiển thị. Bấm để trở về mặc định'
               }
             >
               <ArrowUpDown className="w-3.5 h-3.5" />
               <span>
                 {!sortAscending
-                  ? 'Tuần mới nhất (Mặc định)'
-                  : 'Thứ tự tuần (1 → N)'}
+                  ? 'Chưa nộp (Tuần 1 → N)'
+                  : 'Đảo thứ tự tuần'}
               </span>
             </button>
           </div>
