@@ -79,14 +79,14 @@ const createNotification = async ({
     (async () => {
       try {
         const recipientUser = await User.findById(targetRecipientId)
-          .select("email fullName emailNotificationEnabled")
+          .select("email fullName emailNotificationEnabled emailThesisEnabled emailNewsEnabled")
           .lean();
 
         if (!recipientUser || !recipientUser.email || !recipientUser.email.trim()) {
           return;
         }
 
-        // Nhận diện thông báo thuộc module Thực tập Doanh nghiệp (TTDN)
+        // 1. Nhận diện thông báo thuộc module Thực tập Doanh nghiệp (TTDN)
         const isInternshipNotification =
           ["INTERNSHIP", "INTERNSHIP_REPORT", "EVALUATION"].includes(type) ||
           ["Internship", "InternshipDocument", "InternshipReport"].includes(referenceModel) ||
@@ -96,6 +96,33 @@ const createNotification = async ({
         if (isInternshipNotification) {
           // Chỉ gửi email nếu người dùng đã bật chức năng đăng ký nhận email thông báo TTDN
           if (!recipientUser.emailNotificationEnabled) {
+            return;
+          }
+        }
+
+        // 2. Nhận diện thông báo thuộc module Khóa luận Tốt nghiệp (KLTN)
+        const isThesisNotification =
+          ["THESIS", "THESIS_PROGRESS", "THESIS_REVIEW"].includes(type) ||
+          ["Thesis", "ThesisTopic", "ThesisProgress", "ThesisDocument"].includes(referenceModel) ||
+          (metadata && metadata.module === "THESIS") ||
+          (link && (link.includes("/thesis") || link.includes("/theses")));
+
+        if (isThesisNotification) {
+          // Chỉ gửi email nếu người dùng đã bật chức năng đăng ký nhận email thông báo KLTN
+          if (!recipientUser.emailThesisEnabled) {
+            return;
+          }
+        }
+
+        // 3. Nhận diện thông báo thuộc Bản tin & Sự kiện
+        const isNewsNotification =
+          (metadata && metadata.module === "NEWS") ||
+          (referenceModel === "News") ||
+          (link && link.startsWith("/news"));
+
+        if (isNewsNotification) {
+          // Chỉ gửi email nếu người dùng đã bật chức năng đăng ký nhận email Bản tin
+          if (!recipientUser.emailNewsEnabled) {
             return;
           }
         }
@@ -135,6 +162,7 @@ const createNotificationForRole = async (
     referenceModel = null,
     link = null,
     priority = "NORMAL",
+    metadata = {},
   },
 ) => {
   try {
@@ -155,6 +183,7 @@ const createNotificationForRole = async (
           referenceModel,
           link,
           priority,
+          metadata,
         }),
       ),
     );

@@ -11,8 +11,9 @@ import {
   AlertCircle,
   RefreshCw,
   Info,
-  ShieldCheck,
-  ExternalLink,
+  Briefcase,
+  GraduationCap,
+  Newspaper,
 } from 'lucide-react';
 
 const EmailNotificationModal = ({ isOpen, onClose }) => {
@@ -20,10 +21,13 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
   const { showToast } = useToast();
 
   const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
-  const [enabled, setEnabled] = useState(Boolean(user?.emailNotificationEnabled));
+  const [savingKey, setSavingKey] = useState(null); // 'TTDN' | 'THESIS' | 'NEWS' | null
   const [email, setEmail] = useState(user?.email || '');
   const [hasValidEmail, setHasValidEmail] = useState(false);
+
+  const [enabledTTDN, setEnabledTTDN] = useState(Boolean(user?.emailNotificationEnabled));
+  const [enabledThesis, setEnabledThesis] = useState(Boolean(user?.emailThesisEnabled));
+  const [enabledNews, setEnabledNews] = useState(Boolean(user?.emailNewsEnabled));
 
   // Validate email format
   const checkEmailValid = (emailStr) => {
@@ -42,24 +46,25 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
       try {
         const res = await notificationApi.getEmailSettings();
         if (isMounted && res?.data) {
-          const currentEmail = res.data.email || user?.email || '';
-          const isEnabled = Boolean(res.data.emailNotificationEnabled);
+          const currentEmail = res.data.email || '';
+          const isEnabledTTDN = Boolean(res.data.emailNotificationEnabled);
+          const isEnabledThesis = Boolean(res.data.emailThesisEnabled);
+          const isEnabledNews = Boolean(res.data.emailNewsEnabled);
           const isValid = res.data.hasValidEmail ?? checkEmailValid(currentEmail);
 
           setEmail(currentEmail);
-          setEnabled(isEnabled);
+          setEnabledTTDN(isEnabledTTDN);
+          setEnabledThesis(isEnabledThesis);
+          setEnabledNews(isEnabledNews);
           setHasValidEmail(isValid);
-
-          // Sync with AuthContext if different
-          if (user && user.emailNotificationEnabled !== isEnabled) {
-            updateUser({ emailNotificationEnabled: isEnabled });
-          }
         }
       } catch {
         if (isMounted) {
           const fallbackEmail = user?.email || '';
           setEmail(fallbackEmail);
-          setEnabled(Boolean(user?.emailNotificationEnabled));
+          setEnabledTTDN(Boolean(user?.emailNotificationEnabled));
+          setEnabledThesis(Boolean(user?.emailThesisEnabled));
+          setEnabledNews(Boolean(user?.emailNewsEnabled));
           setHasValidEmail(checkEmailValid(fallbackEmail));
         }
       } finally {
@@ -74,13 +79,31 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
     return () => {
       isMounted = false;
     };
-  }, [isOpen, user, updateUser]);
+  }, [isOpen]);
 
-  // Handle Toggle Switch
-  const handleToggle = async () => {
-    if (saving) return;
+  // Handle Toggle Switch for individual module
+  const handleToggle = async (key) => {
+    if (savingKey) return;
 
-    const nextState = !enabled;
+    let currentVal = false;
+    let payloadKey = '';
+    let label = '';
+
+    if (key === 'TTDN') {
+      currentVal = enabledTTDN;
+      payloadKey = 'emailNotificationEnabled';
+      label = 'Thực tập Doanh nghiệp (TTDN)';
+    } else if (key === 'THESIS') {
+      currentVal = enabledThesis;
+      payloadKey = 'emailThesisEnabled';
+      label = 'Khóa luận Tốt nghiệp (KLTN)';
+    } else if (key === 'NEWS') {
+      currentVal = enabledNews;
+      payloadKey = 'emailNewsEnabled';
+      label = 'Bản tin đào tạo & Sự kiện';
+    }
+
+    const nextState = !currentVal;
 
     // Check email requirement before enabling
     if (nextState && !hasValidEmail) {
@@ -92,17 +115,20 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    setSaving(true);
+    setSavingKey(key);
     try {
-      const res = await notificationApi.updateEmailSettings({ enabled: nextState });
+      const res = await notificationApi.updateEmailSettings({ [payloadKey]: nextState });
 
       if (res?.success || res?.status === 200) {
-        setEnabled(nextState);
-        updateUser({ emailNotificationEnabled: nextState });
+        if (key === 'TTDN') setEnabledTTDN(nextState);
+        if (key === 'THESIS') setEnabledThesis(nextState);
+        if (key === 'NEWS') setEnabledNews(nextState);
+
+        updateUser({ [payloadKey]: nextState });
         showToast(
           nextState
-            ? 'Đã bật đăng ký nhận email thông báo TTDN thành công!'
-            : 'Đã tắt nhận email thông báo TTDN.',
+            ? `Đã bật đăng ký nhận email thông báo ${label} thành công!`
+            : `Đã tắt nhận email thông báo ${label}.`,
           'success'
         );
       }
@@ -112,7 +138,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
         'error'
       );
     } finally {
-      setSaving(false);
+      setSavingKey(null);
     }
   };
 
@@ -120,8 +146,8 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Đăng ký nhận Email Thông báo (TTDN)"
-      subtitle="Cài đặt thông báo tự động qua hòm thư điện tử cho module Thực tập Doanh nghiệp"
+      title="Cài Đặt Đăng Ký Nhận Email Thông Báo"
+      subtitle="Quản lý việc nhận thư điện tử tự động cho các phân hệ học vụ và tin tức đào tạo"
       maxWidth="max-w-xl"
     >
       <div className="space-y-4 text-xs">
@@ -168,88 +194,224 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Card 2: Main Toggle Switch */}
-        <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-3">
-          <div className="flex items-start justify-between gap-4">
-            <div className="space-y-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
-                }`}>
-                  {enabled ? <BellRing className="w-4 h-4" /> : <BellOff className="w-4 h-4" />}
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">
-                    Thông báo Thực tập Doanh nghiệp (TTDN)
-                  </h4>
-                  <div className="mt-0.5">
-                    {loading ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                        <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
-                        <span>Đang đồng bộ...</span>
-                      </span>
-                    ) : enabled ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
-                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                        <span>Trạng thái: Đang bật</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
-                        <BellOff className="w-3 h-3 text-slate-400" />
-                        <span>Trạng thái: Đang tắt</span>
-                      </span>
-                    )}
+        {/* Card 2: Modules Toggle List */}
+        <div className="space-y-3">
+          {/* Nhóm 1: TTDN */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                    enabledTTDN ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    <Briefcase className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      1. Thực tập Doanh nghiệp (TTDN)
+                    </h4>
+                    <div className="mt-0.5">
+                      {loading ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                          <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
+                          <span>Đang đồng bộ...</span>
+                        </span>
+                      ) : enabledTTDN ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Đang bật</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                          <BellOff className="w-3 h-3 text-slate-400" />
+                          <span>Đang tắt</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                  Nhận email khi: Duyệt hồ sơ, phân công GVGS, nộp/xử lý báo cáo, nhật ký thực tập, công bố điểm.
+                </p>
               </div>
 
-              <p className="text-[11px] text-slate-600 leading-relaxed pt-2">
-                Khi được kích hoạt, hệ thống sẽ tự động gửi email thông báo đến hòm thư của bạn khi phát sinh các sự kiện:
-              </p>
-              <ul className="text-[11px] text-slate-500 list-disc list-inside space-y-0.5 pl-1">
-                <li>Đăng ký thực tập thành công / Duyệt hoặc từ chối hồ sơ thực tập</li>
-                <li>Phân công Giảng viên Giám sát (GVGS)</li>
-                <li>Sinh viên nộp hoặc gỡ file báo cáo thực tập</li>
-                <li>Nộp và phản hồi nhật ký thực tập</li>
-                <li>Giảng viên cập nhật điểm / Trưởng Bộ Môn công bố điểm chính thức</li>
-              </ul>
-            </div>
-
-            {/* Toggle Switch Component */}
-            <div className="shrink-0 pt-1">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={enabled}
-                disabled={saving || loading || (!enabled && !hasValidEmail)}
-                onClick={handleToggle}
-                className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-                  enabled ? 'bg-emerald-600' : 'bg-slate-300'
-                }`}
-                title={
-                  !hasValidEmail && !enabled
-                    ? 'Vui lòng cập nhật email hợp lệ trước khi bật'
-                    : enabled
-                    ? 'Nhấn để tắt nhận email'
-                    : 'Nhấn để bật nhận email'
-                }
-              >
-                <span className="sr-only">Bật/tắt nhận email</span>
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
-                    enabled ? 'translate-x-6' : 'translate-x-0'
+              {/* Toggle Switch */}
+              <div className="shrink-0 pt-1">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={enabledTTDN}
+                  disabled={savingKey !== null || loading || (!enabledTTDN && !hasValidEmail)}
+                  onClick={() => handleToggle('TTDN')}
+                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    enabledTTDN ? 'bg-emerald-600' : 'bg-slate-300'
                   }`}
+                  title={enabledTTDN ? 'Nhấn để tắt nhận email TTDN' : 'Nhấn để bật nhận email TTDN'}
                 >
-                  {saving ? (
-                    <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
-                  ) : enabled ? (
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                  ) : (
-                    <BellOff className="w-3 h-3 text-slate-400" />
-                  )}
-                </span>
-              </button>
+                  <span className="sr-only">Bật/tắt nhận email TTDN</span>
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
+                      enabledTTDN ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  >
+                    {savingKey === 'TTDN' ? (
+                      <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
+                    ) : enabledTTDN ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <BellOff className="w-3 h-3 text-slate-400" />
+                    )}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Nhóm 2: KLTN */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                    enabledThesis ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    <GraduationCap className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      2. Khóa luận Tốt nghiệp (KLTN)
+                    </h4>
+                    <div className="mt-0.5">
+                      {loading ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                          <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
+                          <span>Đang đồng bộ...</span>
+                        </span>
+                      ) : enabledThesis ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Đang bật</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                          <BellOff className="w-3 h-3 text-slate-400" />
+                          <span>Đang tắt</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                  Nhận email khi: Duyệt đề tài, phân công GVHD, đăng tải tài liệu KLTN, cập nhật tiến độ/nhật ký, đánh giá phản biện & hội đồng.
+                </p>
+              </div>
+
+              {/* Toggle Switch */}
+              <div className="shrink-0 pt-1">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={enabledThesis}
+                  disabled={savingKey !== null || loading || (!enabledThesis && !hasValidEmail)}
+                  onClick={() => handleToggle('THESIS')}
+                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    enabledThesis ? 'bg-emerald-600' : 'bg-slate-300'
+                  }`}
+                  title={enabledThesis ? 'Nhấn để tắt nhận email KLTN' : 'Nhấn để bật nhận email KLTN'}
+                >
+                  <span className="sr-only">Bật/tắt nhận email KLTN</span>
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
+                      enabledThesis ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  >
+                    {savingKey === 'THESIS' ? (
+                      <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
+                    ) : enabledThesis ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <BellOff className="w-3 h-3 text-slate-400" />
+                    )}
+                  </span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Nhóm 3: Bản tin & Sự kiện */}
+          <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
+            <div className="flex items-start justify-between gap-4">
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                    enabledNews ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-400'
+                  }`}>
+                    <Newspaper className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">
+                      3. Bản tin đào tạo & Sự kiện
+                    </h4>
+                    <div className="mt-0.5">
+                      {loading ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
+                          <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
+                          <span>Đang đồng bộ...</span>
+                        </span>
+                      ) : enabledNews ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Đang bật</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                          <BellOff className="w-3 h-3 text-slate-400" />
+                          <span>Đang tắt</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                  Nhận email khi: Khoa CNTT hoặc Bộ môn chính thức công bố các thông báo đào tạo, lịch trình hội thảo và sự kiện quan trọng.
+                </p>
+              </div>
+
+              {/* Toggle Switch */}
+              <div className="shrink-0 pt-1">
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={enabledNews}
+                  disabled={savingKey !== null || loading || (!enabledNews && !hasValidEmail)}
+                  onClick={() => handleToggle('NEWS')}
+                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+                    enabledNews ? 'bg-emerald-600' : 'bg-slate-300'
+                  }`}
+                  title={enabledNews ? 'Nhấn để tắt nhận email Bản tin' : 'Nhấn để bật nhận email Bản tin'}
+                >
+                  <span className="sr-only">Bật/tắt nhận email Bản tin</span>
+                  <span
+                    aria-hidden="true"
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
+                      enabledNews ? 'translate-x-6' : 'translate-x-0'
+                    }`}
+                  >
+                    {savingKey === 'NEWS' ? (
+                      <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
+                    ) : enabledNews ? (
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                    ) : (
+                      <BellOff className="w-3 h-3 text-slate-400" />
+                    )}
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

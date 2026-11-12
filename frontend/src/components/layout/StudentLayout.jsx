@@ -229,20 +229,20 @@ const StudentLayout = () => {
           </div>
         </header>
 
-        {/* Email Notification Settings Modal (TTDN) */}
-        {emailModalOpen && (
-          <EmailNotificationModal
-            isOpen={emailModalOpen}
-            onClose={() => setEmailModalOpen(false)}
-          />
-        )}
-
         {/* Main Content Router View */}
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 w-full max-w-full min-w-0">
           <Outlet />
         </main>
         <Footer />
       </div>
+
+      {/* Email Notification Settings Modal (TTDN & KLTN & News) */}
+      {emailModalOpen && (
+        <EmailNotificationModal
+          isOpen={emailModalOpen}
+          onClose={() => setEmailModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

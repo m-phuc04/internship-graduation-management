@@ -638,6 +638,8 @@ const getPublicUserProfile = async (targetId) => {
       role: user.role,
       isActive: user.isActive,
       emailNotificationEnabled: Boolean(user.emailNotificationEnabled),
+      emailThesisEnabled: Boolean(user.emailThesisEnabled),
+      emailNewsEnabled: Boolean(user.emailNewsEnabled),
     },
     lecturer: lecturer
       ? {
