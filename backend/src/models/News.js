@@ -49,6 +49,10 @@ const newsSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    emailBroadcasted: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

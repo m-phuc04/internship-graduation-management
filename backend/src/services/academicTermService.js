@@ -1,4 +1,4 @@
-import AcademicTerm from "../models/AcademicTerm.js";
+import AcademicTerm, { calculateInternshipGradingDates } from "../models/AcademicTerm.js";
 import Internship from "../models/Internship.js";
 import Thesis from "../models/Thesis.js";
 import User from "../models/User.js";
@@ -224,6 +224,14 @@ const createTerm = async (data, userId) => {
     await AcademicTerm.updateMany({ status: "ACTIVE" }, { status: "CLOSED" });
   }
 
+  let autoGradingStart = null;
+  let autoGradingEnd = null;
+  if (internship.registrationEnd) {
+    const dates = calculateInternshipGradingDates(internship.registrationEnd);
+    autoGradingStart = dates.gradingStart;
+    autoGradingEnd = dates.gradingEnd;
+  }
+
   const newTerm = await AcademicTerm.create({
     name: name.trim(),
     academicYear: academicYear.trim(),
@@ -237,8 +245,8 @@ const createTerm = async (data, userId) => {
       registrationEnd: internship.registrationEnd ? new Date(internship.registrationEnd) : null,
       reportStart: internship.reportStart ? new Date(internship.reportStart) : null,
       reportDeadline: internship.reportDeadline ? new Date(internship.reportDeadline) : null,
-      gradingStart: internship.gradingStart ? new Date(internship.gradingStart) : null,
-      gradingEnd: internship.gradingEnd ? new Date(internship.gradingEnd) : null,
+      gradingStart: autoGradingStart,
+      gradingEnd: autoGradingEnd,
     },
     thesis: {
       registrationStart: thesis.registrationStart ? new Date(thesis.registrationStart) : null,
@@ -306,11 +314,29 @@ const updateTerm = async (id, data) => {
   }
 
   if (internship) {
-    if (internship.gradingStart && internship.gradingEnd) {
-      if (new Date(internship.gradingEnd) < new Date(internship.gradingStart)) {
-        throw new AppError("Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm", 400, "INVALID_DATE_RANGE");
-      }
+    const regStart = internship.registrationStart !== undefined
+      ? (internship.registrationStart ? new Date(internship.registrationStart) : null)
+      : term.internship?.registrationStart;
+
+    const regEnd = internship.registrationEnd !== undefined
+      ? (internship.registrationEnd ? new Date(internship.registrationEnd) : null)
+      : term.internship?.registrationEnd;
+
+    if (regStart && regEnd && regEnd < regStart) {
+      throw new AppError("Hạn chót đăng ký TTDN phải sau ngày bắt đầu đăng ký", 400, "INVALID_DATE_RANGE");
     }
+
+    // Tự động tính hai mốc thời gian chấm điểm TTDN dựa trên registrationEnd
+    // gradingStart = registrationEnd + 10 tuần (70 ngày)
+    // gradingEnd = gradingStart + 15 ngày
+    let autoGradingStart = null;
+    let autoGradingEnd = null;
+    if (regEnd) {
+      const dates = calculateInternshipGradingDates(regEnd);
+      autoGradingStart = dates.gradingStart;
+      autoGradingEnd = dates.gradingEnd;
+    }
+
     const rStart = internship.reportStart !== undefined
       ? (internship.reportStart ? new Date(internship.reportStart) : null)
       : term.internship?.reportStart;
@@ -319,12 +345,13 @@ const updateTerm = async (id, data) => {
       : term.internship?.reportDeadline;
 
     term.internship = {
-      registrationStart: internship.registrationStart !== undefined ? (internship.registrationStart ? new Date(internship.registrationStart) : null) : term.internship?.registrationStart,
-      registrationEnd: internship.registrationEnd !== undefined ? (internship.registrationEnd ? new Date(internship.registrationEnd) : null) : term.internship?.registrationEnd,
+      ...(term.internship?.toObject ? term.internship.toObject() : (term.internship || {})),
+      registrationStart: regStart,
+      registrationEnd: regEnd,
       reportStart: rStart,
       reportDeadline: rEnd,
-      gradingStart: internship.gradingStart !== undefined ? (internship.gradingStart ? new Date(internship.gradingStart) : null) : term.internship?.gradingStart,
-      gradingEnd: internship.gradingEnd !== undefined ? (internship.gradingEnd ? new Date(internship.gradingEnd) : null) : term.internship?.gradingEnd,
+      gradingStart: autoGradingStart,
+      gradingEnd: autoGradingEnd,
     };
   }
 

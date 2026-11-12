@@ -108,13 +108,15 @@ const notifyCouncilAssignment = async (req, res, next) => {
 };
 
 // ====================
-// Email Notification Settings (TTDN)
+// Email Notification Settings (TTDN, KLTN, News)
 // ====================
 
 const getEmailSettings = async (req, res, next) => {
   try {
     const User = (await import("../models/User.js")).default;
-    const user = await User.findById(req.user.userId).select("email emailNotificationEnabled fullName").lean();
+    const user = await User.findById(req.user.userId)
+      .select("email emailNotificationEnabled emailThesisEnabled emailNewsEnabled fullName")
+      .lean();
     if (!user) {
       const error = new Error("Không tìm thấy thông tin tài khoản");
       error.statusCode = 404;
@@ -130,6 +132,8 @@ const getEmailSettings = async (req, res, next) => {
       data: {
         email: user.email || "",
         emailNotificationEnabled: Boolean(user.emailNotificationEnabled),
+        emailThesisEnabled: Boolean(user.emailThesisEnabled),
+        emailNewsEnabled: Boolean(user.emailNewsEnabled),
         hasValidEmail,
       },
     });
@@ -140,7 +144,7 @@ const getEmailSettings = async (req, res, next) => {
 
 const updateEmailSettings = async (req, res, next) => {
   try {
-    const { enabled } = req.body;
+    const { enabled, emailNotificationEnabled, emailThesisEnabled, emailNewsEnabled } = req.body;
     const User = (await import("../models/User.js")).default;
     const user = await User.findById(req.user.userId);
     if (!user) {
@@ -149,11 +153,31 @@ const updateEmailSettings = async (req, res, next) => {
       throw error;
     }
 
-    const isEnabling = Boolean(enabled);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const hasValidEmail = Boolean(user.email && emailRegex.test(user.email.trim()));
 
-    if (isEnabling && !hasValidEmail) {
+    // Xác định các trường cần update
+    const updates = {};
+    if (enabled !== undefined) {
+      updates.emailNotificationEnabled = Boolean(enabled);
+    }
+    if (emailNotificationEnabled !== undefined) {
+      updates.emailNotificationEnabled = Boolean(emailNotificationEnabled);
+    }
+    if (emailThesisEnabled !== undefined) {
+      updates.emailThesisEnabled = Boolean(emailThesisEnabled);
+    }
+    if (emailNewsEnabled !== undefined) {
+      updates.emailNewsEnabled = Boolean(emailNewsEnabled);
+    }
+
+    // Nếu có ít nhất 1 tùy chọn bật mà tài khoản chưa có email hợp lệ
+    const willEnableAny =
+      (updates.emailNotificationEnabled && !user.emailNotificationEnabled) ||
+      (updates.emailThesisEnabled && !user.emailThesisEnabled) ||
+      (updates.emailNewsEnabled && !user.emailNewsEnabled);
+
+    if (willEnableAny && !hasValidEmail) {
       const error = new Error(
         "Tài khoản của bạn chưa có địa chỉ email hợp lệ. Vui lòng cập nhật email trong phần Hồ sơ cá nhân trước khi bật nhận email thông báo."
       );
@@ -161,17 +185,26 @@ const updateEmailSettings = async (req, res, next) => {
       throw error;
     }
 
-    user.emailNotificationEnabled = isEnabling;
+    if (updates.emailNotificationEnabled !== undefined) {
+      user.emailNotificationEnabled = updates.emailNotificationEnabled;
+    }
+    if (updates.emailThesisEnabled !== undefined) {
+      user.emailThesisEnabled = updates.emailThesisEnabled;
+    }
+    if (updates.emailNewsEnabled !== undefined) {
+      user.emailNewsEnabled = updates.emailNewsEnabled;
+    }
+
     await user.save();
 
     res.status(200).json({
       success: true,
-      message: isEnabling
-        ? "Đã bật đăng ký nhận email thông báo TTDN thành công."
-        : "Đã tắt chức năng nhận email thông báo TTDN.",
+      message: "Cập nhật cài đặt nhận email thông báo thành công.",
       data: {
         email: user.email || "",
-        emailNotificationEnabled: user.emailNotificationEnabled,
+        emailNotificationEnabled: Boolean(user.emailNotificationEnabled),
+        emailThesisEnabled: Boolean(user.emailThesisEnabled),
+        emailNewsEnabled: Boolean(user.emailNewsEnabled),
         hasValidEmail,
       },
     });

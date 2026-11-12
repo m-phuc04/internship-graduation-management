@@ -260,14 +260,6 @@ const LecturerLayout = () => {
               )}
             </div>
           </div>
-
-          {/* Email Notification Settings Modal (TTDN) */}
-          {emailModalOpen && (
-            <EmailNotificationModal
-              isOpen={emailModalOpen}
-              onClose={() => setEmailModalOpen(false)}
-            />
-          )}
         </header>
 
         {/* Content Outlet */}
@@ -276,6 +268,14 @@ const LecturerLayout = () => {
         </main>
         <Footer />
       </div>
+
+      {/* Email Notification Settings Modal (TTDN & KLTN & News) */}
+      {emailModalOpen && (
+        <EmailNotificationModal
+          isOpen={emailModalOpen}
+          onClose={() => setEmailModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

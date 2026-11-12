@@ -100,22 +100,39 @@ const createNews = async (
     publishedAt: publishedAt ? new Date(publishedAt) : new Date(),
   });
 
-  // Nếu xuất bản ngay -> Gửi thông báo cho Sinh viên & Giảng viên
-  if (news.isPublished) {
+  // Helper broadcast thông báo và email cho bản tin
+  const broadcastNewsNotification = async (newsDoc, senderUserId) => {
+    if (!newsDoc.isPublished || newsDoc.emailBroadcasted) {
+      return;
+    }
+
     try {
+      // Đánh dấu đã broadcast để không gửi trùng lặp
+      newsDoc.emailBroadcasted = true;
+      await newsDoc.save();
+
       await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
-        senderId: user._id,
+        senderId: senderUserId,
         type: "SYSTEM",
-        title: `Thông báo mới: ${news.title}`,
-        message: news.summary || `Khoa CNTT vừa đăng thông báo mới: "${news.title}". Vui lòng xem chi tiết trên trang chủ.`,
-        referenceId: news._id,
+        title: `Bản tin mới: ${newsDoc.title}`,
+        message: newsDoc.summary || `Khoa CNTT vừa đăng bản tin: "${newsDoc.title}". Vui lòng xem chi tiết trên hệ thống.`,
+        referenceId: newsDoc._id,
         referenceModel: null,
-        link: "/",
+        link: `/news/${newsDoc._id}`,
         priority: "NORMAL",
+        metadata: {
+          module: "NEWS",
+          newsId: newsDoc._id,
+        },
       });
     } catch (notifErr) {
       console.warn("[NewsService] Could not broadcast news notification:", notifErr.message);
     }
+  };
+
+  // Nếu xuất bản ngay -> Gửi thông báo cho Sinh viên & Giảng viên
+  if (news.isPublished) {
+    await broadcastNewsNotification(news, user._id);
   }
 
   return news;
@@ -204,10 +221,37 @@ const updateNews = async (
   if (content !== undefined) news.content = content.trim();
   if (category !== undefined) news.category = category;
   if (thumbnail !== undefined) news.thumbnail = thumbnail;
+  const wasPublishedBefore = Boolean(news.isPublished);
   if (isPublished !== undefined) news.isPublished = Boolean(isPublished);
   if (publishedAt !== undefined) news.publishedAt = new Date(publishedAt);
 
   await news.save();
+
+  // Nếu chuyển từ chưa xuất bản (nháp) sang xuất bản lần đầu -> Gửi broadcast
+  if (!wasPublishedBefore && news.isPublished && !news.emailBroadcasted) {
+    try {
+      news.emailBroadcasted = true;
+      await news.save();
+
+      await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
+        senderId: userId,
+        type: "SYSTEM",
+        title: `Bản tin mới: ${news.title}`,
+        message: news.summary || `Khoa CNTT vừa đăng bản tin: "${news.title}". Vui lòng xem chi tiết trên hệ thống.`,
+        referenceId: news._id,
+        referenceModel: null,
+        link: `/news/${news._id}`,
+        priority: "NORMAL",
+        metadata: {
+          module: "NEWS",
+          newsId: news._id,
+        },
+      });
+    } catch (notifErr) {
+      console.warn("[NewsService] Could not broadcast news notification on update:", notifErr.message);
+    }
+  }
+
   return news;
 };
 
@@ -228,12 +272,39 @@ const togglePublishNews = async (id, userId, userRole) => {
     throw new AppError("Bạn không có quyền thay đổi trạng thái bài viết này", 403);
   }
 
-  news.isPublished = !news.isPublished;
+  const willBePublished = !news.isPublished;
+  news.isPublished = willBePublished;
   if (news.isPublished && !news.publishedAt) {
     news.publishedAt = new Date();
   }
 
   await news.save();
+
+  // Nếu chuyển sang công bố và chưa từng broadcast email -> Gửi broadcast
+  if (willBePublished && !news.emailBroadcasted) {
+    try {
+      news.emailBroadcasted = true;
+      await news.save();
+
+      await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
+        senderId: userId,
+        type: "SYSTEM",
+        title: `Bản tin mới: ${news.title}`,
+        message: news.summary || `Khoa CNTT vừa đăng bản tin: "${news.title}". Vui lòng xem chi tiết trên hệ thống.`,
+        referenceId: news._id,
+        referenceModel: null,
+        link: `/news/${news._id}`,
+        priority: "NORMAL",
+        metadata: {
+          module: "NEWS",
+          newsId: news._id,
+        },
+      });
+    } catch (notifErr) {
+      console.warn("[NewsService] Could not broadcast news notification on toggle:", notifErr.message);
+    }
+  }
+
   return news;
 };
 

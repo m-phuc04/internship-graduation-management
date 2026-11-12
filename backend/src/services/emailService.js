@@ -68,6 +68,8 @@ const getTypeLabel = (type) => {
       return "Báo Cáo Thực Tập";
     case "EVALUATION":
       return "Đánh Giá Thực Tập";
+    case "NEWS":
+      return "Bản Tin & Sự Kiện";
     case "SCHEDULE":
       return "Lịch Trình Đào Tạo";
     case "SYSTEM":

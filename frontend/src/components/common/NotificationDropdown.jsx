@@ -310,10 +310,19 @@ const NotificationDropdown = () => {
       ) {
         targetLink = '/student/thesis/progress';
       } else if (
-        titleLower.includes('đăng 1 tài liệu') ||
-        titleLower.includes('tài liệu khóa luận') ||
+        targetLink.startsWith('/student/internship/documents') ||
+        targetLink.includes('/internship/documents') ||
+        targetLink.includes('internship-documents') ||
+        (item.type === 'INTERNSHIP' &&
+          (titleLower.includes('tài liệu') || messageLower.includes('tài liệu')))
+      ) {
+        targetLink = '/student/internship/documents';
+      } else if (
         targetLink.startsWith('/student/thesis/documents') ||
-        targetLink.includes('/thesis/documents')
+        targetLink.includes('/thesis/documents') ||
+        targetLink.includes('theses/documents') ||
+        (item.type === 'THESIS' &&
+          (titleLower.includes('tài liệu') || messageLower.includes('tài liệu')))
       ) {
         targetLink = '/student/thesis/documents';
       } else if (
