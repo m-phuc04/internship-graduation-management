@@ -399,22 +399,10 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
               </span>
             </div>
 
-            <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl text-[11px] text-emerald-900 flex items-start gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold">Hệ thống tự động tính toán thời gian chấm điểm:</span>
-                <ul className="list-disc list-inside mt-0.5 space-y-0.5 text-emerald-800">
-                  <li>Ngày bắt đầu chấm = Hạn chót đóng cổng + 10 tuần</li>
-                  <li>Hạn chót chấm điểm = Ngày bắt đầu chấm + 15 ngày</li>
-                </ul>
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Ngày bắt đầu mở chấm điểm:</span>
-                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tự động tính (+10 tuần)</span>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Ngày bắt đầu mở chấm điểm:
                 </label>
                 <input
                   type="date"
@@ -437,9 +425,8 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                  <span>Hạn chót chấm điểm:</span>
-                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tự động tính (+15 ngày)</span>
+                <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                  Hạn chót chấm điểm:
                 </label>
                 <input
                   type="date"
@@ -462,7 +449,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
               </div>
             </div>
             <p className="text-[11px] text-slate-500">
-              Lưu ý: Nút <strong>Chấm điểm</strong> của Giảng viên Giám sát (GVGS) chỉ hoạt động khi TBM đã cấu hình đủ cả ngày bắt đầu lẫn hạn chót và thời điểm hiện tại nằm trong khoảng thời gian này. Nếu chưa cấu hình đủ, chưa đến hạn hoặc đã quá hạn, nút Chấm điểm sẽ tự động bị khóa màu xám và không thể thao tác.
+              Lưu ý: GVGS được phép chấm điểm trong khoảng thời gian đã thiết lập.
             </p>
           </div>
 
