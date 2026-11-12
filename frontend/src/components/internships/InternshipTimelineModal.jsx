@@ -50,23 +50,20 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
         term.internship.gradingEnd || term.internship.evaluationEndDate
       );
 
-      // Tự động tính hai mốc chấm điểm nếu đã có registrationEnd
-      if (regEnd) {
+      // Nếu đã có registrationEnd mà học kỳ chưa có ngày chấm điểm -> tính mặc định ban đầu
+      if (regEnd && (!gStart || !gEnd)) {
         const autoDates = calculateInternshipGradingDates(regEnd);
         if (autoDates) {
-          gStart = autoDates.gradingStart;
-          gEnd = autoDates.gradingEnd;
+          if (!gStart) gStart = autoDates.gradingStart;
+          if (!gEnd) gEnd = autoDates.gradingEnd;
         }
-      } else {
-        gStart = '';
-        gEnd = '';
       }
 
       setFormData({
         registrationStart: regStart,
         registrationEnd: regEnd,
-        gradingStart: gStart,
-        gradingEnd: gEnd,
+        gradingStart: gStart || '',
+        gradingEnd: gEnd || '',
       });
     } else {
       setFormData({
@@ -228,18 +225,11 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
       }
     }
 
-    // Tự động tính toán đảm bảo chuẩn xác trước khi gửi API
-    let gStart = formData.gradingStart || null;
-    let gEnd = formData.gradingEnd || null;
-    if (formData.registrationEnd) {
-      const autoDates = calculateInternshipGradingDates(formData.registrationEnd);
-      if (autoDates) {
-        gStart = autoDates.gradingStart;
-        gEnd = autoDates.gradingEnd;
+    if (formData.gradingStart && formData.gradingEnd) {
+      if (new Date(formData.gradingEnd) < new Date(formData.gradingStart)) {
+        showToast('Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm', 'error');
+        return;
       }
-    } else {
-      gStart = null;
-      gEnd = null;
     }
 
     setSubmitting(true);
@@ -248,8 +238,8 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
         internship: {
           registrationStart: formData.registrationStart || null,
           registrationEnd: formData.registrationEnd || null,
-          gradingStart: gStart,
-          gradingEnd: gEnd,
+          gradingStart: formData.gradingStart || null,
+          gradingEnd: formData.gradingEnd || null,
         },
       });
 
@@ -394,9 +384,6 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                 <Award className="w-4 h-4 text-emerald-600" />
                 2. Thời gian Giảng viên Giám sát chấm điểm TTDN
               </div>
-              <span className={`px-2 py-0.5 text-[10px] font-bold rounded-md ${gradingStatus.badge}`}>
-                {gradingStatus.label}
-              </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -407,10 +394,10 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                 <input
                   type="date"
                   value={formData.gradingStart}
-                  readOnly
-                  disabled
-                  placeholder="Chờ hạn đóng cổng..."
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 border border-slate-200 text-slate-700 cursor-not-allowed select-none"
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, gradingStart: e.target.value }))
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.gradingStart ? (
                   <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
@@ -431,10 +418,10 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                 <input
                   type="date"
                   value={formData.gradingEnd}
-                  readOnly
-                  disabled
-                  placeholder="Chờ hạn đóng cổng..."
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 border border-slate-200 text-slate-700 cursor-not-allowed select-none"
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, gradingEnd: e.target.value }))
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.gradingEnd ? (
                   <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">

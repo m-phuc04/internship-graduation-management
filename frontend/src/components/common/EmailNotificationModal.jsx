@@ -20,15 +20,6 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
 
-  const [loading, setLoading] = useState(false);
-  const [savingKey, setSavingKey] = useState(null); // 'TTDN' | 'THESIS' | 'NEWS' | null
-  const [email, setEmail] = useState(user?.email || '');
-  const [hasValidEmail, setHasValidEmail] = useState(false);
-
-  const [enabledTTDN, setEnabledTTDN] = useState(Boolean(user?.emailNotificationEnabled));
-  const [enabledThesis, setEnabledThesis] = useState(Boolean(user?.emailThesisEnabled));
-  const [enabledNews, setEnabledNews] = useState(Boolean(user?.emailNewsEnabled));
-
   // Validate email format
   const checkEmailValid = (emailStr) => {
     if (!emailStr || typeof emailStr !== 'string') return false;
@@ -36,17 +27,24 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
     return regex.test(emailStr.trim());
   };
 
-  // Fetch latest settings from backend whenever modal opens
+  const [savingKey, setSavingKey] = useState(null); // 'TTDN' | 'THESIS' | 'NEWS' | null
+  const [email, setEmail] = useState(user?.email || '');
+  const [hasValidEmail, setHasValidEmail] = useState(() => checkEmailValid(user?.email));
+
+  const [enabledTTDN, setEnabledTTDN] = useState(Boolean(user?.emailNotificationEnabled));
+  const [enabledThesis, setEnabledThesis] = useState(Boolean(user?.emailThesisEnabled));
+  const [enabledNews, setEnabledNews] = useState(Boolean(user?.emailNewsEnabled));
+
+  // Sync latest settings from backend whenever modal opens
   useEffect(() => {
     if (!isOpen) return;
 
     let isMounted = true;
     const fetchSettings = async () => {
-      setLoading(true);
       try {
         const res = await notificationApi.getEmailSettings();
         if (isMounted && res?.data) {
-          const currentEmail = res.data.email || '';
+          const currentEmail = res.data.email || user?.email || '';
           const isEnabledTTDN = Boolean(res.data.emailNotificationEnabled);
           const isEnabledThesis = Boolean(res.data.emailThesisEnabled);
           const isEnabledNews = Boolean(res.data.emailNewsEnabled);
@@ -67,10 +65,6 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           setEnabledNews(Boolean(user?.emailNewsEnabled));
           setHasValidEmail(checkEmailValid(fallbackEmail));
         }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
       }
     };
 
@@ -79,7 +73,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
     return () => {
       isMounted = false;
     };
-  }, [isOpen]);
+  }, [isOpen, user]);
 
   // Handle Toggle Switch for individual module
   const handleToggle = async (key) => {
@@ -211,12 +205,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                       1. Thực tập Doanh nghiệp (TTDN)
                     </h4>
                     <div className="mt-0.5">
-                      {loading ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                          <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
-                          <span>Đang đồng bộ...</span>
-                        </span>
-                      ) : enabledTTDN ? (
+                      {enabledTTDN ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Đang bật</span>
@@ -242,7 +231,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   type="button"
                   role="switch"
                   aria-checked={enabledTTDN}
-                  disabled={savingKey !== null || loading || (!enabledTTDN && !hasValidEmail)}
+                  disabled={savingKey !== null || (!enabledTTDN && !hasValidEmail)}
                   onClick={() => handleToggle('TTDN')}
                   className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                     enabledTTDN ? 'bg-emerald-600' : 'bg-slate-300'
@@ -284,12 +273,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                       2. Khóa luận Tốt nghiệp (KLTN)
                     </h4>
                     <div className="mt-0.5">
-                      {loading ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                          <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
-                          <span>Đang đồng bộ...</span>
-                        </span>
-                      ) : enabledThesis ? (
+                      {enabledThesis ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Đang bật</span>
@@ -315,7 +299,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   type="button"
                   role="switch"
                   aria-checked={enabledThesis}
-                  disabled={savingKey !== null || loading || (!enabledThesis && !hasValidEmail)}
+                  disabled={savingKey !== null || (!enabledThesis && !hasValidEmail)}
                   onClick={() => handleToggle('THESIS')}
                   className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                     enabledThesis ? 'bg-emerald-600' : 'bg-slate-300'
@@ -357,12 +341,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                       3. Bản tin đào tạo & Sự kiện
                     </h4>
                     <div className="mt-0.5">
-                      {loading ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-                          <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
-                          <span>Đang đồng bộ...</span>
-                        </span>
-                      ) : enabledNews ? (
+                      {enabledNews ? (
                         <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-lg border border-emerald-200 shadow-2xs">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Đang bật</span>
@@ -388,7 +367,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   type="button"
                   role="switch"
                   aria-checked={enabledNews}
-                  disabled={savingKey !== null || loading || (!enabledNews && !hasValidEmail)}
+                  disabled={savingKey !== null || (!enabledNews && !hasValidEmail)}
                   onClick={() => handleToggle('NEWS')}
                   className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                     enabledNews ? 'bg-emerald-600' : 'bg-slate-300'

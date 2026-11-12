@@ -224,12 +224,12 @@ const createTerm = async (data, userId) => {
     await AcademicTerm.updateMany({ status: "ACTIVE" }, { status: "CLOSED" });
   }
 
-  let autoGradingStart = null;
-  let autoGradingEnd = null;
-  if (internship.registrationEnd) {
+  let autoGradingStart = internship.gradingStart ? new Date(internship.gradingStart) : null;
+  let autoGradingEnd = internship.gradingEnd ? new Date(internship.gradingEnd) : null;
+  if (internship.registrationEnd && (!autoGradingStart || !autoGradingEnd)) {
     const dates = calculateInternshipGradingDates(internship.registrationEnd);
-    autoGradingStart = dates.gradingStart;
-    autoGradingEnd = dates.gradingEnd;
+    if (!autoGradingStart) autoGradingStart = dates.gradingStart;
+    if (!autoGradingEnd) autoGradingEnd = dates.gradingEnd;
   }
 
   const newTerm = await AcademicTerm.create({
@@ -326,15 +326,23 @@ const updateTerm = async (id, data) => {
       throw new AppError("Hạn chót đăng ký TTDN phải sau ngày bắt đầu đăng ký", 400, "INVALID_DATE_RANGE");
     }
 
-    // Tự động tính hai mốc thời gian chấm điểm TTDN dựa trên registrationEnd
-    // gradingStart = registrationEnd + 10 tuần (70 ngày)
-    // gradingEnd = gradingStart + 15 ngày
-    let autoGradingStart = null;
-    let autoGradingEnd = null;
-    if (regEnd) {
+    // Tự động tính mốc thời gian chấm điểm TTDN nếu TBM chưa cung cấp thủ công
+    let finalGradingStart = internship.gradingStart !== undefined
+      ? (internship.gradingStart ? new Date(internship.gradingStart) : null)
+      : term.internship?.gradingStart;
+    let finalGradingEnd = internship.gradingEnd !== undefined
+      ? (internship.gradingEnd ? new Date(internship.gradingEnd) : null)
+      : term.internship?.gradingEnd;
+
+    // Nếu có registrationEnd mà TBM chưa thiết lập ngày chấm điểm -> tự động tính
+    if (regEnd && (!finalGradingStart || !finalGradingEnd)) {
       const dates = calculateInternshipGradingDates(regEnd);
-      autoGradingStart = dates.gradingStart;
-      autoGradingEnd = dates.gradingEnd;
+      if (!finalGradingStart) finalGradingStart = dates.gradingStart;
+      if (!finalGradingEnd) finalGradingEnd = dates.gradingEnd;
+    }
+
+    if (finalGradingStart && finalGradingEnd && finalGradingEnd < finalGradingStart) {
+      throw new AppError("Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm", 400, "INVALID_DATE_RANGE");
     }
 
     const rStart = internship.reportStart !== undefined
@@ -350,8 +358,8 @@ const updateTerm = async (id, data) => {
       registrationEnd: regEnd,
       reportStart: rStart,
       reportDeadline: rEnd,
-      gradingStart: autoGradingStart,
-      gradingEnd: autoGradingEnd,
+      gradingStart: finalGradingStart,
+      gradingEnd: finalGradingEnd,
     };
   }
 

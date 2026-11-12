@@ -21,14 +21,45 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
   const termFilter = academicTermId && academicTermId !== "ALL" ? { academicTermId } : {};
 
   // Active Internship
-  const internship = await Internship.findOne({ studentId: student._id, ...termFilter })
+  let internship = await Internship.findOne({ studentId: student._id, ...termFilter })
     .sort({ createdAt: -1 })
     .populate("companyId")
     .populate({
       path: "lecturerId",
       populate: { path: "userId", select: "fullName email phone" },
     })
-    .populate("academicTermId");
+    .populate("academicTermId")
+    .lean();
+
+  if (internship) {
+    const evalDoc = await Evaluation.findOne({
+      evaluationType: "INTERNSHIP",
+      targetId: internship._id,
+    }).lean();
+
+    if (evalDoc) {
+      const isPublished = Boolean(
+        internship.isScorePublished ||
+        internship.scorePublishStatus === "PUBLISHED" ||
+        evalDoc.isScorePublished ||
+        evalDoc.scorePublishStatus === "PUBLISHED"
+      );
+
+      if (isPublished) {
+        internship.evaluation = evalDoc;
+        internship.score = evalDoc.score;
+        internship.finalScore = evalDoc.score;
+        internship.isScorePublished = true;
+        internship.scorePublishStatus = "PUBLISHED";
+      } else {
+        internship.hasGraded = evalDoc.score !== null && evalDoc.score !== undefined && !isNaN(evalDoc.score);
+        internship.isScorePublished = false;
+        internship.evaluation = null;
+        internship.score = null;
+        internship.finalScore = null;
+      }
+    }
+  }
 
   // Latest Internship Report
   let latestReport = null;
