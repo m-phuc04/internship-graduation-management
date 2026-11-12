@@ -45,6 +45,27 @@ const unlinkFileSafe = (fileUrl) => {
 const ACTIVE_STATUSES = ["PENDING", "PENDING_SUPERVISOR_ACCEPTANCE", "APPROVED", "INTERNING"];
 
 // ====================
+// Helper: Ensure AcademicTerm is not CLOSED for Internship write operations
+// ====================
+const ensureInternshipTermNotClosed = async (internship, actionName = "thao tác này") => {
+  if (!internship) return;
+  let term = null;
+  const termId = internship.academicTermId?._id || internship.academicTermId;
+  if (termId) {
+    term = await AcademicTerm.findById(termId).lean();
+  }
+  if (!term && internship.startDate) {
+    term = await AcademicTerm.findOne({
+      startDate: { $lte: internship.startDate },
+      endDate: { $gte: internship.startDate },
+    }).lean();
+  }
+  if (term && term.status === "CLOSED") {
+    throw new AppError(`Học kỳ đã kết thúc (CLOSED). Không thể thực hiện ${actionName}.`, 400);
+  }
+};
+
+// ====================
 // Student Registers Internship
 // ====================
 const createInternship = async ({
@@ -113,9 +134,19 @@ const createInternship = async ({
   let activeTerm = null;
   if (academicTermId) {
     activeTerm = await AcademicTerm.findById(academicTermId).lean();
-  }
-  if (!activeTerm) {
+    if (!activeTerm) {
+      throw new AppError("Không tìm thấy học kỳ được chỉ định", 404);
+    }
+  } else {
     activeTerm = await academicTermService.getCurrentAcademicTerm(new Date());
+  }
+
+  if (!activeTerm) {
+    throw new AppError("Không tìm thấy học kỳ hoạt động", 404);
+  }
+
+  if (activeTerm.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể đăng ký thực tập.", 400);
   }
 
   // Validate Registration Window (if configured)
@@ -371,7 +402,7 @@ const getAllInternships = async ({
 // ====================
 // TBM: Get Available Lecturers with Workload Count
 // ====================
-const getAvailableLecturers = async () => {
+const getAvailableLecturers = async (academicTermId = null) => {
   const lecturers = await Lecturer.find({ isAvailable: true })
     .populate({
       path: "userId",
@@ -380,12 +411,23 @@ const getAvailableLecturers = async () => {
     .sort({ academicTitle: 1 })
     .lean();
 
+  let targetTermId = academicTermId;
+  if (!targetTermId || targetTermId === "ALL") {
+    const activeTerm = await academicTermService.getActiveTerm();
+    targetTermId = activeTerm?._id || null;
+  }
+
   const results = await Promise.all(
     lecturers.map(async (lec) => {
-      const activeStudentsCount = await Internship.countDocuments({
+      const countFilter = {
         lecturerId: lec._id,
-        status: { $in: ["APPROVED", "INTERNING"] },
-      });
+        status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE"] },
+      };
+      if (targetTermId) {
+        countFilter.academicTermId = targetTermId;
+      }
+
+      const activeStudentsCount = await Internship.countDocuments(countFilter);
 
       const remainingQuota = Math.max(0, lec.maxStudents - activeStudentsCount);
       const canAssign = lec.isAvailable !== false;
@@ -416,6 +458,8 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "phân công giảng viên");
 
   if (internship.status === "COMPLETED") {
     throw new AppError(
@@ -486,6 +530,8 @@ const approveInternship = async (internshipId, approvedBy, lecturerId) => {
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "phê duyệt hồ sơ");
 
   if (internship.status !== "PENDING") {
     throw new AppError(`Không thể duyệt hồ sơ đang ở trạng thái ${internship.status}`, 409);
@@ -571,13 +617,25 @@ const rejectInternship = async (internshipId, rejectedBy, rejectionReason) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  await ensureInternshipTermNotClosed(internship, "từ chối hồ sơ");
+
   if (internship.status !== "PENDING") {
     throw new AppError(`Không thể từ chối hồ sơ đang ở trạng thái ${internship.status}`, 409);
   }
 
-  // Get student and company details before deleting the internship
+  // Get student and company details before updating
   const student = await Student.findById(internship.studentId).populate("userId");
   const comp = await Company.findById(internship.companyId);
+
+  const cleanReason = rejectionReason && rejectionReason.trim() ? rejectionReason.trim() : null;
+  const now = new Date();
+
+  // Soft update: Chuyển trạng thái sang REJECTED và lưu lý do, người từ chối, thời điểm từ chối
+  internship.status = "REJECTED";
+  internship.rejectionReason = cleanReason;
+  internship.rejectedBy = rejectedBy || null;
+  internship.rejectedAt = now;
+  await internship.save();
 
   // Reset Student flag to allow new registration from scratch
   if (student) {
@@ -586,38 +644,26 @@ const rejectInternship = async (internshipId, rejectedBy, rejectionReason) => {
   }
 
   // Notify Student - inform reason and prompt re-registration
-  const reasonText = rejectionReason && rejectionReason.trim() ? `: ${rejectionReason.trim()}` : "";
+  const reasonText = cleanReason ? `: ${cleanReason}` : "";
   if (student?.userId?._id) {
     await notificationService.createNotification({
       recipientId: student.userId._id,
       type: "INTERNSHIP",
       title: "Hồ sơ thực tập đã bị từ chối",
       message: `Hồ sơ đăng ký thực tập của bạn tại "${comp?.name || "Doanh nghiệp"}" đã bị từ chối${reasonText}. Vui lòng tiến hành đăng ký lại từ đầu.`,
-      referenceId: null,
-      referenceModel: null,
+      referenceId: internship._id,
+      referenceModel: "Internship",
       link: "/student/internship/register",
     });
   }
 
-  const compId = internship.companyId;
-
-  // Completely delete the internship record - do not store any rejection history or reason in Database
-  await Internship.findByIdAndDelete(internshipId);
-
-  // If the company has no other active internships, delete it to keep database completely clean
-  if (compId) {
-    const otherCount = await Internship.countDocuments({ companyId: compId });
-    if (otherCount === 0) {
-      await Company.findByIdAndDelete(compId);
-    }
-  }
-
-  return {
-    deleted: true,
-    internshipId,
-    studentId: student?._id,
-    message: "Đã từ chối đơn đăng ký và thông báo cho sinh viên",
-  };
+  return await Internship.findById(internship._id)
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("companyId")
+    .populate("academicTermId");
 };
 
 // ====================
@@ -637,6 +683,8 @@ const supervisorAcceptInternship = async (internshipId, requestingUser) => {
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "tiếp nhận hướng dẫn thực tập");
 
   if (!internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
     throw new AppError("Bạn không phải là giảng viên được phân công cho hồ sơ này", 403);
@@ -692,6 +740,8 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  await ensureInternshipTermNotClosed(internship, "từ chối hướng dẫn thực tập");
+
   if (!internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
     throw new AppError("Bạn không phải là giảng viên được phân công cho hồ sơ này", 403);
   }
@@ -699,6 +749,16 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
   if (internship.status !== "PENDING_SUPERVISOR_ACCEPTANCE") {
     throw new AppError(`Không thể từ chối hồ sơ đang ở trạng thái ${internship.status}`, 409);
   }
+
+  const cleanReason = reason.trim();
+  const now = new Date();
+
+  // Soft update: Chuyển trạng thái sang REJECTED và lưu lý do, người từ chối, thời điểm từ chối
+  internship.status = "REJECTED";
+  internship.rejectionReason = cleanReason;
+  internship.rejectedBy = lecturer.userId?._id || null;
+  internship.rejectedAt = now;
+  await internship.save();
 
   // Reset student registration flag
   await Student.findByIdAndUpdate(internship.studentId._id || internship.studentId, {
@@ -714,9 +774,9 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
       recipientId: student.userId._id,
       type: "INTERNSHIP",
       title: "Giảng viên đã từ chối hướng dẫn thực tập",
-      message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối tiếp nhận giám sát hồ sơ thực tập. Lý do: ${reason.trim()}. Vui lòng đăng ký lại hồ sơ.`,
-      referenceId: null,
-      referenceModel: null,
+      message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối tiếp nhận giám sát hồ sơ thực tập. Lý do: ${cleanReason}. Vui lòng đăng ký lại hồ sơ.`,
+      referenceId: internship._id,
+      referenceModel: "Internship",
       link: "/student/internship/register",
     });
   }
@@ -725,20 +785,15 @@ const supervisorRejectInternship = async (internshipId, requestingUser, { reason
   await notificationService.createNotificationForRole("TBM", {
     type: "INTERNSHIP",
     title: "Giảng viên đã từ chối hướng dẫn thực tập",
-    message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối tiếp nhận giám sát hồ sơ thực tập của sinh viên ${student?.userId?.fullName || "SV"}. Lý do: ${reason.trim()}`,
-    referenceId: null,
-    referenceModel: null,
+    message: `Giảng viên ${lecturer.userId?.fullName || "GVHD"} đã từ chối tiếp nhận giám sát hồ sơ thực tập của sinh viên ${student?.userId?.fullName || "SV"}. Lý do: ${cleanReason}`,
+    referenceId: internship._id,
+    referenceModel: "Internship",
     link: "/tbm/internships",
   });
 
-  // Delete internship record from database
-  await Internship.findByIdAndDelete(internshipId);
-
-  return {
-    deleted: true,
-    internshipId,
-    message: "Đã từ chối tiếp nhận hồ sơ thực tập",
-  };
+  return await Internship.findById(internship._id)
+    .populate({ path: "studentId", populate: { path: "userId", select: "fullName email phone" } })
+    .populate("companyId");
 };
 
 // ====================
@@ -749,6 +804,8 @@ const completeInternship = async (internshipId, requestingUser) => {
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "hoàn thành kỳ thực tập");
 
   if (requestingUser.role === "LECTURER") {
     const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
@@ -1293,6 +1350,10 @@ const updateAcademicTermReportCycle = async (termId, requestingUser, reportCycle
     throw new AppError("Không tìm thấy học kỳ hợp lệ để thiết lập chu kỳ nộp nhật ký", 404);
   }
 
+  if (term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể thiết lập chu kỳ nộp nhật ký.", 400);
+  }
+
   if (!term.internship) {
     term.internship = {};
   }
@@ -1325,6 +1386,8 @@ const updateReportCycle = async (internshipId, requestingUser, reportCycle) => {
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "thiết lập chu kỳ nộp nhật ký");
 
   // Access control
   if (requestingUser.role === "LECTURER") {
@@ -1396,6 +1459,8 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập của bạn", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "nộp file báo cáo thực tập");
 
   // Security check: cannot upload for another student
   const isOwner =
@@ -1588,6 +1653,8 @@ const deleteReportFile = async ({ internshipId = null, userId, reason = "" }) =>
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  await ensureInternshipTermNotClosed(internship, "gỡ file báo cáo thực tập");
+
   // 3. Phân quyền chặt chẽ giữa Sinh viên và GVGS:
   let actorRole = user.role;
   let actorName = user.fullName || "Người dùng";
@@ -1762,6 +1829,8 @@ const updatePretestStatus = async (internshipId, requestingUser, { isPassed = tr
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
+
+  await ensureInternshipTermNotClosed(internship, "xác nhận Pretest");
 
   // Permission check
   if (requestingUser.role === "LECTURER") {

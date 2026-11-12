@@ -40,6 +40,7 @@ const STATUS_FILTERS = [
   { value: 'INTERNING', label: 'Đang thực tập' },
   { value: 'COMPLETED', label: 'Đã hoàn thành' },
   { value: 'CANCELLED', label: 'Đã hủy' },
+  { value: 'REJECTED', label: 'Đã từ chối' },
 ];
 const STATUS_OPTIONS = STATUS_FILTERS;
 

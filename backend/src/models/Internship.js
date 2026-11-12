@@ -95,6 +95,7 @@ const internshipSchema = new mongoose.Schema(
         "INTERNING",
         "COMPLETED",
         "CANCELLED",
+        "REJECTED",
       ],
       default: "PENDING",
     },
@@ -135,6 +136,12 @@ const internshipSchema = new mongoose.Schema(
     },
 
     approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
+    rejectedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       default: null,

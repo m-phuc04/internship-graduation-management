@@ -17,7 +17,9 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
       const fetchLecturers = async () => {
         setLoading(true);
         try {
-          const res = await internshipApi.getAvailableLecturers();
+          const termId = internship?.academicTermId?._id || internship?.academicTermId;
+          const params = termId ? { academicTermId: termId } : undefined;
+          const res = await internshipApi.getAvailableLecturers(params);
           if (res.success) {
             setAvailableLecturers(res.data || []);
             if (internship?.lecturerId?._id) {
@@ -117,7 +119,9 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                       <div className="font-bold text-slate-900">
                         {displayName}
                       </div>
-                      
+                      <div className="text-[11px] text-slate-500 mt-0.5">
+                        Đang hướng dẫn: <strong className="text-slate-700">{lec.activeStudentsCount ?? 0}</strong> sinh viên
+                      </div>
                     </div>
 
                     <div className="text-right shrink-0">
