@@ -53,7 +53,8 @@ const getAllInternships = async (req, res, next) => {
 // ====================
 const getAvailableLecturers = async (req, res, next) => {
   try {
-    const lecturers = await internshipService.getAvailableLecturers();
+    const academicTermId = req.query?.academicTermId || req.query?.termId || null;
+    const lecturers = await internshipService.getAvailableLecturers(academicTermId);
 
     res.status(200).json({
       success: true,

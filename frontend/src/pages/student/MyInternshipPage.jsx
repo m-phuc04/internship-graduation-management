@@ -338,21 +338,28 @@ const MyInternshipPage = () => {
     return (
       <div className="space-y-6">
         <div className="p-8 sm:p-12 rounded-3xl bg-white border border-slate-200/80 shadow-2xs text-center flex flex-col items-center justify-center">
-          <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#123891] flex items-center justify-center mb-4">
-            <Briefcase className="w-8 h-8" />
+          <div className={`w-16 h-16 rounded-3xl ${isRejected ? 'bg-rose-50 text-rose-600' : 'bg-blue-50 text-[#123891]'} flex items-center justify-center mb-4`}>
+            {isRejected ? <AlertCircle className="w-8 h-8" /> : <Briefcase className="w-8 h-8" />}
           </div>
           <h3 className="text-lg font-bold text-slate-800 mb-2">
-            Bạn chưa đăng ký hồ sơ Thực tập Doanh nghiệp
+            {isRejected ? 'Hồ sơ Thực tập của bạn đã bị từ chối' : 'Bạn chưa đăng ký hồ sơ Thực tập Doanh nghiệp'}
           </h3>
+          {isRejected && internship?.rejectionReason && (
+            <div className="p-3 mb-4 max-w-md w-full rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              Lý do từ chối: <strong>{internship.rejectionReason}</strong>
+            </div>
+          )}
           <p className="text-sm text-slate-500 max-w-md mb-8 leading-relaxed">
-            Hãy nộp đơn đăng ký thực tập để được Trưởng Bộ Môn xét duyệt và phân công Giảng viên Giám sát trong kỳ này.
+            {isRejected
+              ? 'Hồ sơ đăng ký trước đó của bạn đã bị từ chối. Bạn có thể tiến hành đăng ký lại hồ sơ thực tập mới.'
+              : 'Hãy nộp đơn đăng ký thực tập để được Trưởng Bộ Môn xét duyệt và phân công Giảng viên Giám sát trong kỳ này.'}
           </p>
 
           <Link
             to="/student/internship/register"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-sm rounded-2xl shadow-sm transition"
           >
-            <span>Đăng ký Thực tập ngay</span>
+            <span>{isRejected ? 'Đăng ký lại Thực tập' : 'Đăng ký Thực tập ngay'}</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

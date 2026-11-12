@@ -16,7 +16,9 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
       const fetchLecturers = async () => {
         setLoadingLecturers(true);
         try {
-          const res = await internshipApi.getAvailableLecturers();
+          const termId = internship?.academicTermId?._id || internship?.academicTermId;
+          const params = termId ? { academicTermId: termId } : undefined;
+          const res = await internshipApi.getAvailableLecturers(params);
           if (res.success) {
             setAvailableLecturers(res.data || []);
             // Pre-select if internship already had one
@@ -95,13 +97,13 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
               const displayName = title && !rawName.toLowerCase().startsWith(title.toLowerCase())
                 ? `${title} ${rawName}`
                 : rawName;
-              const code = '';
+              const countText = lec.activeStudentsCount !== undefined ? ` (${lec.activeStudentsCount} SV)` : '';
               return (
                 <option
                   key={lec._id}
                   value={lec._id}
                 >
-                  {displayName}{code}
+                  {displayName}{countText}
                 </option>
               );
             })}

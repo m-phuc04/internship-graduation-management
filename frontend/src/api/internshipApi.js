@@ -5,7 +5,8 @@ export const internshipApi = {
   getAll: (params) => axiosClient.get('/internships', { params }),
 
   // TBM gets available lecturers with workload counts
-  getAvailableLecturers: () => axiosClient.get('/internships/available-lecturers'),
+  getAvailableLecturers: (params) =>
+    axiosClient.get('/internships/available-lecturers', { params }),
 
   // TBM assigns lecturer to internship
   assignLecturer: (id, lecturerId) =>

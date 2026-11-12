@@ -58,6 +58,22 @@ const createReport = async ({
     throw new AppError("Hồ sơ thực tập không thuộc về tài khoản này", 403);
   }
 
+  // Check if academic term is CLOSED
+  let termDoc = null;
+  const termId = internship.academicTermId?._id || internship.academicTermId;
+  if (termId) {
+    termDoc = await AcademicTerm.findById(termId).lean();
+  }
+  if (!termDoc && internship.startDate) {
+    termDoc = await AcademicTerm.findOne({
+      startDate: { $lte: internship.startDate },
+      endDate: { $gte: internship.startDate },
+    }).lean();
+  }
+  if (termDoc && termDoc.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể tạo hoặc nộp nhật ký thực tập.", 400);
+  }
+
   const isApprovedByTBM =
     (Boolean(internship.approvedAt) ||
       Boolean(internship.lecturerId) ||
@@ -277,6 +293,22 @@ const updateReport = async ({
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
   }
 
+  // Check if academic term is CLOSED
+  let termDoc = null;
+  const termId = internship.academicTermId?._id || internship.academicTermId;
+  if (termId) {
+    termDoc = await AcademicTerm.findById(termId).lean();
+  }
+  if (!termDoc && internship.startDate) {
+    termDoc = await AcademicTerm.findOne({
+      startDate: { $lte: internship.startDate },
+      endDate: { $gte: internship.startDate },
+    }).lean();
+  }
+  if (termDoc && termDoc.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể chỉnh sửa hoặc nộp nhật ký thực tập.", 400);
+  }
+
   const isApprovedByTBM =
     (Boolean(internship.approvedAt) ||
       Boolean(internship.lecturerId) ||
@@ -421,6 +453,24 @@ const confirmReportByStudent2 = async (reportId, userId, { action, rejectionReas
     internship.secondStudentId._id?.toString() !== student._id.toString()
   ) {
     throw new AppError("Bạn không phải là Sinh viên 2 trong đợt thực tập này", 403);
+  }
+
+  // Check if academic term is CLOSED
+  if (internship) {
+    let termDoc = null;
+    const termId = internship.academicTermId?._id || internship.academicTermId;
+    if (termId) {
+      termDoc = await AcademicTerm.findById(termId).lean();
+    }
+    if (!termDoc && internship.startDate) {
+      termDoc = await AcademicTerm.findOne({
+        startDate: { $lte: internship.startDate },
+        endDate: { $gte: internship.startDate },
+      }).lean();
+    }
+    if (termDoc && termDoc.status === "CLOSED") {
+      throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể xác nhận nhật ký thực tập.", 400);
+    }
   }
 
   if (report.status !== "WAITING_STUDENT_2") {
@@ -882,6 +932,25 @@ const reviewReport = async (
   const report = await InternshipReport.findById(reportId).populate("internshipId");
   if (!report) {
     throw new AppError("Không tìm thấy báo cáo thực tập", 404);
+  }
+
+  // Check if academic term is CLOSED
+  const internship = report.internshipId;
+  if (internship) {
+    let termDoc = null;
+    const termId = internship.academicTermId?._id || internship.academicTermId;
+    if (termId) {
+      termDoc = await AcademicTerm.findById(termId).lean();
+    }
+    if (!termDoc && internship.startDate) {
+      termDoc = await AcademicTerm.findOne({
+        startDate: { $lte: internship.startDate },
+        endDate: { $gte: internship.startDate },
+      }).lean();
+    }
+    if (termDoc && termDoc.status === "CLOSED") {
+      throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể đánh giá báo cáo thực tập.", 400);
+    }
   }
 
   if (requestingUser.role === "LECTURER") {

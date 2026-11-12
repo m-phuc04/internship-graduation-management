@@ -231,6 +231,26 @@ const InternshipDetailModal = ({
             </div>
           </div>
 
+          {/* Section: Rejection Info if REJECTED */}
+          {internship.status === 'REJECTED' && (
+            <div className="md:col-span-2 p-4 rounded-2xl bg-rose-50/80 border border-rose-200/80 text-rose-900 space-y-1">
+              <div className="flex items-center gap-2 font-bold text-sm text-rose-700">
+                <AlertCircle className="w-4 h-4 text-rose-600" />
+                Hồ sơ đã bị từ chối
+              </div>
+              {internship.rejectionReason && (
+                <div className="text-xs text-rose-700">
+                  Lý do từ chối: <strong>{internship.rejectionReason}</strong>
+                </div>
+              )}
+              {internship.rejectedAt && (
+                <div className="text-[11px] text-rose-500">
+                  Thời điểm từ chối: {formatDate(internship.rejectedAt)}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Section 5: Evaluation Summary if available */}
           {internship.evaluation && (
             <div className="md:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-amber-50/80 to-emerald-50/80 border border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

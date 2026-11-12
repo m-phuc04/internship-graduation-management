@@ -55,6 +55,9 @@ export const validateInternshipGradingWindow = (term, checkDate = new Date()) =>
   if (!term) {
     throw new AppError("Không tìm thấy thông tin học kỳ để kiểm tra thời gian chấm điểm.", 400);
   }
+  if (term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể chấm điểm thực tập.", 400);
+  }
   const internshipCfg = term.internship || {};
   const startRaw = internshipCfg.gradingStart;
   const endRaw = internshipCfg.gradingEnd;
@@ -121,6 +124,9 @@ export const validateInternshipGradingWindow = (term, checkDate = new Date()) =>
 export const validateInternshipEvaluationWindow = (term, checkDate = new Date()) => {
   if (!term) {
     throw new AppError("Không tìm thấy thông tin học kỳ để kiểm tra thời gian tạo link đánh giá.", 400);
+  }
+  if (term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể đánh giá thực tập.", 400);
   }
   const internshipCfg = term.internship || {};
   const startRaw =
@@ -497,8 +503,15 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
 
   const internshipId = evaluation.targetId;
 
-  // Check if internship is already completed/locked
+  // Check if internship is already completed/locked or term is CLOSED
   const internship = await Internship.findById(internshipId);
+  if (internship) {
+    const term = await resolveAcademicTermForInternship(internship);
+    if (term && term.status === "CLOSED") {
+      throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể xóa kết quả đánh giá.", 400);
+    }
+  }
+
   if (internship && internship.status === "COMPLETED") {
     throw new AppError(
       "Phiếu đánh giá đã ở trạng thái hoàn thành và bị khóa, không thể xóa.",
@@ -556,6 +569,11 @@ const gradeInternshipByLecturer = async ({
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  const term = await resolveAcademicTermForInternship(internship);
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể chấm điểm thực tập.", 400);
+  }
+
   // Ensure this lecturer is assigned as GVGS for this internship
   if (!internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
     throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
@@ -597,7 +615,6 @@ const gradeInternshipByLecturer = async ({
   }
 
   // Điều kiện 3: Hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp
-  const term = await resolveAcademicTermForInternship(internship);
   const commonReportCycle = [1, 2, 3].includes(Number(internship.reportCycle))
     ? Number(internship.reportCycle)
     : [1, 2, 3].includes(Number(term?.internship?.reportCycle))
@@ -738,6 +755,11 @@ const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser 
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  const term = await resolveAcademicTermForInternship(internship);
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể công bố điểm.", 400);
+  }
+
   // Access control: If requesting user is LECTURER, must be assigned supervisor
   if (requestingUser && requestingUser.role === "LECTURER") {
     const lecturer = await Lecturer.findOne({
@@ -831,6 +853,12 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
         continue;
       }
 
+      const term = await resolveAcademicTermForInternship(internship);
+      if (term && term.status === "CLOSED") {
+        skippedCount++;
+        continue;
+      }
+
       const evaluation = await Evaluation.findOne({
         evaluationType: "INTERNSHIP",
         targetId: internship._id,
@@ -910,6 +938,11 @@ const hideInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
+  const term = await resolveAcademicTermForInternship(internship);
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể ẩn điểm.", 400);
+  }
+
   const evaluation = await Evaluation.findOne({
     evaluationType: "INTERNSHIP",
     targetId: internship._id,
@@ -980,6 +1013,11 @@ const hideInternshipScoresBulk = async ({ internshipIds, tbmUserId, reason = "" 
         skippedCount++;
         continue;
       }
+      const term = await resolveAcademicTermForInternship(internship);
+      if (term && term.status === "CLOSED") {
+        skippedCount++;
+        continue;
+      }
       const evaluation = await Evaluation.findOne({
         evaluationType: "INTERNSHIP",
         targetId: internship._id,
@@ -1041,6 +1079,11 @@ const republishInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
   const internship = await Internship.findById(id).populate("studentId");
   if (!internship) {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
+  }
+
+  const term = await resolveAcademicTermForInternship(internship);
+  if (term && term.status === "CLOSED") {
+    throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể công bố lại điểm.", 400);
   }
 
   const evaluation = await Evaluation.findOne({
