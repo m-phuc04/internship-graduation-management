@@ -286,9 +286,7 @@ const LecturerInternshipDocumentsPage = () => {
         return;
       }
       setSelectedFile(file);
-      if (!title) {
-        setTitle(file.originalname);
-      }
+      setTitle(file.name || '');
       setFormError('');
     }
   };
@@ -308,10 +306,7 @@ const LecturerInternshipDocumentsPage = () => {
     setUploading(true);
     setFormError('');
     try {
-      const safeTitle =
-        typeof title === 'string' && title.trim()
-          ? title.trim()
-          : selectedFile.name || '';
+      const safeTitle = selectedFile.name || (typeof title === 'string' && title.trim() ? title.trim() : '');
       const safeCategory =
         typeof category === 'string' && category.trim()
           ? category.trim()
@@ -1199,20 +1194,6 @@ const LecturerInternshipDocumentsPage = () => {
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Title */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">
-                  Tên tài liệu
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Ví dụ: Hướng dẫn viết báo cáo thực tập, Mẫu phiếu khảo sát..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#123891] focus:ring-1 focus:ring-[#123891] transition"
-                />
               </div>
 
               {/* Category */}

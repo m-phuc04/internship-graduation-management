@@ -435,6 +435,7 @@ const StudentThesisDocumentsPage = () => {
                 onClick={handleOpenSubmitModal}
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
               >
+                <Plus className="w-4 h-4" />
                 <span>Thêm file</span>
               </button>
 
