@@ -79,6 +79,27 @@ export const formatDateForInput = (d) => {
 };
 
 /**
+ * Automatically calculate TTDN grading milestones based on registrationEnd
+ * - gradingStart = registrationEnd + 10 weeks (70 days)
+ * - gradingEnd = gradingStart + 15 days
+ * @param {Date|string|number} regEndDate
+ * @returns {{ gradingStart: string, gradingEnd: string }}
+ */
+export const calculateInternshipGradingDates = (regEndDate) => {
+  if (!regEndDate) return { gradingStart: '', gradingEnd: '' };
+  const d = parseLocalDate(regEndDate);
+  if (!d || isNaN(d.getTime())) return { gradingStart: '', gradingEnd: '' };
+
+  const startObj = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 70);
+  const endObj = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 70 + 15);
+
+  return {
+    gradingStart: formatDateForInput(startObj),
+    gradingEnd: formatDateForInput(endObj),
+  };
+};
+
+/**
  * Check if the report time / defense time of a Council room has expired (ended)
  * @param {Object} council
  * @returns {boolean}

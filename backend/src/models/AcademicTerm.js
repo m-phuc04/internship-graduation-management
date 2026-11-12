@@ -88,10 +88,61 @@ const academicTermSchema = new mongoose.Schema(
   },
 );
 
-// Ràng buộc ngày kết thúc phải sau ngày bắt đầu
+// Helper: Tự động tính thời gian chấm điểm TTDN dựa trên registrationEnd
+// gradingStart = registrationEnd + 10 tuần (70 ngày)
+// gradingEnd = gradingStart + 15 ngày
+export const calculateInternshipGradingDates = (registrationEndDate) => {
+  if (!registrationEndDate) {
+    return { gradingStart: null, gradingEnd: null };
+  }
+  let year, month, day;
+  if (typeof registrationEndDate === "string" && /^\d{4}-\d{2}-\d{2}/.test(registrationEndDate)) {
+    const parts = registrationEndDate.substring(0, 10).split("-").map(Number);
+    year = parts[0];
+    month = parts[1] - 1;
+    day = parts[2];
+  } else {
+    const d = new Date(registrationEndDate);
+    if (isNaN(d.getTime())) {
+      return { gradingStart: null, gradingEnd: null };
+    }
+    const dateStr = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "Asia/Ho_Chi_Minh",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
+    const parts = dateStr.split("-").map(Number);
+    year = parts[0];
+    month = parts[1] - 1;
+    day = parts[2];
+  }
+
+  const startD = new Date(Date.UTC(year, month, day + 70, 0, 0, 0));
+  const endD = new Date(Date.UTC(year, month, day + 70 + 15, 23, 59, 59, 999));
+
+  return {
+    gradingStart: startD,
+    gradingEnd: endD,
+  };
+};
+
+// Ràng buộc ngày kết thúc phải sau ngày bắt đầu và tự động tính mốc chấm điểm TTDN
 academicTermSchema.pre("validate", function () {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
     throw new Error("Ngày kết thúc học kỳ phải sau ngày bắt đầu");
+  }
+
+  // Tự động tính hai mốc thời gian chấm điểm TTDN nếu có registrationEnd
+  if (this.internship?.registrationEnd) {
+    const { gradingStart, gradingEnd } = calculateInternshipGradingDates(this.internship.registrationEnd);
+    if (gradingStart && gradingEnd) {
+      this.internship.gradingStart = gradingStart;
+      this.internship.gradingEnd = gradingEnd;
+    }
+  } else if (this.internship && !this.internship.registrationEnd) {
+    this.internship.gradingStart = null;
+    this.internship.gradingEnd = null;
   }
 });
 

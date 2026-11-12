@@ -8,6 +8,7 @@ import {
   formatDateForInput,
   parseLocalDate,
   getInternshipGradingWindowStatus,
+  calculateInternshipGradingDates,
 } from '../../utils/dateUtils';
 import {
   Calendar,
@@ -40,15 +41,32 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
 
   useEffect(() => {
     if (term?.internship) {
+      const regStart = formatDateForInput(term.internship.registrationStart);
+      const regEnd = formatDateForInput(term.internship.registrationEnd);
+      let gStart = formatDateForInput(
+        term.internship.gradingStart || term.internship.evaluationStartDate
+      );
+      let gEnd = formatDateForInput(
+        term.internship.gradingEnd || term.internship.evaluationEndDate
+      );
+
+      // Tự động tính hai mốc chấm điểm nếu đã có registrationEnd
+      if (regEnd) {
+        const autoDates = calculateInternshipGradingDates(regEnd);
+        if (autoDates) {
+          gStart = autoDates.gradingStart;
+          gEnd = autoDates.gradingEnd;
+        }
+      } else {
+        gStart = '';
+        gEnd = '';
+      }
+
       setFormData({
-        registrationStart: formatDateForInput(term.internship.registrationStart),
-        registrationEnd: formatDateForInput(term.internship.registrationEnd),
-        gradingStart: formatDateForInput(
-          term.internship.gradingStart || term.internship.evaluationStartDate
-        ),
-        gradingEnd: formatDateForInput(
-          term.internship.gradingEnd || term.internship.evaluationEndDate
-        ),
+        registrationStart: regStart,
+        registrationEnd: regEnd,
+        gradingStart: gStart,
+        gradingEnd: gEnd,
       });
     } else {
       setFormData({
@@ -151,22 +169,39 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
   const gradingStatus = getGradingStatus();
   const StatusIcon = windowStatus.icon;
 
+  const handleRegistrationEndChange = (newRegEnd) => {
+    if (newRegEnd) {
+      const autoDates = calculateInternshipGradingDates(newRegEnd);
+      setFormData((prev) => ({
+        ...prev,
+        registrationEnd: newRegEnd,
+        gradingStart: autoDates?.gradingStart || '',
+        gradingEnd: autoDates?.gradingEnd || '',
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        registrationEnd: '',
+        gradingStart: '',
+        gradingEnd: '',
+      }));
+    }
+  };
+
   // Presets
   const applyPresetDays = (days) => {
     const today = new Date();
     const end = new Date();
     end.setDate(today.getDate() + days);
 
-    const startGrading = new Date();
-    startGrading.setDate(today.getDate() + days + 30);
-    const endGrading = new Date();
-    endGrading.setDate(today.getDate() + days + 60);
+    const formattedEnd = formatDateForInput(end);
+    const autoDates = calculateInternshipGradingDates(formattedEnd);
 
     setFormData({
       registrationStart: formatDateForInput(today),
-      registrationEnd: formatDateForInput(end),
-      gradingStart: formatDateForInput(startGrading),
-      gradingEnd: formatDateForInput(endGrading),
+      registrationEnd: formattedEnd,
+      gradingStart: autoDates?.gradingStart || '',
+      gradingEnd: autoDates?.gradingEnd || '',
     });
   };
 
@@ -193,11 +228,18 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
       }
     }
 
-    if (formData.gradingStart && formData.gradingEnd) {
-      if (new Date(formData.gradingEnd) < new Date(formData.gradingStart)) {
-        showToast('Hạn chót chấm điểm TTDN phải sau ngày bắt đầu chấm điểm', 'error');
-        return;
+    // Tự động tính toán đảm bảo chuẩn xác trước khi gửi API
+    let gStart = formData.gradingStart || null;
+    let gEnd = formData.gradingEnd || null;
+    if (formData.registrationEnd) {
+      const autoDates = calculateInternshipGradingDates(formData.registrationEnd);
+      if (autoDates) {
+        gStart = autoDates.gradingStart;
+        gEnd = autoDates.gradingEnd;
       }
+    } else {
+      gStart = null;
+      gEnd = null;
     }
 
     setSubmitting(true);
@@ -206,8 +248,8 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
         internship: {
           registrationStart: formData.registrationStart || null,
           registrationEnd: formData.registrationEnd || null,
-          gradingStart: formData.gradingStart || null,
-          gradingEnd: formData.gradingEnd || null,
+          gradingStart: gStart,
+          gradingEnd: gEnd,
         },
       });
 
@@ -332,7 +374,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
                 <input
                   type="date"
                   value={formData.registrationEnd}
-                  onChange={(e) => setFormData({ ...formData, registrationEnd: e.target.value })}
+                  onChange={(e) => handleRegistrationEndChange(e.target.value)}
                   className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
                 />
                 {formData.registrationEnd && (
@@ -357,40 +399,65 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
               </span>
             </div>
 
+            <div className="p-3 bg-emerald-50/60 border border-emerald-100 rounded-2xl text-[11px] text-emerald-900 flex items-start gap-2">
+              <Sparkles className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">Hệ thống tự động tính toán thời gian chấm điểm:</span>
+                <ul className="list-disc list-inside mt-0.5 space-y-0.5 text-emerald-800">
+                  <li>Ngày bắt đầu chấm = Hạn chót đóng cổng + 10 tuần</li>
+                  <li>Hạn chót chấm điểm = Ngày bắt đầu chấm + 15 ngày</li>
+                </ul>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Ngày bắt đầu mở chấm điểm:
+                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Ngày bắt đầu mở chấm điểm:</span>
+                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tự động tính (+10 tuần)</span>
                 </label>
                 <input
                   type="date"
                   value={formData.gradingStart}
-                  onChange={(e) => setFormData({ ...formData, gradingStart: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                  readOnly
+                  disabled
+                  placeholder="Chờ hạn đóng cổng..."
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 border border-slate-200 text-slate-700 cursor-not-allowed select-none"
                 />
-                {formData.gradingStart && (
+                {formData.gradingStart ? (
                   <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
                     <span>📅</span>
                     <span>{formatFullDateVN(formData.gradingStart)} ({formatDateVN(formData.gradingStart)})</span>
                   </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Chưa xác định (Cần nhập Hạn chót đóng cổng)
+                  </p>
                 )}
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                  Hạn chót chấm điểm:
+                <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Hạn chót chấm điểm:</span>
+                  <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">Tự động tính (+15 ngày)</span>
                 </label>
                 <input
                   type="date"
                   value={formData.gradingEnd}
-                  onChange={(e) => setFormData({ ...formData, gradingEnd: e.target.value })}
-                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                  readOnly
+                  disabled
+                  placeholder="Chờ hạn đóng cổng..."
+                  className="w-full px-3.5 py-2 rounded-xl text-xs bg-slate-100 border border-slate-200 text-slate-700 cursor-not-allowed select-none"
                 />
-                {formData.gradingEnd && (
+                {formData.gradingEnd ? (
                   <div className="text-[11px] font-semibold text-emerald-700 mt-1 flex items-center gap-1 bg-emerald-50/80 px-2 py-0.5 rounded-md">
                     <span>📅</span>
                     <span>{formatFullDateVN(formData.gradingEnd)} ({formatDateVN(formData.gradingEnd)})</span>
                   </div>
+                ) : (
+                  <p className="text-[10px] text-slate-400 mt-1 italic">
+                    Chưa xác định (Cần nhập Hạn chót đóng cổng)
+                  </p>
                 )}
               </div>
             </div>
