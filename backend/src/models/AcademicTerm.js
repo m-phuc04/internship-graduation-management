@@ -127,18 +127,22 @@ export const calculateInternshipGradingDates = (registrationEndDate) => {
   };
 };
 
-// Ràng buộc ngày kết thúc phải sau ngày bắt đầu và tự động tính mốc chấm điểm TTDN
+// Ràng buộc ngày kết thúc phải sau ngày bắt đầu và tự động tính mốc chấm điểm TTDN nếu chưa được thiết lập thủ công
 academicTermSchema.pre("validate", function () {
   if (this.startDate && this.endDate && this.endDate < this.startDate) {
     throw new Error("Ngày kết thúc học kỳ phải sau ngày bắt đầu");
   }
 
-  // Tự động tính hai mốc thời gian chấm điểm TTDN nếu có registrationEnd
+  // Tự động tính hai mốc thời gian chấm điểm TTDN nếu có registrationEnd và chưa có gradingStart/gradingEnd
   if (this.internship?.registrationEnd) {
-    const { gradingStart, gradingEnd } = calculateInternshipGradingDates(this.internship.registrationEnd);
-    if (gradingStart && gradingEnd) {
-      this.internship.gradingStart = gradingStart;
-      this.internship.gradingEnd = gradingEnd;
+    if (!this.internship.gradingStart || !this.internship.gradingEnd) {
+      const { gradingStart, gradingEnd } = calculateInternshipGradingDates(this.internship.registrationEnd);
+      if (!this.internship.gradingStart && gradingStart) {
+        this.internship.gradingStart = gradingStart;
+      }
+      if (!this.internship.gradingEnd && gradingEnd) {
+        this.internship.gradingEnd = gradingEnd;
+      }
     }
   } else if (this.internship && !this.internship.registrationEnd) {
     this.internship.gradingStart = null;

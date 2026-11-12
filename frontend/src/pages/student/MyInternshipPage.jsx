@@ -104,24 +104,26 @@ const MyInternshipPage = () => {
         });
       }
 
-      // Fetch evaluation request / grading data
-      try {
-        let evalRes = await evaluationApi.getStudentEvaluationRequest({
-          academicTermId: currentTerm?._id || '',
-        });
+      // Fetch evaluation request / grading data if API function exists
+      if (typeof evaluationApi?.getStudentEvaluationRequest === 'function') {
+        try {
+          let evalRes = await evaluationApi.getStudentEvaluationRequest({
+            academicTermId: currentTerm?._id || '',
+          });
 
-        if (!evalRes?.success || !evalRes?.data?.hasInternship || !evalRes?.data?.evaluation) {
-          const evalFallback = await evaluationApi.getStudentEvaluationRequest();
-          if (evalFallback?.success && (evalFallback.data?.hasInternship || evalFallback.data?.evaluation)) {
-            evalRes = evalFallback;
+          if (!evalRes?.success || !evalRes?.data?.hasInternship || !evalRes?.data?.evaluation) {
+            const evalFallback = await evaluationApi.getStudentEvaluationRequest();
+            if (evalFallback?.success && (evalFallback.data?.hasInternship || evalFallback.data?.evaluation)) {
+              evalRes = evalFallback;
+            }
           }
-        }
 
-        if (evalRes?.success && evalRes.data) {
-          setEvalData(evalRes.data);
+          if (evalRes?.success && evalRes.data) {
+            setEvalData(evalRes.data);
+          }
+        } catch {
+          // Safe ignore
         }
-      } catch {
-        // Safe ignore
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải thông tin thực tập của bạn', 'error');
@@ -168,10 +170,11 @@ const MyInternshipPage = () => {
 
   // Active evaluation data
   const activeEvaluation = evalData?.evaluation ||
+    data?.evaluation ||
     (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
 
   const isScorePublished = Boolean(
-    evalData?.isScorePublished ?? internship?.isScorePublished ?? activeEvaluation?.isScorePublished
+    evalData?.isScorePublished ?? data?.isScorePublished ?? internship?.isScorePublished ?? activeEvaluation?.isScorePublished
   );
 
   const rawHasScore = Boolean(

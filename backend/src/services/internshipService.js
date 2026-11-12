@@ -902,14 +902,45 @@ const getMyInternship = async (userId, academicTermId = null) => {
   }
 
   let diaryStatus = null;
+  let evaluation = null;
   if (internship) {
     const reports = await InternshipReport.find({ internshipId: internship._id }).lean();
     diaryStatus = checkInternshipDiaryCompletion(internship, reports);
+
+    const evalDoc = await Evaluation.findOne({
+      evaluationType: "INTERNSHIP",
+      targetId: internship._id,
+    }).lean();
+
+    if (evalDoc) {
+      const isPublished = Boolean(
+        internship.isScorePublished ||
+        internship.scorePublishStatus === "PUBLISHED" ||
+        evalDoc.isScorePublished ||
+        evalDoc.scorePublishStatus === "PUBLISHED"
+      );
+
+      if (isPublished) {
+        evaluation = evalDoc;
+        internship.evaluation = evalDoc;
+        internship.score = evalDoc.score;
+        internship.finalScore = evalDoc.score;
+        internship.isScorePublished = true;
+        internship.scorePublishStatus = "PUBLISHED";
+      } else {
+        internship.hasGraded = evalDoc.score !== null && evalDoc.score !== undefined && !isNaN(evalDoc.score);
+        internship.isScorePublished = false;
+        internship.evaluation = null;
+        internship.score = null;
+        internship.finalScore = null;
+      }
+    }
   }
 
   return {
     student,
     internship: internship || null,
+    evaluation,
     hasActiveInternship: Boolean(hasActiveInternship),
     canRegisterNew: !hasActiveInternship,
     diaryStatus,
