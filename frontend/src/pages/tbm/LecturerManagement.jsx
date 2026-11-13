@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import lecturerApi from '../../api/lecturerApi';
+import researchFieldApi from '../../api/researchFieldApi';
 import { useToast } from '../../context/ToastContext';
 import SearchInput from '../../components/common/SearchInput';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -23,6 +24,10 @@ import {
   ShieldAlert,
   UserCheck,
   UserX,
+  Clock,
+  Sparkles,
+  Check,
+  X,
 } from 'lucide-react';
 
 const LecturerManagement = () => {
@@ -43,7 +48,33 @@ const LecturerManagement = () => {
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Field change requests state
+  const [fieldRequests, setFieldRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [fieldConfirmDialog, setFieldConfirmDialog] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    confirmText: 'Xác nhận',
+    type: 'primary',
+    onConfirm: null,
+  });
+
   const { showToast } = useToast();
+
+  const fetchFieldRequests = useCallback(async () => {
+    setRequestsLoading(true);
+    try {
+      const res = await researchFieldApi.getAllRequests();
+      if (res?.success) {
+        setFieldRequests(res.data || []);
+      }
+    } catch (err) {
+      console.warn('Cannot fetch field change requests:', err.message);
+    } finally {
+      setRequestsLoading(false);
+    }
+  }, []);
 
   const fetchLecturers = useCallback(async () => {
     setLoading(true);
@@ -71,7 +102,96 @@ const LecturerManagement = () => {
 
   useEffect(() => {
     fetchLecturers();
-  }, [fetchLecturers]);
+    fetchFieldRequests();
+  }, [fetchLecturers, fetchFieldRequests]);
+
+  // Handle Approve Field Change Request
+  const handleApproveFieldRequest = (req) => {
+    const lecName = req.lecturerId?.userId?.fullName || 'giảng viên';
+    setFieldConfirmDialog({
+      isOpen: true,
+      title: 'Duyệt yêu cầu thay đổi lĩnh vực',
+      message: `Bạn có chắc chắn muốn duyệt yêu cầu thay đổi lĩnh vực cho ${lecName}? Lĩnh vực của giảng viên sẽ được cập nhật và các tag mới (nếu có) sẽ tự động thêm vào danh mục hệ thống.`,
+      confirmText: 'Phê duyệt',
+      type: 'primary',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          const res = await researchFieldApi.approveRequest(req._id);
+          if (res?.success) {
+            showToast('Đã phê duyệt yêu cầu thay đổi lĩnh vực thành công!', 'success');
+            await Promise.all([fetchFieldRequests(), fetchLecturers()]);
+          }
+        } catch (err) {
+          const isConflict =
+            err.status === 409 ||
+            err.status === 400 ||
+            err.data?.errorCode === 'REQUEST_ALREADY_PROCESSED' ||
+            err.response?.status === 409 ||
+            err.response?.status === 400 ||
+            err.message?.toLowerCase().includes('đã được xử lý');
+
+          if (isConflict) {
+            showToast(
+              'Yêu cầu này đã được xử lý. Đang cập nhật lại danh sách...',
+              'error'
+            );
+          } else {
+            showToast(err.message || 'Không thể duyệt yêu cầu', 'error');
+          }
+          // Always refresh to sync UI state and clear processed items
+          await Promise.all([fetchFieldRequests(), fetchLecturers()]);
+        } finally {
+          setActionLoading(false);
+          setFieldConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
+
+  // Handle Reject Field Change Request
+  const handleRejectFieldRequest = (req) => {
+    const lecName = req.lecturerId?.userId?.fullName || 'giảng viên';
+    setFieldConfirmDialog({
+      isOpen: true,
+      title: 'Từ chối yêu cầu thay đổi lĩnh vực',
+      message: `Bạn có chắc chắn muốn từ chối yêu cầu thay đổi lĩnh vực của ${lecName}?`,
+      confirmText: 'Từ chối',
+      type: 'danger',
+      onConfirm: async () => {
+        setActionLoading(true);
+        try {
+          const res = await researchFieldApi.rejectRequest(req._id);
+          if (res?.success) {
+            showToast('Đã từ chối yêu cầu thay đổi lĩnh vực', 'success');
+            await fetchFieldRequests();
+          }
+        } catch (err) {
+          const isConflict =
+            err.status === 409 ||
+            err.status === 400 ||
+            err.data?.errorCode === 'REQUEST_ALREADY_PROCESSED' ||
+            err.response?.status === 409 ||
+            err.response?.status === 400 ||
+            err.message?.toLowerCase().includes('đã được xử lý');
+
+          if (isConflict) {
+            showToast(
+              'Yêu cầu này đã được xử lý. Đang cập nhật lại danh sách...',
+              'error'
+            );
+          } else {
+            showToast(err.message || 'Không thể từ chối yêu cầu', 'error');
+          }
+          // Always refresh to sync UI state and clear processed items
+          await fetchFieldRequests();
+        } finally {
+          setActionLoading(false);
+          setFieldConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+        }
+      },
+    });
+  };
 
   const handleSearchChange = (val) => {
     setSearch(val);
@@ -175,6 +295,138 @@ const LecturerManagement = () => {
           </div>
         </div>
 
+      {/* Yêu Cầu Thay Đổi Lĩnh Vực (Pending Field Requests) */}
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-amber-500" />
+            <h2 className="text-base font-bold text-slate-900">
+              Yêu Cầu Thay Đổi Lĩnh Vực
+            </h2>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+              {fieldRequests.length}
+            </span>
+          </div>
+        </div>
+
+        {requestsLoading ? (
+          <div className="py-6">
+            <LoadingSkeleton rows={2} cols={5} />
+          </div>
+        ) : fieldRequests.length === 0 ? (
+          <div className="py-6 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
+            <CheckCircle2 className="w-7 h-7 text-emerald-400" />
+            <span>Hiện không có yêu cầu thay đổi lĩnh vực nào.</span>
+          </div>
+        ) : (
+          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold">
+                  <th className="py-3 px-3.5 w-12 text-center">STT</th>
+                  <th className="py-3 px-4">Tên giảng viên</th>
+                  <th className="py-3 px-4">Lĩnh vực hiện tại</th>
+                  <th className="py-3 px-4">Yêu cầu thay đổi</th>
+                  <th className="py-3 px-4 w-24 text-right"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {fieldRequests.map((req, idx) => {
+                  const lecUser = req.lecturerId?.userId;
+                  const currentList = Array.isArray(req.currentFields) ? req.currentFields : [];
+                  const requestedList = Array.isArray(req.requestedFields) ? req.requestedFields : [];
+                  const proposedList = Array.isArray(req.proposedNewTags) ? req.proposedNewTags : [];
+
+                  return (
+                    <tr key={req._id} className="hover:bg-slate-50/70 transition">
+                      <td className="py-3.5 px-3.5 text-center font-mono text-slate-500">
+                        {idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-slate-900">
+                        <div>
+                          <strong className="block text-slate-900">
+                            {req.lecturerId?.academicTitle ? `${req.lecturerId.academicTitle} ` : ''}
+                            {lecUser?.fullName || 'Chưa cập nhật'}
+                          </strong>
+                          <span className="text-[11px] text-slate-400 font-mono">
+                            {req.lecturerId?.lecturerCode || lecUser?.email || ''}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {currentList.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5 max-w-xs">
+                            {currentList.map((tag, i) => (
+                              <span
+                                key={i}
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-700 border border-slate-200"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-400 italic">Không có</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-wrap gap-1.5 max-w-md">
+                          {requestedList.map((tag, i) => {
+                            const isNewProposed = proposedList.includes(tag);
+                            return (
+                              <span
+                                key={i}
+                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                  isNewProposed
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-2xs'
+                                    : 'bg-blue-50 text-[#123891] border-blue-200'
+                                }`}
+                              >
+                                {isNewProposed && (
+                                  <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
+                                )}
+                                <span>{tag}</span>
+                                {isNewProposed && (
+                                  <span className="text-[9px] px-1 rounded bg-purple-200 text-purple-900 font-bold uppercase">
+                                    Mới
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveFieldRequest(req)}
+                            disabled={actionLoading}
+                            className="p-1 text-slate-400 hover:text-emerald-600 transition cursor-pointer disabled:opacity-50"
+                            title="Phê duyệt yêu cầu"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectFieldRequest(req)}
+                            disabled={actionLoading}
+                            className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer disabled:opacity-50"
+                            title="Từ chối yêu cầu"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="w-full md:w-96">
@@ -202,7 +454,7 @@ const LecturerManagement = () => {
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
-            <LoadingSkeleton rows={5} cols={6} />
+            <LoadingSkeleton rows={5} cols={7} />
           </div>
         ) : lecturers.length === 0 ? (
           <EmptyState
@@ -222,6 +474,7 @@ const LecturerManagement = () => {
                   <th className="py-3.5 px-4 text-center w-14">STT</th>
                   <th className="py-3.5 px-4">Giảng viên</th>
                   <th className="py-3.5 px-4">Học vị</th>
+                  <th className="py-3.5 px-4">Lĩnh vực</th>
                   <th className="py-3.5 px-4 text-center">Tiếp nhận</th>
                   <th className="py-3.5 px-4 text-center">Trạng thái</th>
                   <th className="py-3.5 px-4 pr-6 text-right"></th>
@@ -257,6 +510,42 @@ const LecturerManagement = () => {
                         <span className="px-2 py-0.5 bg-slate-100 rounded-md">
                           {lec.academicTitle || 'ThS.'}
                         </span>
+                      </td>
+
+                      {/* Research Fields / Lĩnh vực */}
+                      <td className="py-3.5 px-4">
+                        {(() => {
+                          const fieldsList = Array.isArray(lec.fields) && lec.fields.length > 0
+                            ? lec.fields
+                            : (lec.specialization
+                                ? lec.specialization.split(',').map((s) => s.trim()).filter(Boolean)
+                                : []);
+
+                          if (fieldsList.length === 0) {
+                            return <span className="text-xs text-slate-400 italic">Chưa cập nhật</span>;
+                          }
+
+                          return (
+                            <div className="flex flex-wrap gap-1 max-w-[280px]">
+                              {fieldsList.slice(0, 3).map((field, fIdx) => (
+                                <span
+                                  key={fIdx}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60"
+                                >
+                                  {field}
+                                </span>
+                              ))}
+                              {fieldsList.length > 3 && (
+                                <span
+                                  title={fieldsList.slice(3).join(', ')}
+                                  className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 cursor-help"
+                                >
+                                  +{fieldsList.length - 3}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       {/* Availability */}
@@ -407,6 +696,19 @@ const LecturerManagement = () => {
         confirmText="Kích hoạt lại"
         cancelText="Hủy"
         type="primary"
+        loading={actionLoading}
+      />
+
+      {/* Field Request Approval / Rejection Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={fieldConfirmDialog.isOpen}
+        onClose={() => setFieldConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={fieldConfirmDialog.onConfirm}
+        title={fieldConfirmDialog.title}
+        message={fieldConfirmDialog.message}
+        confirmText={fieldConfirmDialog.confirmText}
+        cancelText="Hủy"
+        type={fieldConfirmDialog.type}
         loading={actionLoading}
       />
     </div>

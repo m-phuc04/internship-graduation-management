@@ -17,4 +17,7 @@ router.get("/users", adminController.getAllUsers);
 router.patch("/users/:userId/status", adminController.toggleUserStatus);
 router.post("/users/:userId/reset-password", adminController.resetPassword);
 
+// System Activity Logs
+router.get("/logs", adminController.getSystemLogs);
+
 export default router;

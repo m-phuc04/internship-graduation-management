@@ -24,21 +24,16 @@ const AcademicTermSelector = () => {
         <GraduationCap className="w-4 h-4" />
       </div>
 
-      <div className="text-left hidden md:block">
-        <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 leading-none">
-          Học kỳ làm việc
-        </div>
-        <div className="text-xs font-bold text-slate-800 leading-tight mt-0.5 flex items-center gap-1.5">
-          <span>{displayTerm?.code || 'Chưa có học kỳ'}</span>
-          {displayTerm && (
-            <span
-              className={`w-2 h-2 rounded-full ${
-                displayTerm.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-amber-500'
-              } inline-block animate-pulse`}
-              title={displayTerm.status === 'ACTIVE' ? 'Đang diễn ra (ACTIVE)' : displayTerm.status}
-            />
-          )}
-        </div>
+      <div className="hidden md:flex items-center gap-1.5 text-xs font-bold text-slate-800 leading-none">
+        <span>{displayTerm?.code || 'Chưa có học kỳ'}</span>
+        {displayTerm && (
+          <span
+            className={`w-2 h-2 rounded-full ${
+              displayTerm.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-amber-500'
+            } inline-block animate-pulse`}
+            title={displayTerm.status === 'ACTIVE' ? 'Đang diễn ra (ACTIVE)' : displayTerm.status}
+          />
+        )}
       </div>
     </div>
   );

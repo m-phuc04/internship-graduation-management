@@ -195,7 +195,24 @@ const TbmLecturerFieldsPage = () => {
             await fetchData();
           }
         } catch (err) {
-          showToast(err.message || 'Không thể duyệt yêu cầu', 'error');
+          const isConflict =
+            err.status === 409 ||
+            err.status === 400 ||
+            err.data?.errorCode === 'REQUEST_ALREADY_PROCESSED' ||
+            err.response?.status === 409 ||
+            err.response?.status === 400 ||
+            err.message?.toLowerCase().includes('đã được xử lý');
+
+          if (isConflict) {
+            showToast(
+              'Yêu cầu này đã được xử lý. Đang cập nhật lại danh sách...',
+              'error'
+            );
+          } else {
+            showToast(err.message || 'Không thể duyệt yêu cầu', 'error');
+          }
+          // Always refresh to sync UI state and clear processed items
+          await fetchData();
         } finally {
           setActionLoading(false);
           setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
@@ -223,7 +240,24 @@ const TbmLecturerFieldsPage = () => {
             await fetchData();
           }
         } catch (err) {
-          showToast(err.message || 'Không thể từ chối yêu cầu', 'error');
+          const isConflict =
+            err.status === 409 ||
+            err.status === 400 ||
+            err.data?.errorCode === 'REQUEST_ALREADY_PROCESSED' ||
+            err.response?.status === 409 ||
+            err.response?.status === 400 ||
+            err.message?.toLowerCase().includes('đã được xử lý');
+
+          if (isConflict) {
+            showToast(
+              'Yêu cầu này đã được xử lý. Đang cập nhật lại danh sách...',
+              'error'
+            );
+          } else {
+            showToast(err.message || 'Không thể từ chối yêu cầu', 'error');
+          }
+          // Always refresh to sync UI state and clear processed items
+          await fetchData();
         } finally {
           setActionLoading(false);
           setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
@@ -340,15 +374,12 @@ const TbmLecturerFieldsPage = () => {
               {requests.length}
             </span>
           </div>
-          <span className="text-xs text-slate-400">
-            Các yêu cầu đang chờ Trưởng bộ môn phê duyệt
-          </span>
         </div>
 
         {requests.length === 0 ? (
           <div className="py-8 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
-            <span>Hiện không có yêu cầu thay đổi lĩnh vực nào đang chờ duyệt.</span>
+            <span>Hiện không có yêu cầu thay đổi lĩnh vực nào.</span>
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200">

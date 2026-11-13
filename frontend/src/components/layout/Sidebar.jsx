@@ -18,6 +18,7 @@ import {
   Newspaper,
   Menu,
   Tag,
+  History,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
@@ -96,6 +97,11 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
       to: '/admin/users',
       label: 'Quản lý người dùng',
       icon: Users,
+    },
+    {
+      to: '/admin/logs',
+      label: 'Nhật ký hệ thống',
+      icon: History,
     },
   ];
 

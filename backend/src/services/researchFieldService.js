@@ -2,6 +2,7 @@ import ResearchField from "../models/ResearchField.js";
 import FieldChangeRequest from "../models/FieldChangeRequest.js";
 import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
+import Log from "../models/Log.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 
@@ -198,23 +199,27 @@ const createFieldChangeRequest = async ({ userId, requestedFields = [], proposed
     });
   }
 
-  // Notify TBM users
+  // Notify TBM and Admin users
   try {
-    const tbmUsers = await User.find({ role: "TBM", isActive: true });
+    const managers = await User.find({
+      role: { $in: ["TBM", "ADMIN"] },
+      isActive: true,
+    });
     const lecName = `${lecturer.academicTitle ? `${lecturer.academicTitle} ` : ""}${lecturer.userId?.fullName || "Giảng viên"}`;
-    for (const tbm of tbmUsers) {
+    for (const manager of managers) {
+      const link = manager.role === "ADMIN" ? "/admin/lecturers" : "/tbm/fields";
       await notificationService.createNotification({
-        recipientId: tbm._id,
+        recipientId: manager._id,
         senderId: userId,
         type: "SYSTEM",
         title: "Yêu cầu thay đổi lĩnh vực",
         message: `Giảng viên ${lecName} đã gửi yêu cầu thay đổi lĩnh vực nghiên cứu. Vui lòng xem xét và duyệt.`,
-        link: "/tbm/fields",
+        link,
         priority: "HIGH",
       });
     }
   } catch (err) {
-    console.warn("Error notifying TBM about field change request:", err.message);
+    console.warn("Error notifying TBM and Admin about field change request:", err.message);
   }
 
   return request;
@@ -236,12 +241,37 @@ const getAllRequests = async () => {
 
 // 9. TBM approves request
 const approveRequest = async (requestId, tbmUserId) => {
-  const request = await FieldChangeRequest.findById(requestId).populate("lecturerId");
-  if (!request) {
-    throw new AppError("Không tìm thấy yêu cầu", 404);
+  const existing = await FieldChangeRequest.findById(requestId);
+  if (!existing) {
+    throw new AppError("Không tìm thấy yêu cầu", 404, "REQUEST_NOT_FOUND");
   }
-  if (request.status !== "PENDING") {
-    throw new AppError("Yêu cầu này đã được xử lý", 400);
+  if (existing.status !== "PENDING") {
+    throw new AppError(
+      "Yêu cầu này đã được xử lý",
+      409,
+      "REQUEST_ALREADY_PROCESSED"
+    );
+  }
+
+  // Atomic state transition to prevent race condition
+  const request = await FieldChangeRequest.findOneAndUpdate(
+    { _id: requestId, status: "PENDING" },
+    {
+      $set: {
+        status: "APPROVED",
+        reviewedBy: tbmUserId,
+        reviewedAt: new Date(),
+      },
+    },
+    { returnDocument: "after" }
+  ).populate("lecturerId");
+
+  if (!request) {
+    throw new AppError(
+      "Yêu cầu này đã được xử lý",
+      409,
+      "REQUEST_ALREADY_PROCESSED"
+    );
   }
 
   const lecturer = await Lecturer.findById(request.lecturerId._id || request.lecturerId);
@@ -251,6 +281,9 @@ const approveRequest = async (requestId, tbmUserId) => {
 
   // 1. Overwrite lecturer fields
   lecturer.fields = request.requestedFields;
+  if (request.requestedFields && request.requestedFields.length > 0) {
+    lecturer.specialization = request.requestedFields.join(", ");
+  }
   await lecturer.save();
 
   // 2. Auto add any newly proposed tags into system ResearchField
@@ -272,14 +305,11 @@ const approveRequest = async (requestId, tbmUserId) => {
     }
   }
 
-  // 3. Mark request APPROVED
-  request.status = "APPROVED";
-  request.reviewedBy = tbmUserId;
-  request.reviewedAt = new Date();
-  await request.save();
-
-  // 4. Send notification to lecturer
+  // 3. Send notification to lecturer & create log
   try {
+    const reviewer = await User.findById(tbmUserId).select("fullName role").lean();
+    const reviewerRoleTitle = reviewer?.role === "ADMIN" ? "Quản trị viên" : "Trưởng bộ môn";
+
     const targetUserId = lecturer.userId?._id || lecturer.userId || request.userId;
     if (targetUserId) {
       await notificationService.createNotification({
@@ -287,11 +317,20 @@ const approveRequest = async (requestId, tbmUserId) => {
         senderId: tbmUserId,
         type: "SYSTEM",
         title: "Yêu cầu thay đổi lĩnh vực đã được duyệt",
-        message: `Trưởng bộ môn đã phê duyệt yêu cầu thay đổi lĩnh vực nghiên cứu của bạn. Lĩnh vực mới: ${request.requestedFields.join(", ")}`,
+        message: `${reviewerRoleTitle} đã phê duyệt yêu cầu thay đổi lĩnh vực nghiên cứu của bạn. Lĩnh vực mới: ${request.requestedFields.join(", ")}`,
         link: "/lecturer/dashboard",
         priority: "HIGH",
       });
     }
+
+    // System activity log
+    await Log.create({
+      userId: tbmUserId,
+      action: "Phê duyệt yêu cầu lĩnh vực",
+      module: "USER",
+      description: `${reviewerRoleTitle} ${reviewer?.fullName || ""} đã phê duyệt yêu cầu thay đổi lĩnh vực cho giảng viên ${lecturer.lecturerCode || ""}. Lĩnh vực mới: ${request.requestedFields.join(", ")}`,
+      status: "SUCCESS",
+    });
   } catch (err) {
     console.warn("Error notifying lecturer about approved field request:", err.message);
   }
@@ -306,20 +345,43 @@ const approveRequest = async (requestId, tbmUserId) => {
 
 // 10. TBM rejects request
 const rejectRequest = async (requestId, tbmUserId) => {
-  const request = await FieldChangeRequest.findById(requestId).populate("lecturerId");
-  if (!request) {
-    throw new AppError("Không tìm thấy yêu cầu", 404);
+  const existing = await FieldChangeRequest.findById(requestId);
+  if (!existing) {
+    throw new AppError("Không tìm thấy yêu cầu", 404, "REQUEST_NOT_FOUND");
   }
-  if (request.status !== "PENDING") {
-    throw new AppError("Yêu cầu này đã được xử lý", 400);
+  if (existing.status !== "PENDING") {
+    throw new AppError(
+      "Yêu cầu này đã được xử lý",
+      409,
+      "REQUEST_ALREADY_PROCESSED"
+    );
   }
 
-  request.status = "REJECTED";
-  request.reviewedBy = tbmUserId;
-  request.reviewedAt = new Date();
-  await request.save();
+  // Atomic state transition to prevent race condition
+  const request = await FieldChangeRequest.findOneAndUpdate(
+    { _id: requestId, status: "PENDING" },
+    {
+      $set: {
+        status: "REJECTED",
+        reviewedBy: tbmUserId,
+        reviewedAt: new Date(),
+      },
+    },
+    { returnDocument: "after" }
+  ).populate("lecturerId");
+
+  if (!request) {
+    throw new AppError(
+      "Yêu cầu này đã được xử lý",
+      409,
+      "REQUEST_ALREADY_PROCESSED"
+    );
+  }
 
   try {
+    const reviewer = await User.findById(tbmUserId).select("fullName role").lean();
+    const reviewerRoleTitle = reviewer?.role === "ADMIN" ? "Quản trị viên" : "Trưởng bộ môn";
+
     const targetUserId = request.lecturerId?.userId || request.userId;
     if (targetUserId) {
       await notificationService.createNotification({
@@ -327,11 +389,20 @@ const rejectRequest = async (requestId, tbmUserId) => {
         senderId: tbmUserId,
         type: "SYSTEM",
         title: "Yêu cầu thay đổi lĩnh vực không được duyệt",
-        message: "Trưởng bộ môn đã từ chối yêu cầu thay đổi lĩnh vực nghiên cứu của bạn.",
+        message: `${reviewerRoleTitle} đã từ chối yêu cầu thay đổi lĩnh vực nghiên cứu của bạn.`,
         link: "/lecturer/dashboard",
         priority: "NORMAL",
       });
     }
+
+    // System activity log
+    await Log.create({
+      userId: tbmUserId,
+      action: "Từ chối yêu cầu lĩnh vực",
+      module: "USER",
+      description: `${reviewerRoleTitle} ${reviewer?.fullName || ""} đã từ chối yêu cầu thay đổi lĩnh vực của giảng viên`,
+      status: "SUCCESS",
+    });
   } catch (err) {
     console.warn("Error notifying lecturer about rejected field request:", err.message);
   }

@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, Menu, X, Bell } from 'lucide-react';
+import { ShieldCheck, Menu, X } from 'lucide-react';
+import NotificationDropdown from '../common/NotificationDropdown';
 import Footer from './Footer';
 
 const AdminLayout = () => {
@@ -85,6 +86,7 @@ const AdminLayout = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            <NotificationDropdown />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px] font-bold text-slate-700">

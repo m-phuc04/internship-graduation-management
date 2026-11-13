@@ -25,6 +25,11 @@ const adminApi = {
     const response = await axiosClient.post(`/admin/users/${userId}/reset-password`, { newPassword });
     return response;
   },
+
+  getSystemLogs: async (params = {}) => {
+    const response = await axiosClient.get('/admin/logs', { params });
+    return response;
+  },
 };
 
 export default adminApi;

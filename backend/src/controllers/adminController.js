@@ -71,10 +71,24 @@ const resetPassword = async (req, res, next) => {
   }
 };
 
+const getSystemLogs = async (req, res, next) => {
+  try {
+    const { page, limit, role, search } = req.query;
+    const data = await adminService.getSystemLogs({ page, limit, role, search });
+    res.status(200).json({
+      success: true,
+      ...data,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getPermissionsList,
   updateLecturerPermissions,
   getAllUsers,
   toggleUserStatus,
   resetPassword,
+  getSystemLogs,
 };

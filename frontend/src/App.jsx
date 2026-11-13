@@ -18,6 +18,7 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AdminPermissionsPage from './pages/admin/AdminPermissionsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminLogsPage from './pages/admin/AdminLogsPage';
 import AcademicTermManagement from './pages/admin/AcademicTermManagement';
 import StudentManagement from './pages/tbm/StudentManagement';
 import LecturerManagement from './pages/tbm/LecturerManagement';
@@ -225,6 +226,8 @@ function App() {
               <Route path="academic-terms" element={<AcademicTermManagement />} />
               <Route path="students" element={<StudentManagement />} />
               <Route path="lecturers" element={<LecturerManagement />} />
+              <Route path="fields" element={<Navigate to="/admin/lecturers" replace />} />
+              <Route path="logs" element={<AdminLogsPage />} />
               <Route path="news" element={<LecturerNewsManagement />} />
               <Route path="profile" element={<ProfilePage />} />
             </Route>
