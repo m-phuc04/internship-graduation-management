@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
+import thesisDocumentApi from '../../api/thesisDocumentApi';
 import internshipApi from '../../api/internshipApi';
 import thesisProgressApi from '../../api/thesisProgressApi';
 import councilApi from '../../api/councilApi';
@@ -40,6 +41,10 @@ import {
   Edit2,
   Edit3,
   FileText,
+  FileCheck,
+  FileSpreadsheet,
+  FileCode,
+  FileArchive,
   ExternalLink,
   Ban,
   Trash2,
@@ -184,6 +189,77 @@ const LecturerThesesPage = () => {
   const [targetThesis, setTargetThesis] = useState(null);
   const [rejectReason, setRejectReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [detailSubmissions, setDetailSubmissions] = useState([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+
+  // Load student submission files whenever detail modal opens with a valid thesis
+  useEffect(() => {
+    if (detailModalOpen && targetThesis?._id) {
+      setLoadingSubmissions(true);
+      thesisDocumentApi
+        .getLecturerSubmissions({ thesisId: targetThesis._id })
+        .then((res) => {
+          if (res?.success) {
+            setDetailSubmissions(res.data || []);
+          } else {
+            setDetailSubmissions([]);
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not fetch submissions for thesis modal:', err);
+          setDetailSubmissions([]);
+        })
+        .finally(() => {
+          setLoadingSubmissions(false);
+        });
+    } else {
+      setDetailSubmissions([]);
+    }
+  }, [detailModalOpen, targetThesis?._id]);
+
+  const formatDateTime = (d) => {
+    if (!d) return '—';
+    const date = new Date(d);
+    return `${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+  };
+
+  const getSubmissionFileIcon = (fileName) => {
+    if (!fileName) return <FileText className="w-4 h-4 text-slate-500" />;
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') {
+      return <FileText className="w-4 h-4 text-rose-600" />;
+    }
+    if (['doc', 'docx'].includes(ext)) {
+      return <FileText className="w-4 h-4 text-blue-600" />;
+    }
+    if (['xls', 'xlsx'].includes(ext)) {
+      return <FileSpreadsheet className="w-4 h-4 text-emerald-600" />;
+    }
+    if (['ppt', 'pptx'].includes(ext)) {
+      return <FileCode className="w-4 h-4 text-amber-600" />;
+    }
+    if (['zip', 'rar', '7z'].includes(ext)) {
+      return <FileArchive className="w-4 h-4 text-purple-600" />;
+    }
+    return <FileText className="w-4 h-4 text-slate-500" />;
+  };
+
+  const handleDownloadSubmissionFile = (e, doc) => {
+    e.stopPropagation();
+    const fullUrl = getFileUrl(doc.fileUrl);
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.setAttribute('download', doc.fileName || 'file-nop-khoa-luan');
+    link.setAttribute('target', '_blank');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePreviewSubmissionFile = (doc) => {
+    const fullUrl = getFileUrl(doc.fileUrl);
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
 
   // Student Diary / Progress Modal State
   const [progressModalOpen, setProgressModalOpen] = useState(false);
@@ -4157,7 +4233,106 @@ const LecturerThesesPage = () => {
               )}
             </div>
 
+            {/* File Nộp Của Sinh Viên (Submitted Files) */}
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/60 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Paperclip className="w-4 h-4 text-[#123891]" />
+                  <span className="font-bold text-xs text-[#123891] uppercase tracking-wider">
+                    File Nộp ({detailSubmissions.length})
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDetailModalOpen(false);
+                    navigate('/lecturer/theses/documents');
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-[#123891] hover:text-[#0d2a75] hover:underline cursor-pointer"
+                  title="Chuyển đến trang Quản lý tài liệu khóa luận"
+                >
+                  <span>Xem tại trang Tài liệu</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              </div>
 
+              {loadingSubmissions ? (
+                <div className="py-4 flex items-center justify-center gap-2 text-xs text-slate-500 font-medium">
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#123891]" />
+                  <span>Đang tải danh sách file nộp...</span>
+                </div>
+              ) : detailSubmissions.length === 0 ? (
+                <div className="p-4 rounded-xl bg-white border border-dashed border-slate-200 text-center">
+                  <Paperclip className="w-5 h-5 text-slate-300 mx-auto mb-1" />
+                  <p className="text-xs font-medium text-slate-500">Chưa có file nào do sinh viên nộp cho đề tài này</p>
+                  <p className="text-[10.5px] text-slate-400 mt-0.5">
+                    Các file báo cáo, bản nháp hoặc sản phẩm do sinh viên nộp sẽ hiển thị trực tiếp tại đây.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                  {detailSubmissions.map((sub, sIdx) => {
+                    const studentName =
+                      sub.studentId?.userId?.fullName || sub.uploadedBy?.fullName || 'Sinh viên';
+                    const studentCode = sub.studentId?.studentCode;
+                    return (
+                      <div
+                        key={sub._id || sIdx}
+                        className="p-3 bg-white rounded-xl border border-slate-200/70 hover:border-blue-200 hover:shadow-2xs transition flex items-center justify-between gap-3 group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition">
+                            {getSubmissionFileIcon(sub.fileName)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div
+                              className="text-xs font-bold text-slate-800 hover:text-[#123891] truncate cursor-pointer transition"
+                              onClick={() => handlePreviewSubmissionFile(sub)}
+                              title={sub.fileName}
+                            >
+                              {sub.fileName}
+                            </div>
+                            <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                              <span className="font-mono text-slate-500">{formatFileSize(sub.fileSize)}</span>
+                              <span>•</span>
+                              <span>{formatDateTime(sub.createdAt)}</span>
+                              <span>•</span>
+                              <span className="text-slate-600 font-medium">
+                                {studentName} {studentCode ? `(${studentCode})` : ''}
+                              </span>
+                            </div>
+                            {sub.description && (
+                              <div className="text-[11px] text-slate-500 italic mt-0.5 line-clamp-1" title={sub.description}>
+                                "{sub.description}"
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handlePreviewSubmissionFile(sub)}
+                            className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                            title="Xem / Mở file trong tab mới"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => handleDownloadSubmissionFile(e, sub)}
+                            className="p-1.5 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                            title="Tải về file"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
             {/* Actions inside Detail Modal */}
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">

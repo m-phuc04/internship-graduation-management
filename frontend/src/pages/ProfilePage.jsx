@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import profileApi from '../api/profileApi';
+import researchFieldApi from '../api/researchFieldApi';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import LoadingSkeleton from '../components/common/LoadingSkeleton';
@@ -26,6 +27,11 @@ import {
   Globe,
   MapPin,
   FileText,
+  Tag,
+  Sparkles,
+  Clock,
+  Plus,
+  Check,
 } from 'lucide-react';
 
 const ProfilePage = () => {
@@ -55,11 +61,26 @@ const ProfilePage = () => {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState('');
 
+  // Field Request States (for Lecturer / TBM)
+  const [fieldRequestInfo, setFieldRequestInfo] = useState(null);
+  const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
+  const [allSystemFields, setAllSystemFields] = useState([]);
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [proposedTags, setProposedTags] = useState([]);
+  const [newTagInput, setNewTagInput] = useState('');
+  const [loadingFields, setLoadingFields] = useState(false);
+  const [submittingFieldRequest, setSubmittingFieldRequest] = useState(false);
+
   // Fetch full profile
   const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await profileApi.getProfile();
+      const isLecOrTbm = authUser?.role === 'LECTURER' || authUser?.role === 'TBM';
+      const [res, fieldRes] = await Promise.all([
+        profileApi.getProfile(),
+        isLecOrTbm ? researchFieldApi.getMyRequest().catch(() => null) : Promise.resolve(null),
+      ]);
+
       if (res.success && res.data) {
         setProfileData(res.data);
         const u = res.data.user;
@@ -74,16 +95,109 @@ const ProfilePage = () => {
           );
         }
       }
+
+      if (fieldRes && fieldRes.success) {
+        setFieldRequestInfo(fieldRes.data);
+      }
     } catch (err) {
       showToast(err.message || 'Không thể tải thông tin cá nhân', 'error');
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [authUser?.role, showToast]);
 
   useEffect(() => {
     fetchProfile();
   }, [fetchProfile]);
+
+  // Handlers for Research Field Change Modal
+  const handleOpenFieldModal = async () => {
+    setIsFieldModalOpen(true);
+    setLoadingFields(true);
+    try {
+      const res = await researchFieldApi.getAllFields();
+      if (res.success) {
+        setAllSystemFields(res.data || []);
+      }
+
+      if (fieldRequestInfo?.hasPending && fieldRequestInfo.request?.requestedFields) {
+        setSelectedFields([...fieldRequestInfo.request.requestedFields]);
+        setProposedTags([...(fieldRequestInfo.request.proposedNewTags || [])]);
+      } else {
+        const initialFields =
+          fieldRequestInfo?.currentFields?.length
+            ? fieldRequestInfo.currentFields
+            : (profileData?.lecturer?.fields?.length
+              ? profileData.lecturer.fields
+              : (profileData?.lecturer?.specialization
+                ? profileData.lecturer.specialization.split(',').map((s) => s.trim()).filter(Boolean)
+                : []));
+        setSelectedFields([...initialFields]);
+        setProposedTags([]);
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể tải danh sách lĩnh vực', 'error');
+    } finally {
+      setLoadingFields(false);
+    }
+  };
+
+  const toggleField = (fieldName) => {
+    setSelectedFields((prev) =>
+      prev.includes(fieldName)
+        ? prev.filter((name) => name !== fieldName)
+        : [...prev, fieldName]
+    );
+  };
+
+  const handleAddProposedTag = () => {
+    const cleanTag = newTagInput.trim();
+    if (!cleanTag) return;
+
+    if (selectedFields.includes(cleanTag)) {
+      showToast('Lĩnh vực này đã được chọn', 'info');
+      setNewTagInput('');
+      return;
+    }
+
+    setProposedTags((prev) => (prev.includes(cleanTag) ? prev : [...prev, cleanTag]));
+    setSelectedFields((prev) => [...prev, cleanTag]);
+    setNewTagInput('');
+  };
+
+  const handleRemoveProposedTag = (tagToRemove) => {
+    setProposedTags((prev) => prev.filter((t) => t !== tagToRemove));
+    setSelectedFields((prev) => prev.filter((t) => t !== tagToRemove));
+  };
+
+  const handleSubmitFieldRequest = async () => {
+    if (selectedFields.length === 0) {
+      showToast('Vui lòng chọn hoặc đề xuất ít nhất một lĩnh vực', 'warning');
+      return;
+    }
+
+    setSubmittingFieldRequest(true);
+    try {
+      const res = await researchFieldApi.createRequest({
+        requestedFields: selectedFields,
+        proposedNewTags: proposedTags,
+      });
+
+      if (res.success) {
+        showToast('Đã gửi yêu cầu thay đổi lĩnh vực tới Trưởng bộ môn', 'success');
+        setFieldRequestInfo((prev) => ({
+          ...prev,
+          hasPending: true,
+          request: res.data,
+        }));
+        setIsFieldModalOpen(false);
+      }
+    } catch (err) {
+      showToast(err.message || 'Không thể gửi yêu cầu thay đổi lĩnh vực', 'error');
+    } finally {
+      setSubmittingFieldRequest(false);
+    }
+  };
 
   // Cancel edit
   const handleCancelEdit = () => {
@@ -198,6 +312,15 @@ const ProfilePage = () => {
   const user = profileData?.user || authUser;
   const student = profileData?.student;
   const lecturer = profileData?.lecturer;
+  const isLecturerOrTbm = user?.role === 'LECTURER' || user?.role === 'TBM';
+
+  const currentFields = fieldRequestInfo?.currentFields?.length
+    ? fieldRequestInfo.currentFields
+    : (lecturer?.fields?.length
+      ? lecturer.fields
+      : (lecturer?.specialization
+        ? lecturer.specialization.split(',').map((s) => s.trim()).filter(Boolean)
+        : []));
 
   // Compute Account Code
   const getAccountCode = () => {
@@ -226,75 +349,122 @@ const ProfilePage = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Top Banner Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#123891] text-white font-black text-2xl flex items-center justify-center shadow-md shadow-blue-100 shrink-0">
-              {user?.fullName?.charAt(0).toUpperCase() || 'U'}
-            </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl font-bold text-slate-900">{user?.fullName}</h1>
-                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${roleInfo.color}`}>
-                  {roleInfo.label}
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-mono mt-1 flex items-center gap-2">
-                <span>Mã tài khoản: <strong className="text-[#123891] font-bold">{getAccountCode()}</strong></span>
-                <span className="text-slate-300">•</span>
-                <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Hoạt động
-                </span>
-              </p>
-            </div>
+      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-start gap-4 sm:gap-5">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-md shadow-blue-100 shrink-0">
+            {lecturer?.academicTitle ? lecturer.academicTitle.charAt(0) : (user?.fullName?.charAt(0).toUpperCase() || 'U')}
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            {!isEditing ? (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(true)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span>Chỉnh sửa hồ sơ</span>
-                </button>
+          <div className="flex-1 min-w-0 space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+                {lecturer?.academicTitle ? `${lecturer.academicTitle} ` : ''}{user?.fullName}
+              </h1>
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${roleInfo.color}`}>
+                {roleInfo.label}
+              </span>
+            </div>
+
+            <div className="text-xs text-slate-500 font-mono flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span>Mã tài khoản: <strong className="text-[#123891] font-bold">{getAccountCode()}</strong></span>
+              <span className="text-slate-300">•</span>
+              <span className="inline-flex items-center gap-1 text-emerald-600 font-semibold">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Hoạt động
+              </span>
+              {lecturer?.department && (
+                <>
+                  <span className="text-slate-300">•</span>
+                  <span>Khoa: <strong className="text-slate-700 font-semibold">{lecturer.department}</strong></span>
+                </>
+              )}
+            </div>
+
+            {/* Research Fields (Lĩnh vực) & Change Request Button Horizontally in a Single Row */}
+            {isLecturerOrTbm && (
+              <div className="pt-1.5 text-xs text-slate-500 flex flex-wrap items-center gap-2">
+                <span className="font-semibold text-slate-700 shrink-0">Lĩnh vực:</span>
+                {currentFields && currentFields.length > 0 ? (
+                  currentFields.map((f, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
+                    >
+                      {f}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400 italic shrink-0">Chưa có lĩnh vực</span>
+                )}
 
                 <button
                   type="button"
-                  onClick={() => setChangePasswordOpen(true)}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl transition"
+                  onClick={handleOpenFieldModal}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-xl bg-blue-50 hover:bg-blue-100 text-[#123891] border border-blue-200 transition shadow-2xs cursor-pointer shrink-0 ml-0.5"
                 >
-                  <Key className="w-4 h-4 text-slate-500" />
-                  <span>Đổi mật khẩu</span>
+                  <Tag className="w-3.5 h-3.5 text-[#123891]" />
+                  <span>Yêu cầu thay đổi lĩnh vực</span>
                 </button>
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  disabled={saving}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition"
-                >
-                  <X className="w-4 h-4" />
-                  <span>Hủy</span>
-                </button>
+              </div>
+            )}
 
-                <button
-                  type="button"
-                  onClick={handleSaveProfile}
-                  disabled={saving}
-                  className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
-                </button>
-              </>
+            {/* Pending request notice */}
+            {isLecturerOrTbm && fieldRequestInfo?.hasPending && (
+              <div className="pt-1">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+                  <Clock className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+                  <span>Đang chờ TBM duyệt yêu cầu thay đổi lĩnh vực</span>
+                </div>
+              </div>
             )}
           </div>
         </div>
+      </div>
+
+      {/* Action Buttons: Positioned OUTSIDE and completely separated below the main profile card, aligned to the right */}
+      <div className="flex items-center justify-end gap-2.5 -mt-2">
+        {!isEditing ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsEditing(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            >
+              <Edit3 className="w-4 h-4" />
+              <span>Chỉnh sửa hồ sơ</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setChangePasswordOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl shadow-2xs transition cursor-pointer"
+            >
+              <Key className="w-4 h-4 text-slate-500" />
+              <span>Đổi mật khẩu</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={handleCancelEdit}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+              <span>Hủy</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleSaveProfile}
+              disabled={saving}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+            >
+              <Save className="w-4 h-4" />
+              <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* Main Profile Content Form */}
@@ -595,6 +765,155 @@ const ProfilePage = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Modal Yêu cầu thay đổi lĩnh vực */}
+      {isFieldModalOpen && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center">
+                  <Tag className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-slate-900">Yêu cầu thay đổi lĩnh vực nghiên cứu</h2>
+                  <p className="text-xs text-slate-500">Chọn các lĩnh vực hiện có hoặc đề xuất tag lĩnh vực mới</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFieldModalOpen(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+              {/* Existing System Fields */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Danh sách lĩnh vực hiện có ({allSystemFields.length})
+                </label>
+                {loadingFields ? (
+                  <div className="text-xs text-slate-400 py-3 text-center">Đang tải danh sách lĩnh vực...</div>
+                ) : (
+                  <div className="flex flex-wrap gap-2 max-h-52 overflow-y-auto p-3 bg-slate-50 rounded-2xl border border-slate-200">
+                    {allSystemFields.map((field) => {
+                      const isSelected = selectedFields.includes(field.name);
+                      return (
+                        <button
+                          key={field._id || field.name}
+                          type="button"
+                          onClick={() => toggleField(field.name)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition cursor-pointer border ${
+                            isSelected
+                              ? 'bg-[#123891] text-white border-[#123891] shadow-xs'
+                              : 'bg-white text-slate-700 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
+                          }`}
+                        >
+                          {isSelected ? (
+                            <Check className="w-3.5 h-3.5 shrink-0" />
+                          ) : (
+                            <span className="w-3.5 h-3.5 rounded border border-slate-300 shrink-0 inline-block" />
+                          )}
+                          <span>{field.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Propose New Tag */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Đề xuất lĩnh vực mới
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={newTagInput}
+                    onChange={(e) => setNewTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddProposedTag();
+                      }
+                    }}
+                    placeholder="Nhập tên tag mới muốn đề xuất..."
+                    className="flex-1 px-3.5 py-2 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddProposedTag}
+                    className="inline-flex items-center gap-1 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium transition cursor-pointer shadow-xs shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Thêm</span>
+                  </button>
+                </div>
+
+                {/* List of proposed new tags */}
+                {proposedTags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2.5">
+                    {proposedTags.map((tag, idx) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200 shadow-2xs"
+                      >
+                        <Sparkles className="w-3 h-3 text-purple-500" />
+                        <span>{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveProposedTag(tag)}
+                          className="hover:text-purple-900 hover:bg-purple-100 p-0.5 rounded transition cursor-pointer"
+                          title="Xóa đề xuất"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Selected Summary */}
+              <div className="text-xs text-slate-500">
+                Đã chọn: <strong className="text-slate-800">{selectedFields.length}</strong> lĩnh vực
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsFieldModalOpen(false)}
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmitFieldRequest}
+                disabled={submittingFieldRequest || selectedFields.length === 0}
+                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {submittingFieldRequest ? (
+                  <span>Đang gửi...</span>
+                ) : (
+                  <>
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Gửi yêu cầu</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

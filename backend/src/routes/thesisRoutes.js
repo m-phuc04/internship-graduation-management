@@ -196,6 +196,20 @@ router.patch(
   thesisController.cancelGroupRegistrationByStudent1,
 );
 
+// Student: Cancel expired group registration (60-minute timeout)
+router.post(
+  "/:id/cancel-expired",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.cancelExpiredThesis,
+);
+router.patch(
+  "/:id/cancel-expired",
+  authMiddleware,
+  authorizeRoles("STUDENT"),
+  thesisController.cancelExpiredThesis,
+);
+
 // Student 1: Remove Student 2 from group (before supervisor approval)
 router.patch(
   "/:id/remove-student2",

@@ -1169,6 +1169,26 @@ const cancelGroupRegistrationByStudent1 = async (req, res, next) => {
 };
 
 // ====================
+// Student: Cancel Expired Group Registration (60-minute timeout)
+// ====================
+const cancelExpiredThesis = async (req, res, next) => {
+  try {
+    const result = await thesisService.cancelExpiredThesisByStudent(
+      req.params.id,
+      req.user.userId,
+    );
+
+    res.status(200).json({
+      success: true,
+      message: result.message || "Đã hủy đề tài nhóm do hết hạn 60 phút thành công",
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
 // Student 1: Remove Student 2 from Group (before supervisor approval)
 // ====================
 const removeStudent2ByStudent1 = async (req, res, next) => {
@@ -1223,6 +1243,7 @@ export default {
   cancelStudent2Invite,
   cancelParticipationByStudent2,
   cancelGroupRegistrationByStudent1,
+  cancelExpiredThesis,
   removeStudent2ByStudent1,
   // Criteria & Grading Period Management
   getThesisEvaluationCriteria,

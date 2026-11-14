@@ -91,6 +91,84 @@ const MyThesisPage = () => {
     fetchMyThesis();
   }, [fetchMyThesis]);
 
+  // 60-Minute Countdown Timer for Pending 2-Student Group Registration
+  const isPendingGroupPhase = Boolean(
+    thesis &&
+      ['WAITING_FOR_STUDENT2_CONFIRMATION', 'WAITING_FOR_SUPERVISOR_REQUEST'].includes(thesis.status) &&
+      (thesis.studentCount === 2 || thesis.secondStudentId || thesis.student2Status === 'ACCEPTED' || thesis.student2Status === 'PENDING')
+  );
+
+  const effectiveExpiresAt = thesis?.expiresAt || (thesis?.createdAt && isPendingGroupPhase
+    ? new Date(new Date(thesis.createdAt).getTime() + 60 * 60 * 1000).toISOString()
+    : null);
+
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!effectiveExpiresAt || !isPendingGroupPhase) return null;
+    return Math.max(0, Math.floor((new Date(effectiveExpiresAt).getTime() - Date.now()) / 1000));
+  });
+
+  const handleExpiredThesis = useCallback(async () => {
+    const expiredThesisId = thesis?._id;
+    setTimeLeft(0);
+    // Instantly clear the expired thesis card and switch to empty registration state
+    setThesis(null);
+    setCanRegisterNew(true);
+    showToast('Thời gian đăng ký nhóm (60 phút) đã hết hạn. Đề tài nhóm đã tự động bị hủy.', 'warning');
+
+    try {
+      if (expiredThesisId) {
+        await thesisApi.cancelExpiredThesis(expiredThesisId);
+      }
+    } catch (e) {
+      console.warn('Auto-cancel expired thesis call error:', e);
+    } finally {
+      await fetchMyThesis();
+    }
+  }, [thesis?._id, fetchMyThesis, showToast]);
+
+  useEffect(() => {
+    if (!effectiveExpiresAt || !isPendingGroupPhase) {
+      setTimeLeft(null);
+      return;
+    }
+
+    let isHandled = false;
+    const triggerExpire = () => {
+      if (isHandled) return;
+      isHandled = true;
+      handleExpiredThesis();
+    };
+
+    const calcTime = () => {
+      const diff = Math.max(0, Math.floor((new Date(effectiveExpiresAt).getTime() - Date.now()) / 1000));
+      setTimeLeft(diff);
+      return diff;
+    };
+
+    const initial = calcTime();
+    if (initial <= 0) {
+      triggerExpire();
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const remaining = calcTime();
+      if (remaining <= 0) {
+        clearInterval(interval);
+        triggerExpire();
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [effectiveExpiresAt, isPendingGroupPhase, handleExpiredThesis]);
+
+  const formatCountdown = (seconds) => {
+    if (seconds === null || seconds === undefined || seconds < 0) return '00:00';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
   // Handle SV2 Respond Invitation (ACCEPT / REJECT)
   const handleRespondInvitation = async (action) => {
     if (!thesis?._id) return;
@@ -650,6 +728,14 @@ const MyThesisPage = () => {
     });
   }
 
+  // Resolve actual registered thesis topic title directly from database (topicId.title or thesisTitle)
+  const thesisTitle =
+    (typeof thesis?.topicId === 'object' && (thesis?.topicId?.title || thesis?.topicId?.vietnameseTitle)) ||
+    thesis?.thesisTitle ||
+    thesis?.title ||
+    thesis?.vietnameseTitle ||
+    'Hồ Sơ Khóa Luận Tốt Nghiệp (KLTN)';
+
   if (loading) {
     return (
       <div className="p-6">
@@ -670,7 +756,7 @@ const MyThesisPage = () => {
             <div>
               <div className="flex items-center gap-2.5">
                 <h2 className="text-xl font-bold text-slate-900 leading-tight">
-                  {thesis ? thesis.thesisTitle : 'Hồ Sơ Khóa Luận Tốt Nghiệp (KLTN)'}
+                  {thesis ? thesisTitle : 'Hồ Sơ Khóa Luận Tốt Nghiệp (KLTN)'}
                 </h2>
                 {thesis && <StatusBadge status={thesis.status} size="md" />}
               </div>
@@ -729,16 +815,22 @@ const MyThesisPage = () => {
               <Users className="w-6 h-6 text-amber-700 animate-bounce" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 uppercase tracking-wider">
                   Lời mời tham gia nhóm KLTN
                 </span>
+                {timeLeft !== null && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-200 text-amber-950 border border-amber-400 font-mono shadow-2xs">
+                    <Clock className="w-3.5 h-3.5 text-amber-800" />
+                    <span>Hết hạn sau: {formatCountdown(timeLeft)}</span>
+                  </span>
+                )}
               </div>
               <h3 className="text-base font-bold text-slate-900 mt-1">
                 Sinh viên {thesis.studentId?.userId?.fullName || thesis.studentId?.studentCode} ({thesis.studentId?.studentCode}) đã mời bạn tham gia nhóm đề tài
               </h3>
               <p className="text-xs text-slate-600 mt-1">
-                Đề tài: <strong>"{thesis.thesisTitle}"</strong> • GVHD: <strong>{formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName)}</strong>
+                Đề tài: <strong>"{thesisTitle}"</strong> • GVHD: <strong>{formatLecturerDisplay(thesis.supervisorId?.academicTitle, thesis.supervisorId?.userId?.fullName)}</strong>
               </p>
             </div>
           </div>
@@ -770,8 +862,16 @@ const MyThesisPage = () => {
           <div className="flex items-start gap-3">
             <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm text-amber-900">
-                Đang chờ Sinh viên 2 xác nhận tham gia nhóm
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-bold text-sm text-amber-900">
+                  Đang chờ Sinh viên 2 xác nhận tham gia nhóm
+                </div>
+                {timeLeft !== null && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-200 text-amber-950 border border-amber-400 font-mono shadow-2xs">
+                    <Clock className="w-3.5 h-3.5 text-amber-800" />
+                    <span>Hết hạn sau: {formatCountdown(timeLeft)}</span>
+                  </span>
+                )}
               </div>
               <div className="mt-1 leading-relaxed text-slate-700">
                 Hệ thống đã gửi lời mời đến Sinh viên{' '}
@@ -810,12 +910,20 @@ const MyThesisPage = () => {
           <div className="flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
             <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm text-[#102d7d]">
-                {isStudent1
-                  ? thesis.student2Status === 'ACCEPTED'
-                    ? 'Sinh viên 2 đã đồng ý tham gia! Nhóm đã đủ điều kiện gửi GVHD'
-                    : 'Đề tài sẵn sàng gửi yêu cầu xét duyệt đến Giảng viên hướng dẫn'
-                  : 'Bạn đã tham gia nhóm thành công!'}
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="font-bold text-sm text-[#102d7d]">
+                  {isStudent1
+                    ? thesis.student2Status === 'ACCEPTED'
+                      ? 'Sinh viên 2 đã đồng ý tham gia! Nhóm đã đủ điều kiện gửi GVHD'
+                      : 'Đề tài sẵn sàng gửi yêu cầu xét duyệt đến Giảng viên hướng dẫn'
+                    : 'Bạn đã tham gia nhóm thành công!'}
+                </div>
+                {isPendingGroupPhase && timeLeft !== null && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold bg-amber-100 text-amber-950 border border-amber-400 font-mono shadow-2xs">
+                    <Clock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Hết hạn sau: {formatCountdown(timeLeft)}</span>
+                  </span>
+                )}
               </div>
               <div className="mt-1 leading-relaxed text-slate-700">
                 {isStudent1 ? (
@@ -909,7 +1017,7 @@ const MyThesisPage = () => {
                 Đang chờ Giảng viên hướng dẫn duyệt đăng ký
               </div>
               <div className="mt-1 leading-relaxed text-slate-700">
-                Đề tài <strong>"{thesis.thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
+                Đề tài <strong>"{thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
                 <strong>
                   {formatLecturerDisplay(
                     thesis.supervisorId?.academicTitle,
