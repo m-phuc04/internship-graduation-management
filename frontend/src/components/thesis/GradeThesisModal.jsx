@@ -563,11 +563,11 @@ const GradeThesisModal = ({
         ) : null}
 
         {/* 4 Main Tabs Navigation */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200/80 overflow-x-auto no-scrollbar">
           <button
             type="button"
             onClick={() => setActiveTabSection('REPORTS')}
-            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
               activeTabSection === 'REPORTS'
                 ? 'bg-white text-[#102d7d] shadow-2xs border border-blue-200'
                 : 'text-slate-600 hover:text-slate-900'
@@ -585,7 +585,7 @@ const GradeThesisModal = ({
           <button
             type="button"
             onClick={() => setActiveTabSection('CRITERIA')}
-            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
               activeTabSection === 'CRITERIA'
                 ? 'bg-white text-emerald-700 shadow-2xs border border-emerald-200'
                 : 'text-slate-600 hover:text-slate-900'
@@ -603,7 +603,7 @@ const GradeThesisModal = ({
           <button
             type="button"
             onClick={() => setActiveTabSection('GRADE')}
-            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
               activeTabSection === 'GRADE'
                 ? 'bg-white text-[#102d7d] shadow-2xs border border-blue-200'
                 : 'text-slate-600 hover:text-slate-900'
@@ -616,7 +616,7 @@ const GradeThesisModal = ({
           <button
             type="button"
             onClick={() => setActiveTabSection('INFO')}
-            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer ${
+            className={`flex-1 py-2 px-2.5 rounded-xl font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap ${
               activeTabSection === 'INFO'
                 ? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
                 : 'text-slate-600 hover:text-slate-900'
@@ -1162,7 +1162,8 @@ const GradeThesisModal = ({
                       </div>
                     </div>
                   </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
 
@@ -1194,12 +1195,12 @@ const GradeThesisModal = ({
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={onClose}
                 disabled={submitting}
-                className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 {isFormLocked ? 'Đóng' : 'Hủy'}
               </button>
@@ -1207,7 +1208,7 @@ const GradeThesisModal = ({
                 <button
                   type="submit"
                   disabled={submitting || isFormLocked}
-                  className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 cursor-pointer text-center"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   <span>{submitting ? 'Đang lưu...' : 'Lưu'}</span>

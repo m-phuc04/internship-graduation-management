@@ -228,7 +228,7 @@ const TbmInternshipDocumentsPage = () => {
             />
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[560px]">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                     <th className="py-3.5 px-4 text-center w-16">STT</th>
@@ -315,9 +315,9 @@ const TbmInternshipDocumentsPage = () => {
 
       {/* MODAL: THÊM FILE */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95">
-            <div className="px-6 py-5 bg-[#123891] text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col animate-in zoom-in-95">
+            <div className="px-5 py-4 sm:px-6 sm:py-5 bg-[#123891] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
                   <Upload className="w-5 h-5" />
@@ -329,13 +329,13 @@ const TbmInternshipDocumentsPage = () => {
               <button
                 type="button"
                 onClick={() => setAddModalOpen(false)}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitAdd} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitAdd} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
               {formError && (
                 <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -399,19 +399,19 @@ const TbmInternshipDocumentsPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100">
+              <div className="pt-3 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setAddModalOpen(false)}
                   disabled={uploading}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2.5 sm:py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !selectedFile}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 sm:py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
                 >
                   {uploading ? (
                     <>
@@ -430,9 +430,9 @@ const TbmInternshipDocumentsPage = () => {
 
       {/* MODAL: XÁC NHẬN GỠ FILE */}
       {deleteModalOpen && deletingDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95">
-            <div className="p-6 text-center space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col animate-in zoom-in-95">
+            <div className="p-4 sm:p-6 text-center space-y-4 overflow-y-auto overscroll-contain flex-1">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
@@ -446,12 +446,12 @@ const TbmInternshipDocumentsPage = () => {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center justify-center gap-3">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setDeleteModalOpen(false)}
                   disabled={deleting}
-                  className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy bỏ
                 </button>
@@ -459,7 +459,7 @@ const TbmInternshipDocumentsPage = () => {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={deleting}
-                  className="px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
                 >
                   {deleting ? (
                     <>

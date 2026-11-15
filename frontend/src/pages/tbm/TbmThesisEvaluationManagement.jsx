@@ -8,6 +8,7 @@ import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Modal from '../../components/common/Modal';
 import PublishScoresModal from '../../components/thesis/PublishScoresModal';
+import ThesisDetailModal from '../../components/thesis/ThesisDetailModal';
 
 import {
   Award,
@@ -75,6 +76,8 @@ const TbmThesisEvaluationManagement = () => {
   // Detail Modal
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedThesis, setSelectedThesis] = useState(null);
+  const [thesisDetailModalOpen, setThesisDetailModalOpen] = useState(false);
+  const [selectedThesisForDetail, setSelectedThesisForDetail] = useState(null);
 
   // Publish Scores Modal
   const [publishModalOpen, setPublishModalOpen] = useState(false);
@@ -1111,7 +1114,7 @@ const TbmThesisEvaluationManagement = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs min-w-[850px]">
                   <thead>
                     <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                       <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -1324,7 +1327,13 @@ const TbmThesisEvaluationManagement = () => {
 
                           {/* Title */}
                           <td className="py-3.5 px-4 min-w-[220px] max-w-sm" title={item.thesisTitle}>
-                            <strong className="text-slate-900 line-clamp-2 leading-snug hover:text-[#123891] transition">
+                            <strong
+                              onClick={() => {
+                                setSelectedThesisForDetail(item);
+                                setThesisDetailModalOpen(true);
+                              }}
+                              className="text-slate-900 line-clamp-2 leading-snug hover:text-[#123891] cursor-pointer transition"
+                            >
                               {item.thesisTitle}
                             </strong>
                             <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded font-mono mt-1">
@@ -1582,7 +1591,7 @@ const TbmThesisEvaluationManagement = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs min-w-[850px]">
                   <thead>
                     <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                       <th className="py-3.5 px-4 text-center w-14">Thứ tự</th>
@@ -1717,7 +1726,7 @@ const TbmThesisEvaluationManagement = () => {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
+                <table className="w-full text-left border-collapse text-xs min-w-[850px]">
                   <thead>
                     <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                       <th className="py-3.5 px-4">Tên đợt nhập điểm</th>
@@ -2312,6 +2321,16 @@ const TbmThesisEvaluationManagement = () => {
           </Modal>
         );
       })()}
+
+      {/* Unified Thesis Detail Modal */}
+      <ThesisDetailModal
+        isOpen={thesisDetailModalOpen}
+        onClose={() => {
+          setThesisDetailModalOpen(false);
+          setSelectedThesisForDetail(null);
+        }}
+        thesis={selectedThesisForDetail}
+      />
     </div>
   );
 };

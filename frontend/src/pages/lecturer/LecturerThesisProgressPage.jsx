@@ -476,7 +476,7 @@ const LecturerThesisProgressPage = () => {
         ) : (
           <div>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[850px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                     <th className="py-3.5 px-4">Tuần</th>

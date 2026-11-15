@@ -461,6 +461,54 @@ const TbmThesisManagement = () => {
   const [assignCouncilToThesisModalOpen, setAssignCouncilToThesisModalOpen] = useState(false);
   const [selectedThesisForCouncil, setSelectedThesisForCouncil] = useState(null);
 
+  const handleOpenTopicDetail = useCallback((topic) => {
+    if (!topic) return;
+    const matchedThesis = theses.find(
+      (t) =>
+        (t.topicId && String(t.topicId?._id || t.topicId) === String(topic._id)) ||
+        (Array.isArray(topic.registeredGroups) &&
+          topic.registeredGroups.some(
+            (g) => g.thesisId && String(g.thesisId?._id || g.thesisId) === String(t._id)
+          )) ||
+        (t.thesisTitle && t.thesisTitle.trim().toLowerCase() === (topic.title || '').trim().toLowerCase())
+    );
+
+    if (matchedThesis) {
+      setSelectedThesis(matchedThesis);
+      setDetailModalOpen(true);
+      return;
+    }
+
+    const firstGroup = topic.registeredGroups?.[0];
+    const student1 = topic.studentId || firstGroup?.studentId || null;
+    const student2 = topic.secondStudentId || firstGroup?.secondStudentId || null;
+
+    const topicAsThesis = {
+      _id: topic._id,
+      thesisTitle: topic.title,
+      description: topic.description,
+      objectives: topic.objectives,
+      status: topic.status === 'APPROVED' ? 'APPROVED' : topic.status === 'REJECTED' ? 'REJECTED' : 'PENDING_TBM_APPROVAL',
+      createdAt: topic.createdAt,
+      supervisorId: topic.supervisorId,
+      supervisorName: formatLecturerDisplay(topic.supervisorId?.academicTitle, topic.supervisorId?.userId?.fullName),
+      studentCount: student2 ? 2 : 1,
+      studentId: student1,
+      secondStudentId: student2,
+      scores: topic.scores || null,
+      reviewers: topic.reviewers || [],
+      reviewer1Id: topic.reviewer1Id || null,
+      reviewer2Id: topic.reviewer2Id || null,
+      councilId: topic.councilId || null,
+      startDate: topic.startDate || null,
+      endDate: topic.endDate || null,
+      academicTermId: topic.academicTermId || currentTerm,
+    };
+
+    setSelectedThesis(topicAsThesis);
+    setDetailModalOpen(true);
+  }, [theses, currentTerm]);
+
   const thesisCouncilStorageKey = `tbm_thesis_councils_${currentTerm?._id || 'default'}`;
   const [thesisCouncilMap, setThesisCouncilMap] = useState(() => {
     try {
@@ -1652,7 +1700,7 @@ const TbmThesisManagement = () => {
                       {/* Lecturer Topics Table (Visible when expanded) */}
                       {isExpanded && (
                         <div className="overflow-x-auto border-t border-slate-100">
-                          <table className="w-full text-left border-collapse text-xs">
+                          <table className="w-full min-w-[900px] text-left border-collapse text-xs">
                             <thead>
                               <tr className="bg-slate-50/70 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                                 <th className="py-3 px-4 text-center w-12">STT</th>
@@ -1677,7 +1725,10 @@ const TbmThesisManagement = () => {
                                     </td>
 
                                     <td className="py-3.5 px-4 min-w-[220px]">
-                                      <div className="font-bold text-slate-900 leading-snug">
+                                      <div
+                                        onClick={() => handleOpenTopicDetail(topic)}
+                                        className="font-bold text-slate-900 leading-snug hover:text-[#123891] cursor-pointer transition"
+                                      >
                                         {topic.title}
                                       </div>
                                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -1887,7 +1938,7 @@ const TbmThesisManagement = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                         <th className="py-3.5 px-4 text-center w-12">STT</th>
@@ -1913,7 +1964,10 @@ const TbmThesisManagement = () => {
                             </td>
 
                             <td className="py-3.5 px-4 min-w-[240px] max-w-sm">
-                              <div className="font-bold text-slate-900 leading-snug">
+                              <div
+                                onClick={() => handleOpenTopicDetail(topic)}
+                                className="font-bold text-slate-900 leading-snug hover:text-[#123891] cursor-pointer transition"
+                              >
                                 {topic.title}
                               </div>
                               <div className="text-[10px] text-slate-400 font-mono mt-0.5">
@@ -2221,7 +2275,7 @@ const TbmThesisManagement = () => {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
+                      <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                         {renderPrivateReviewerTableHeader()}
                         <tbody className="divide-y divide-slate-100">
                           {unassignedReviewerTheses.map((item, idx) => renderPrivateReviewerRow(item, idx))}
@@ -2255,7 +2309,7 @@ const TbmThesisManagement = () => {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
+                      <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                         {renderPrivateReviewerTableHeader()}
                         <tbody className="divide-y divide-slate-100">
                           {assignedReviewerTheses.map((item, idx) => renderPrivateReviewerRow(item, idx))}
@@ -2284,7 +2338,7 @@ const TbmThesisManagement = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full min-w-[1050px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                         <th className="py-3.5 px-4 text-center w-12">STT</th>
@@ -2844,6 +2898,9 @@ const TbmThesisManagement = () => {
         isOpen={detailModalOpen}
         onClose={() => setDetailModalOpen(false)}
         thesis={selectedThesis}
+        councils={getCouncilsList()}
+        thesisCouncilMap={thesisCouncilMap}
+        onTimelineUpdated={() => fetchTheses(true)}
         onApprove={(t) => {
           setSelectedThesis(t);
           setApproveConfirmOpen(true);

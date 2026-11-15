@@ -11,6 +11,7 @@ import {
   Award,
   ChevronDown,
   Menu,
+  X,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
@@ -135,6 +136,18 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
             </div>
           </div>
         </Link>
+
+        {onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            aria-label="Đóng menu"
+            className="lg:hidden p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer shrink-0 ml-2"
+            title="Đóng menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Navigation List */}

@@ -138,11 +138,11 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition text-center"
           >
             Hủy
           </button>
@@ -150,7 +150,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
             type="button"
             onClick={handleAssign}
             disabled={submitting || !selectedLecturerId}
-            className="inline-flex items-center gap-1.5 px-4 py-2 font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 text-center"
           >
             {submitting ? (
               <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

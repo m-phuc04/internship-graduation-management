@@ -257,7 +257,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
                       <span>Chi tiết tiêu chí chấm điểm (GVGS)</span>
                     </div>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left text-xs">
+                      <table className="w-full text-left text-xs min-w-[420px]">
                         <thead>
                           <tr className="border-b border-slate-100 text-[11px] text-slate-500 uppercase">
                             <th className="py-2">Tiêu chí</th>

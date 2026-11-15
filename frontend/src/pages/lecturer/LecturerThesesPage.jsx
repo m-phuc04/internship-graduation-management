@@ -1942,15 +1942,15 @@ const LecturerThesesPage = () => {
     <div className="space-y-6">
       {isTopicsView ? (
         /* ========================================================================= */
-        /* KHỐI CARD DUY NHẤT: QUẢN LÝ ĐỀ XUẤT ĐỀ TÀI KHÓA LUẬN                     */
+        /* QUẢN LÝ ĐỀ XUẤT ĐỀ TÀI KHÓA LUẬN (TÁCH 3 CARD RIÊNG BIỆT)                */
         /* ========================================================================= */
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
-          {/* Header Card */}
-          <div className="p-6 pb-5">
+        <div className="space-y-6">
+          {/* Card 1: Top Header Card */}
+          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
-                <div className="w-13 h-13 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white bg-gradient-to-tr from-[#123891] to-[#1B4DA1] shadow-blue-200">
-                  <BookOpen className="w-6 h-6" />
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-bold text-xl shadow-md shrink-0 text-white bg-gradient-to-tr from-[#123891] to-[#1B4DA1] shadow-blue-200">
+                  <BookOpen className="w-7 h-7" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2.5">
@@ -1976,6 +1976,20 @@ const LecturerThesesPage = () => {
                   </div>
                 </div>
               </div>
+
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => {
+                    fetchAssignedTheses();
+                    fetchMyTopics();
+                    fetchApprovedTopics();
+                  }}
+                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                  title="Làm mới"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
             {/* Past/Non-active Term Notification Banner */}
@@ -1990,49 +2004,49 @@ const LecturerThesesPage = () => {
                 </div>
               </div>
             )}
+
+            {/* Navigation Sub-Tabs */}
+            <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setTopicsSubTab('MY_PROPOSALS')}
+                className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  topicsSubTab === 'MY_PROPOSALS'
+                    ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Đề tài tôi đã đề xuất</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                  topicsSubTab === 'MY_PROPOSALS' ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {myTopics.length}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTopicsSubTab('APPROVED_BANK')}
+                className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer shrink-0 whitespace-nowrap ${
+                  topicsSubTab === 'APPROVED_BANK'
+                    ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                    : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+                }`}
+              >
+                <BookOpen className="w-4 h-4" />
+                <span>Tất cả đề tài</span>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                  topicsSubTab === 'APPROVED_BANK' ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
+                }`}>
+                  {approvedTopics.length}
+                </span>
+              </button>
+            </div>
           </div>
 
-          {/* Navigation Sub-Tabs */}
-          <div className="px-6 border-b border-slate-200 flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setTopicsSubTab('MY_PROPOSALS')}
-              className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
-                topicsSubTab === 'MY_PROPOSALS'
-                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-xl'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl'
-              }`}
-            >
-              <FileText className="w-4 h-4" />
-              <span>Đề tài tôi đã đề xuất</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
-                topicsSubTab === 'MY_PROPOSALS' ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
-              }`}>
-                {myTopics.length}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setTopicsSubTab('APPROVED_BANK')}
-              className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
-                topicsSubTab === 'APPROVED_BANK'
-                  ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-xl'
-                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-xl'
-              }`}
-            >
-              <BookOpen className="w-4 h-4" />
-              <span>Tất cả đề tài</span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
-                topicsSubTab === 'APPROVED_BANK' ? 'bg-[#123891] text-white' : 'bg-slate-100 text-slate-600'
-              }`}>
-                {approvedTopics.length}
-              </span>
-            </button>
-          </div>
-
-          {/* Toolbar: Tìm kiếm, Học kỳ & Nút Đề xuất đề tài */}
-          <div className="p-4 sm:px-6 bg-slate-50/50 border-b border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Card 2: Filter & Search Bar Card */}
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
             <div className="w-full sm:w-80 md:w-96">
               <SearchInput
                 value={search}
@@ -2050,7 +2064,7 @@ const LecturerThesesPage = () => {
                     setCurrentTerm(e.target.value);
                   }
                 }}
-                className="px-3 py-2 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+                className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
               >
                 {Array.isArray(terms) && terms.map((t) => (
                   <option key={t._id} value={t._id}>
@@ -2068,17 +2082,20 @@ const LecturerThesesPage = () => {
                     setSelectedTopicFields([]);
                     setCreateTopicModalOpen(true);
                   }}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-[#123891] hover:bg-[#102d7d] text-white shadow-xs hover:shadow cursor-pointer shrink-0"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold transition bg-[#123891] hover:bg-[#102d7d] text-white shadow-xs hover:shadow cursor-pointer shrink-0 inline-flex items-center gap-2"
                   title="Đề xuất đề tài"
                 >
+                  <BookOpen className="w-4 h-4" />
                   <span>Đề xuất đề tài</span>
                 </button>
               )}
             </div>
           </div>
 
-          {/* Table Area for Topics View */}
-          {topicsSubTab === 'MY_PROPOSALS' ? (
+          {/* Card 3: Data Table Card */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            {/* Table Area for Topics View */}
+            {topicsSubTab === 'MY_PROPOSALS' ? (
             <div>
               {loadingMyTopics ? (
                 <div className="p-6">
@@ -2102,7 +2119,7 @@ const LecturerThesesPage = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full min-w-[850px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                         <th className="py-3.5 px-4 text-center w-12">STT</th>
@@ -2220,7 +2237,7 @@ const LecturerThesesPage = () => {
                 </div>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
+                  <table className="w-full min-w-[850px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                         <th className="py-3.5 px-4 text-center w-12">STT</th>
@@ -2318,6 +2335,7 @@ const LecturerThesesPage = () => {
             </div>
           )}
         </div>
+      </div>
       ) : (
         <>
           {/* Top Banner */}
@@ -2391,19 +2409,21 @@ const LecturerThesesPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5">
-                <button
-                  onClick={() => {
-                    fetchAssignedTheses();
-                    fetchMyTopics();
-                    fetchApprovedTopics();
-                  }}
-                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-                  title="Làm mới"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                </button>
-              </div>
+              {!isReviewView && (
+                <div className="flex items-center gap-2.5">
+                  <button
+                    onClick={() => {
+                      fetchAssignedTheses();
+                      fetchMyTopics();
+                      fetchApprovedTopics();
+                    }}
+                    className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                    title="Làm mới"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Past/Non-active Term Notification Banner */}
@@ -2421,11 +2441,11 @@ const LecturerThesesPage = () => {
 
             {/* Navigation Tabs for Review Section */}
             {isReviewView && (
-              <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2">
+              <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2 overflow-x-auto no-scrollbar">
                 <button
                   type="button"
                   onClick={() => navigate('/lecturer/theses?tab=review')}
-                  className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
+                  className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer shrink-0 whitespace-nowrap ${
                     !isCouncilTab
                       ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
                       : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
@@ -2443,7 +2463,7 @@ const LecturerThesesPage = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/lecturer/theses?tab=council')}
-                  className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer ${
+                  className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer shrink-0 whitespace-nowrap ${
                     isCouncilTab
                       ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
                       : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
@@ -2667,7 +2687,7 @@ const LecturerThesesPage = () => {
 
                   return (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
+                      <table className="w-full min-w-[1050px] text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                             <th className="py-3.5 px-4 w-12 text-center">STT</th>
@@ -2934,7 +2954,7 @@ const LecturerThesesPage = () => {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
+                      <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                             <th className="py-3 px-2 w-10 text-center">STT</th>
@@ -3115,7 +3135,7 @@ const LecturerThesesPage = () => {
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse text-xs">
+                      <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                             <th className="py-3 px-2 w-10 text-center">STT</th>
@@ -3269,7 +3289,7 @@ const LecturerThesesPage = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[1000px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                     {/* 1. STT */}
@@ -4430,8 +4450,8 @@ const LecturerThesesPage = () => {
 
       {/* Modal: Tạo danh sách đề tài KLTN hàng loạt */}
       {createTopicModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
@@ -4547,21 +4567,21 @@ const LecturerThesesPage = () => {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
                     setCreateTopicModalOpen(false);
                     setSelectedTopicFields([]);
                   }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={createTopicLoading}
-                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs hover:shadow transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer text-center"
                 >
                   {createTopicLoading ? 'Đang tạo...' : 'Gửi đề xuất đề tài'}
                 </button>
@@ -4573,8 +4593,8 @@ const LecturerThesesPage = () => {
 
       {/* Modal: Xem chi tiết đề tài đề xuất & Danh sách nhóm đăng ký */}
       {selectedTopicDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
@@ -4722,7 +4742,7 @@ const LecturerThesesPage = () => {
               <button
                 type="button"
                 onClick={() => setSelectedTopicDetail(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Đóng
               </button>
@@ -4733,8 +4753,8 @@ const LecturerThesesPage = () => {
 
       {/* Modal: Xem chi tiết Phòng Hội đồng */}
       {councilDetailModalOpen && selectedCouncilDetail && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
@@ -4872,7 +4892,7 @@ const LecturerThesesPage = () => {
                   setCouncilDetailModalOpen(false);
                   setSelectedCouncilDetail(null);
                 }}
-                className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition cursor-pointer text-center"
               >
                 Đóng
               </button>
@@ -4883,8 +4903,8 @@ const LecturerThesesPage = () => {
 
       {/* Modal Chỉnh sửa Đề tài (GVHD) */}
       {editTopicModalOpen && selectedTopicForEdit && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-slate-100 pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-100 text-[#123891] flex items-center justify-center font-bold">
@@ -4964,21 +4984,21 @@ const LecturerThesesPage = () => {
                 </span>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => {
                     setEditTopicModalOpen(false);
                     setSelectedTopicForEdit(null);
                   }}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy bỏ
                 </button>
                 <button
                   type="submit"
                   disabled={actionLoading || !editTopicTitle.trim()}
-                  className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-md shadow-blue-200 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer text-center"
                 >
                   <Check className="w-3.5 h-3.5" />
                   <span>Lưu thay đổi</span>
@@ -5033,8 +5053,8 @@ const LecturerThesesPage = () => {
 
       {/* Modal: Xem Nhật ký & Tiến độ Sinh viên */}
       {progressModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-3xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-3xl bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
@@ -5205,7 +5225,7 @@ const LecturerThesesPage = () => {
               <button
                 type="button"
                 onClick={() => setProgressModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Đóng
               </button>

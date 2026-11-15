@@ -458,18 +458,18 @@ const LecturerInternshipGradingModal = ({
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
           >
             Hủy
           </button>
           <button
             type="submit"
             disabled={submitting || !canSubmitGrading}
-            className={`inline-flex items-center gap-1.5 px-6 py-2.5 font-bold rounded-xl transition ${
+            className={`w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-6 py-2.5 font-bold rounded-xl transition text-center ${
               canSubmitGrading
                 ? 'text-white bg-[#123891] hover:bg-[#102d7d] shadow-sm shadow-blue-200 cursor-pointer disabled:opacity-50'
                 : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'

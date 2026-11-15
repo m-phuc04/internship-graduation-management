@@ -383,7 +383,7 @@ const TbmLecturerFieldsPage = () => {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[650px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold">
                   <th className="py-3 px-3.5 w-12 text-center">STT</th>
@@ -528,7 +528,7 @@ const TbmLecturerFieldsPage = () => {
 
           {/* Table */}
           <div className="overflow-x-auto rounded-2xl border border-slate-200 max-h-[600px] overflow-y-auto">
-            <table className="w-full text-left text-xs border-collapse">
+            <table className="w-full min-w-[680px] text-left text-xs border-collapse">
               <thead className="sticky top-0 bg-slate-100 z-10">
                 <tr className="border-b border-slate-200 text-slate-700 font-bold">
                   <th className="py-3 px-3.5 w-10 text-center">

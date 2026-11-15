@@ -251,7 +251,7 @@ const LecturerNewsManagement = () => {
       {/* 3. News Table List */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-600">
+          <table className="w-full min-w-[760px] text-left text-xs text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
               <tr>
                 <th className="px-5 py-3.5">Tiêu đề bài viết</th>

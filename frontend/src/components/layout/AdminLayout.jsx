@@ -37,12 +37,13 @@ const AdminLayout = () => {
 
       {/* Mobile Drawer */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-50 lg:hidden flex">
           <div
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setMobileOpen(false)}
+            aria-label="Đóng menu"
           />
-          <div className="fixed inset-y-0 left-0 max-w-xs w-full bg-white shadow-xl z-10 flex">
+          <div className="relative w-64 max-w-[85vw] bg-[#123891] shadow-2xl z-10 h-full flex flex-col animate-in slide-in-from-left duration-200">
             <AdminSidebar onCloseMobile={() => setMobileOpen(false)} />
           </div>
         </div>
@@ -89,7 +90,7 @@ const AdminLayout = () => {
             <NotificationDropdown />
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200/80">
               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[11px] font-bold text-slate-700">
+              <span className="text-[11px] font-bold text-slate-700 truncate max-w-[90px] sm:max-w-none">
                 {user?.fullName || 'Quản trị viên'}
               </span>
               <span className="text-[9px] font-bold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">
@@ -100,7 +101,7 @@ const AdminLayout = () => {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 w-full max-w-full">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full max-w-full">
           <Outlet />
         </main>
         <Footer />
