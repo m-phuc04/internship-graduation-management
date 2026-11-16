@@ -200,8 +200,8 @@ const LecturerReportPage = () => {
             title="Chưa có nhật ký nào"
             description="Hiện không tìm thấy nhật ký nào của sinh viên phù hợp với bộ lọc hoặc sinh viên chưa nộp/chưa hoàn tất xác nhận."
           />
-        ) : (
-          <div className="overflow-x-auto">
+        ) : (<>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[720px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -292,7 +292,74 @@ const LecturerReportPage = () => {
               </tbody>
             </table>
           </div>
-        )}
+          {/* Mobile Card List (< 768px) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {reports.map((report) => (
+              <div
+                key={report._id}
+                className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition cursor-pointer"
+                onClick={() => {
+                  setSelectedReport(report);
+                  setReviewModalOpen(true);
+                }}
+              >
+                {/* Header: Student Name + Status Badge */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-bold text-slate-900 text-xs">
+                      {report.studentId?.userId?.fullName}
+                      <span className="text-[11px] text-[#102d7d] font-mono ml-1">
+                        ({report.studentId?.studentCode})
+                      </span>
+                    </div>
+                    {report.secondStudentId && (
+                      <div className="text-[10.5px] text-slate-500 mt-0.5">
+                        + SV2: {report.secondStudentId?.userId?.fullName} ({report.secondStudentId?.studentCode})
+                      </div>
+                    )}
+                  </div>
+                  <StatusBadge
+                    status={report.status}
+                    label={REPORT_STATUS_CONFIG[report.status]?.label || report.status}
+                    variant={REPORT_STATUS_CONFIG[report.status]?.variant}
+                    size="sm"
+                  />
+                </div>
+
+                {/* Week / Type Badge & Title */}
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
+                      {report.weekNumber ? 'Tuần ' + report.weekNumber : 'Nhật ký'}
+                    </span>
+                    <span className="text-[11px] text-slate-400 truncate">
+                      {report.internshipId?.companyId?.name || 'Doanh nghiệp'}
+                    </span>
+                  </div>
+                  <h4 className="font-semibold text-slate-900 text-xs leading-snug line-clamp-2">
+                    {report.title}
+                  </h4>
+                </div>
+
+                {/* File Attachment & Submission Date */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px]">
+                  {report.file?.originalName ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-1 rounded-lg truncate max-w-[200px]">
+                      <Paperclip className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{report.file.originalName}</span>
+                    </span>
+                  ) : (
+                    <span className="text-slate-400 italic text-[10.5px]">Không đính kèm file</span>
+                  )}
+
+                  <div className="text-right text-slate-500 font-mono text-[10.5px]">
+                    {formatDate(report.submittedAt || report.createdAt)}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>)}
 
         {/* Pagination */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">

@@ -445,7 +445,7 @@ const LecturerInternshipPage = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto justify-end">
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-start sm:justify-end">
           {/* Cấu hình chu kỳ nộp nhật ký dùng chung toàn học kỳ */}
           <button
             type="button"
@@ -498,8 +498,8 @@ const LecturerInternshipPage = () => {
             title={isActiveTerm ? "Chưa có sinh viên thực tập được phân công" : "Không có sinh viên thực tập trong học kỳ này"}
             description={isActiveTerm ? "Bạn hiện chưa có sinh viên thực tập nào được Trưởng Bộ Môn (TBM) phân công giám sát." : "Không tìm thấy dữ liệu sinh viên thực tập giám sát của học kỳ này."}
           />
-        ) : (
-          <div className="overflow-x-auto">
+        ) : (<>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[850px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -780,7 +780,227 @@ const LecturerInternshipPage = () => {
               </tbody>
             </table>
           </div>
-        )}
+          {/* Mobile Card List (< 768px) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {internships.map((item) => {
+              const hasScore =
+                item.evaluation &&
+                item.evaluation?.score !== undefined &&
+                item.evaluation?.score !== null;
+              const windowStatus = getGradingWindowStatus(item);
+
+              const allReasons = [];
+              if (!item.pretestPassed) allReasons.push('Chưa PASS PRETEST');
+              if (!item.reportFileSubmitted) allReasons.push('Chưa nộp file báo cáo thực tập');
+              if (!item.diaryStatus?.isCompleted) {
+                allReasons.push(
+                  item.diaryStatus?.missingWeeks?.length > 0
+                    ? `Còn thiếu nhật ký (tuần: ${item.diaryStatus.missingWeeks.join(', ')})`
+                    : 'Chưa hoàn thành đủ nhật ký thực tập'
+                );
+              }
+              if (!windowStatus.allowed) allReasons.push(windowStatus.reason);
+
+              const isEligibleToGrade =
+                Boolean(item.canGrade) &&
+                item.pretestPassed &&
+                item.reportFileSubmitted &&
+                Boolean(item.diaryStatus?.isCompleted) &&
+                windowStatus.allowed;
+
+              const isLocked = item.isScorePublished;
+              const canEdit = !isLocked && isEligibleToGrade;
+
+              return (
+                <div
+                  key={item._id}
+                  className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition cursor-pointer"
+                  onClick={() => {
+                    setSelectedInternship(item);
+                    setDetailModalOpen(true);
+                  }}
+                >
+                  {/* Top Bar: MSSV, Pretest, Status */}
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono font-bold text-xs text-[#102d7d]">
+                      {item.studentId?.studentCode}
+                    </span>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      {/* PASS PRETEST TOGGLE */}
+                      {item.pretestPassed ? (
+                        <button
+                          type="button"
+                          disabled={pretestTogglingId === item._id}
+                          onClick={() => handleTogglePretest(item)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10.5px] font-bold"
+                          title="Bấm để chuyển về FAIL"
+                        >
+                          {pretestTogglingId === item._id ? (
+                            <span className="w-3 h-3 border-2 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          )}
+                          <span>PASS</span>
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={pretestTogglingId === item._id}
+                          onClick={() => handleTogglePretest(item)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-50 text-amber-800 border border-amber-200 text-[10.5px] font-bold"
+                          title="Bấm để xác nhận PASS"
+                        >
+                          {pretestTogglingId === item._id ? (
+                            <span className="w-3 h-3 border-2 border-amber-600/30 border-t-amber-600 rounded-full animate-spin" />
+                          ) : (
+                            <AlertCircle className="w-3 h-3 text-amber-600" />
+                          )}
+                          <span>FAIL</span>
+                        </button>
+                      )}
+                      <StatusBadge status={item.status} size="sm" />
+                    </div>
+                  </div>
+
+                  {/* Student Name & Class */}
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 leading-tight">
+                      {item.studentId?.userId?.fullName || 'Chưa cập nhật'}
+                    </h3>
+                    <div className="text-[11px] text-slate-500 mt-0.5 font-mono">
+                      {item.studentId?.className} • SĐT: {item.studentId?.userId?.phone || '—'}
+                    </div>
+                  </div>
+
+                  {/* Company & Position */}
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                    <div className="font-semibold text-slate-900 truncate">
+                      {item.companyId?.name || 'Doanh nghiệp'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                      Vị trí: {item.position || '—'}
+                    </div>
+                  </div>
+
+                  {/* Diary & Report File & Score Overview */}
+                  <div className="grid grid-cols-2 gap-2 text-[11px]">
+                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Nhật ký</span>
+                      {item.diaryStatus?.isCompleted ? (
+                        <span className="font-bold text-emerald-700 flex items-center gap-1 mt-0.5">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span>Đủ ({item.diaryStatus?.submittedWeeks?.length}/{item.diaryStatus?.mandatoryWeeks?.length})</span>
+                        </span>
+                      ) : (
+                        <span className="font-bold text-amber-700 flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                          <span>Thiếu tuần {item.diaryStatus?.missingWeeks?.join(', ')}</span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="p-2 rounded-xl bg-slate-50 border border-slate-100" onClick={(e) => e.stopPropagation()}>
+                      <span className="text-slate-400 block text-[10px] uppercase font-bold">Báo cáo file</span>
+                      {item.reportFileSubmitted ? (
+                        <a
+                          href={item.reportFile.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-bold text-emerald-700 hover:underline flex items-center gap-1 mt-0.5 truncate"
+                        >
+                          <FileText className="w-3 h-3 text-emerald-600 shrink-0" />
+                          <span className="truncate">Đã nộp</span>
+                        </a>
+                      ) : (
+                        <span className="font-medium text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span>Chưa nộp</span>
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Score & Action Buttons */}
+                  <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 block">Điểm GV</span>
+                      <span className="text-xs font-mono font-bold text-amber-800">
+                        {item.evaluation?.score !== undefined && item.evaluation?.score !== null
+                          ? item.evaluation.score
+                          : '—'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      {!hasScore ? (
+                        <button
+                          type="button"
+                          disabled={!isEligibleToGrade}
+                          onClick={() => {
+                            if (isEligibleToGrade) handleOpenGrading(item);
+                          }}
+                          className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition ${
+                            isEligibleToGrade
+                              ? 'text-white bg-[#123891] hover:bg-[#102d7d]'
+                              : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed'
+                          }`}
+                        >
+                          <Award className="w-3.5 h-3.5" />
+                          <span>Chấm điểm</span>
+                        </button>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            disabled={!canEdit}
+                            onClick={() => {
+                              if (canEdit) handleOpenGrading(item);
+                            }}
+                            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                              canEdit
+                                ? 'text-amber-900 bg-amber-100 border border-amber-300'
+                                : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed'
+                            }`}
+                          >
+                            <Award className="w-3.5 h-3.5 text-amber-700" />
+                            <span>Sửa</span>
+                          </button>
+                          {!isLocked ? (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenPublishModal(item)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>Công bố</span>
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10.5px] font-bold">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Đã công bố</span>
+                            </span>
+                          )}
+                        </>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedInternship(item);
+                          setDetailModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Chi tiết</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>)}
 
         {/* Pagination */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">

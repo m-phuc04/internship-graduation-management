@@ -392,7 +392,7 @@ const LecturerThesisProgressPage = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Search */}
         <div className="relative w-full md:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -406,10 +406,10 @@ const LecturerThesisProgressPage = () => {
         </div>
 
         {/* Dropdowns */}
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-start md:justify-end">
           {/* Academic Term Selector */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs font-semibold text-slate-500 hidden md:inline">Học kỳ:</span>
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <span className="text-xs font-semibold text-slate-500 hidden md:inline shrink-0">Học kỳ:</span>
             <select
               value={currentTerm?._id || ''}
               onChange={(e) => {
@@ -417,7 +417,7 @@ const LecturerThesisProgressPage = () => {
                   setCurrentTerm(e.target.value);
                 }
               }}
-              className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
+              className="w-full sm:w-auto px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-100 transition cursor-pointer"
             >
               {Array.isArray(terms) &&
                 terms.map((t) => (
@@ -429,12 +429,12 @@ const LecturerThesisProgressPage = () => {
           </div>
 
           {/* Thesis filter */}
-          <div className="flex items-center gap-1.5">
-            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <div className="flex items-center gap-1.5 w-full sm:w-auto">
+            <Filter className="w-3.5 h-3.5 text-slate-400 shrink-0 hidden sm:inline" />
             <select
               value={selectedThesisId}
               onChange={handleThesisFilterChange}
-              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition max-w-[200px] truncate"
+              className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition max-w-full sm:max-w-[200px] truncate"
             >
               <option value="ALL">Tất cả đề tài ({theses.length})</option>
               {theses.map((t) => (
@@ -449,7 +449,7 @@ const LecturerThesisProgressPage = () => {
           <select
             value={statusFilter}
             onChange={handleStatusFilterChange}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="SUBMITTED">Đã nộp (Chờ chấm)</option>
@@ -475,7 +475,7 @@ const LecturerThesisProgressPage = () => {
           </div>
         ) : (
           <div>
-            <div className="overflow-x-auto">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full min-w-[850px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
@@ -641,6 +641,111 @@ const LecturerThesisProgressPage = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+            {/* Mobile Card List (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {paginatedReports.map((item) => {
+                const isGraded = item.lecturerScore !== null && item.lecturerScore !== undefined && item.lecturerScore !== '';
+                const isLate = (() => {
+                  if (!item.weekEndDate) return false;
+                  const deadline = new Date(item.weekEndDate);
+                  deadline.setHours(23, 59, 59, 999);
+                  if (item.submittedAt || item.createdAt) {
+                    return new Date(item.submittedAt || item.createdAt) > deadline;
+                  }
+                  return new Date() > deadline;
+                })();
+
+                return (
+                  <div key={item._id} className="p-4 space-y-3 bg-white">
+                    {/* Header: Week badge + Tags */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-mono font-bold text-xs bg-blue-50 text-[#123891] border border-blue-200/80 px-2 py-0.5 rounded-lg">
+                        Tuần {item.weekNumber}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {isGraded ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Đã chấm
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-blue-50 text-[#123891] border border-blue-200">
+                            Đã nộp
+                          </span>
+                        )}
+                        {isLate ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            Nộp trễ
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Đúng hạn
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Thesis Title */}
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-xs leading-snug line-clamp-2">
+                        {item.thesisId?.thesisTitle || 'Đề tài KLTN'}
+                      </h4>
+                    </div>
+
+                    {/* Student Info */}
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
+                      <div className="font-semibold text-slate-800">
+                        {item.studentId?.userId?.fullName || 'Sinh viên'}
+                        <span className="font-mono text-slate-400 text-[11px] ml-1">
+                          ({item.studentId?.studentCode})
+                        </span>
+                      </div>
+                      {item.secondStudentId && (
+                        <div className="text-[11px] text-slate-500 font-mono">
+                          + SV2: {item.secondStudentId?.userId?.fullName} ({item.secondStudentId?.studentCode})
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Progress & Scores */}
+                    <div className="grid grid-cols-2 gap-2 text-[11px]">
+                      <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                        <span className="text-slate-400 block text-[10px] uppercase font-bold">Tiến độ</span>
+                        <span className="font-bold text-slate-800">{item.completedPercentage || 0}%</span>
+                      </div>
+                      <div className="p-2 rounded-xl bg-blue-50/60 border border-blue-100">
+                        <span className="text-blue-600 block text-[10px] uppercase font-bold">Điểm tuần</span>
+                        <span className="font-mono font-bold text-[#123891]">
+                          {isGraded ? item.lecturerScore : '—'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDetail(item)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-xs"
+                      >
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>Chi tiết</span>
+                      </button>
+
+                      {!isPastTerm && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenReview(item)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-xs transition text-xs"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{isGraded ? 'Sửa điểm' : 'Đánh giá'}</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Pagination Controls */}

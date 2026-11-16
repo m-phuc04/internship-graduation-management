@@ -370,7 +370,7 @@ const LecturerThesisDocumentsPage = () => {
           </div>
 
           {Array.isArray(terms) && terms.length > 0 && (
-            <div className="flex items-center shrink-0 justify-end">
+            <div className="flex items-center shrink-0 justify-start sm:justify-end w-full sm:w-auto">
               <select
                 value={currentTerm?._id || ''}
                 onChange={(e) => {
@@ -378,7 +378,7 @@ const LecturerThesisDocumentsPage = () => {
                     setCurrentTerm(e.target.value);
                   }
                 }}
-                className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 transition cursor-pointer"
+                className="w-full sm:w-auto px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 transition cursor-pointer"
               >
                 {terms.map((t) => (
                   <option key={t._id} value={t._id}>
@@ -416,8 +416,8 @@ const LecturerThesisDocumentsPage = () => {
                 title="Chưa có tài liệu khóa luận nào"
                 description="Hãy nhấn nút 'Thêm tài liệu' phía trên để tải lên tài liệu hướng dẫn hoặc biểu mẫu cho các nhóm sinh viên."
               />
-            ) : (
-              <div className="overflow-x-auto">
+            ) : (<>
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[680px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -500,7 +500,67 @@ const LecturerThesisDocumentsPage = () => {
                   </tbody>
                 </table>
               </div>
-            )}
+              {/* Mobile Card List for Guides (< 768px) */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {guides.map((doc, idx) => (
+                  <div key={doc._id} className="p-4 space-y-3 bg-white">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 border border-blue-100">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-slate-900 text-xs leading-snug break-words">
+                          {doc.fileName}
+                        </h4>
+                        <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          {formatFileSize(doc.fileSize)} • {formatDate(doc.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Scope */}
+                    <div>
+                      {doc.scope === 'SPECIFIC' && doc.thesisId ? (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                          <Layers className="w-3.5 h-3.5 shrink-0" />
+                          <span className="truncate">{doc.thesisId.thesisTitle}</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <Users className="w-3.5 h-3.5 shrink-0" />
+                          <span>Tất cả các nhóm</span>
+                        </span>
+                      )}
+                    </div>
+
+                    {doc.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        {doc.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(doc)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Tải về</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDelete(doc)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition cursor-pointer border border-rose-200"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Gỡ</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>)}
           </div>
         )}
 
@@ -517,8 +577,8 @@ const LecturerThesisDocumentsPage = () => {
                 title="Chưa có file nào do sinh viên nộp"
                 description="Các file báo cáo, bản nháp hoặc tài liệu do các nhóm sinh viên hướng dẫn nộp lên sẽ xuất hiện tại đây."
               />
-            ) : (
-              <div className="overflow-x-auto">
+            ) : (<>
+              <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[760px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -604,7 +664,53 @@ const LecturerThesisDocumentsPage = () => {
                   </tbody>
                 </table>
               </div>
-            )}
+              {/* Mobile Card List for Submissions (< 768px) */}
+              <div className="md:hidden divide-y divide-slate-100">
+                {submissions.map((doc, idx) => (
+                  <div key={doc._id} className="p-4 space-y-3 bg-white">
+                    <div className="flex items-start gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0 border border-emerald-100">
+                        <FileCheck className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="font-bold text-slate-900 text-xs leading-snug break-words">
+                          {doc.fileName}
+                        </h4>
+                        <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                          {formatFileSize(doc.fileSize)} • {formatDate(doc.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1 text-xs">
+                      <div className="font-semibold text-slate-800 line-clamp-2">
+                        {doc.thesisId?.thesisTitle || 'Đề tài KLTN'}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">
+                        SV nộp: {doc.uploadedBy?.fullName || 'Sinh viên'}
+                      </div>
+                    </div>
+
+                    {doc.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                        {doc.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => handleDownload(doc)}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        <span>Mở / Tải về</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>)}
           </div>
         )}
       </div>

@@ -132,46 +132,46 @@ const InternshipManagement = () => {
   return (
     <div className="space-y-6">
       {/* Top Header Card */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <Briefcase className="w-7 h-7" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <Briefcase className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
               Quản lý Thực tập Doanh nghiệp (TTDN)
             </h1>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 justify-end">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
           {/* Configure Timeline Window Button */}
           <button
             type="button"
             onClick={() => setTimelineModalOpen(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-[#102d7d] hover:text-[#123891] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer shadow-2xs"
+            className="flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 text-xs font-bold text-[#102d7d] hover:text-[#123891] bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-xl transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0"
             title="Cấu hình thời gian mở cổng đăng ký & nộp báo cáo TTDN"
           >
-            <Clock className="w-3.5 h-3.5 text-[#123891]" />
+            <Clock className="w-3.5 h-3.5 text-[#123891] shrink-0" />
             <span>Thời gian mở TTDN</span>
-            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color}`}>
+            <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color} shrink-0`}>
               {windowBadge.text}
             </span>
           </button>
 
           <button
             onClick={() => setExportModalOpen(true)}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 rounded-xl transition cursor-pointer"
+            className="flex items-center justify-center sm:justify-start gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 rounded-xl transition cursor-pointer w-full sm:w-auto shrink-0"
             title="Xuất danh sách sinh viên TTDN ra Excel"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
+            <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
             <span>Xuất danh sách</span>
           </button>
         </div>
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
             value={search}
@@ -180,7 +180,7 @@ const InternshipManagement = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-start md:justify-end">
           {/* Academic Term Selector */}
           <select
             value={currentTerm?._id || ''}
@@ -225,8 +225,8 @@ const InternshipManagement = () => {
             title="Không tìm thấy hồ sơ thực tập"
             description="Không có hồ sơ nào phù hợp với bộ lọc hoặc từ khóa tìm kiếm."
           />
-        ) : (
-          <div className="overflow-x-auto">
+        ) : (<>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[780px]">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -261,7 +261,7 @@ const InternshipManagement = () => {
                         user={item.studentId}
                         name={item.studentId?.userId?.fullName || 'Chưa cập nhật'}
                         subtitle={`${item.studentId?.studentCode} • ${item.studentId?.className || ''}`}
-                        avatarSize="w-9 h-9"
+                        showAvatar={false}
                       />
                     </td>
 
@@ -380,7 +380,126 @@ const InternshipManagement = () => {
               </tbody>
             </table>
           </div>
-        )}
+          {/* Mobile Card List (< 768px) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {internships.map((item, idx) => (
+              <div
+                key={item._id}
+                className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition cursor-pointer"
+                onClick={() => {
+                  setSelectedInternship(item);
+                  setDetailModalOpen(true);
+                }}
+              >
+                {/* Header: STT + Student name + Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10.5px] font-mono text-slate-400 font-bold">#{(page - 1) * 10 + idx + 1}</span>
+                      <h4 className="font-bold text-slate-900 text-xs truncate">
+                        {item.studentId?.userId?.fullName || 'Chưa cập nhật'}
+                      </h4>
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                      MSSV: {item.studentId?.studentCode} • {item.studentId?.className || ''}
+                    </div>
+                  </div>
+                  {item.status === 'COMPLETED' || item.evaluation?.status === 'CONFIRMED' ? (
+                    <StatusBadge status="COMPLETED" size="sm" />
+                  ) : (
+                    <StatusBadge status={item.status} size="sm" />
+                  )}
+                </div>
+
+                {/* Company & Position */}
+                <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                  <div className="font-semibold text-slate-900 truncate">
+                    {item.companyId?.name}
+                  </div>
+                  <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                    Vị trí: {item.position}
+                  </div>
+                </div>
+
+                {/* Dates & Supervisor */}
+                <div className="grid grid-cols-2 gap-2 text-[11px]">
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">Thời gian</span>
+                    <span className="text-slate-700 font-mono">
+                      {formatDate(item.startDate)} - {formatDate(item.endDate)}
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
+                    <span className="text-slate-400 block text-[10px] uppercase font-bold">GV Giám Sát</span>
+                    {item.lecturerId ? (
+                      <span className="font-semibold text-[#102d7d] truncate block">
+                        {item.lecturerId?.academicTitle ? item.lecturerId.academicTitle + ' ' : ''}{item.lecturerId?.userId?.fullName || 'Giảng viên'}
+                      </span>
+                    ) : (
+                      <span className="text-amber-700 font-medium text-[10.5px] block truncate">Chưa phân công</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                  {item.status === 'PENDING' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedInternship(item);
+                          setApproveModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition border border-emerald-200"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Duyệt</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedInternship(item);
+                          setRejectModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition border border-rose-200"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        <span>Từ chối</span>
+                      </button>
+                    </>
+                  )}
+
+                  {item.status !== 'COMPLETED' && item.evaluation?.status !== 'CONFIRMED' && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedInternship(item);
+                        setAssignModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>{item.lecturerId ? 'Đổi GV' : 'Gán GV'}</span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedInternship(item);
+                      setDetailModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>Chi tiết</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>)}
 
         {/* Pagination */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">

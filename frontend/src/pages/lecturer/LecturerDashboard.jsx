@@ -189,8 +189,8 @@ const LecturerDashboard = () => {
   return (
     <div className="space-y-6">
       {/* 1. Lecturer Identity Banner */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
-        <div className="flex items-center gap-4">
+      <div className="p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 sm:gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             {lecturer?.academicTitle ? lecturer.academicTitle.charAt(0) : (user?.fullName?.charAt(0) || 'G')}
           </div>
@@ -369,7 +369,7 @@ const LecturerDashboard = () => {
             <div className="divide-y divide-slate-100 text-xs">
               {pendingReports.slice(0, 5).map((r) => (
                 <div key={r._id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 max-w-[70%]">
+                  <div className="flex-1 min-w-0 pr-1">
                     <strong className="text-slate-900 block truncate">{r.reportTitle || `Báo cáo Tuần ${r.weekNumber || 1}`}</strong>
                     <span className="text-[11px] text-slate-500 mt-0.5 block truncate">
                       SV: {r.internshipId?.studentId?.userId?.fullName || 'Sinh viên'} ({r.internshipId?.studentId?.studentCode})
@@ -408,7 +408,7 @@ const LecturerDashboard = () => {
             <div className="divide-y divide-slate-100 text-xs">
               {supervisedTheses.slice(0, 5).map((t) => (
                 <div key={t._id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0 max-w-[70%]">
+                  <div className="flex-1 min-w-0 pr-1">
                     <strong className="text-slate-900 line-clamp-1 block">{t.thesisTitle}</strong>
                     <span className="text-[11px] text-slate-500 mt-0.5 block truncate">
                       SV: {t.studentId?.userId?.fullName} ({t.studentId?.studentCode}){t.secondStudentId ? ` & ${t.secondStudentId?.userId?.fullName}` : ''}
@@ -425,7 +425,7 @@ const LecturerDashboard = () => {
       {/* Modal Yêu cầu thay đổi lĩnh vực */}
       {isFieldModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
               <div className="flex items-center gap-3">

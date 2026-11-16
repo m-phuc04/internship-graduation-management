@@ -65,18 +65,22 @@
 */
 @media (min-width: 1300px) {
   .admin-desktop-sidebar,
+  .lecturer-desktop-sidebar,
   .student-desktop-sidebar {
     display: flex !important;
   }
   .admin-desktop-toggle,
+  .lecturer-desktop-toggle,
   .student-desktop-toggle {
     display: flex !important;
   }
   .admin-drawer-container,
+  .lecturer-drawer-container,
   .student-drawer-container {
     display: none !important;
   }
   .admin-hamburger-btn,
+  .lecturer-hamburger-btn,
   .student-hamburger-btn {
     display: none !important;
   }
@@ -84,18 +88,22 @@
 
 @media (max-width: 1299px) {
   .admin-desktop-sidebar,
+  .lecturer-desktop-sidebar,
   .student-desktop-sidebar {
     display: none !important;
   }
   .admin-desktop-toggle,
+  .lecturer-desktop-toggle,
   .student-desktop-toggle {
     display: none !important;
   }
   .admin-drawer-container,
+  .lecturer-drawer-container,
   .student-drawer-container {
     display: flex !important;
   }
   .admin-hamburger-btn,
+  .lecturer-hamburger-btn,
   .student-hamburger-btn {
     display: flex !important;
   }
@@ -103,8 +111,19 @@
 
 /* Ensure Sticky Header works properly without ancestor overflow interference */
 .admin-sticky-header,
+.lecturer-sticky-header,
 .student-sticky-header {
   position: sticky !important;
   top: 0 !important;
   z-index: 40 !important;
+}
+
+
+/* Hide scrollbar for clean horizontal tab lists */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
