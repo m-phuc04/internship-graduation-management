@@ -263,7 +263,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* 2. Core Operational Modules (TTDN & KLTN) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Module 1: Thực tập Doanh nghiệp (TTDN) */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4">
           <div>
@@ -510,7 +510,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* 3. Bottom Columns: Pending Actions & Real Notifications */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Left: Pending Action Items */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">

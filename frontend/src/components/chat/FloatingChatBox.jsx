@@ -175,7 +175,7 @@ const FloatingChatBox = () => {
 
       {/* 2. Floating Chat Drawer / Window */}
       {isWidgetOpen && (
-        <div className="fixed bottom-4 right-4 sm:right-6 z-50 w-[92vw] sm:w-[380px] h-[520px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-fade-in-up">
+        <div className="fixed bottom-4 right-4 sm:right-6 z-50 w-[calc(100vw-2rem)] sm:w-[380px] h-[520px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden animate-fade-in-up">
           {/* ================= VIEW 1: INBOX / CONVERSATIONS LIST ================= */}
           {currentView === 'inbox' && (
             <>

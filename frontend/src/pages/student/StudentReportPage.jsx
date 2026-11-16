@@ -319,9 +319,9 @@ const StudentReportPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[#123891] font-semibold text-xs tracking-wider uppercase">
             <BookOpen className="w-4 h-4" /> Theo Dõi Tiến Độ Thực Tập
@@ -389,7 +389,7 @@ const StudentReportPage = () => {
 
       {/* 3. Registered Internship Overview Summary Card */}
       {!loading && internship && (
-        <div className="p-5 rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#123891] to-[#102d7d] text-white shadow-md border border-blue-800/40 space-y-4">
+        <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#123891] to-[#102d7d] text-white shadow-md border border-blue-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-blue-800/60">
             <div>
               <div className="text-[11px] uppercase tracking-widest text-blue-300 font-bold">
@@ -433,7 +433,7 @@ const StudentReportPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 text-xs">
             <div className="p-3 bg-white/5 rounded-2xl border border-white/10">
               <span className="text-[10px] text-blue-300 uppercase font-bold tracking-wider block">Ngày bắt đầu</span>
               <span className="font-bold text-sm text-white mt-0.5 block font-mono">{formatDate(internship.startDate)}</span>
@@ -554,7 +554,7 @@ const StudentReportPage = () => {
                 return (
                   <div
                     key={week.weekNumber}
-                    className={`p-5 rounded-3xl bg-white border transition-all shadow-2xs ${
+                    className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border transition-all shadow-2xs ${
                       isWaitingStudent2
                         ? 'border-amber-300 ring-2 ring-amber-100'
                         : isNeedsRevision

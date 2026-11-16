@@ -371,9 +371,9 @@ const MyInternshipPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+      <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
         <div className="flex items-start sm:items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
             <Briefcase className="w-7 h-7" />
@@ -396,11 +396,11 @@ const MyInternshipPage = () => {
       </div>
 
       {/* Main Grid: Details */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column (2 Cols): Student & Company Info */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Section 1: Student & Position */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <UserCheck className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
@@ -440,7 +440,7 @@ const MyInternshipPage = () => {
           </div>
 
           {/* Section 2: Company Information */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <Building2 className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
@@ -552,9 +552,9 @@ const MyInternshipPage = () => {
             </div>
           </div>
 
-          {/* Section 3: File Báo Cáo Thực Tập Doanh Nghiệp (Prompt 2 - Requirement 1) */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+          {/* Section 3: File Báo Cáo Thực Tập Doanh Nghiệp */}
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
               <div className="flex items-center gap-2">
                 <FileText className="w-5 h-5 text-[#123891]" />
                 <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
@@ -563,12 +563,12 @@ const MyInternshipPage = () => {
               </div>
 
               {internship.reportFile?.fileUrl ? (
-                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shadow-2xs">
+                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1.5 shadow-2xs self-start sm:self-auto">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   <span>ĐÃ NỘP BÁO CÁO</span>
                 </span>
               ) : (
-                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5">
+                <span className="text-xs font-bold px-3 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1.5 self-start sm:self-auto">
                   <Clock className="w-3.5 h-3.5 text-amber-600" />
                   <span>CHƯA NỘP FILE BÁO CÁO</span>
                 </span>
@@ -578,12 +578,12 @@ const MyInternshipPage = () => {
             {/* Display submitted file or upload form */}
             {internship.reportFile?.fileUrl ? (
               <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-xl bg-white border border-emerald-200 text-rose-500 flex items-center justify-center shadow-2xs shrink-0">
                       <FileText className="w-5 h-5" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="font-bold text-slate-900 text-xs truncate max-w-sm">
                         {internship.reportFile.originalName || internship.reportFile.fileName}
                       </div>
@@ -596,7 +596,7 @@ const MyInternshipPage = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
                     <a
                       href={internship.reportFile.fileUrl}
                       target="_blank"
@@ -670,9 +670,9 @@ const MyInternshipPage = () => {
         </div>
 
         {/* Right Column (1 Col): Supervisor Lecturer & Evaluation Outcome */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Section 3: Giảng viên Giám sát (GVGS) */}
-          <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <BookOpen className="w-5 h-5 text-[#123891]" />
               <h3 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
@@ -714,7 +714,7 @@ const MyInternshipPage = () => {
           </div>
 
           {/* Section 4: Evaluation Outcome by Giảng viên Giám sát */}
-          <div id="evaluation-section" className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+          <div id="evaluation-section" className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <Award className="w-5 h-5 text-[#123891]" />
@@ -808,7 +808,7 @@ const MyInternshipPage = () => {
           </div>
 
           {/* Application Metadata */}
-          <div className="p-6 rounded-3xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-2">
+          <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-2">
             <div className="flex justify-between">
               <span>Ngày gửi đăng ký:</span>
               <strong className="text-slate-800">{formatDate(internship.createdAt)}</strong>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from './StudentSidebar';
@@ -60,11 +60,33 @@ const StudentLayout = () => {
     });
   };
 
+  // Close mobile drawer on Escape key or when resizing to desktop >= 1300px
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMobileDrawerOpen(false);
+      }
+    };
+
+    const handleResize = () => {
+      if (window.innerWidth >= 1300) {
+        setMobileDrawerOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex">
-      {/* Desktop Sidebar (Fixed Left) */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-x-clip">
+      {/* Desktop Sidebar (Fixed Left >= 1300px) */}
       <div
-        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`student-desktop-sidebar flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
           isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
         } bg-[#123891]`}
       >
@@ -73,15 +95,15 @@ const StudentLayout = () => {
         />
       </div>
 
-      {/* Mobile Drawer Backdrop & Sidebar */}
+      {/* Mobile & Tablet Drawer (< 1300px) */}
       {mobileDrawerOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 flex">
+        <div className="student-drawer-container fixed inset-0 z-50 flex">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setMobileDrawerOpen(false)}
             aria-label="Đóng menu"
           />
-          <div className="relative w-64 max-w-[85vw] bg-[#123891] z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 sm:w-80 max-w-[85vw] bg-[#123891] z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <StudentSidebar
               onCloseMobile={() => setMobileDrawerOpen(false)}
             />
@@ -90,9 +112,9 @@ const StudentLayout = () => {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-clip">
         {/* Top Header */}
-        <header className="bg-white border-b border-slate-200/80 sticky top-0 z-30 shadow-2xs backdrop-blur-md bg-white/95">
+        <header className="student-sticky-header bg-white/95 border-b border-slate-200/80 sticky top-0 z-40 shadow-xs backdrop-blur-md">
           <div className="px-3 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
               {/* Left: Mobile & Desktop Toggle & Page Title */}
@@ -101,7 +123,7 @@ const StudentLayout = () => {
                 <button
                   type="button"
                   onClick={() => setMobileDrawerOpen(true)}
-                  className="lg:hidden p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition shrink-0 cursor-pointer"
+                  className="student-hamburger-btn p-2 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition shrink-0 cursor-pointer"
                   title="Mở menu điều hướng"
                   aria-label="Mở menu điều hướng"
                 >
@@ -112,7 +134,7 @@ const StudentLayout = () => {
                 <button
                   type="button"
                   onClick={toggleSidebar}
-                  className="hidden lg:flex p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition shrink-0 cursor-pointer"
+                  className="student-desktop-toggle p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition shrink-0 cursor-pointer"
                   title={isSidebarCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
                   aria-label="Đóng/mở thanh điều hướng"
                 >
@@ -120,7 +142,7 @@ const StudentLayout = () => {
                 </button>
 
                 {/* Brand Title for Mobile / Tablet */}
-                <Link to="/" className="flex items-center gap-2 lg:hidden cursor-pointer group min-w-0 shrink">
+                <Link to="/" className="flex items-center gap-2 student-hamburger-btn cursor-pointer group min-w-0 shrink">
                   <div className="p-1 bg-white rounded-lg border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
                     <img
                       src="https://iuh.edu.vn/assets/images/iuh.png?v=51"
@@ -136,7 +158,7 @@ const StudentLayout = () => {
                 </Link>
 
                 {/* Page Breadcrumb Title (Desktop) */}
-                <div className="hidden lg:block min-w-0">
+                <div className="student-desktop-toggle min-w-0 flex-col">
                   <h1 className="text-base font-bold text-slate-900 leading-tight truncate">
                     {getPageTitle()}
                   </h1>

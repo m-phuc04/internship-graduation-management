@@ -308,13 +308,13 @@ const StudentInternshipDocumentsPage = () => {
   return (
     <div className="space-y-6">
       {/* Header Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <FileText className="w-7 h-7" />
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <FileText className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900">
               Tài Liệu Thực Tập
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -424,8 +424,8 @@ const StudentInternshipDocumentsPage = () => {
         {activeTab === 'GUIDES' && (
           <div className="space-y-4">
             {/* Search toolbar */}
-            <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-              <div className="w-full sm:w-80">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-between gap-2.5 sm:gap-3">
+              <div className="flex-1 min-w-0 sm:w-80 sm:flex-none">
                 <SearchInput
                   value={search}
                   onChange={(v) => setSearch(v)}
@@ -433,18 +433,17 @@ const StudentInternshipDocumentsPage = () => {
                 />
               </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={loadData}
-                  className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                  title="Tải lại danh sách"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={loadData}
+                className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer shrink-0 border border-slate-200/60 sm:border-transparent"
+                title="Tải lại danh sách"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </button>
             </div>
 
-            {/* Table */}
+            {/* Table & Mobile Cards */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {loading ? (
                 <div className="p-6">
@@ -461,95 +460,167 @@ const StudentInternshipDocumentsPage = () => {
                   }
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[700px] text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th className="py-3.5 px-4 text-center w-14">STT</th>
-                        <th className="py-3.5 px-4 pl-6">File tài liệu</th>
-                        <th className="py-3.5 px-4">Phân loại</th>
-                        <th className="py-3.5 px-4">Mô tả / Hướng dẫn</th>
-                        <th className="py-3.5 px-4">Phạm vi</th>
-                        <th className="py-3.5 px-4 pr-6 text-right w-28"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                      {guidesData.documents.map((doc, idx) => (
-                        <tr key={doc._id} className="hover:bg-slate-50/60 transition group">
-                          {/* STT */}
-                          <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
-                            {idx + 1}
-                          </td>
+                <>
+                  {/* Mobile Card View (< 768px) */}
+                  <div className="block md:hidden divide-y divide-slate-100">
+                    {guidesData.documents.map((doc) => (
+                      <div key={doc._id} className="p-4 space-y-2.5 hover:bg-slate-50/50 transition">
+                        {/* Header: Icon + Title */}
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80 mt-0.5">
+                            {getFileIcon(doc.fileName)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-slate-900 text-sm leading-snug break-words">
+                              {doc.title || doc.fileName}
+                            </h4>
+                            {doc.title && doc.fileName && doc.title !== doc.fileName && (
+                              <p className="text-xs text-slate-500 break-all mt-0.5 font-mono">
+                                {doc.fileName}
+                              </p>
+                            )}
+                          </div>
+                        </div>
 
-                          {/* File */}
-                          <td className="py-3.5 px-4 pl-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
-                                {getFileIcon(doc.fileName)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-slate-900 group-hover:text-[#123891] transition truncate max-w-sm">
-                                  {doc.title || doc.fileName}
-                                </div>
-                                <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                                  <span>{doc.fileName}</span>
-                                  <span>•</span>
-                                  <span>{formatFileSize(doc.fileSize)}</span>
-                                  <span>•</span>
-                                  <span>{formatDate(doc.createdAt)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Phân loại */}
-                          <td className="py-3.5 px-4 text-xs">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-medium text-slate-700 bg-slate-100 border border-slate-200">
-                              <Tag className="w-3 h-3 text-slate-400" />
-                              <span>{doc.category || 'Tài liệu hướng dẫn'}</span>
+                        {/* Badges: Category & Scope */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200">
+                            <Tag className="w-3 h-3 text-slate-400" />
+                            <span>{doc.category || 'Tài liệu hướng dẫn'}</span>
+                          </span>
+                          {doc.scope === 'SPECIFIC' ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              Riêng bạn
                             </span>
-                          </td>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              Chung sinh viên
+                            </span>
+                          )}
+                        </div>
 
-                          {/* Mô tả */}
-                          <td className="py-3.5 px-4 text-xs text-slate-700 max-w-xs">
-                            {doc.description ? (
-                              <span className="leading-relaxed line-clamp-2">{doc.description}</span>
-                            ) : (
-                              <span className="text-slate-400 italic">Không có mô tả</span>
-                            )}
-                          </td>
+                        {/* Description (if any) */}
+                        {doc.description ? (
+                          <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed break-words">
+                            {doc.description}
+                          </div>
+                        ) : null}
 
-                          {/* Phạm vi */}
-                          <td className="py-3.5 px-4">
-                            {doc.scope === 'SPECIFIC' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                                <span>Riêng bạn</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                <span>Chung sinh viên</span>
-                              </span>
-                            )}
-                          </td>
+                        {/* Footer: Metadata & Action */}
+                        <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-50">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                            <span className="font-semibold text-slate-700">{formatFileSize(doc.fileSize)}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{formatDate(doc.createdAt)}</span>
+                            </span>
+                          </div>
 
-                          {/* Thao tác */}
-                          <td className="py-3.5 px-4 pr-6 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleDownload(doc)}
-                                className="p-2 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                                title="Tải về file"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(doc)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl transition text-xs shadow-xs cursor-pointer active:scale-95 shrink-0"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Tải xuống</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tablet & Desktop Table View (>= 768px) */}
+                  <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                    <table className="w-full min-w-[720px] text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="py-3.5 px-4 text-center w-14">STT</th>
+                          <th className="py-3.5 px-4 pl-6">File tài liệu</th>
+                          <th className="py-3.5 px-4">Phân loại</th>
+                          <th className="py-3.5 px-4">Mô tả / Hướng dẫn</th>
+                          <th className="py-3.5 px-4">Phạm vi</th>
+                          <th className="py-3.5 px-4 pr-6 text-right w-28"></th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm">
+                        {guidesData.documents.map((doc, idx) => (
+                          <tr key={doc._id} className="hover:bg-slate-50/60 transition group">
+                            {/* STT */}
+                            <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                              {idx + 1}
+                            </td>
+
+                            {/* File */}
+                            <td className="py-3.5 px-4 pl-6">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
+                                  {getFileIcon(doc.fileName)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 group-hover:text-[#123891] transition truncate max-w-sm">
+                                    {doc.title || doc.fileName}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span>{doc.fileName}</span>
+                                    <span>•</span>
+                                    <span>{formatFileSize(doc.fileSize)}</span>
+                                    <span>•</span>
+                                    <span>{formatDate(doc.createdAt)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Phân loại */}
+                            <td className="py-3.5 px-4 text-xs">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-medium text-slate-700 bg-slate-100 border border-slate-200">
+                                <Tag className="w-3 h-3 text-slate-400" />
+                                <span>{doc.category || 'Tài liệu hướng dẫn'}</span>
+                              </span>
+                            </td>
+
+                            {/* Mô tả */}
+                            <td className="py-3.5 px-4 text-xs text-slate-700 max-w-xs">
+                              {doc.description ? (
+                                <span className="leading-relaxed line-clamp-2">{doc.description}</span>
+                              ) : (
+                                <span className="text-slate-400 italic">Không có mô tả</span>
+                              )}
+                            </td>
+
+                            {/* Phạm vi */}
+                            <td className="py-3.5 px-4">
+                              {doc.scope === 'SPECIFIC' ? (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                  <span>Riêng bạn</span>
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                  <span>Chung sinh viên</span>
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Thao tác */}
+                            <td className="py-3.5 px-4 pr-6 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownload(doc)}
+                                  className="p-2 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                                  title="Tải về file"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -591,7 +662,7 @@ const StudentInternshipDocumentsPage = () => {
             )}
 
             {/* Top Action Bar */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2.5">
               <button
                 type="button"
                 onClick={handleOpenSubmitModal}
@@ -601,7 +672,7 @@ const StudentInternshipDocumentsPage = () => {
                     ? guidesData.submitBlockReason || 'Chưa đủ điều kiện nộp file'
                     : 'Nộp file mới'
                 }
-                className={`inline-flex items-center gap-2 px-5 py-2.5 text-xs font-bold rounded-xl shadow-xs transition ${
+                className={`inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 text-xs font-bold rounded-xl shadow-xs transition ${
                   guidesData.canSubmit
                     ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
                     : 'bg-slate-200 text-slate-400 cursor-not-allowed opacity-75'
@@ -612,15 +683,16 @@ const StudentInternshipDocumentsPage = () => {
               </button>
 
               <button
+                type="button"
                 onClick={fetchSubmissions}
-                className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer shrink-0 border border-slate-200/60 sm:border-transparent"
                 title="Tải lại danh sách"
               >
                 <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
               </button>
             </div>
 
-            {/* Submissions Table */}
+            {/* Submissions Table & Mobile Cards */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {loading ? (
                 <div className="p-6">
@@ -633,98 +705,177 @@ const StudentInternshipDocumentsPage = () => {
                   description="Hãy nhấn nút '+ Nộp file mới' để gửi tài liệu, báo cáo cho Giảng viên giám sát."
                 />
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[700px] text-left border-collapse">
-                    <thead>
-                      <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                        <th className="py-3.5 px-4 text-center w-14">STT</th>
-                        <th className="py-3.5 px-4 pl-6">File đã nộp</th>
-                        <th className="py-3.5 px-4">Phân loại</th>
-                        <th className="py-3.5 px-4">Ghi chú</th>
-                        <th className="py-3.5 px-4">Trạng thái</th>
-                        <th className="py-3.5 px-4 pr-6 text-right w-36"></th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 text-sm">
-                      {submissions.map((sub, idx) => (
-                        <tr key={sub._id} className="hover:bg-slate-50/60 transition group">
-                          {/* STT */}
-                          <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
-                            {idx + 1}
-                          </td>
-
-                          {/* File */}
-                          <td className="py-3.5 px-4 pl-6">
-                            <div className="flex items-center gap-3">
-                              <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
-                                {getFileIcon(sub.fileName)}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-bold text-slate-900 group-hover:text-[#123891] transition truncate max-w-sm">
-                                  {sub.title || sub.fileName}
-                                </div>
-                                <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
-                                  <span>{sub.fileName}</span>
-                                  <span>•</span>
-                                  <span>{formatFileSize(sub.fileSize)}</span>
-                                  <span>•</span>
-                                  <span>{formatDate(sub.createdAt)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Phân loại */}
-                          <td className="py-3.5 px-4 text-xs">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-medium text-slate-700 bg-slate-100 border border-slate-200">
-                              <Tag className="w-3 h-3 text-slate-400" />
-                              <span>{sub.category || 'Báo cáo thực tập'}</span>
-                            </span>
-                          </td>
-
-                          {/* Ghi chú */}
-                          <td className="py-3.5 px-4 text-xs text-slate-700 max-w-xs">
-                            {sub.description ? (
-                              <span className="leading-relaxed line-clamp-2">{sub.description}</span>
-                            ) : (
-                              <span className="text-slate-400 italic">Không có ghi chú</span>
+                <>
+                  {/* Mobile Card View (< 768px) */}
+                  <div className="block md:hidden divide-y divide-slate-100">
+                    {submissions.map((sub) => (
+                      <div key={sub._id} className="p-4 space-y-2.5 hover:bg-slate-50/50 transition">
+                        {/* Header: Icon + Title */}
+                        <div className="flex items-start gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80 mt-0.5">
+                            {getFileIcon(sub.fileName)}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h4 className="font-bold text-slate-900 text-sm leading-snug break-words">
+                              {sub.title || sub.fileName}
+                            </h4>
+                            {sub.title && sub.fileName && sub.title !== sub.fileName && (
+                              <p className="text-xs text-slate-500 break-all mt-0.5 font-mono">
+                                {sub.fileName}
+                              </p>
                             )}
-                          </td>
+                          </div>
+                        </div>
 
-                          {/* Trạng thái */}
-                          <td className="py-3.5 px-4 text-xs">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                              <span>Đã nộp</span>
+                        {/* Badges: Category & Status */}
+                        <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200">
+                            <Tag className="w-3 h-3 text-slate-400" />
+                            <span>{sub.category || 'Báo cáo thực tập'}</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                            <span>Đã nộp</span>
+                          </span>
+                        </div>
+
+                        {/* Note / Description (if any) */}
+                        {sub.description ? (
+                          <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed break-words">
+                            {sub.description}
+                          </div>
+                        ) : null}
+
+                        {/* Footer: Metadata & Actions */}
+                        <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-50">
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+                            <span className="font-semibold text-slate-700">{formatFileSize(sub.fileSize)}</span>
+                            <span>•</span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span>{formatDate(sub.createdAt)}</span>
                             </span>
-                          </td>
+                          </div>
 
-                          {/* Thao tác */}
-                          <td className="py-3.5 px-4 pr-6 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleDownload(sub)}
-                                className="p-2 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                                title="Tải về file"
-                              >
-                                <Download className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDelete(sub)}
-                                className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition cursor-pointer"
-                                title="Gỡ file này"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => handleDownload(sub)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#123891] font-bold rounded-xl transition text-xs cursor-pointer active:scale-95"
+                              title="Tải về file"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>Tải về</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenDelete(sub)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl transition text-xs cursor-pointer active:scale-95"
+                              title="Gỡ file này"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span>Gỡ</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Tablet & Desktop Table View (>= 768px) */}
+                  <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                    <table className="w-full min-w-[720px] text-left border-collapse">
+                      <thead>
+                        <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                          <th className="py-3.5 px-4 text-center w-14">STT</th>
+                          <th className="py-3.5 px-4 pl-6">File đã nộp</th>
+                          <th className="py-3.5 px-4">Phân loại</th>
+                          <th className="py-3.5 px-4">Ghi chú</th>
+                          <th className="py-3.5 px-4">Trạng thái</th>
+                          <th className="py-3.5 px-4 pr-6 text-right w-36"></th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-sm">
+                        {submissions.map((sub, idx) => (
+                          <tr key={sub._id} className="hover:bg-slate-50/60 transition group">
+                            {/* STT */}
+                            <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                              {idx + 1}
+                            </td>
+
+                            {/* File */}
+                            <td className="py-3.5 px-4 pl-6">
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
+                                  {getFileIcon(sub.fileName)}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="font-bold text-slate-900 group-hover:text-[#123891] transition truncate max-w-sm">
+                                    {sub.title || sub.fileName}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                                    <span>{sub.fileName}</span>
+                                    <span>•</span>
+                                    <span>{formatFileSize(sub.fileSize)}</span>
+                                    <span>•</span>
+                                    <span>{formatDate(sub.createdAt)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+
+                            {/* Phân loại */}
+                            <td className="py-3.5 px-4 text-xs">
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-medium text-slate-700 bg-slate-100 border border-slate-200">
+                                <Tag className="w-3 h-3 text-slate-400" />
+                                <span>{sub.category || 'Báo cáo thực tập'}</span>
+                              </span>
+                            </td>
+
+                            {/* Ghi chú */}
+                            <td className="py-3.5 px-4 text-xs text-slate-700 max-w-xs">
+                              {sub.description ? (
+                                <span className="leading-relaxed line-clamp-2">{sub.description}</span>
+                              ) : (
+                                <span className="text-slate-400 italic">Không có ghi chú</span>
+                              )}
+                            </td>
+
+                            {/* Trạng thái */}
+                            <td className="py-3.5 px-4 text-xs">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+                                <span>Đã nộp</span>
+                              </span>
+                            </td>
+
+                            {/* Thao tác */}
+                            <td className="py-3.5 px-4 pr-6 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDownload(sub)}
+                                  className="p-2 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-xl transition cursor-pointer"
+                                  title="Tải về file"
+                                >
+                                  <Download className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDelete(sub)}
+                                  className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-xl transition cursor-pointer"
+                                  title="Gỡ file này"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -932,12 +1083,12 @@ const StudentInternshipDocumentsPage = () => {
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteModalOpen(false)}
                 disabled={deleting}
-                className="w-full py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Hủy bỏ
               </button>
@@ -945,7 +1096,7 @@ const StudentInternshipDocumentsPage = () => {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 text-center"
               >
                 {deleting ? (
                   <>

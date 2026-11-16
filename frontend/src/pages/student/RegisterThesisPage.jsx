@@ -244,9 +244,9 @@ const RegisterThesisPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Header Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold text-xl shadow-xs shrink-0">
             <GraduationCap className="w-7 h-7" />
@@ -294,8 +294,8 @@ const RegisterThesisPage = () => {
       {/* APPROVED TOPICS LIST */}
       <div className="space-y-4">
         {/* Search & Filter Bar */}
-        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
-          <div className="w-full md:w-96">
+        <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center justify-between">
+          <div className="w-full sm:w-80 md:w-96">
             <SearchInput
               value={topicSearch}
               onChange={(val) => setTopicSearch(val)}
@@ -308,8 +308,8 @@ const RegisterThesisPage = () => {
           </div>
         </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        {/* Table & Mobile Cards */}
+        <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
           {loadingApprovedTopics ? (
             <div className="p-6">
               <LoadingSkeleton rows={5} cols={6} />
@@ -322,83 +322,90 @@ const RegisterThesisPage = () => {
               />
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px] text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-12">STT</th>
-                    <th className="py-3.5 px-4">Tên đề tài KLTN</th>
-                    <th className="py-3.5 px-4">Giáo viên hướng dẫn</th>
-                    <th className="py-3.5 px-4">Mô tả / Yêu cầu</th>
-                    <th className="py-3.5 px-4 text-right"></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {approvedTopics.map((topic, idx) => {
-                    const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
-                    const maxCount = topic.maxGroups || 1;
-                    const isFull = topic.isFull || currentCount >= maxCount;
+            <>
+              {/* Mobile Card View (< 768px) */}
+              <div className="block md:hidden divide-y divide-slate-100">
+                {approvedTopics.map((topic, idx) => {
+                  const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+                  const maxCount = topic.maxGroups || 1;
+                  const isFull = topic.isFull || currentCount >= maxCount;
+                  const lecturerName = formatLecturerDisplay(
+                    topic.supervisor?.academicTitle || topic.supervisorId?.academicTitle,
+                    topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName
+                  );
 
-                    return (
-                      <tr key={topic._id} className="hover:bg-slate-50/80 transition">
-                        <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                  return (
+                    <div key={topic._id} className="p-4 space-y-3 hover:bg-slate-50/50 transition">
+                      {/* Header: STT + Title */}
+                      <div className="flex items-start gap-2.5">
+                        <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#123891] text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">
                           {idx + 1}
-                        </td>
+                        </span>
+                        <h4 className="font-bold text-slate-900 text-sm leading-snug break-words flex-1">
+                          {topic.title}
+                        </h4>
+                      </div>
 
-                        <td className="py-3.5 px-4 min-w-[240px] max-w-sm">
-                          <div className="font-bold text-slate-900 leading-snug">
-                            {topic.title}
-                          </div>
-                        </td>
+                      {/* Supervisor & Group Capacity Badges */}
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 text-slate-800 font-medium">
+                          <User className="w-3.5 h-3.5 text-[#123891]" />
+                          <span>GVHD: <strong>{lecturerName}</strong></span>
+                        </div>
 
-                        <td className="py-3.5 px-4 whitespace-nowrap">
-                          <div className="font-semibold text-slate-900">
-                            {formatLecturerDisplay(
-                              topic.supervisor?.academicTitle || topic.supervisorId?.academicTitle,
-                              topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName
-                            )}
-                          </div>
-                          
-                        </td>
+                        {isFull ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                            Đã đủ nhóm ({currentCount}/{maxCount})
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            Còn nhận ({currentCount}/{maxCount})
+                          </span>
+                        )}
+                      </div>
 
-                        <td className="py-3.5 px-4 max-w-xs">
-                          <p className="text-slate-600 line-clamp-2 text-xs">
-                            {topic.description || <span className="text-slate-400 italic">Không có mô tả</span>}
-                          </p>
-                        </td>
+                      {/* Description (if any) */}
+                      {topic.description ? (
+                        <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed break-words">
+                          {topic.description}
+                        </p>
+                      ) : null}
 
-                        <td className="py-3.5 px-4 whitespace-nowrap text-right">
-                          <button
-                            type="button"
-                            disabled={isFull || !!existingThesis || isClosedOrLocked}
-                            onClick={() => {
-                              if (isClosedOrLocked) {
-                                showToast(lockInfo?.desc || 'Cổng đăng ký đề tài KLTN hiện đang đóng', 'error');
-                                return;
-                              }
-                              setSelectedTopicForRegistration(topic);
-                              setTopicStudentCount(1);
-                              setTopicStudent2(null);
-                              setTopicSv2Code('');
-                              setTopicSv2Error('');
-                              setTopicSearchResults([]);
-                              setRegisterTopicModalOpen(true);
-                            }}
-                            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs ${
-                              isFull || existingThesis || isClosedOrLocked
-                                ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
-                                : 'bg-[#123891] hover:bg-blue-700 text-white'
-                            }`}
-                            title={
-                              isClosedOrLocked
-                                ? lockInfo?.title || 'Cổng đăng ký đề tài KLTN hiện đang đóng'
-                                : isFull
-                                ? 'Đề tài đã đủ số lượng nhóm đăng ký'
-                                : existingThesis
-                                ? 'Bạn đã có đề tài khóa luận trong kỳ'
-                                : 'Đăng ký đề tài này'
+                      {/* Register Action Button */}
+                      <div className="pt-1">
+                        <button
+                          type="button"
+                          disabled={isFull || !!existingThesis || isClosedOrLocked}
+                          onClick={() => {
+                            if (isClosedOrLocked) {
+                              showToast(lockInfo?.desc || 'Cổng đăng ký đề tài KLTN hiện đang đóng', 'error');
+                              return;
                             }
-                          >
+                            setSelectedTopicForRegistration(topic);
+                            setTopicStudentCount(1);
+                            setTopicStudent2(null);
+                            setTopicSv2Code('');
+                            setTopicSv2Error('');
+                            setTopicSearchResults([]);
+                            setRegisterTopicModalOpen(true);
+                          }}
+                          className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs transition cursor-pointer flex items-center justify-center gap-1.5 ${
+                            isFull || existingThesis || isClosedOrLocked
+                              ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                              : 'bg-[#123891] hover:bg-blue-700 text-white shadow-xs active:scale-98'
+                          }`}
+                          title={
+                            isClosedOrLocked
+                              ? lockInfo?.title || 'Cổng đăng ký đề tài KLTN hiện đang đóng'
+                              : isFull
+                              ? 'Đề tài đã đủ số lượng nhóm đăng ký'
+                              : existingThesis
+                              ? 'Bạn đã có đề tài khóa luận trong kỳ'
+                              : 'Đăng ký đề tài này'
+                          }
+                        >
+                          <BookOpen className="w-4 h-4" />
+                          <span>
                             {isClosedOrLocked
                               ? 'Đã khóa'
                               : isFull
@@ -406,14 +413,108 @@ const RegisterThesisPage = () => {
                               : existingThesis
                               ? 'Đã có đề tài'
                               : 'Chọn đề tài'}
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          </span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Tablet & Desktop Table View (>= 768px) */}
+              <div className="hidden md:block overflow-x-auto custom-scrollbar">
+                <table className="w-full min-w-[720px] text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                      <th className="py-3.5 px-4 text-center w-12">STT</th>
+                      <th className="py-3.5 px-4">Tên đề tài KLTN</th>
+                      <th className="py-3.5 px-4">Giáo viên hướng dẫn</th>
+                      <th className="py-3.5 px-4">Mô tả / Yêu cầu</th>
+                      <th className="py-3.5 px-4 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {approvedTopics.map((topic, idx) => {
+                      const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+                      const maxCount = topic.maxGroups || 1;
+                      const isFull = topic.isFull || currentCount >= maxCount;
+
+                      return (
+                        <tr key={topic._id} className="hover:bg-slate-50/80 transition">
+                          <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                            {idx + 1}
+                          </td>
+
+                          <td className="py-3.5 px-4 min-w-[240px] max-w-sm">
+                            <div className="font-bold text-slate-900 leading-snug">
+                              {topic.title}
+                            </div>
+                          </td>
+
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <div className="font-semibold text-slate-900">
+                              {formatLecturerDisplay(
+                                topic.supervisor?.academicTitle || topic.supervisorId?.academicTitle,
+                                topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName
+                              )}
+                            </div>
+                            
+                          </td>
+
+                          <td className="py-3.5 px-4 max-w-xs">
+                            <p className="text-slate-600 line-clamp-2 text-xs">
+                              {topic.description || <span className="text-slate-400 italic">Không có mô tả</span>}
+                            </p>
+                          </td>
+
+                          <td className="py-3.5 px-4 whitespace-nowrap text-right">
+                            <button
+                              type="button"
+                              disabled={isFull || !!existingThesis || isClosedOrLocked}
+                              onClick={() => {
+                                if (isClosedOrLocked) {
+                                  showToast(lockInfo?.desc || 'Cổng đăng ký đề tài KLTN hiện đang đóng', 'error');
+                                  return;
+                                }
+                                setSelectedTopicForRegistration(topic);
+                                setTopicStudentCount(1);
+                                setTopicStudent2(null);
+                                setTopicSv2Code('');
+                                setTopicSv2Error('');
+                                setTopicSearchResults([]);
+                                setRegisterTopicModalOpen(true);
+                              }}
+                              className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-xs ${
+                                isFull || existingThesis || isClosedOrLocked
+                                  ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed shadow-none'
+                                  : 'bg-[#123891] hover:bg-blue-700 text-white'
+                              }`}
+                              title={
+                                isClosedOrLocked
+                                  ? lockInfo?.title || 'Cổng đăng ký đề tài KLTN hiện đang đóng'
+                                  : isFull
+                                  ? 'Đề tài đã đủ số lượng nhóm đăng ký'
+                                  : existingThesis
+                                  ? 'Bạn đã có đề tài khóa luận trong kỳ'
+                                  : 'Đăng ký đề tài này'
+                              }
+                            >
+                              {isClosedOrLocked
+                                ? 'Đã khóa'
+                                : isFull
+                                ? 'Đã đủ nhóm'
+                                : existingThesis
+                                ? 'Đã có đề tài'
+                                : 'Chọn đề tài'}
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>

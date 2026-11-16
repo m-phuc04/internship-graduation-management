@@ -59,42 +59,51 @@
   animation: fadeIn 0.2s ease-out forwards;
 }
 
-/* Responsive Layout Breakpoint for Admin Portal:
+/* Responsive Layout Breakpoint for Admin & Student Portal:
    - Mobile (< 768px) & Tablet / Nest Hub Max (768px - 1299px): Drawer navigation, 100% content width
    - Desktop (>= 1300px): Fixed Left Sidebar
 */
 @media (min-width: 1300px) {
-  .admin-desktop-sidebar {
+  .admin-desktop-sidebar,
+  .student-desktop-sidebar {
     display: flex !important;
   }
-  .admin-desktop-toggle {
+  .admin-desktop-toggle,
+  .student-desktop-toggle {
     display: flex !important;
   }
-  .admin-drawer-container {
+  .admin-drawer-container,
+  .student-drawer-container {
     display: none !important;
   }
-  .admin-hamburger-btn {
+  .admin-hamburger-btn,
+  .student-hamburger-btn {
     display: none !important;
   }
 }
 
 @media (max-width: 1299px) {
-  .admin-desktop-sidebar {
+  .admin-desktop-sidebar,
+  .student-desktop-sidebar {
     display: none !important;
   }
-  .admin-desktop-toggle {
+  .admin-desktop-toggle,
+  .student-desktop-toggle {
     display: none !important;
   }
-  .admin-drawer-container {
+  .admin-drawer-container,
+  .student-drawer-container {
     display: flex !important;
   }
-  .admin-hamburger-btn {
+  .admin-hamburger-btn,
+  .student-hamburger-btn {
     display: flex !important;
   }
 }
 
 /* Ensure Sticky Header works properly without ancestor overflow interference */
-.admin-sticky-header {
+.admin-sticky-header,
+.student-sticky-header {
   position: sticky !important;
   top: 0 !important;
   z-index: 40 !important;
