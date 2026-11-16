@@ -550,7 +550,7 @@ const TbmEvaluationManagement = () => {
       {/* Main Content: Evaluations List */}
       <div className="space-y-4">
         {/* Filter & Search Bar */}
-        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           <div className="w-full md:w-96">
             <SearchInput
               value={search}
@@ -562,15 +562,15 @@ const TbmEvaluationManagement = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-            <Filter className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
             <select
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
+              className="w-full sm:w-auto bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
             >
               {EVAL_STATUS_FILTERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -696,7 +696,7 @@ const TbmEvaluationManagement = () => {
                             </span>
                           ) : isItemFail ? (
                             <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                              FAIL (Không đạt)
+                              FAIL (Rớt)
                             </span>
                           ) : (
                             <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
@@ -820,7 +820,7 @@ const TbmEvaluationManagement = () => {
                     key={item._id}
                     className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition"
                   >
-                    {/* Header: STT + Student name + Status */}
+                    {/* Header: STT + Student name + Single Unified Result Badge */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -833,7 +833,22 @@ const TbmEvaluationManagement = () => {
                           MSSV: {item.studentId?.studentCode} • {item.studentId?.className || ''}
                         </div>
                       </div>
-                      <StatusBadge status={item.status} size="sm" />
+
+                      {/* Single Unified Result Badge: PASS (Đạt) / FAIL (Rớt) / Đang thực hiện */}
+                      {isItemPass ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 shrink-0">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>PASS (Đạt)</span>
+                        </span>
+                      ) : isItemFail ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
+                          FAIL (Rớt)
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                          Đang thực hiện
+                        </span>
+                      )}
                     </div>
 
                     {/* Company & Position */}
@@ -846,41 +861,21 @@ const TbmEvaluationManagement = () => {
                       </div>
                     </div>
 
-                    {/* Điểm tổng kết & Kết quả */}
+                    {/* Điểm tổng kết */}
                     <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
-                      <div>
-                        <span className="text-slate-400 block text-[10px] uppercase font-bold mb-0.5">Điểm tổng kết</span>
-                        {hasValidScore ? (
-                          <div className="inline-flex items-baseline gap-1 font-bold text-[#102d7d]">
-                            <span className="text-sm font-mono">
-                              {Number(item.evaluation.score) % 1 === 0
-                                ? Number(item.evaluation.score).toFixed(1)
-                                : item.evaluation.score}
-                            </span>
-                            <span className="text-[10px] text-slate-500 font-normal">/ 10</span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-slate-400 italic">Chưa có điểm</span>
-                        )}
-                      </div>
-
-                      <div className="text-right">
-                        <span className="text-slate-400 block text-[10px] uppercase font-bold mb-0.5">Kết quả</span>
-                        {isItemPass ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                            <span>PASS (Đạt)</span>
+                      <span className="text-slate-500 font-medium">Điểm tổng kết</span>
+                      {hasValidScore ? (
+                        <div className="inline-flex items-baseline gap-1 font-bold text-[#102d7d]">
+                          <span className="text-sm font-mono">
+                            {Number(item.evaluation.score) % 1 === 0
+                              ? Number(item.evaluation.score).toFixed(1)
+                              : item.evaluation.score}
                           </span>
-                        ) : isItemFail ? (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                            FAIL (Không đạt)
-                          </span>
-                        ) : (
-                          <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
-                            Đang thực hiện
-                          </span>
-                        )}
-                      </div>
+                          <span className="text-[10px] text-slate-500 font-normal">/ 10</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Chưa có điểm</span>
+                      )}
                     </div>
 
                     {/* Publish Status Pill & Actions */}
