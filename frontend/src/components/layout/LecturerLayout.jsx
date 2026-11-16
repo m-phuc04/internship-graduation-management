@@ -56,6 +56,26 @@ const LecturerLayout = () => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
 
+  // Close mobile drawer on Escape key or when resizing to desktop >= 1300px
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setMobileOpen(false);
+      }
+    };
+    const handleResize = () => {
+      if (window.innerWidth >= 1300) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed((prev) => {
       const next = !prev;
@@ -69,10 +89,10 @@ const LecturerLayout = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex overflow-x-clip w-full">
       {/* 1. Desktop Fixed Sidebar */}
       <div
-        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`lecturer-desktop-sidebar flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
           isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
         } bg-[#123891]`}
       >
@@ -85,13 +105,13 @@ const LecturerLayout = () => {
 
       {/* 2. Mobile Drawer Sidebar */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="lecturer-drawer-container fixed inset-0 z-50 flex">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setMobileOpen(false)}
             aria-label="Đóng menu"
           />
-          <div className="relative w-64 max-w-[85vw] bg-[#123891] h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 sm:w-80 max-w-[85vw] bg-[#123891] h-full shadow-2xl flex flex-col z-10 animate-in slide-in-from-left duration-200">
             <LecturerSidebar
               onCloseMobile={() => setMobileOpen(false)}
               unreadCount={unreadCount}
@@ -101,16 +121,16 @@ const LecturerLayout = () => {
       )}
 
       {/* 3. Main Workspace Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen w-full overflow-x-clip">
         {/* Top Header */}
-        <header className="sticky top-0 z-30 h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 backdrop-blur-md bg-white/95 shadow-2xs">
+        <header className="lecturer-sticky-header sticky top-0 z-40 h-16 bg-white/95 border-b border-slate-200/80 px-3 sm:px-5 lg:px-8 flex items-center justify-between gap-2 sm:gap-4 backdrop-blur-md shadow-2xs w-full">
           {/* Left: Mobile & Desktop Hamburger Toggle & Breadcrumb Title */}
           <div className="flex items-center gap-3">
             {/* Mobile Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl lg:hidden transition cursor-pointer"
+              className="lecturer-hamburger-btn p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
               title="Mở menu điều hướng"
               aria-label="Mở menu điều hướng"
             >
@@ -121,7 +141,7 @@ const LecturerLayout = () => {
             <button
               type="button"
               onClick={toggleSidebar}
-              className="hidden lg:flex p-2 -ml-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              className="lecturer-desktop-toggle p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
               title={isSidebarCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
               aria-label="Đóng/mở thanh điều hướng"
             >

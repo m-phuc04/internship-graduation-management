@@ -62,7 +62,7 @@ const TbmDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
             <LayoutDashboard className="w-7 h-7" />
@@ -167,7 +167,7 @@ const TbmDashboard = () => {
             ) : (
               recentInternships.map((item) => (
                 <div key={item._id} className="py-2.5 flex items-center justify-between gap-2">
-                  <div>
+                  <div className="flex-1 min-w-0 pr-1">
                     <strong className="text-slate-900 block">{item.studentId?.userId?.fullName || 'Sinh viên'}</strong>
                     <span className="text-[11px] text-slate-500">{item.companyId?.companyName}</span>
                   </div>
@@ -196,7 +196,7 @@ const TbmDashboard = () => {
             ) : (
               recentTheses.map((item) => (
                 <div key={item._id} className="py-2.5 flex items-center justify-between gap-2">
-                  <div className="max-w-[70%]">
+                  <div className="flex-1 min-w-0 pr-1">
                     <strong className="text-slate-900 line-clamp-1 block">{item.thesisTitle}</strong>
                     <span className="text-[11px] text-slate-500">
                       SV: {item.studentId?.userId?.fullName} • GVHD: {item.supervisorId?.userId?.fullName}

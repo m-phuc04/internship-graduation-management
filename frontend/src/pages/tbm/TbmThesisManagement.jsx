@@ -1399,75 +1399,71 @@ const TbmThesisManagement = () => {
   return (
     <div className="space-y-6">
       {/* Top Header Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-              <GraduationCap className="w-7 h-7" />
+      <div className="p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5">
+          <div className="flex items-center gap-3.5 sm:gap-4">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+              <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-900">
+              <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
                 Phân công Khóa luận Tốt nghiệp (KLTN)
               </h1>
             </div>
           </div>
 
-          <div className="flex flex-col items-start md:items-end gap-2.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              {/* Configure KLTN Timeline Button */}
-              <button
-                type="button"
-                onClick={() => setTimelineModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
-                title="Cấu hình thời gian mở cổng đăng ký, phân công & bảo vệ KLTN"
-              >
-                <Clock className="w-3.5 h-3.5 text-[#123891]" />
-                <span>Thời gian mở KLTN</span>
-                <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color}`}>
-                  {windowBadge.text}
-                </span>
-              </button>
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center md:justify-end gap-2.5 w-full md:w-auto">
+            {/* Configure KLTN Timeline Button */}
+            <button
+              type="button"
+              onClick={() => setTimelineModalOpen(true)}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0"
+              title="Cấu hình thời gian mở cổng đăng ký, phân công & bảo vệ KLTN"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#123891] shrink-0" />
+              <span>Thời gian mở KLTN</span>
+              <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color} shrink-0`}>
+                {windowBadge.text}
+              </span>
+            </button>
 
-              {/* Quick Link to KLTN Grading Periods Management */}
-              <Link
-                to="/tbm/thesis-evaluations"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs"
-                title="Quản lý đợt nhập điểm, tiêu chí đánh giá và bảng điểm KLTN"
-              >
-                <Award className="w-3.5 h-3.5 text-[#123891]" />
-                <span>Thời gian nhập điểm KLTN</span>
-              </Link>
-            </div>
+            {/* Quick Link to KLTN Grading Periods Management */}
+            <Link
+              to="/tbm/thesis-evaluations"
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0"
+              title="Quản lý đợt nhập điểm, tiêu chí đánh giá và bảng điểm KLTN"
+            >
+              <Award className="w-3.5 h-3.5 text-[#123891] shrink-0" />
+              <span>Thời gian nhập điểm KLTN</span>
+            </Link>
 
-            {/* Dời nút Xuất danh sách xuống dưới các nút cấu hình thời gian */}
-            <div>
-              <button
-                type="button"
-                onClick={() => setExportModalOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-emerald-600/20 transition cursor-pointer"
-                title="Xuất danh sách sinh viên & đề tài KLTN ra Excel"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span>Xuất danh sách</span>
-              </button>
-            </div>
+            {/* Nút Xuất danh sách */}
+            <button
+              type="button"
+              onClick={() => setExportModalOpen(true)}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-emerald-600/20 transition cursor-pointer w-full sm:w-auto shrink-0"
+              title="Xuất danh sách sinh viên & đề tài KLTN ra Excel"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+              <span>Xuất danh sách</span>
+            </button>
           </div>
         </div>
 
         {/* Main Tab Switcher */}
-        <div className="flex items-center gap-2 mt-6 pt-5 border-t border-slate-100 overflow-x-auto">
+        <div className="flex items-center gap-2 mt-5 sm:mt-6 pt-4 sm:pt-5 border-t border-slate-100 overflow-x-auto no-scrollbar scroll-smooth pb-1">
           <button
             type="button"
             onClick={() => setActiveMainTab('PROPOSED_TOPICS')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shrink-0 whitespace-nowrap ${
               activeMainTab === 'PROPOSED_TOPICS'
                 ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-4 h-4 shrink-0" />
             <span>1. Tất cả đề tài</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeMainTab === 'PROPOSED_TOPICS' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${activeMainTab === 'PROPOSED_TOPICS' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
               {proposedTopics.length}
             </span>
           </button>
@@ -1475,15 +1471,15 @@ const TbmThesisManagement = () => {
           <button
             type="button"
             onClick={() => setActiveMainTab('PRIVATE_REVIEWER')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shrink-0 whitespace-nowrap ${
               activeMainTab === 'PRIVATE_REVIEWER'
                 ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            <UserCheck className="w-4 h-4" />
+            <UserCheck className="w-4 h-4 shrink-0" />
             <span>2. Phân công phản biện kín</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeMainTab === 'PRIVATE_REVIEWER' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${activeMainTab === 'PRIVATE_REVIEWER' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
               {privateReviewerEligibleCount}
             </span>
           </button>
@@ -1491,15 +1487,15 @@ const TbmThesisManagement = () => {
           <button
             type="button"
             onClick={() => setActiveMainTab('COUNCIL_REVIEWER')}
-            className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer ${
+            className={`px-3.5 sm:px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-2 transition cursor-pointer shrink-0 whitespace-nowrap ${
               activeMainTab === 'COUNCIL_REVIEWER'
                 ? 'bg-[#123891] text-white shadow-sm'
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 shrink-0" />
             <span>3. Phân công hội đồng</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono ${activeMainTab === 'COUNCIL_REVIEWER' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono shrink-0 ${activeMainTab === 'COUNCIL_REVIEWER' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
               {councilEligibleCount}
             </span>
           </button>
@@ -1512,7 +1508,7 @@ const TbmThesisManagement = () => {
       {activeMainTab === 'PROPOSED_TOPICS' && (
         <div className="space-y-4">
           {/* Filter & Search Bar - Đồng bộ giao diện 100% với Tab 2 */}
-          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             <div className="w-full md:w-96">
               <SearchInput
                 value={topicSearch}
@@ -1525,7 +1521,7 @@ const TbmThesisManagement = () => {
               <select
                 value={topicFieldFilter}
                 onChange={(e) => setTopicFieldFilter(e.target.value)}
-                className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                className="w-full md:w-auto px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
               >
                 <option value="ALL">Tất cả lĩnh vực</option>
                 {availableFields.map((fName) => (
@@ -1539,29 +1535,29 @@ const TbmThesisManagement = () => {
 
           {/* 2. Hàng dưới: Chế độ xem */}
           <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 text-xs shadow-2xs">
+            <div className="flex sm:inline-flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 text-xs shadow-2xs w-full sm:w-auto">
               <button
                 type="button"
                 onClick={() => setTopicViewMode('BY_LECTURER')}
-                className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 sm:px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition cursor-pointer shrink-0 whitespace-nowrap ${
                   topicViewMode === 'BY_LECTURER'
                     ? 'bg-white text-[#123891] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Users className="w-4 h-4" />
+                <Users className="w-4 h-4 shrink-0" />
                 <span>Theo Giảng viên</span>
               </button>
               <button
                 type="button"
                 onClick={() => setTopicViewMode('TABLE')}
-                className={`px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition cursor-pointer ${
+                className={`flex-1 sm:flex-none justify-center px-3 sm:px-3.5 py-2 rounded-xl font-bold flex items-center gap-2 transition cursor-pointer shrink-0 whitespace-nowrap ${
                   topicViewMode === 'TABLE'
                     ? 'bg-white text-[#123891] shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <List className="w-4 h-4" />
+                <List className="w-4 h-4 shrink-0" />
                 <span>Dạng bảng</span>
               </button>
             </div>
@@ -1937,8 +1933,10 @@ const TbmThesisManagement = () => {
                   />
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[950px] text-left border-collapse text-xs">
+                <>
+                  {/* Desktop Table */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full min-w-[950px] text-left border-collapse text-xs">
                     <thead>
                       <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                         <th className="py-3.5 px-4 text-center w-12">STT</th>
@@ -2146,7 +2144,206 @@ const TbmThesisManagement = () => {
                       })}
                     </tbody>
                   </table>
-                </div>
+                  </div>
+
+                  {/* Mobile Card List */}
+                  <div className="md:hidden divide-y divide-slate-100">
+                    {sortedProposedTopics.map((topic, idx) => {
+                      const isPending = topic.status === 'PENDING';
+                      const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+                      const maxCount = topic.maxGroups || 1;
+
+                      return (
+                        <div
+                          key={topic._id}
+                          className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition"
+                        >
+                          {/* Header: STT + Title */}
+                          <div className="flex items-start gap-2.5">
+                            <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#123891] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                              {idx + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div
+                                onClick={() => handleOpenTopicDetail(topic)}
+                                className="font-bold text-slate-900 leading-snug hover:text-[#123891] cursor-pointer transition text-sm line-clamp-2"
+                              >
+                                {topic.title}
+                              </div>
+                              <div className="text-[10.5px] text-slate-400 font-mono mt-0.5">
+                                Ngày gửi: {formatDate(topic.createdAt)}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Status and Field Tags */}
+                          <div className="flex flex-wrap items-center gap-1.5 pl-8.5">
+                            {renderTopicBadge(topic.status)}
+
+                            {Array.isArray(topic.fields) && topic.fields.map((f, fIdx) => (
+                              <span
+                                key={fIdx}
+                                className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              >
+                                {f}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Supervisor (GVHD) */}
+                          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs ml-8.5 space-y-1">
+                            <div className="text-[10px] text-slate-400 uppercase font-bold">Giảng viên hướng dẫn</div>
+                            <div className="font-semibold text-slate-900">
+                              {formatLecturerDisplay(topic.supervisorId?.academicTitle, topic.supervisorId?.userId?.fullName)}
+                            </div>
+                          </div>
+
+                          {/* Description / Rejection reason */}
+                          {topic.description && (
+                            <div className="text-xs text-slate-600 line-clamp-2 pl-8.5">
+                              {topic.description}
+                            </div>
+                          )}
+
+                          {topic.rejectionReason && (
+                            <div className="text-[11px] text-rose-600 bg-rose-50 p-2 rounded-xl border border-rose-200 ml-8.5">
+                              <strong>Lý do từ chối:</strong> {topic.rejectionReason}
+                            </div>
+                          )}
+
+                          {/* Pending Edit Request Box */}
+                          {topic.editRequest?.status === 'PENDING' && (
+                            <div className="ml-8.5 p-2.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs space-y-1.5 shadow-2xs">
+                              <div className="font-bold text-amber-900 flex items-center gap-1 text-[11px]">
+                                <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span>Yêu cầu chỉnh sửa tên đề tài:</span>
+                              </div>
+                              <div className="font-semibold text-slate-900 bg-white p-2 rounded-xl border border-amber-200 text-xs">
+                                "{topic.editRequest?.newTitle}"
+                              </div>
+                              <div className="flex items-center gap-1.5 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveEditTopic(topic)}
+                                  disabled={actionLoading}
+                                  className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                >
+                                  <Check className="w-3 h-3" />
+                                  <span>Duyệt sửa</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenRejectEditTopic(topic)}
+                                  disabled={actionLoading}
+                                  className="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
+                                >
+                                  <X className="w-3 h-3" />
+                                  <span>Từ chối</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Pending Delete Request Box */}
+                          {topic.deleteRequest?.status === 'PENDING' && (
+                            <div className="ml-8.5 p-2.5 bg-rose-50 border border-rose-300 rounded-2xl text-xs space-y-1.5 shadow-2xs">
+                              <div className="font-bold text-rose-900 flex items-center gap-1 text-[11px]">
+                                <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
+                                <span>Giảng viên yêu cầu xóa đề tài này:</span>
+                              </div>
+                              <div className="text-slate-700 bg-white p-2 rounded-xl border border-rose-200 text-[11px]">
+                                Lý do: {topic.deleteRequest?.reason || 'GV yêu cầu xóa đề tài'}
+                              </div>
+                              <div className="flex items-center gap-1.5 pt-0.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenApproveDeleteTopic(topic)}
+                                  disabled={actionLoading}
+                                  className="px-2.5 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px] flex items-center gap-1 transition shadow-xs cursor-pointer"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                  <span>Duyệt xóa</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenRejectDeleteTopic(topic)}
+                                  disabled={actionLoading}
+                                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg font-bold text-[11px] flex items-center gap-1 transition cursor-pointer"
+                                >
+                                  <X className="w-3 h-3" />
+                                  <span>Từ chối</span>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Registered Groups (if any) */}
+                          {topic.registeredGroups?.length > 0 && (
+                            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs ml-8.5 space-y-1">
+                              <div className="text-[10px] text-slate-400 uppercase font-bold">Nhóm SV đăng ký (FIFO):</div>
+                              {topic.registeredGroups.map((g) => (
+                                <div key={g._id} className="text-[11px] text-slate-700">
+                                  <span className="font-bold text-[#102d7d]">N{g.groupOrder}:</span>{' '}
+                                  {g.studentId?.userId?.fullName || g.studentCode} ({g.studentCode})
+                                  {g.secondStudentId && ` + ${g.secondStudentId?.userId?.fullName || g.secondStudentCode}`}
+                                  <span className="text-[10px] text-slate-400 block font-mono">
+                                    Ngày nhận: {formatDate(g.registeredAt)}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Action buttons */}
+                          <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100 pl-8.5">
+                            {isPending && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleApproveTopic(topic)}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                                  title="Phê duyệt đề tài"
+                                >
+                                  <Check className="w-3.5 h-3.5" />
+                                  <span>Duyệt</span>
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setTargetTopic(topic);
+                                    setTopicRejectReason('');
+                                    setRejectTopicModalOpen(true);
+                                  }}
+                                  disabled={actionLoading}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                                  title="Từ chối đề tài"
+                                >
+                                  <X className="w-3.5 h-3.5" />
+                                  <span>Từ chối</span>
+                                </button>
+                              </>
+                            )}
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelectedTopic(topic);
+                                setTopicDetailModalOpen(true);
+                              }}
+                              className="inline-flex items-center gap-1 px-3 py-1.5 text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl text-xs font-semibold transition cursor-pointer"
+                              title="Xem chi tiết"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Chi tiết</span>
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -2172,7 +2369,7 @@ const TbmThesisManagement = () => {
 
 
           {/* Filter & Search Bar */}
-          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
             <div className="w-full md:w-96">
               <SearchInput
                 value={search}
@@ -2192,7 +2389,7 @@ const TbmThesisManagement = () => {
                     setCouncilFilter(e.target.value);
                     setPage(1);
                   }}
-                  className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                  className="w-full md:w-auto px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
                 >
                   <option value="ALL">Tất cả đề tài</option>
                   <option value="ASSIGNED">Đã phân công</option>
@@ -2207,7 +2404,7 @@ const TbmThesisManagement = () => {
                     setStatus(e.target.value);
                     setPage(1);
                   }}
-                  className="px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+                  className="w-full md:w-auto px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
                 >
                   <option value="ALL">Tất cả trạng thái</option>
                   <option value="PENDING_TBM_APPROVAL">PENDING_TBM_APPROVAL (Chờ duyệt)</option>

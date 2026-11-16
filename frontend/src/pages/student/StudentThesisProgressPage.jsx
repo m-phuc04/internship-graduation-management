@@ -514,9 +514,9 @@ const StudentThesisProgressPage = () => {
   const latestReport = progressList && progressList.length > 0 ? progressList[progressList.length - 1] : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* 1. Header Information Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#123891] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
@@ -559,22 +559,6 @@ const StudentThesisProgressPage = () => {
               >
                 <Printer className="w-4 h-4" />
                 <span>Xuất nhật ký</span>
-              </button>
-            )}
-
-            {thesis && eligibilityInfo.eligible && (
-              <button
-                type="button"
-                onClick={() => {
-                  const targetWeek = weeks.find((w) => !w.progress) || weeks[0];
-                  if (targetWeek) {
-                    handleOpenWriteModal(targetWeek);
-                  }
-                }}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>Thêm nhật ký</span>
               </button>
             )}
           </div>
@@ -767,7 +751,7 @@ const StudentThesisProgressPage = () => {
               return (
                 <div
                   key={week.weekNumber}
-                  className={`p-5 rounded-3xl bg-white border transition-all shadow-2xs ${
+                  className={`p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border transition-all shadow-2xs ${
                     isWaitingStudent2
                       ? 'border-amber-300 ring-2 ring-amber-100'
                       : isNeedsRevision
@@ -1389,12 +1373,12 @@ const StudentThesisProgressPage = () => {
           </div>
 
           {/* Modal Actions */}
-          <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setWriteModalOpen(false)}
               disabled={submitting}
-              className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition text-center justify-center"
             >
               Hủy
             </button>
@@ -1403,7 +1387,7 @@ const StudentThesisProgressPage = () => {
               type="button"
               onClick={() => handleSaveDiary('DRAFT')}
               disabled={submitting}
-              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition"
+              className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-center justify-center"
             >
               Lưu bản nháp
             </button>
@@ -1412,7 +1396,7 @@ const StudentThesisProgressPage = () => {
               type="button"
               onClick={() => handleSaveDiary(thesis?.secondStudentId ? 'WAITING_STUDENT_2' : 'SUBMITTED')}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-md shadow-blue-200 transition disabled:opacity-50"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{submitting ? 'Đang lưu...' : editingProgressId ? 'Cập nhật nhật ký' : 'Gửi nhật ký ngay'}</span>
@@ -1490,24 +1474,24 @@ const StudentThesisProgressPage = () => {
             )}
 
             {/* Actions */}
-            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-0 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setConfirmModalOpen(false)}
                 disabled={confirming}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-center justify-center"
               >
                 Đóng
               </button>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 {!isRejecting ? (
                   <>
                     <button
                       type="button"
                       onClick={() => setIsRejecting(true)}
                       disabled={confirming}
-                      className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 transition"
+                      className="px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold rounded-xl border border-rose-200 transition text-center justify-center"
                     >
                       Yêu cầu chỉnh sửa
                     </button>
@@ -1515,7 +1499,7 @@ const StudentThesisProgressPage = () => {
                       type="button"
                       onClick={() => handleConfirmByStudent2('CONFIRM')}
                       disabled={confirming}
-                      className="inline-flex items-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md shadow-emerald-200 transition"
+                      className="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md shadow-emerald-200 transition"
                     >
                       <Check className="w-4 h-4" />
                       <span>{confirming ? 'Đang xác nhận...' : 'Xác nhận nhật ký'}</span>
@@ -1526,7 +1510,7 @@ const StudentThesisProgressPage = () => {
                     <button
                       type="button"
                       onClick={() => setIsRejecting(false)}
-                      className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition"
+                      className="px-3 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition text-center justify-center"
                     >
                       Quay lại
                     </button>
@@ -1534,7 +1518,7 @@ const StudentThesisProgressPage = () => {
                       type="button"
                       onClick={() => handleConfirmByStudent2('REJECT')}
                       disabled={confirming}
-                      className="inline-flex items-center gap-1.5 px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md shadow-rose-200 transition"
+                      className="inline-flex items-center justify-center gap-1.5 px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md shadow-rose-200 transition"
                     >
                       <X className="w-4 h-4" />
                       <span>{confirming ? 'Đang gửi...' : 'Gửi yêu cầu sửa'}</span>

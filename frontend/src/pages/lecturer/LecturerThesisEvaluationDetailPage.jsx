@@ -686,7 +686,7 @@ const LecturerThesisEvaluationDetailPage = () => {
       </div>
 
       {/* Main Hero Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] to-[#123891] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0 mt-1">
@@ -819,11 +819,11 @@ const LecturerThesisEvaluationDetailPage = () => {
       ) : null}
 
       {/* 4 Main Nav Tabs */}
-      <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200 overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => setActiveTabSection('REPORTS')}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'REPORTS'
+          className={`shrink-0 sm:shrink sm:flex-1 whitespace-nowrap py-3 px-3.5 sm:px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'REPORTS'
               ? 'bg-white text-[#102d7d] shadow-sm border border-blue-200'
               : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -840,7 +840,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <button
           type="button"
           onClick={() => setActiveTabSection('CRITERIA')}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'CRITERIA'
+          className={`shrink-0 sm:shrink sm:flex-1 whitespace-nowrap py-3 px-3.5 sm:px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'CRITERIA'
               ? 'bg-white text-emerald-700 shadow-sm border border-emerald-200'
               : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -857,7 +857,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <button
           type="button"
           onClick={() => setActiveTabSection('GRADE')}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'GRADE'
+          className={`shrink-0 sm:shrink sm:flex-1 whitespace-nowrap py-3 px-3.5 sm:px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'GRADE'
               ? 'bg-white text-[#102d7d] shadow-sm border border-blue-200'
               : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -869,7 +869,7 @@ const LecturerThesisEvaluationDetailPage = () => {
         <button
           type="button"
           onClick={() => setActiveTabSection('INFO')}
-          className={`flex-1 py-3 px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'INFO'
+          className={`shrink-0 sm:shrink sm:flex-1 whitespace-nowrap py-3 px-3.5 sm:px-4 rounded-xl font-bold text-xs transition flex items-center justify-center gap-2 cursor-pointer ${activeTabSection === 'INFO'
               ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
               : 'text-slate-600 hover:text-slate-900'
             }`}
@@ -1442,7 +1442,7 @@ const LecturerThesisEvaluationDetailPage = () => {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-100">
               <Link
                 to="/lecturer/theses"
                 className="px-5 py-2.5 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-xs"

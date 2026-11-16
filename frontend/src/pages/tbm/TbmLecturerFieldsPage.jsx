@@ -381,8 +381,8 @@ const TbmLecturerFieldsPage = () => {
             <CheckCircle2 className="w-9 h-9 text-emerald-400" />
             <span>Hiện không có yêu cầu thay đổi lĩnh vực nào.</span>
           </div>
-        ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
+        ) : (<>
+          <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-200">
             <table className="w-full min-w-[650px] text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold">
@@ -485,7 +485,105 @@ const TbmLecturerFieldsPage = () => {
               </tbody>
             </table>
           </div>
-        )}
+          {/* Mobile Card List (< 768px) */}
+          <div className="md:hidden divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
+            {requests.map((req, idx) => {
+              const lecUser = req.lecturerId?.userId;
+              const currentList = Array.isArray(req.currentFields) ? req.currentFields : [];
+              const requestedList = Array.isArray(req.requestedFields) ? req.requestedFields : [];
+              const proposedList = Array.isArray(req.proposedNewTags) ? req.proposedNewTags : [];
+
+              return (
+                <div key={req._id} className="p-4 space-y-3 bg-white">
+                  {/* Header: STT + Lecturer Name */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10.5px] font-mono text-slate-400 font-bold">#{idx + 1}</span>
+                        <h4 className="font-bold text-slate-900 text-xs">
+                          {req.lecturerId?.academicTitle ? req.lecturerId.academicTitle + ' ' : ''}
+                          {lecUser?.fullName || 'Chưa cập nhật'}
+                        </h4>
+                      </div>
+                      <div className="text-[11px] text-slate-400 font-mono mt-0.5">
+                        {req.lecturerId?.lecturerCode || lecUser?.email || ''}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Fields */}
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-slate-400 block">Lĩnh vực hiện tại</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {currentList.length > 0 ? (
+                        currentList.map((tag, i) => (
+                          <span
+                            key={i}
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-[10.5px] bg-white text-slate-700 border border-slate-200"
+                          >
+                            {tag}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-slate-400 italic text-[11px]">Chưa có lĩnh vực</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Requested Fields */}
+                  <div className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-100 text-xs space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-[#123891] block">Yêu cầu thay đổi</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {requestedList.map((tag, i) => {
+                        const isNewProposed = proposedList.includes(tag);
+                        return (
+                          <span
+                            key={i}
+                            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold border ${
+                              isNewProposed
+                                ? 'bg-purple-50 text-purple-700 border-purple-200'
+                                : 'bg-white text-[#123891] border-blue-200'
+                            }`}
+                          >
+                            {isNewProposed && (
+                              <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
+                            )}
+                            <span>{tag}</span>
+                            {isNewProposed && (
+                              <span className="text-[9px] px-1 rounded bg-purple-200 text-purple-900 font-bold uppercase">
+                                Mới
+                              </span>
+                            )}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => handleRejectRequest(req)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl transition border border-rose-200 cursor-pointer"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Từ chối</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApproveRequest(req)}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition border border-emerald-200 cursor-pointer"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>Duyệt</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>)}
       </div>
 
       {/* ============================================================== */}

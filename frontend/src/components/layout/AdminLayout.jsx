@@ -23,10 +23,10 @@ const AdminLayout = () => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Desktop Sidebar (Fixed) */}
+    <div className="min-h-screen bg-slate-50 flex overflow-x-clip">
+      {/* Desktop Sidebar (Fixed >= 1300px) */}
       <div
-        className={`hidden lg:flex flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
+        className={`admin-desktop-sidebar flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
           isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
         } bg-[#123891]`}
       >
@@ -35,30 +35,30 @@ const AdminLayout = () => {
         />
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile & Tablet Drawer (< 1300px) */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden flex">
+        <div className="fixed inset-0 z-50 admin-drawer-container flex">
           <div
             className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setMobileOpen(false)}
             aria-label="Đóng menu"
           />
-          <div className="relative w-64 max-w-[85vw] bg-[#123891] shadow-2xl z-10 h-full flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="relative w-72 sm:w-80 max-w-[85vw] bg-[#123891] shadow-2xl z-10 h-full flex flex-col animate-in slide-in-from-left duration-200">
             <AdminSidebar onCloseMobile={() => setMobileOpen(false)} />
           </div>
         </div>
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-clip">
         {/* Top Header */}
-        <header className="h-16 bg-white border-b border-slate-200/80 sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6">
+        <header className="admin-sticky-header h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 shadow-xs">
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger Toggle */}
+            {/* Mobile & Tablet Hamburger Toggle */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition cursor-pointer"
+              className="admin-hamburger-btn p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition cursor-pointer"
               title="Mở menu điều hướng"
               aria-label="Mở menu điều hướng"
             >
@@ -69,7 +69,7 @@ const AdminLayout = () => {
             <button
               type="button"
               onClick={toggleSidebar}
-              className="hidden lg:flex p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition cursor-pointer"
+              className="admin-desktop-toggle p-2 text-slate-500 hover:text-slate-900 rounded-xl hover:bg-slate-50 transition cursor-pointer"
               title={isSidebarCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
               aria-label="Đóng/mở thanh điều hướng"
             >

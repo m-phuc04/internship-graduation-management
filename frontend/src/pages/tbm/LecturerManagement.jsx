@@ -266,13 +266,13 @@ const LecturerManagement = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <BookOpen className="w-7 h-7" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               Quản lý Danh sách Giảng viên
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -281,26 +281,26 @@ const LecturerManagement = () => {
           </div>
         </div>
 
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={() => {
-                setSelectedLecturer(null);
-                setFormModalOpen(true);
-              }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#123891] text-white text-xs font-semibold hover:bg-[#102d7d] active:scale-98 transition shadow-xs cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Thêm giảng viên</span>
-            </button>
-          </div>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <button
+            onClick={() => {
+              setSelectedLecturer(null);
+              setFormModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] text-white text-xs font-semibold hover:bg-[#102d7d] active:scale-98 transition shadow-xs cursor-pointer w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Thêm giảng viên</span>
+          </button>
         </div>
+      </div>
 
       {/* Yêu Cầu Thay Đổi Lĩnh Vực (Pending Field Requests) */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div className="flex items-center gap-2">
             <Clock className="w-5 h-5 text-amber-500" />
-            <h2 className="text-base font-bold text-slate-900">
+            <h2 className="text-sm sm:text-base font-bold text-slate-900">
               Yêu Cầu Thay Đổi Lĩnh Vực
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
@@ -319,75 +319,180 @@ const LecturerManagement = () => {
             <span>Hiện không có yêu cầu thay đổi lĩnh vực nào.</span>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-slate-200">
-            <table className="w-full text-left text-xs border-collapse min-w-[620px]">
-              <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold">
-                  <th className="py-3 px-3.5 w-12 text-center">STT</th>
-                  <th className="py-3 px-4">Tên giảng viên</th>
-                  <th className="py-3 px-4">Lĩnh vực hiện tại</th>
-                  <th className="py-3 px-4">Yêu cầu thay đổi</th>
-                  <th className="py-3 px-4 w-24 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {fieldRequests.map((req, idx) => {
-                  const lecUser = req.lecturerId?.userId;
-                  const currentList = Array.isArray(req.currentFields) ? req.currentFields : [];
-                  const requestedList = Array.isArray(req.requestedFields) ? req.requestedFields : [];
-                  const proposedList = Array.isArray(req.proposedNewTags) ? req.proposedNewTags : [];
+          <>
+            {/* Desktop Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto rounded-2xl border border-slate-200">
+              <table className="w-full text-left text-xs border-collapse min-w-[620px]">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-700 font-bold">
+                    <th className="py-3 px-3.5 w-12 text-center">STT</th>
+                    <th className="py-3 px-4">Tên giảng viên</th>
+                    <th className="py-3 px-4">Lĩnh vực hiện tại</th>
+                    <th className="py-3 px-4">Yêu cầu thay đổi</th>
+                    <th className="py-3 px-4 w-24 text-right"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {fieldRequests.map((req, idx) => {
+                    const lecUser = req.lecturerId?.userId;
+                    const currentList = Array.isArray(req.currentFields) ? req.currentFields : [];
+                    const requestedList = Array.isArray(req.requestedFields) ? req.requestedFields : [];
+                    const proposedList = Array.isArray(req.proposedNewTags) ? req.proposedNewTags : [];
 
-                  return (
-                    <tr key={req._id} className="hover:bg-slate-50/70 transition">
-                      <td className="py-3.5 px-3.5 text-center font-mono text-slate-500">
+                    return (
+                      <tr key={req._id} className="hover:bg-slate-50/70 transition">
+                        <td className="py-3.5 px-3.5 text-center font-mono text-slate-500">
+                          {idx + 1}
+                        </td>
+                        <td className="py-3.5 px-4 font-medium text-slate-900">
+                          <div>
+                            <strong className="block text-slate-900">
+                              {req.lecturerId?.academicTitle ? `${req.lecturerId.academicTitle} ` : ''}
+                              {lecUser?.fullName || 'Chưa cập nhật'}
+                            </strong>
+                            <span className="text-[11px] text-slate-400 font-mono">
+                              {req.lecturerId?.lecturerCode || lecUser?.email || ''}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4">
+                          {currentList.length > 0 ? (
+                            <div className="flex flex-wrap gap-1.5 max-w-xs">
+                              {currentList.map((tag, i) => (
+                                <span
+                                  key={i}
+                                  className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-700 border border-slate-200"
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-400 italic">Không có</span>
+                          )}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-wrap gap-1.5 max-w-md">
+                            {requestedList.map((tag, i) => {
+                              const isNewProposed = proposedList.includes(tag);
+                              return (
+                                <span
+                                  key={i}
+                                  className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                    isNewProposed
+                                      ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-2xs'
+                                      : 'bg-blue-50 text-[#123891] border-blue-200'
+                                  }`}
+                                >
+                                  {isNewProposed && (
+                                    <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
+                                  )}
+                                  <span>{tag}</span>
+                                  {isNewProposed && (
+                                    <span className="text-[9px] px-1 rounded bg-purple-200 text-purple-900 font-bold uppercase">
+                                      Mới
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleApproveFieldRequest(req)}
+                              disabled={actionLoading}
+                              className="p-1 text-slate-400 hover:text-emerald-600 transition cursor-pointer disabled:opacity-50"
+                              title="Phê duyệt yêu cầu"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRejectFieldRequest(req)}
+                              disabled={actionLoading}
+                              className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer disabled:opacity-50"
+                              title="Từ chối yêu cầu"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100 rounded-2xl border border-slate-200 overflow-hidden">
+              {fieldRequests.map((req, idx) => {
+                const lecUser = req.lecturerId?.userId;
+                const currentList = Array.isArray(req.currentFields) ? req.currentFields : [];
+                const requestedList = Array.isArray(req.requestedFields) ? req.requestedFields : [];
+                const proposedList = Array.isArray(req.proposedNewTags) ? req.proposedNewTags : [];
+
+                return (
+                  <div key={req._id} className="p-3.5 space-y-2.5 bg-white">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <strong className="block text-slate-900 text-sm">
+                          {req.lecturerId?.academicTitle ? `${req.lecturerId.academicTitle} ` : ''}
+                          {lecUser?.fullName || 'Chưa cập nhật'}
+                        </strong>
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          {req.lecturerId?.lecturerCode || lecUser?.email || ''}
+                        </span>
+                      </div>
+                      <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
                         {idx + 1}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-slate-900">
-                        <div>
-                          <strong className="block text-slate-900">
-                            {req.lecturerId?.academicTitle ? `${req.lecturerId.academicTitle} ` : ''}
-                            {lecUser?.fullName || 'Chưa cập nhật'}
-                          </strong>
-                          <span className="text-[11px] text-slate-400 font-mono">
-                            {req.lecturerId?.lecturerCode || lecUser?.email || ''}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="py-3.5 px-4">
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                          Lĩnh vực hiện tại:
+                        </span>
                         {currentList.length > 0 ? (
-                          <div className="flex flex-wrap gap-1.5 max-w-xs">
+                          <div className="flex flex-wrap gap-1">
                             {currentList.map((tag, i) => (
                               <span
                                 key={i}
-                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] bg-slate-100 text-slate-700 border border-slate-200"
+                                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] bg-slate-100 text-slate-700 border border-slate-200"
                               >
                                 {tag}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <span className="text-slate-400 italic">Không có</span>
+                          <span className="text-slate-400 italic text-[11px]">Không có</span>
                         )}
-                      </td>
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-wrap gap-1.5 max-w-md">
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block mb-1">
+                          Yêu cầu thay đổi:
+                        </span>
+                        <div className="flex flex-wrap gap-1">
                           {requestedList.map((tag, i) => {
                             const isNewProposed = proposedList.includes(tag);
                             return (
                               <span
                                 key={i}
-                                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
                                   isNewProposed
-                                    ? 'bg-purple-50 text-purple-700 border-purple-200 shadow-2xs'
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200'
                                     : 'bg-blue-50 text-[#123891] border-blue-200'
                                 }`}
                               >
-                                {isNewProposed && (
-                                  <Sparkles className="w-3 h-3 text-purple-500 shrink-0" />
-                                )}
+                                {isNewProposed && <Sparkles className="w-2.5 h-2.5 text-purple-500" />}
                                 <span>{tag}</span>
                                 {isNewProposed && (
-                                  <span className="text-[9px] px-1 rounded bg-purple-200 text-purple-900 font-bold uppercase">
+                                  <span className="text-[8px] px-1 rounded bg-purple-200 text-purple-900 font-bold uppercase">
                                     Mới
                                   </span>
                                 )}
@@ -395,40 +500,39 @@ const LecturerManagement = () => {
                             );
                           })}
                         </div>
-                      </td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleApproveFieldRequest(req)}
-                            disabled={actionLoading}
-                            className="p-1 text-slate-400 hover:text-emerald-600 transition cursor-pointer disabled:opacity-50"
-                            title="Phê duyệt yêu cầu"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleRejectFieldRequest(req)}
-                            disabled={actionLoading}
-                            className="p-1 text-slate-400 hover:text-rose-600 transition cursor-pointer disabled:opacity-50"
-                            title="Từ chối yêu cầu"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        type="button"
+                        onClick={() => handleRejectFieldRequest(req)}
+                        disabled={actionLoading}
+                        className="px-3 py-1.5 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-xs font-bold transition active:scale-95 cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Từ chối</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleApproveFieldRequest(req)}
+                        disabled={actionLoading}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold transition active:scale-95 cursor-pointer disabled:opacity-50 inline-flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Duyệt</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
       {/* Search & Filter Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
             value={search}
@@ -441,7 +545,7 @@ const LecturerManagement = () => {
           <select
             value={isActive}
             onChange={(e) => handleFilterChange(setIsActive, e.target.value)}
-            className="w-full sm:w-auto min-w-[240px] py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+            className="w-full sm:w-auto min-w-[220px] md:min-w-[240px] py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
           >
             <option value="">-- Tất cả trạng thái tài khoản --</option>
             <option value="true">Đang hoạt động</option>
@@ -450,8 +554,8 @@ const LecturerManagement = () => {
         </div>
       </div>
 
-      {/* Main Table */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      {/* Main Table / Cards */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
             <LoadingSkeleton rows={5} cols={7} />
@@ -467,168 +571,298 @@ const LecturerManagement = () => {
             }}
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[700px]">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 text-center w-14">STT</th>
-                  <th className="py-3.5 px-4">Giảng viên</th>
-                  <th className="py-3.5 px-4">Học vị</th>
-                  <th className="py-3.5 px-4">Lĩnh vực</th>
-                  <th className="py-3.5 px-4 text-center">Tiếp nhận</th>
-                  <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-sm">
-                {lecturers.map((lec, idx) => {
-                  const isLecturerActive = lec.isActive !== false && lec.userId?.isActive !== false;
+          <>
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[850px]">
+                <thead>
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Giảng viên</th>
+                    <th className="py-3.5 px-4 min-w-[100px]">Học vị</th>
+                    <th className="py-3.5 px-4 min-w-[220px]">Lĩnh vực</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px]">Tiếp nhận</th>
+                    <th className="py-3.5 px-4 text-center min-w-[130px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 pr-6 text-right min-w-[120px]">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-sm">
+                  {lecturers.map((lec, idx) => {
+                    const isLecturerActive = lec.isActive !== false && lec.userId?.isActive !== false;
 
-                  return (
-                    <tr
-                      key={lec._id}
-                      className={`transition-colors group ${
-                        !isLecturerActive ? 'bg-slate-50/50 opacity-75' : 'hover:bg-slate-50/80'
-                      }`}
-                    >
-                      {/* STT */}
-                      <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
-                        {(page - 1) * 10 + idx + 1}
-                      </td>
-                      {/* Lecturer Info */}
-                      <td className="py-3.5 px-4 pl-6">
-                        <UserNameClickable
-                          user={lec}
-                          name={lec.userId?.fullName || 'Chưa đặt tên'}
-                          subtitle={lec.userId?.email || 'Chưa có email'}
-                          avatarSize="w-9 h-9"
-                        />
-                      </td>
+                    return (
+                      <tr
+                        key={lec._id}
+                        className={`transition-colors group ${
+                          !isLecturerActive ? 'bg-slate-50/50 opacity-75' : 'hover:bg-slate-50/80'
+                        }`}
+                      >
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
+                          {(page - 1) * 10 + idx + 1}
+                        </td>
+                        {/* Lecturer Info */}
+                        <td className="py-3.5 px-4 pl-6">
+                          <UserNameClickable
+                            user={lec}
+                            name={lec.userId?.fullName || 'Chưa đặt tên'}
+                            subtitle={lec.userId?.email || 'Chưa có email'}
+                            avatarSize="w-9 h-9"
+                          />
+                        </td>
 
-                      {/* Academic Title */}
-                      <td className="py-3.5 px-4 font-medium text-slate-800 text-xs">
-                        <span className="px-2 py-0.5 bg-slate-100 rounded-md">
-                          {lec.academicTitle || 'ThS.'}
+                        {/* Academic Title */}
+                        <td className="py-3.5 px-4 font-medium text-slate-800 text-xs">
+                          <span className="px-2 py-0.5 bg-slate-100 rounded-md">
+                            {lec.academicTitle || 'ThS.'}
+                          </span>
+                        </td>
+
+                        {/* Research Fields / Lĩnh vực */}
+                        <td className="py-3.5 px-4">
+                          {(() => {
+                            const fieldsList = Array.isArray(lec.fields) && lec.fields.length > 0
+                              ? lec.fields
+                              : (lec.specialization
+                                  ? lec.specialization.split(',').map((s) => s.trim()).filter(Boolean)
+                                  : []);
+
+                            if (fieldsList.length === 0) {
+                              return <span className="text-xs text-slate-400 italic">Chưa cập nhật</span>;
+                            }
+
+                            return (
+                              <div className="flex flex-wrap gap-1 max-w-[280px]">
+                                {fieldsList.slice(0, 3).map((field, fIdx) => (
+                                  <span
+                                    key={fIdx}
+                                    className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60"
+                                  >
+                                    {field}
+                                  </span>
+                                ))}
+                                {fieldsList.length > 3 && (
+                                  <span
+                                    title={fieldsList.slice(3).join(', ')}
+                                    className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 cursor-help"
+                                  >
+                                    +{fieldsList.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
+                        </td>
+
+                        {/* Availability */}
+                        <td className="py-3.5 px-4 text-center">
+                          <StatusBadge
+                            status={lec.isAvailable}
+                            label={lec.isAvailable ? 'Sẵn sàng' : 'Tạm ngưng'}
+                            size="sm"
+                          />
+                        </td>
+
+                        {/* Account Status Badge */}
+                        <td className="py-3.5 px-4 text-center">
+                          {isLecturerActive ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3" />
+                              <span>Hoạt động</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
+                              <XCircle className="w-3 h-3" />
+                              <span>Vô hiệu hóa</span>
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 pr-6 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              onClick={() => {
+                                setSelectedLecturer(lec);
+                                setDetailModalOpen(true);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition"
+                              title="Xem chi tiết"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+
+                            <button
+                              onClick={() => {
+                                setSelectedLecturer(lec);
+                                setFormModalOpen(true);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                              title="Chỉnh sửa"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Toggle Active Action (Deactivate / Activate) */}
+                            {isLecturerActive ? (
+                              <button
+                                onClick={() => {
+                                  setSelectedLecturer(lec);
+                                  setDeactivateDialogOpen(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                                title="Vô hiệu hóa tài khoản"
+                              >
+                                <UserX className="w-4 h-4" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  setSelectedLecturer(lec);
+                                  setActivateDialogOpen(true);
+                                }}
+                                className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                                title="Kích hoạt lại tài khoản"
+                              >
+                                <UserCheck className="w-4 h-4" />
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {lecturers.map((lec, idx) => {
+                const isLecturerActive = lec.isActive !== false && lec.userId?.isActive !== false;
+                const fieldsList = Array.isArray(lec.fields) && lec.fields.length > 0
+                  ? lec.fields
+                  : (lec.specialization
+                      ? lec.specialization.split(',').map((s) => s.trim()).filter(Boolean)
+                      : []);
+
+                return (
+                  <div key={lec._id} className={`p-4 space-y-3 hover:bg-slate-50/60 transition ${!isLecturerActive ? 'bg-slate-50/50 opacity-80' : ''}`}>
+                    {/* Header: STT + Name + Title */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                          {(page - 1) * 10 + idx + 1}
                         </span>
-                      </td>
+                        <div className="min-w-0">
+                          <UserNameClickable
+                            user={lec}
+                            name={lec.userId?.fullName || 'Chưa đặt tên'}
+                            subtitle={lec.userId?.email || 'Chưa có email'}
+                            avatarSize="w-8 h-8"
+                          />
+                        </div>
+                      </div>
 
-                      {/* Research Fields / Lĩnh vực */}
-                      <td className="py-3.5 px-4">
-                        {(() => {
-                          const fieldsList = Array.isArray(lec.fields) && lec.fields.length > 0
-                            ? lec.fields
-                            : (lec.specialization
-                                ? lec.specialization.split(',').map((s) => s.trim()).filter(Boolean)
-                                : []);
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-md shrink-0">
+                        {lec.academicTitle || 'ThS.'}
+                      </span>
+                    </div>
 
-                          if (fieldsList.length === 0) {
-                            return <span className="text-xs text-slate-400 italic">Chưa cập nhật</span>;
-                          }
-
-                          return (
-                            <div className="flex flex-wrap gap-1 max-w-[280px]">
-                              {fieldsList.slice(0, 3).map((field, fIdx) => (
-                                <span
-                                  key={fIdx}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60"
-                                >
-                                  {field}
-                                </span>
-                              ))}
-                              {fieldsList.length > 3 && (
-                                <span
-                                  title={fieldsList.slice(3).join(', ')}
-                                  className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-600 border border-slate-200 cursor-help"
-                                >
-                                  +{fieldsList.length - 3}
-                                </span>
-                              )}
-                            </div>
-                          );
-                        })()}
-                      </td>
-
-                      {/* Availability */}
-                      <td className="py-3.5 px-4 text-center">
+                    {/* Status & Availability Badges */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-slate-400 text-[10px]">Tiếp nhận:</span>
                         <StatusBadge
                           status={lec.isAvailable}
                           label={lec.isAvailable ? 'Sẵn sàng' : 'Tạm ngưng'}
                           size="sm"
                         />
-                      </td>
+                      </div>
 
-                      {/* Account Status Badge */}
-                      <td className="py-3.5 px-4 text-center">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className="text-slate-400 text-[10px]">Tài khoản:</span>
                         {isLecturerActive ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Hoạt động</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-2.5 h-2.5" />
+                            Hoạt động
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 border border-slate-200">
-                            <XCircle className="w-3 h-3" />
-                            <span>Vô hiệu hóa</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                            <XCircle className="w-2.5 h-2.5" />
+                            Vô hiệu hóa
                           </span>
                         )}
-                      </td>
+                      </div>
+                    </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 pr-6 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <button
-                            onClick={() => {
-                              setSelectedLecturer(lec);
-                              setDetailModalOpen(true);
-                            }}
-                            className="p-1.5 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition"
-                            title="Xem chi tiết"
+                    {/* Fields */}
+                    {fieldsList.length > 0 && (
+                      <div className="flex flex-wrap gap-1 pt-0.5">
+                        {fieldsList.map((f, fIdx) => (
+                          <span
+                            key={fIdx}
+                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200/60"
                           >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    )}
 
-                          <button
-                            onClick={() => {
-                              setSelectedLecturer(lec);
-                              setFormModalOpen(true);
-                            }}
-                            className="p-1.5 text-slate-500 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                            title="Chỉnh sửa"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-1.5 pt-1 border-t border-slate-100/80">
+                      <button
+                        onClick={() => {
+                          setSelectedLecturer(lec);
+                          setDetailModalOpen(true);
+                        }}
+                        className="p-2 text-slate-600 hover:text-[#123891] hover:bg-blue-50 border border-slate-200 rounded-xl transition active:scale-95 cursor-pointer"
+                        title="Xem chi tiết"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
 
-                          {/* Toggle Active Action (Deactivate / Activate) */}
-                          {isLecturerActive ? (
-                            <button
-                              onClick={() => {
-                                setSelectedLecturer(lec);
-                                setDeactivateDialogOpen(true);
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                              title="Vô hiệu hóa tài khoản"
-                            >
-                              <UserX className="w-4 h-4" />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => {
-                                setSelectedLecturer(lec);
-                                setActivateDialogOpen(true);
-                              }}
-                              className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
-                              title="Kích hoạt lại tài khoản"
-                            >
-                              <UserCheck className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      <button
+                        onClick={() => {
+                          setSelectedLecturer(lec);
+                          setFormModalOpen(true);
+                        }}
+                        className="p-2 text-slate-600 hover:text-amber-600 hover:bg-amber-50 border border-slate-200 rounded-xl transition active:scale-95 cursor-pointer"
+                        title="Chỉnh sửa"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+
+                      {isLecturerActive ? (
+                        <button
+                          onClick={() => {
+                            setSelectedLecturer(lec);
+                            setDeactivateDialogOpen(true);
+                          }}
+                          className="p-2 text-rose-500 hover:bg-rose-50 border border-rose-200 rounded-xl transition active:scale-95 cursor-pointer"
+                          title="Vô hiệu hóa tài khoản"
+                        >
+                          <UserX className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            setSelectedLecturer(lec);
+                            setActivateDialogOpen(true);
+                          }}
+                          className="p-2 text-emerald-600 hover:bg-emerald-50 border border-emerald-200 rounded-xl transition active:scale-95 cursor-pointer"
+                          title="Kích hoạt lại tài khoản"
+                        >
+                          <UserCheck className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Pagination */}

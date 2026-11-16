@@ -116,9 +116,9 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   ];
 
   return (
-    <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
+    <aside className="w-full h-full bg-[#123891] text-slate-200 flex flex-col shrink-0 min-h-0 select-none">
       {/* Brand Header */}
-      <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73]">
+      <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73] shrink-0">
         <Link
           to="/"
           onClick={onCloseMobile}
@@ -142,7 +142,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
             type="button"
             onClick={onCloseMobile}
             aria-label="Đóng menu"
-            className="lg:hidden p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer shrink-0 ml-2"
+            className="student-hamburger-btn p-1.5 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg transition cursor-pointer shrink-0 ml-2"
             title="Đóng menu"
           >
             <X className="w-5 h-5" />
@@ -151,7 +151,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
       </div>
 
       {/* Navigation List */}
-      <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
+      <div className="flex-1 min-h-0 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {/* 1. Tổng quan */}
         <div>
           <Link

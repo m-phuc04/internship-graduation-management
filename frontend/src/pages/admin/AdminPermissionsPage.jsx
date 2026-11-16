@@ -116,13 +116,13 @@ const AdminPermissionsPage = () => {
   return (
     <div className="space-y-6">
       {/* 1. Header Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <KeyRound className="w-7 h-7" />
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <KeyRound className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               Quản lý Phân quyền Giảng viên & Bộ môn
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -133,8 +133,8 @@ const AdminPermissionsPage = () => {
       </div>
 
       {/* 2. Filter / Search */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
-        <div className="w-full md:w-96">
+      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="w-full sm:w-80 md:w-96">
           <SearchInput
             value={search}
             onChange={setSearch}
@@ -142,66 +142,164 @@ const AdminPermissionsPage = () => {
           />
         </div>
 
-        <div className="text-xs text-slate-500 font-medium whitespace-nowrap">
+        <div className="text-xs text-slate-500 font-medium whitespace-nowrap text-right sm:text-left">
           Tổng cộng: <strong>{filteredLecturers.length}</strong> giảng viên
         </div>
       </div>
 
-      {/* 3. Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      {/* 3. Table / Cards */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
             <LoadingSkeleton rows={5} cols={5} />
           </div>
         ) : filteredLecturers.length === 0 ? (
-          <div className="p-12">
+          <div className="p-8 sm:p-12">
             <EmptyState
               title="Không tìm thấy giảng viên"
               description="Không có giảng viên nào phù hợp với điều kiện tìm kiếm."
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs min-w-[700px]">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                  <th className="py-3.5 px-4 text-center w-14">STT</th>
-                  <th className="py-3.5 px-4">Họ và Tên</th>
-                  
-                  <th className="py-3.5 px-4">Role</th>
-                  <th className="py-3.5 px-4">Quyền Nghiệp Vụ</th>
-                  <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredLecturers.map((item, idx) => {
-                  const role = item.user?.role || 'LECTURER';
-                  const perms = item.permissions || [];
-                  const isTbm = role === 'TBM';
+          <>
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse text-xs min-w-[850px]">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">Họ và Tên</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Role</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Quyền Nghiệp Vụ</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right min-w-[120px]">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredLecturers.map((item, idx) => {
+                    const role = item.user?.role || 'LECTURER';
+                    const perms = item.permissions || [];
+                    const isTbm = role === 'TBM';
 
-                  return (
-                    <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                      {/* STT */}
-                      <td className="py-3.5 px-4 text-center font-medium text-slate-500">
-                        {idx + 1}
-                      </td>
+                    return (
+                      <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-500 whitespace-nowrap">
+                          {idx + 1}
+                        </td>
 
-                      {/* Name & Academic Title */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">
-                          {item.academicTitle ? `${item.academicTitle} ` : ''}
-                          {item.user?.fullName || '—'}
+                        {/* Name & Academic Title */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          <div className="font-bold text-slate-900">
+                            {item.academicTitle ? `${item.academicTitle} ` : ''}
+                            {item.user?.fullName || '—'}
+                          </div>
+                          <div className="text-[10px] text-slate-400 mt-0.5">
+                            {item.department || 'Khoa Công nghệ Thông tin'}
+                          </div>
+                        </td>
+
+                        {/* Role */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {isTbm ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                              <Building className="w-3 h-3 shrink-0" />
+                              TBM
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
+                              <User className="w-3 h-3 shrink-0" />
+                              LECTURER
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Permissions */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex flex-wrap gap-1">
+                            {perms.includes('GVHD') && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200 whitespace-nowrap">
+                                GVHD
+                              </span>
+                            )}
+                            {perms.includes('GVPB_KIN') && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200 whitespace-nowrap">
+                                GVPB KÍN
+                              </span>
+                            )}
+                            {perms.includes('GVPB_HOIDONG') && (
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200 whitespace-nowrap">
+                                GVPB HỘI ĐỒNG
+                              </span>
+                            )}
+                            {perms.length === 0 && (
+                              <span className="text-[11px] text-slate-400 italic whitespace-nowrap">
+                                Chưa phân quyền
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4 whitespace-nowrap">
+                          {item.user?.isActive !== false ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 shrink-0" />
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                              <XCircle className="w-3 h-3 shrink-0" />
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEdit(item)}
+                            className="inline-flex items-center justify-center min-w-[95px] px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#123891] font-bold border border-blue-200 hover:bg-blue-100 transition cursor-pointer whitespace-nowrap shadow-2xs"
+                          >
+                            Phân quyền
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {filteredLecturers.map((item, idx) => {
+                const role = item.user?.role || 'LECTURER';
+                const perms = item.permissions || [];
+                const isTbm = role === 'TBM';
+
+                return (
+                  <div key={item._id} className="p-4 space-y-3 hover:bg-slate-50/60 transition">
+                    {/* Header Row: STT + Name + Role */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="font-bold text-slate-900 text-sm">
+                            {item.academicTitle ? `${item.academicTitle} ` : ''}
+                            {item.user?.fullName || '—'}
+                          </span>
                         </div>
-                        <div className="text-[10px] text-slate-400 mt-0.5">
+                        <div className="text-[11px] text-slate-400 mt-0.5">
                           {item.department || 'Khoa Công nghệ Thông tin'}
                         </div>
-                      </td>
+                      </div>
 
-                      
-
-                      {/* Role */}
-                      <td className="py-3.5 px-4">
+                      {/* Role Badge */}
+                      <div className="shrink-0">
                         {isTbm ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
                             <Building className="w-3 h-3" />
@@ -213,36 +311,41 @@ const AdminPermissionsPage = () => {
                             LECTURER
                           </span>
                         )}
-                      </td>
+                      </div>
+                    </div>
 
-                      {/* Permissions */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex flex-wrap gap-1">
-                          {perms.includes('GVHD') && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
-                              GVHD
-                            </span>
-                          )}
-                          {perms.includes('GVPB_KIN') && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
-                              GVPB KÍN
-                            </span>
-                          )}
-                          {perms.includes('GVPB_HOIDONG') && (
-                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
-                              GVPB HỘI ĐỒNG
-                            </span>
-                          )}
-                          {perms.length === 0 && (
-                            <span className="text-[11px] text-slate-400 italic">
-                              Chưa phân quyền
-                            </span>
-                          )}
-                        </div>
-                      </td>
+                    {/* Permissions Badges */}
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">
+                        Quyền nghiệp vụ
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {perms.includes('GVHD') && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                            GVHD
+                          </span>
+                        )}
+                        {perms.includes('GVPB_KIN') && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                            GVPB KÍN
+                          </span>
+                        )}
+                        {perms.includes('GVPB_HOIDONG') && (
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                            GVPB HỘI ĐỒNG
+                          </span>
+                        )}
+                        {perms.length === 0 && (
+                          <span className="text-[11px] text-slate-400 italic">
+                            Chưa phân quyền
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                      {/* Status */}
-                      <td className="py-3.5 px-4">
+                    {/* Footer Row: Status + Action Button */}
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100/80 gap-3">
+                      <div>
                         {item.user?.isActive !== false ? (
                           <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                             <CheckCircle2 className="w-3 h-3" />
@@ -254,24 +357,21 @@ const AdminPermissionsPage = () => {
                             Inactive
                           </span>
                         )}
-                      </td>
+                      </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEdit(item)}
-                          className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#123891] font-bold border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
-                        >
-                          Phân quyền
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEdit(item)}
+                        className="px-4 py-2 rounded-xl bg-blue-50 text-[#123891] text-xs font-bold border border-blue-200 hover:bg-blue-100 active:scale-95 transition cursor-pointer"
+                      >
+                        Phân quyền
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
 
@@ -340,7 +440,7 @@ const AdminPermissionsPage = () => {
                 Vai trò quản lý bộ môn
               </label>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setSelectedRole('LECTURER')}
@@ -371,11 +471,11 @@ const AdminPermissionsPage = () => {
             </div>
 
             {/* Footer Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-2 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setEditModalOpen(false)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition cursor-pointer text-center"
               >
                 Hủy
               </button>
@@ -384,7 +484,7 @@ const AdminPermissionsPage = () => {
                 type="button"
                 disabled={saving}
                 onClick={handleSavePermissions}
-                className="px-5 py-2 bg-[#123891] hover:bg-[#093e94] text-white font-bold rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50"
+                className="w-full sm:w-auto px-5 py-2.5 sm:py-2 bg-[#123891] hover:bg-[#093e94] text-white font-bold rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50 text-center"
               >
                 {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>

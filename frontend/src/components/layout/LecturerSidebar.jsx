@@ -94,7 +94,7 @@ const LecturerSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   const isTbm = user?.role === 'TBM';
 
   return (
-    <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
+    <aside className="w-full h-full bg-[#123891] text-slate-200 flex flex-col shrink-0 min-h-0 select-none">
       {/* Brand Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-[#0e2c73] bg-[#0e2c73]">
         <Link

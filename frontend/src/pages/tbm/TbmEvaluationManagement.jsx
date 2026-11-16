@@ -8,14 +8,12 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
-import EvaluationDetailModal from '../../components/evaluations/EvaluationDetailModal';
 
 import {
   Award,
   Building2,
   Calendar,
-  Eye,
-  RefreshCw,
+    RefreshCw,
   Clock,
   Filter,
   CheckCircle2,
@@ -51,8 +49,7 @@ const TbmEvaluationManagement = () => {
   const [page, setPage] = useState(1);
 
   // Modals
-  const [selectedInternship, setSelectedInternship] = useState(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [targetInternship, setTargetInternship] = useState(null);
   const [deleteEvalModalOpen, setDeleteEvalModalOpen] = useState(false);
@@ -492,9 +489,7 @@ const TbmEvaluationManagement = () => {
 
         showToast(res?.message || 'Đã xóa kết quả đánh giá thành công!', 'success');
         setDeleteEvalModalOpen(false);
-        setDetailModalOpen(false);
         setDeleteTarget(null);
-        setSelectedInternship(null);
         await fetchEvaluations();
       }
     } catch (err) {
@@ -555,7 +550,7 @@ const TbmEvaluationManagement = () => {
       {/* Main Content: Evaluations List */}
       <div className="space-y-4">
         {/* Filter & Search Bar */}
-        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+        <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           <div className="w-full md:w-96">
             <SearchInput
               value={search}
@@ -567,15 +562,15 @@ const TbmEvaluationManagement = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-            <Filter className="w-4 h-4 text-slate-400" />
+          <div className="flex items-center gap-2 w-full md:w-auto justify-start md:justify-end">
+            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
             <select
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
+              className="w-full sm:w-auto bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
             >
               {EVAL_STATUS_FILTERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -598,8 +593,8 @@ const TbmEvaluationManagement = () => {
               title="Chưa có dữ liệu đánh giá"
               description="Không tìm thấy phiếu đánh giá thực tập nào phù hợp với bộ lọc."
             />
-          ) : (
-            <div className="overflow-x-auto">
+          ) : (<>
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[850px]">
                 <thead>
                   <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
@@ -629,11 +624,7 @@ const TbmEvaluationManagement = () => {
                     return (
                       <tr
                         key={item._id}
-                        onClick={() => {
-                          setSelectedInternship(item);
-                          setDetailModalOpen(true);
-                        }}
-                        className="hover:bg-blue-50/40 transition cursor-pointer group"
+                        className="hover:bg-slate-50/70 transition group"
                       >
                         {/* STT */}
                         <td className="py-3.5 px-4 text-center font-medium text-xs text-slate-500">
@@ -705,7 +696,7 @@ const TbmEvaluationManagement = () => {
                             </span>
                           ) : isItemFail ? (
                             <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                              FAIL (Không đạt)
+                              FAIL (Rớt)
                             </span>
                           ) : (
                             <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
@@ -746,18 +737,6 @@ const TbmEvaluationManagement = () => {
                             className="flex items-center justify-end gap-1.5"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setSelectedInternship(item);
-                                setDetailModalOpen(true);
-                              }}
-                              className="p-1.5 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                              title="Xem chi tiết phiếu đánh giá"
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-
                             {/* Ẩn điểm đã công bố */}
                             {isPublished && (
                               <button
@@ -823,7 +802,151 @@ const TbmEvaluationManagement = () => {
                 </tbody>
               </table>
             </div>
-          )}
+            {/* Mobile Card List (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {evaluations.map((item, idx) => {
+                const hasValidScore = Boolean(
+                  item.evaluation?.score !== undefined &&
+                  item.evaluation?.score !== null &&
+                  !isNaN(item.evaluation?.score)
+                );
+                const isItemPass = item.isPass || hasValidScore;
+                const isItemFail = item.isFail && !hasValidScore;
+                const isHidden = item.scorePublishStatus === 'HIDDEN';
+                const isPublished = !isHidden && Boolean(item.scorePublishStatus === 'PUBLISHED' || item.isScorePublished);
+
+                return (
+                  <div
+                    key={item._id}
+                    className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition"
+                  >
+                    {/* Header: STT + Student name + Single Unified Result Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10.5px] font-mono text-slate-400 font-bold">#{(page - 1) * 10 + idx + 1}</span>
+                          <h4 className="font-bold text-slate-900 text-xs truncate">
+                            {item.studentId?.userId?.fullName || 'Chưa cập nhật'}
+                          </h4>
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                          MSSV: {item.studentId?.studentCode} • {item.studentId?.className || ''}
+                        </div>
+                      </div>
+
+                      {/* Single Unified Result Badge: PASS (Đạt) / FAIL (Rớt) / Đang thực hiện */}
+                      {isItemPass ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 shrink-0">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>PASS (Đạt)</span>
+                        </span>
+                      ) : isItemFail ? (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-bold bg-rose-100 text-rose-800 border border-rose-300 shrink-0">
+                          FAIL (Rớt)
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold bg-slate-100 text-slate-600 border border-slate-200 shrink-0">
+                          Đang thực hiện
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Company & Position */}
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                      <div className="font-semibold text-slate-900 truncate">
+                        {item.companyId?.name}
+                      </div>
+                      <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                        Vị trí: {item.position}
+                      </div>
+                    </div>
+
+                    {/* Điểm tổng kết */}
+                    <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                      <span className="text-slate-500 font-medium">Điểm tổng kết</span>
+                      {hasValidScore ? (
+                        <div className="inline-flex items-baseline gap-1 font-bold text-[#102d7d]">
+                          <span className="text-sm font-mono">
+                            {Number(item.evaluation.score) % 1 === 0
+                              ? Number(item.evaluation.score).toFixed(1)
+                              : item.evaluation.score}
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-normal">/ 10</span>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Chưa có điểm</span>
+                      )}
+                    </div>
+
+                    {/* Publish Status Pill & Actions */}
+                    <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
+                      <div>
+                        {isPublished ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Đã công bố</span>
+                          </span>
+                        ) : isHidden ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                            <EyeOff className="w-3 h-3 text-amber-600" />
+                            <span>Đang ẩn</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10.5px] text-slate-400 italic">Chưa công bố</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        {isPublished && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenHideSingle(item)}
+                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                            title="Ẩn điểm"
+                          >
+                            <EyeOff className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {isHidden && hasValidScore && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenRepublishSingle(item)}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                            title="Công bố lại"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {!isPublished && !isHidden && hasValidScore && (
+                          <button
+                            type="button"
+                            onClick={() => handlePublishSingle(item)}
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
+                            title="Công bố điểm"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        )}
+
+                        {hasValidScore && item.status !== 'COMPLETED' && (
+                          <button
+                            type="button"
+                            onClick={() => handleOpenComplete(item)}
+                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
+                            title="Hoàn tất và khóa"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>)}
 
           {/* Pagination */}
           {pagination && pagination.pages > 1 && (
@@ -1036,19 +1159,6 @@ const TbmEvaluationManagement = () => {
       )}
 
       {/* MODALS */}
-
-      {/* 1. Evaluation Detail Modal */}
-      {detailModalOpen && selectedInternship && (
-        <EvaluationDetailModal
-          isOpen={detailModalOpen}
-          onClose={() => {
-            setDetailModalOpen(false);
-            setSelectedInternship(null);
-          }}
-          internship={selectedInternship}
-          onDeleteEvaluation={handleOpenDeleteEvaluation}
-        />
-      )}
 
       {/* 2. Complete / Lock Confirmation Modal */}
       {completeModalOpen && targetInternship && (

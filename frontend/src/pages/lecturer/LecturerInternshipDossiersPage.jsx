@@ -191,8 +191,8 @@ const LecturerInternshipDossiersPage = () => {
               }
             />
           </div>
-        ) : (
-          <div className="overflow-x-auto">
+        ) : (<>
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full min-w-[760px] text-left border-collapse text-xs">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
@@ -318,7 +318,98 @@ const LecturerInternshipDossiersPage = () => {
               </tbody>
             </table>
           </div>
-        )}
+          {/* Mobile Card List (< 768px) */}
+          <div className="md:hidden divide-y divide-slate-100">
+            {filteredInternships.map((item) => {
+              const hasFile = Boolean(item.reportFile?.fileUrl);
+              const file = item.reportFile;
+
+              return (
+                <div key={item._id} className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition">
+                  {/* Top: Student avatar + name + class */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 text-[#123891] font-bold text-xs flex items-center justify-center shrink-0">
+                      {item.studentId?.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-slate-900 text-xs truncate">
+                        {item.studentId?.userId?.fullName || '—'}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">
+                        MSSV: {item.studentId?.studentCode} • {item.studentId?.className}
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-md font-bold text-[10px] bg-indigo-50 text-indigo-700 border border-indigo-200 shrink-0">
+                      {item.durationInWeeks || 12} tuần
+                    </span>
+                  </div>
+
+                  {/* Company & Position */}
+                  <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                    <div className="font-semibold text-slate-800 truncate">
+                      {item.companyId?.name || '—'}
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate flex items-center gap-1 mt-0.5">
+                      <Building2 className="w-3 h-3 text-slate-400 shrink-0" />
+                      <span>{item.position}</span>
+                    </div>
+                  </div>
+
+                  {/* Report File status */}
+                  <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold text-slate-400">File Báo Cáo</span>
+                      {hasFile ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Đã nộp</span>
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                          <Clock className="w-3 h-3 text-amber-500" />
+                          <span>Chưa nộp</span>
+                        </span>
+                      )}
+                    </div>
+                    {hasFile && file && (
+                      <div className="text-[11px] text-slate-600 font-mono truncate flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                        <span className="truncate">{file.originalName || file.fileName}</span>
+                        <span className="text-slate-400 font-normal">({formatFileSize(file.fileSize)})</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Action buttons */}
+                  <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    {hasFile && (
+                      <a
+                        href={file.fileUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition border border-emerald-200 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        <span>Mở file</span>
+                      </a>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedInternship(item);
+                        setDetailModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>Chi tiết</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </>)}
 
         {/* Pagination */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">

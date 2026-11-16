@@ -745,9 +745,9 @@ const MyThesisPage = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
@@ -1077,11 +1077,11 @@ const MyThesisPage = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left 2 Cols: Main Thesis Info & Evaluation Section */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6">
             {/* 1. Description & Objectives */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2 border-b border-slate-100 pb-2.5">
                 <BookOpen className="w-4 h-4 text-[#123891]" />
                 <span>Nội dung đề tài nghiên cứu</span>
@@ -1105,7 +1105,7 @@ const MyThesisPage = () => {
             {/* 2. COMPREHENSIVE EVALUATION & RESULTS SECTION */}
             <div
               ref={evaluationSectionRef}
-              className={`p-6 rounded-3xl bg-white border shadow-2xs space-y-6 transition-all duration-300 ${
+              className={`p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border shadow-2xs space-y-4 sm:space-y-6 transition-all duration-300 ${
                 isEvaluationView
                   ? 'border-[#123891]/60 ring-2 ring-blue-500/20 shadow-blue-100/50'
                   : 'border-slate-200/80'
@@ -1382,9 +1382,9 @@ const MyThesisPage = () => {
           </div>
 
           {/* Right Col: Timeline, Supervisor & Members */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Thời gian thực hiện KLTN Card */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-[#123891]" />
@@ -1418,7 +1418,7 @@ const MyThesisPage = () => {
             </div>
 
             {/* Supervisor Lecturer Card */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <span>Giảng viên Hướng dẫn (GVHD)</span>
                 {thesis.supervisorId && (
@@ -1455,7 +1455,7 @@ const MyThesisPage = () => {
             </div>
 
             {/* Members Card */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <span>Thành viên thực hiện ({thesis.studentCount || 1} Sinh viên)</span>
                 {isStudent1 && (!thesis.secondStudentId || thesis.student2Status === 'REJECTED') && thesis.status === 'WAITING_FOR_SUPERVISOR_REQUEST' && (
@@ -1570,7 +1570,7 @@ const MyThesisPage = () => {
             </div>
 
             {/* Reviewers Lecturer Card */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <UserCheck className="w-4 h-4 text-[#123891]" />
@@ -1654,7 +1654,7 @@ const MyThesisPage = () => {
             </div>
 
             {/* Council Card */}
-            <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-3">
               <div className="text-xs font-bold text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-2.5 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="w-4 h-4 text-[#123891]" />
