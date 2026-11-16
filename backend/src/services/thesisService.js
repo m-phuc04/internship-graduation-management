@@ -30,6 +30,49 @@ export const ACTIVE_THESIS_STATUSES = [
 ];
 
 // ====================
+// Check 60-Minute Expiration for Group Registration Waiting Phase
+// ====================
+export const isThesisExpired = (thesis) => {
+  if (!thesis) return false;
+  const WAITING_STATUSES = [
+    "WAITING_FOR_STUDENT2_CONFIRMATION",
+    "WAITING_FOR_SUPERVISOR_REQUEST",
+  ];
+  if (!WAITING_STATUSES.includes(thesis.status)) {
+    return false;
+  }
+  const now = Date.now();
+  if (thesis.expiresAt) {
+    return new Date(thesis.expiresAt).getTime() <= now;
+  }
+  if (thesis.createdAt) {
+    return new Date(thesis.createdAt).getTime() + 60 * 60 * 1000 <= now;
+  }
+  return false;
+};
+
+export const getExpiredThesisFilter = (now = new Date()) => {
+  const sixtyMinutesAgo = new Date(now.getTime() - 60 * 60 * 1000);
+  return {
+    status: {
+      $in: [
+        "WAITING_FOR_STUDENT2_CONFIRMATION",
+        "WAITING_FOR_SUPERVISOR_REQUEST",
+      ],
+    },
+    $or: [
+      { expiresAt: { $ne: null, $lte: now } },
+      {
+        $and: [
+          { $or: [{ expiresAt: null }, { expiresAt: { $exists: false } }] },
+          { createdAt: { $lte: sixtyMinutesAgo } },
+        ],
+      },
+    ],
+  };
+};
+
+// ====================
 // Validate KLTN Registration Window & Lock Status
 // ====================
 export const validateThesisRegistrationWindow = (activeTerm, checkDate = new Date()) => {
@@ -216,8 +259,10 @@ const createThesis = async ({
   const isPendingSv2 = isTwoStudents && student2;
   const initialStatus = isPendingSv2 ? "WAITING_FOR_STUDENT2_CONFIRMATION" : "PENDING_SUPERVISOR_APPROVAL";
   const student2Status = isPendingSv2 ? "PENDING" : null;
+  const expiresAt = isPendingSv2 ? new Date(Date.now() + 60 * 60 * 1000) : null;
 
   const thesis = await Thesis.create({
+    expiresAt,
     academicTermId: activeTerm._id,
     studentId: student1._id,
     secondStudentId: isTwoStudents ? student2._id : null,
@@ -411,6 +456,21 @@ const getMyThesis = async (userId, academicTermId = null) => {
     throw new AppError("Không tìm thấy thông tin sinh viên", 404);
   }
 
+  // Auto-cancel any expired thesis for this student in waiting phase (60-minute limit)
+  try {
+    const expiredStudentThesis = await Thesis.findOne({
+      $and: [
+        { $or: [{ studentId: student._id }, { secondStudentId: student._id }] },
+        getExpiredThesisFilter(),
+      ],
+    });
+    if (expiredStudentThesis) {
+      await cancelExpiredThesis(expiredStudentThesis);
+    }
+  } catch (cleanErr) {
+    console.warn("Auto-clean expired thesis on getMyThesis error:", cleanErr.message);
+  }
+
   const query = {
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
   };
@@ -456,6 +516,7 @@ const getMyThesis = async (userId, academicTermId = null) => {
         populate: { path: "userId", select: "fullName email phone avatar" },
       },
     })
+    .populate("topicId")
     .populate("academicTermId");
 
   // Self-heal: if thesis was mistakenly set to REJECTED due to fail grading, normalize to GRADED
@@ -4395,6 +4456,9 @@ const deleteTopic = async (topicId, userId) => {
  * Sinh viên xem danh sách đề tài APPROVED
  */
 const getApprovedTopicsForStudent = async ({ academicTermId = null, search = "", userId = null }) => {
+  // Free up any FIFO slots of expired groups
+  await cleanupExpiredTheses();
+
   let student = null;
   if (userId) {
     student = await Student.findOne({ userId });
@@ -4701,8 +4765,10 @@ const registerTopicByStudent = async ({
   const isPendingSv2 = isTwoStudents && student2;
   const initialStatus = isPendingSv2 ? "WAITING_FOR_STUDENT2_CONFIRMATION" : "PENDING_SUPERVISOR_APPROVAL";
   const student2Status = isPendingSv2 ? "PENDING" : null;
+  const expiresAt = isPendingSv2 ? new Date(Date.now() + 60 * 60 * 1000) : null;
 
   const thesis = await Thesis.create({
+    expiresAt,
     academicTermId: updatedTopic.academicTermId || topicTerm._id,
     studentId: student1._id,
     secondStudentId: student2 ? student2._id : null,
@@ -5241,6 +5307,12 @@ const respondStudent2Invitation = async (thesisId, userId, action) => {
   const sv2Name = student2.userId?.fullName || student2.studentCode;
   const sv2Code = student2.studentCode;
 
+  // Check if group registration has expired (60 minutes)
+  if (isThesisExpired(thesis)) {
+    await cancelExpiredThesis(thesis);
+    throw new AppError("Thời hạn đăng ký nhóm (60 phút) đã hết hạn. Đề tài nhóm đã tự động bị hủy.", 400);
+  }
+
   if (action === "ACCEPT") {
     const activeTermDoc = thesis.academicTermId
       ? await AcademicTerm.findById(thesis.academicTermId)
@@ -5249,6 +5321,9 @@ const respondStudent2Invitation = async (thesisId, userId, action) => {
 
     thesis.student2Status = "ACCEPTED";
     thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
+    if (!thesis.expiresAt) {
+      thesis.expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    }
     await thesis.save();
 
     student2.thesisRegistered = true;
@@ -5272,6 +5347,7 @@ const respondStudent2Invitation = async (thesisId, userId, action) => {
     thesis.secondStudentId = null;
     thesis.studentCount = 1;
     thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
+    thesis.expiresAt = null;
     await thesis.save();
 
     // Release SV2
@@ -5338,6 +5414,12 @@ const sendSupervisorRequest = async (thesisId, userId) => {
     throw new AppError(`Không thể gửi yêu cầu khi đề tài ở trạng thái ${thesis.status}`, 400);
   }
 
+  // Check if group registration has expired (60 minutes)
+  if (isThesisExpired(thesis)) {
+    await cancelExpiredThesis(thesis);
+    throw new AppError("Thời hạn đăng ký nhóm (60 phút) đã hết hạn. Đề tài nhóm đã tự động bị hủy.", 400);
+  }
+
   // Validate Registration Window
   const activeTermDoc = thesis.academicTermId
     ? await AcademicTerm.findById(thesis.academicTermId)
@@ -5391,6 +5473,7 @@ const sendSupervisorRequest = async (thesisId, userId) => {
 
   thesis.status = "PENDING_SUPERVISOR_APPROVAL";
   thesis.submittedAt = new Date();
+  thesis.expiresAt = null; // Important: Clear 60-minute expiration countdown once submitted to GV!
   await thesis.save();
 
   // Send Notification to Supervisor
@@ -5502,6 +5585,7 @@ const inviteStudent2 = async (thesisId, userId, { secondStudentId, secondStudent
   thesis.studentCount = 2;
   thesis.student2Status = "PENDING";
   thesis.status = "WAITING_FOR_STUDENT2_CONFIRMATION";
+  thesis.expiresAt = new Date(Date.now() + 60 * 60 * 1000);
   await thesis.save();
 
   student2.thesisRegistered = true;
@@ -5568,6 +5652,7 @@ const cancelStudent2Invite = async (thesisId, userId) => {
   thesis.studentCount = 1;
   thesis.student2Status = null;
   thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
+  thesis.expiresAt = null;
   await thesis.save();
 
   if (prevStudent2) {
@@ -5682,6 +5767,7 @@ const cancelGroupParticipationByStudent2 = async (thesisId, userId) => {
   // Revert to WAITING_FOR_SUPERVISOR_REQUEST because group composition changed
   thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
   thesis.submittedAt = null;
+  thesis.expiresAt = null;
   await thesis.save();
 
   // If thesis was created from Topic, update registeredGroups
@@ -5893,6 +5979,7 @@ const removeStudent2ByStudent1 = async (thesisId, userId) => {
   thesis.studentCount = 1;
   thesis.status = "WAITING_FOR_SUPERVISOR_REQUEST";
   thesis.submittedAt = null;
+  thesis.expiresAt = null;
   await thesis.save();
 
   // If thesis was created from Topic, update registeredGroups
@@ -5943,6 +6030,150 @@ const removeStudent2ByStudent1 = async (thesisId, userId) => {
     .populate({ path: "secondStudentId", populate: { path: "userId" } })
     .populate({ path: "supervisorId", populate: { path: "userId" } });
 };
+
+/**
+ * Automatically cancel an expired thesis record in waiting phase (60-minute countdown timeout).
+ * Releases FIFO slot (currentGroups -= 1), removes from registeredGroups in ThesisTopic,
+ * and resets thesisRegistered = false for the students.
+ */
+const cancelExpiredThesis = async (thesisDoc) => {
+  if (!thesisDoc) return null;
+  const thesisId = thesisDoc._id || thesisDoc;
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) return null;
+
+  const WAITING_STATUSES = [
+    "WAITING_FOR_STUDENT2_CONFIRMATION",
+    "WAITING_FOR_SUPERVISOR_REQUEST",
+  ];
+  if (!WAITING_STATUSES.includes(thesis.status)) {
+    return null;
+  }
+
+  const s1Id = thesis.studentId?._id || thesis.studentId;
+  const s2Id = thesis.secondStudentId?._id || thesis.secondStudentId;
+  const topicId = thesis.topicId?._id || thesis.topicId;
+
+  // 1. Reset thesisRegistered = false for Student 1
+  if (s1Id) {
+    await Student.findByIdAndUpdate(s1Id, { thesisRegistered: false });
+  }
+
+  // 2. Reset thesisRegistered = false for Student 2
+  if (s2Id) {
+    await Student.findByIdAndUpdate(s2Id, { thesisRegistered: false });
+  }
+
+  // 3. Release FIFO slot and remove from registeredGroups in ThesisTopic
+  if (topicId) {
+    const updated = await ThesisTopic.updateOne(
+      { _id: topicId, "registeredGroups.thesisId": thesis._id },
+      {
+        $inc: { currentGroups: -1 },
+        $pull: { registeredGroups: { thesisId: thesis._id } },
+      }
+    );
+
+    // If not matched by thesisId, try matching by studentId
+    if (updated.matchedCount === 0 && s1Id) {
+      await ThesisTopic.updateOne(
+        { _id: topicId, "registeredGroups.studentId": s1Id },
+        {
+          $inc: { currentGroups: -1 },
+          $pull: { registeredGroups: { studentId: s1Id } },
+        }
+      );
+    }
+
+    // Safety check: ensure currentGroups never drops below 0
+    await ThesisTopic.updateOne(
+      { _id: topicId, currentGroups: { $lt: 0 } },
+      { $set: { currentGroups: 0 } }
+    );
+  }
+
+  // 4. Send notification to students about timeout cancellation
+  try {
+    const s1Doc = s1Id ? await Student.findById(s1Id).populate("userId") : null;
+    const s2Doc = s2Id ? await Student.findById(s2Id).populate("userId") : null;
+
+    if (s1Doc?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: s1Doc.userId._id,
+        type: "THESIS",
+        title: "Hết hạn đăng ký nhóm đề tài (60 phút)",
+        message: `Đăng ký nhóm cho đề tài "${thesis.thesisTitle}" đã tự động bị hủy do quá thời hạn 60 phút mà chưa hoàn tất xác nhận và gửi yêu cầu đến GVHD. Bạn có thể đăng ký lại đề tài mới.`,
+        referenceId: null,
+        referenceModel: "Thesis",
+        link: "/student/thesis/register",
+      });
+    }
+
+    if (s2Doc?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: s2Doc.userId._id,
+        type: "THESIS",
+        title: "Hết hạn đăng ký nhóm đề tài (60 phút)",
+        message: `Lời mời / đăng ký nhóm cho đề tài "${thesis.thesisTitle}" đã tự động bị hủy do quá thời hạn 60 phút. Bạn có thể đăng ký hoặc tham gia nhóm khác.`,
+        referenceId: null,
+        referenceModel: "Thesis",
+        link: "/student/thesis/register",
+      });
+    }
+  } catch (notifErr) {
+    console.warn("Expired thesis notification error:", notifErr.message);
+  }
+
+  // 5. Delete the unsubmitted thesis record to allow fresh registration
+  await Thesis.findByIdAndDelete(thesis._id);
+
+  return { cancelled: true, thesisId: thesis._id };
+};
+
+const cleanupExpiredTheses = async () => {
+  try {
+    const expiredTheses = await Thesis.find(getExpiredThesisFilter());
+
+    for (const t of expiredTheses) {
+      await cancelExpiredThesis(t);
+    }
+  } catch (err) {
+    console.error("Error in cleanupExpiredTheses:", err.message);
+  }
+};
+
+/**
+ * Explicit student-initiated cancel on expiration (e.g. countdown reaches 0 on client).
+ * Either SV1 or SV2 can call this when the group registration has expired or is in waiting phase.
+ */
+const cancelExpiredThesisByStudent = async (thesisId, userId) => {
+  const student = await Student.findOne({ userId });
+  if (!student) {
+    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
+  }
+
+  const thesis = await Thesis.findById(thesisId);
+  if (!thesis) {
+    return { cancelled: true, message: "Đề tài đã được hủy hoặc không tồn tại" };
+  }
+
+  const s1Id = thesis.studentId?._id?.toString() || thesis.studentId?.toString();
+  const s2Id = thesis.secondStudentId?._id?.toString() || thesis.secondStudentId?.toString();
+  const myId = student._id.toString();
+
+  if (s1Id !== myId && s2Id !== myId) {
+    throw new AppError("Bạn không thuộc nhóm đề tài này", 403);
+  }
+
+  await cancelExpiredThesis(thesis);
+  return { cancelled: true, message: "Đã hủy đề tài nhóm do hết hạn 60 phút thành công" };
+};
+
+// Start background recurring cleanup (every 30 seconds)
+const cleanupExpiredInterval = setInterval(cleanupExpiredTheses, 30000);
+if (cleanupExpiredInterval && cleanupExpiredInterval.unref) {
+  cleanupExpiredInterval.unref();
+}
 
 export default {
   createThesis,
@@ -6006,5 +6237,8 @@ export default {
   rejectDeleteTopicByTbm,
   getApprovedTopicsForStudent,
   registerTopicByStudent,
+  cancelExpiredThesis,
+  cancelExpiredThesisByStudent,
+  cleanupExpiredTheses,
 };
 

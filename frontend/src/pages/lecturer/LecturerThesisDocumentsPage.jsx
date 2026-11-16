@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import thesisDocumentApi from '../../api/thesisDocumentApi';
+import internshipApi from '../../api/internshipApi';
+import { useAuth } from '../../context/AuthContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { useToast } from '../../context/ToastContext';
 import SearchInput from '../../components/common/SearchInput';
@@ -11,9 +13,7 @@ import {
   Trash2,
   Download,
   Upload,
-  Calendar,
   AlertCircle,
-  RefreshCw,
   FileSpreadsheet,
   FileArchive,
   File,
@@ -61,8 +61,24 @@ const formatDate = (d) => {
 };
 
 const LecturerThesisDocumentsPage = () => {
+  const { user } = useAuth();
+  const [lecturerInfo, setLecturerInfo] = useState(null);
   const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
   const { showToast } = useToast();
+
+  useEffect(() => {
+    const fetchLecturerProfile = async () => {
+      try {
+        const res = await internshipApi.getSupervised({ limit: 1 });
+        if (res?.success && res?.lecturer) {
+          setLecturerInfo(res.lecturer);
+        }
+      } catch {
+        // Fallback silently to auth context user
+      }
+    };
+    fetchLecturerProfile();
+  }, []);
 
   const [activeTab, setActiveTab] = useState('GUIDES'); // 'GUIDES' | 'SUBMISSIONS'
 
@@ -252,130 +268,126 @@ const LecturerThesisDocumentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <FileText className="w-7 h-7" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">
-              Quản Lý Tài Liệu Khóa Luận
-            </h1>
+      {/* Header Card with Integrated Tabs */}
+      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
+              <FileText className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">
+                Quản Lý Tài Liệu Khóa Luận
+              </h1>
+              <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
+                <span>
+                  Giảng viên:{' '}
+                  <strong className="text-slate-800">
+                    {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
+                    {lecturerInfo?.userId?.fullName || user?.fullName}
+                  </strong>
+                </span>
+                <span>•</span>
+                <span>
+                  Mã GV:{' '}
+                  <strong className="font-mono text-[#102d7d]">
+                    {lecturerInfo?.lecturerCode || user?.username}
+                  </strong>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {Array.isArray(terms) && terms.length > 0 && (
-          <div className="flex items-center gap-2 shrink-0">
-            <Calendar className="w-4 h-4 text-[#123891]" />
-            <span className="text-xs font-semibold text-slate-500">Học kỳ:</span>
-            <select
-              value={currentTerm?._id || ''}
-              onChange={(e) => {
-                if (setCurrentTerm && e.target.value) {
-                  setCurrentTerm(e.target.value);
-                }
-              }}
-              className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 transition cursor-pointer"
+        {/* Navigation Tabs */}
+        <div className="flex items-center gap-2 border-b border-slate-200 mt-6 pt-2 overflow-x-auto no-scrollbar">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('GUIDES');
+              setSearch('');
+            }}
+            className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer shrink-0 whitespace-nowrap ${
+              activeTab === 'GUIDES'
+                ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+            }`}
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span>Tài liệu</span>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                activeTab === 'GUIDES'
+                  ? 'bg-[#123891] text-white'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
             >
-              {terms.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.termName || t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
+              {guides.length}
+            </span>
+          </button>
 
-      {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('GUIDES');
-            setSearch('');
-          }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-            activeTab === 'GUIDES'
-              ? 'bg-[#123891] text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          <FolderOpen className="w-4 h-4" />
-          <span>Tài liệu</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-            activeTab === 'GUIDES' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-          }`}>
-            {guides.length}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            setActiveTab('SUBMISSIONS');
-            setSearch('');
-          }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
-            activeTab === 'SUBMISSIONS'
-              ? 'bg-[#123891] text-white shadow-xs'
-              : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-          }`}
-        >
-          <FileCheck className="w-4 h-4" />
-          <span>Tài liệu sinh viên</span>
-          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
-            activeTab === 'SUBMISSIONS' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'
-          }`}>
-            {submissions.length}
-          </span>
-        </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('SUBMISSIONS');
+              setSearch('');
+            }}
+            className={`flex items-center gap-2.5 px-5 py-3 border-b-2 font-bold text-xs transition cursor-pointer shrink-0 whitespace-nowrap ${
+              activeTab === 'SUBMISSIONS'
+                ? 'border-[#123891] text-[#123891] bg-blue-50/70 rounded-t-2xl shadow-2xs'
+                : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50 rounded-t-2xl'
+            }`}
+          >
+            <FileCheck className="w-4 h-4" />
+            <span>Tài liệu sinh viên</span>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold font-mono ${
+                activeTab === 'SUBMISSIONS'
+                  ? 'bg-[#123891] text-white'
+                  : 'bg-slate-100 text-slate-600'
+              }`}
+            >
+              {submissions.length}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* Main Content Area */}
       <div className="space-y-4">
         {/* Toolbar */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
-            <div className="w-full sm:w-72">
-              <SearchInput
-                value={search}
-                onChange={(v) => setSearch(v)}
-                placeholder={
-                  activeTab === 'GUIDES'
-                    ? 'Tìm theo tên file, mô tả...'
-                    : 'Tìm theo tên file, sinh viên, MSSV...'
-                }
-              />
-            </div>
+          <div className="w-full sm:w-72">
+            <SearchInput
+              value={search}
+              onChange={(v) => setSearch(v)}
+              placeholder={
+                activeTab === 'GUIDES'
+                  ? 'Tìm theo tên file, mô tả...'
+                  : 'Tìm theo tên file, sinh viên, MSSV...'
+              }
+            />
+          </div>
 
-            {/* Filter by thesis topic */}
-            {thesesList.length > 0 && (
+          {Array.isArray(terms) && terms.length > 0 && (
+            <div className="flex items-center shrink-0 justify-end">
               <select
-                value={filterThesisId}
-                onChange={(e) => setFilterThesisId(e.target.value)}
-                className="px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] text-slate-700 truncate max-w-xs"
+                value={currentTerm?._id || ''}
+                onChange={(e) => {
+                  if (setCurrentTerm && e.target.value) {
+                    setCurrentTerm(e.target.value);
+                  }
+                }}
+                className="px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200/80 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 transition cursor-pointer"
               >
-                <option value="">Tất cả các đề tài hướng dẫn</option>
-                {thesesList.map((t) => (
+                {terms.map((t) => (
                   <option key={t._id} value={t._id}>
-                    {t.thesisTitle} ({t.studentLabel})
+                    {t.termName || t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
                   </option>
                 ))}
               </select>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={loadData}
-              className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-              title="Tải lại danh sách"
-            >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Nút + Thêm tài liệu (Chỉ hiển thị ở tab "Tài liệu") */}
@@ -406,7 +418,7 @@ const LecturerThesisDocumentsPage = () => {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[680px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                       <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -507,7 +519,7 @@ const LecturerThesisDocumentsPage = () => {
               />
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[760px]">
                   <thead>
                     <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                       <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -599,9 +611,9 @@ const LecturerThesisDocumentsPage = () => {
 
       {/* MODAL: + THÊM TÀI LIỆU */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95">
-            <div className="px-6 py-5 bg-[#123891] text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col animate-in zoom-in-95">
+            <div className="px-5 py-4 sm:px-6 sm:py-5 bg-[#123891] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
                   <Upload className="w-5 h-5" />
@@ -616,13 +628,13 @@ const LecturerThesisDocumentsPage = () => {
               <button
                 type="button"
                 onClick={() => setAddModalOpen(false)}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitAdd} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitAdd} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
               {formError && (
                 <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -733,19 +745,19 @@ const LecturerThesisDocumentsPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100">
+              <div className="pt-3 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setAddModalOpen(false)}
                   disabled={uploading}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-4 py-2.5 sm:py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !selectedFile}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 sm:py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
                 >
                   {uploading ? (
                     <>
@@ -764,9 +776,9 @@ const LecturerThesisDocumentsPage = () => {
 
       {/* MODAL: XÁC NHẬN GỠ FILE */}
       {deleteModalOpen && deletingDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95">
-            <div className="p-6 text-center space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col animate-in zoom-in-95">
+            <div className="p-4 sm:p-6 text-center space-y-4 overflow-y-auto overscroll-contain flex-1">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
@@ -780,12 +792,12 @@ const LecturerThesisDocumentsPage = () => {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center justify-center gap-3">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setDeleteModalOpen(false)}
                   disabled={deleting}
-                  className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy bỏ
                 </button>
@@ -793,7 +805,7 @@ const LecturerThesisDocumentsPage = () => {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={deleting}
-                  className="px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
                 >
                   {deleting ? (
                     <>

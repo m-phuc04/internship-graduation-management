@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
 import thesisProgressApi from '../../api/thesisProgressApi';
+import thesisDocumentApi from '../../api/thesisDocumentApi';
+import getFileUrl from '../../utils/fileUrlHelper';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import StatusBadge from '../../components/common/StatusBadge';
@@ -16,12 +18,16 @@ import {
   User,
   Users,
   Lock,
-  Eye,
   CheckSquare,
   Clock,
   Calendar,
   AlertTriangle,
   FileText,
+  FileCheck,
+  FileSpreadsheet,
+  FileCode,
+  FileArchive,
+  Paperclip,
   Download,
   Code,
   Check,
@@ -95,6 +101,10 @@ const LecturerThesisEvaluationDetailPage = () => {
   // Progress Reports & Code State
   const [progressData, setProgressData] = useState(null);
   const [loadingProgress, setLoadingProgress] = useState(false);
+
+  // Student Submitted Documents State (Thesis Document Module)
+  const [documents, setDocuments] = useState([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
 
   // Criteria & Grading Period State
   const [criteriaList, setCriteriaList] = useState([]);
@@ -213,9 +223,25 @@ const LecturerThesisEvaluationDetailPage = () => {
     }
   };
 
+  const fetchDocumentsData = async () => {
+    if (!id) return;
+    setLoadingDocuments(true);
+    try {
+      const res = await thesisDocumentApi.getLecturerSubmissions({ thesisId: id });
+      if (res?.success) {
+        setDocuments(res.data || []);
+      }
+    } catch (err) {
+      console.warn('Cannot load thesis student documents:', err.message);
+    } finally {
+      setLoadingDocuments(false);
+    }
+  };
+
   useEffect(() => {
     fetchThesisData();
     fetchProgressData();
+    fetchDocumentsData();
   }, [id]);
 
   const isCompleted = thesis?.status === 'COMPLETED';
@@ -545,6 +571,50 @@ const LecturerThesisEvaluationDetailPage = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
+  const formatDateTime = (d) => {
+    if (!d) return '—';
+    const date = new Date(d);
+    return `${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+  };
+
+  const getDocFileIcon = (fileName) => {
+    if (!fileName) return <FileText className="w-5 h-5 text-slate-500" />;
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') {
+      return <FileText className="w-5 h-5 text-rose-600" />;
+    }
+    if (['doc', 'docx'].includes(ext)) {
+      return <FileText className="w-5 h-5 text-blue-600" />;
+    }
+    if (['xls', 'xlsx'].includes(ext)) {
+      return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
+    }
+    if (['ppt', 'pptx'].includes(ext)) {
+      return <FileCode className="w-5 h-5 text-amber-600" />;
+    }
+    if (['zip', 'rar', '7z'].includes(ext)) {
+      return <FileArchive className="w-5 h-5 text-purple-600" />;
+    }
+    return <FileText className="w-5 h-5 text-slate-500" />;
+  };
+
+  const handleDownloadDoc = (e, doc) => {
+    e.stopPropagation();
+    const fullUrl = getFileUrl(doc.fileUrl);
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.setAttribute('download', doc.fileName || 'tai-lieu-khoa-luan');
+    link.setAttribute('target', '_blank');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePreviewDoc = (doc) => {
+    const fullUrl = getFileUrl(doc.fileUrl);
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
+
   let roleTitle = 'Giảng viên đánh giá';
   let roleWeight = '30%';
   if (activeRoleTab === 'SUPERVISOR') {
@@ -760,9 +830,9 @@ const LecturerThesisEvaluationDetailPage = () => {
         >
           <FileText className="w-4 h-4" />
           <span>1. Báo Cáo & Code SV</span>
-          {progressList.length > 0 && (
+          {documents.length > 0 && (
             <span className="px-2 py-0.5 bg-blue-100 text-[#0d2a75] rounded-full text-[10.5px] font-mono">
-              {progressList.length} báo cáo
+              {documents.length} file
             </span>
           )}
         </button>
@@ -814,131 +884,120 @@ const LecturerThesisEvaluationDetailPage = () => {
       {/* ========================================================= */}
       {activeTabSection === 'REPORTS' && (
         <div className="space-y-6">
-          {/* Stats Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-2xs space-y-1">
-              <div className="text-[11px] font-bold text-[#123891] uppercase tracking-wider">Tổng số báo cáo nộp</div>
-              <div className="text-2xl font-extrabold text-[#123891] font-mono">
-                {loadingProgress ? '...' : progressList.length}
-              </div>
-              <div className="text-[11px] text-slate-400">Các đợt tiến độ sinh viên đã gửi</div>
-            </div>
-
-            <div className="p-4 bg-white rounded-2xl border border-emerald-100 shadow-2xs space-y-1">
-              <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Đã phê duyệt</div>
-              <div className="text-2xl font-extrabold text-emerald-950 font-mono">
-                {loadingProgress ? '...' : stats.approved || 0}
-              </div>
-              <div className="text-[11px] text-slate-400">Báo cáo đạt chất lượng yêu cầu</div>
-            </div>
-
-            <div className="p-4 bg-white rounded-2xl border border-blue-100 shadow-2xs space-y-1">
-              <div className="text-[11px] font-bold text-[#123891] uppercase tracking-wider">Tiến độ trung bình</div>
-              <div className="text-2xl font-extrabold text-[#123891] font-mono">
-                {loadingProgress ? '...' : `${stats.avgPercentage || 0}%`}
-              </div>
-              <div className="text-[11px] text-slate-400">Độ hoàn thiện đề tài KLTN</div>
-            </div>
-          </div>
-
-          {/* Progress List */}
-          {loadingProgress ? (
-            <div className="p-12 text-center text-slate-400">Đang tải danh sách báo cáo & file nộp của sinh viên...</div>
-          ) : progressList.length === 0 ? (
-            <div className="p-12 bg-white border border-dashed border-slate-200 rounded-3xl text-center text-slate-500 space-y-2 shadow-2xs">
-              <FileText className="w-12 h-12 text-slate-300 mx-auto" />
-              <h3 className="font-bold text-slate-800 text-sm">Chưa có báo cáo tiến độ nào được nộp</h3>
-              <p className="text-xs text-slate-400 max-w-md mx-auto">
-                Sinh viên chưa nộp nhật ký hoặc file báo cáo tiến độ tuần nào trên hệ thống.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {progressList.map((rep, idx) => (
-                <div
-                  key={rep._id || idx}
-                  className="p-5 bg-white border border-slate-200 rounded-3xl space-y-3.5 shadow-2xs hover:border-blue-300 transition"
-                >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="px-3 py-1 rounded-xl bg-blue-50 text-[#102d7d] font-bold text-xs font-mono border border-blue-100">
-                        Tuần {rep.weekNumber || idx + 1}
-                      </span>
-                      <h4 className="text-sm font-bold text-slate-900">{rep.title}</h4>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold ${rep.status === 'APPROVED'
-                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : rep.status === 'NEEDS_REVISION'
-                            ? 'bg-amber-50 text-amber-700 border border-amber-200'
-                            : 'bg-blue-50 text-blue-700 border border-blue-200'
-                        }`}>
-                        {rep.status === 'APPROVED' ? '✓ Đã duyệt' : rep.status === 'NEEDS_REVISION' ? '⚠ Cần sửa' : 'Đã nộp'}
-                      </span>
-                      <span className="text-xs font-mono font-bold text-[#123891] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-100">
-                        {rep.completionPercentage || 0}% Hoàn thành
-                      </span>
-                    </div>
-                  </div>
-
-                  {rep.description && (
-                    <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-100 text-xs text-slate-700 leading-relaxed whitespace-pre-line">
-                      {rep.description}
-                    </div>
-                  )}
-
-                  {/* File & Details */}
-                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1 text-xs">
-                    {rep.file && rep.file.fileUrl ? (
-                      <a
-                        href={rep.file.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] font-bold rounded-xl border border-blue-200 transition shadow-2xs"
-                      >
-                        <Download className="w-4 h-4" />
-                        <span className="truncate max-w-[280px]">{rep.file.originalName || rep.file.fileName || 'Tải file báo cáo'}</span>
-                        <span className="text-blue-400 font-normal">({formatFileSize(rep.file.size)})</span>
-                      </a>
-                    ) : (
-                      <span className="text-slate-400 italic text-xs">Không có file đính kèm</span>
-                    )}
-
-                    <div className="text-xs text-slate-400 flex items-center gap-3 font-mono">
-                      {rep.submittedAt && (
-                        <span>Ngày nộp: {new Date(rep.submittedAt).toLocaleDateString('vi-VN')}</span>
-                      )}
-                      {rep.lecturerScore !== null && rep.lecturerScore !== undefined && (
-                        <span className="font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                          Điểm tiến độ: {rep.lecturerScore}/10
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {rep.lecturerComment && (
-                    <div className="text-xs text-slate-700 bg-amber-50/80 border border-amber-200 p-3 rounded-xl space-y-0.5">
-                      <strong className="text-amber-900">GVHD nhận xét tiến độ:</strong>
-                      <p className="text-slate-600 mt-0.5">{rep.lecturerComment}</p>
-                    </div>
-                  )}
+          {/* Tài Liệu Khóa Luận (Thesis Documents Module) */}
+          <div className="p-5 bg-white rounded-3xl border border-slate-200 space-y-4 shadow-2xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center font-bold">
+                  <Paperclip className="w-4 h-4" />
                 </div>
-              ))}
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                    <span>Tài Liệu Khóa Luận</span>
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#102d7d] border border-blue-100 font-mono">
+                      {documents.length} file
+                    </span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Sinh viên nộp tài liệu khóa luận tại cổng sinh viên sẽ tự động hiển thị tại đây.
+                  </p>
+                </div>
+              </div>
+
+              <Link
+                to="/lecturer/theses/documents"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-[#123891] hover:text-[#0d2a75] hover:underline cursor-pointer shrink-0"
+                title="Đến trang tài liệu khóa luận"
+              >
+                <span>Đến trang tài liệu khóa luận</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </Link>
             </div>
-          )}
+
+            {loadingDocuments ? (
+              <div className="py-6 flex items-center justify-center gap-2 text-xs text-slate-400">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#123891]" />
+                <span>Đang tải danh sách tài liệu sinh viên nộp...</span>
+              </div>
+            ) : documents.length === 0 ? (
+              <div className="p-6 bg-slate-50/60 border border-dashed border-slate-200 rounded-2xl text-center space-y-1">
+                <Paperclip className="w-6 h-6 text-slate-300 mx-auto mb-1" />
+                <p className="text-xs font-semibold text-slate-600">Chưa có file tài liệu nào được nộp</p>
+                <p className="text-[11px] text-slate-400">
+                  Sinh viên nộp tài liệu khóa luận tại cổng sinh viên sẽ tự động hiển thị tại đây.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2.5">
+                {documents.map((doc, dIdx) => {
+                  const studentName =
+                    doc.studentId?.userId?.fullName || doc.uploadedBy?.fullName || 'Sinh viên';
+                  const studentCode = doc.studentId?.studentCode;
+                  return (
+                    <div
+                      key={doc._id || dIdx}
+                      className="p-3.5 bg-slate-50/70 hover:bg-blue-50/40 rounded-2xl border border-slate-200/80 hover:border-blue-200 transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-xl bg-white border border-slate-200/70 flex items-center justify-center shrink-0 shadow-2xs group-hover:border-blue-300 transition">
+                          {getDocFileIcon(doc.fileName)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div
+                            onClick={() => handlePreviewDoc(doc)}
+                            className="text-xs font-bold text-slate-900 hover:text-[#123891] truncate cursor-pointer transition"
+                            title={doc.fileName}
+                          >
+                            {doc.fileName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                            <span className="font-mono text-slate-500 font-semibold">{formatFileSize(doc.fileSize)}</span>
+                            <span>•</span>
+                            <span>{formatDateTime(doc.createdAt)}</span>
+                            <span>•</span>
+                            <span className="text-slate-600 font-medium">
+                              Người nộp: <strong>{studentName}</strong> {studentCode ? `(${studentCode})` : ''}
+                            </span>
+                          </div>
+                          {doc.description && (
+                            <div className="text-[11px] text-slate-500 italic mt-0.5 line-clamp-1" title={doc.description}>
+                              Ghi chú: "{doc.description}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadDoc(e, doc)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-2xs"
+                          title="Tải về máy"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Tải về</span>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
           {/* Bottom Action Nav */}
           <div className="p-4 bg-white rounded-2xl border border-slate-200 flex items-center justify-between">
             <span className="text-xs text-slate-500">
-              Đã kiểm tra xong báo cáo & sản phẩm của sinh viên? Chuyển sang <strong>Tab 2: Điều Kiện KLTN</strong> để đánh giá.
+              Đã kiểm tra xong báo cáo & sản phẩm của sinh viên?
             </span>
             <button
               type="button"
               onClick={() => setActiveTabSection('CRITERIA')}
               className="px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl transition cursor-pointer text-xs flex items-center gap-1.5 shadow-xs"
             >
-              <span>Chuyển sang Đánh giá Điều kiện</span>
+              <span>Chuyển sang Đánh giá điều kiện</span>
               <span>→</span>
             </button>
           </div>

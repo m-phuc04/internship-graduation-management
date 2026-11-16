@@ -31,6 +31,10 @@ export const thesisApi = {
   cancelGroupRegistration: (id) =>
     axiosClient.patch(`/theses/${id}/cancel-group`),
 
+  // Cancel expired group thesis
+  cancelExpiredThesis: (id) =>
+    axiosClient.post(`/theses/${id}/cancel-expired`),
+
   // Student 1 removes student 2 from group (before supervisor approval)
   removeStudent2: (id) =>
     axiosClient.patch(`/theses/${id}/remove-student2`),

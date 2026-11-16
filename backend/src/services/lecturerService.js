@@ -71,11 +71,13 @@ const getAllLecturers = async ({
     const lecturerOrConditions = [
       { lecturerCode: searchRegex },
       { specialization: searchRegex },
+      { fields: searchRegex },
       { academicTitle: searchRegex },
       { userId: { $in: matchedUserIds } },
     ];
     if (strippedRegex) {
       lecturerOrConditions.push({ specialization: strippedRegex });
+      lecturerOrConditions.push({ fields: strippedRegex });
       lecturerOrConditions.push({ academicTitle: strippedRegex });
       lecturerOrConditions.push({ lecturerCode: strippedRegex });
     }
@@ -244,6 +246,7 @@ const createLecturer = async (lecturerData) => {
     lecturerCode,
     academicTitle,
     specialization,
+    fields,
     maxSupervisedStudents,
     maxStudents = 10,
     isAvailable = true,
@@ -295,11 +298,23 @@ const createLecturer = async (lecturerData) => {
       ? Math.max(1, Number(maxSupervisedStudents) || 5)
       : Math.max(1, Number(maxStudents) || 5);
 
+    let parsedFields = [];
+    if (Array.isArray(fields)) {
+      parsedFields = fields.map((f) => (typeof f === "string" ? f.trim() : "")).filter(Boolean);
+    } else if (typeof fields === "string" && fields.trim()) {
+      parsedFields = fields.split(",").map((f) => f.trim()).filter(Boolean);
+    }
+
+    const finalSpecialization = specialization && specialization.trim()
+      ? specialization.trim()
+      : (parsedFields.length > 0 ? parsedFields.join(", ") : null);
+
     const lecturer = await Lecturer.create({
       userId: user._id,
       lecturerCode: normalizedCode,
       academicTitle: academicTitle ? academicTitle.trim() : null,
-      specialization: specialization ? specialization.trim() : null,
+      specialization: finalSpecialization,
+      fields: parsedFields,
       maxSupervisedStudents: finalMax,
       maxStudents: finalMax,
       isAvailable: Boolean(isAvailable),
@@ -336,6 +351,7 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
     lecturerCode,
     academicTitle,
     specialization,
+    fields,
     maxSupervisedStudents,
     maxStudents,
     isAvailable,
@@ -411,6 +427,19 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
   await user.save();
 
   // Update Lecturer fields
+  if (fields !== undefined) {
+    let parsedFields = [];
+    if (Array.isArray(fields)) {
+      parsedFields = fields.map((f) => (typeof f === "string" ? f.trim() : "")).filter(Boolean);
+    } else if (typeof fields === "string") {
+      parsedFields = fields.split(",").map((f) => f.trim()).filter(Boolean);
+    }
+    lecturer.fields = parsedFields;
+    if (specialization === undefined) {
+      lecturer.specialization = parsedFields.length > 0 ? parsedFields.join(", ") : null;
+    }
+  }
+
   if (academicTitle !== undefined) lecturer.academicTitle = academicTitle ? academicTitle.trim() : null;
   if (specialization !== undefined) lecturer.specialization = specialization ? specialization.trim() : null;
   if (isAvailable !== undefined) lecturer.isAvailable = Boolean(isAvailable);

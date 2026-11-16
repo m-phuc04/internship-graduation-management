@@ -8,10 +8,8 @@ import {
   Search,
   Check,
   AlertCircle,
-  AlertTriangle,
   Clock,
   MapPin,
-  Sparkles,
   Info,
   ShieldAlert,
   GraduationCap,
@@ -31,7 +29,6 @@ const AssignThesesToCouncilModal = ({
   const [selectedThesisIds, setSelectedThesisIds] = useState([]);
   const [initialSelectedIds, setInitialSelectedIds] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL'); // 'ALL' | 'ASSIGNED' | 'UNASSIGNED'
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -63,7 +60,6 @@ const AssignThesesToCouncilModal = ({
     if (isOpen && council) {
       setErrorMsg('');
       setSearchQuery('');
-      setActiveTab('ALL');
 
       const preSelected = [];
       theses.forEach((t) => {
@@ -90,38 +86,9 @@ const AssignThesesToCouncilModal = ({
     });
   }, [theses, thesisReportFormatMap, councilType]);
 
-  // Tab counts
-  const assignedToThisCount = useMemo(() => {
-    return formatEligibleTheses.filter((t) => selectedThesisIds.includes(t._id)).length;
-  }, [formatEligibleTheses, selectedThesisIds]);
-
-  const unassignedCount = useMemo(() => {
-    return formatEligibleTheses.filter((t) => {
-      const assignedId = String(
-        thesisCouncilMap[t._id] ||
-        (t.councilId?._id ? t.councilId._id : t.councilId) ||
-        ''
-      );
-      return !assignedId && !selectedThesisIds.includes(t._id);
-    }).length;
-  }, [formatEligibleTheses, thesisCouncilMap, selectedThesisIds]);
-
-  // Filtered list based on search and tab
+  // Filtered list based on search
   const displayedTheses = useMemo(() => {
     return formatEligibleTheses.filter((t) => {
-      const isSelected = selectedThesisIds.includes(t._id);
-      const rawAssignedId = String(
-        thesisCouncilMap[t._id] ||
-        (t.councilId?._id ? t.councilId._id : t.councilId) ||
-        ''
-      );
-
-      // Filter by tab
-      if (activeTab === 'ASSIGNED' && !isSelected) return false;
-      if (activeTab === 'UNASSIGNED') {
-        if (isSelected || Boolean(rawAssignedId)) return false;
-      }
-
       // Filter by search query
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
@@ -144,7 +111,7 @@ const AssignThesesToCouncilModal = ({
 
       return true;
     });
-  }, [formatEligibleTheses, selectedThesisIds, thesisCouncilMap, activeTab, searchQuery]);
+  }, [formatEligibleTheses, searchQuery]);
 
   if (!council) return null;
 
@@ -313,56 +280,16 @@ const AssignThesesToCouncilModal = ({
           </div>
         )}
 
-        {/* Search & Tabs Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          {/* Tabs */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setActiveTab('ALL')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'ALL'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Tất cả phù hợp ({formatEligibleTheses.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('ASSIGNED')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'ASSIGNED'
-                  ? 'bg-white text-[#123891] shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Đã chọn ({assignedToThisCount})
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('UNASSIGNED')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                activeTab === 'UNASSIGNED'
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Chưa phân công ({unassignedCount})
-            </button>
-          </div>
-
-          {/* Search Box */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm đề tài, sinh viên, GVHD..."
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] focus:bg-white transition"
-            />
-          </div>
+        {/* Search Toolbar */}
+        <div className="relative w-full">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Tìm đề tài, sinh viên, GVHD..."
+            className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] focus:bg-white transition"
+          />
         </div>
 
         {/* Theses List */}
@@ -372,11 +299,9 @@ const AssignThesesToCouncilModal = ({
               <GraduationCap className="w-8 h-8 text-slate-300 mx-auto" />
               <div className="text-xs font-bold text-slate-600">Không tìm thấy đề tài nào</div>
               <p className="text-[11px] text-slate-400">
-                {activeTab === 'ASSIGNED'
-                  ? 'Chưa có đề tài nào được chọn cho phòng hội đồng này.'
-                  : activeTab === 'UNASSIGNED'
-                  ? 'Tất cả đề tài phù hợp đã được phân công vào các phòng hội đồng.'
-                  : 'Không có đề tài nào phù hợp với bộ lọc hoặc từ khóa tìm kiếm.'}
+                {searchQuery.trim()
+                  ? 'Không tìm thấy đề tài nào phù hợp với từ khóa tìm kiếm.'
+                  : 'Chưa có đề tài nào phù hợp với hình thức báo cáo của phòng hội đồng này.'}
               </p>
             </div>
           ) : (
@@ -442,24 +367,16 @@ const AssignThesesToCouncilModal = ({
                       </h4>
 
                       {/* Status Tags */}
-                      <div className="flex items-center gap-1 shrink-0">
-                        {isSelected ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Đã chọn
-                          </span>
-                        ) : assignedToOther ? (
+                      {assignedToOther && !isSelected && (
+                        <div className="flex items-center gap-1 shrink-0">
                           <span
                             className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200"
                             title={`Đề tài đang ở ${otherCouncilName}. Tích chọn để chuyển sang phòng này.`}
                           >
                             Đang ở {otherCouncilName}
                           </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
-                            Chưa phân công
-                          </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
 
                     {/* Metadata Row */}
@@ -511,20 +428,20 @@ const AssignThesesToCouncilModal = ({
         </div>
 
         {/* Footer Info & Actions */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100">
+        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-t border-slate-100">
           <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
             <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
             <span>
-              Mỗi phòng hội đồng chứa tối đa 5 đề tài. GVHD không được là thành viên hội đồng.
+              Mỗi phòng hội đồng chứa tối đa 5 đề tài.
             </span>
           </div>
 
-          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto justify-end">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+              className="w-full sm:w-auto px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition cursor-pointer text-center"
             >
               Hủy
             </button>
@@ -532,7 +449,7 @@ const AssignThesesToCouncilModal = ({
               type="button"
               onClick={handleSave}
               disabled={submitting || isExpired}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 py-2.5 sm:py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <>

@@ -12,6 +12,7 @@ import {
   Briefcase,
   Award,
   RotateCcw,
+  Tag,
 } from 'lucide-react';
 
 const NotificationDropdown = () => {
@@ -54,6 +55,10 @@ const NotificationDropdown = () => {
             const type = item.type || '';
             const link = item.link || '';
             const title = item.title || '';
+
+            // Always allow research field change notifications for Admin
+            if (/lĩnh vực/i.test(title)) return true;
+
             const isOperational =
               ['EVALUATION', 'EVALUATION_RECREATE', 'INTERNSHIP', 'INTERNSHIP_REPORT', 'THESIS', 'THESIS_PROGRESS'].includes(type) ||
               link.startsWith('/tbm/internships') ||
@@ -334,20 +339,30 @@ const NotificationDropdown = () => {
       }
     }
 
-    if (role === 'ADMIN' && targetLink) {
-      if (
-        targetLink.startsWith('/tbm/academic-terms') ||
-        targetLink.startsWith('/tbm/students') ||
-        targetLink.startsWith('/tbm/lecturers')
-      ) {
-        targetLink = targetLink.replace('/tbm/', '/admin/');
-      } else if (
-        targetLink.startsWith('/tbm/') ||
-        targetLink.startsWith('/lecturer/') ||
-        targetLink.startsWith('/student/')
-      ) {
-        // Do not navigate ADMIN to non-admin operational pages
-        return;
+    if (role === 'ADMIN') {
+      const isFieldChangeReq =
+        titleLower.includes('lĩnh vực') ||
+        messageLower.includes('lĩnh vực') ||
+        targetLink?.includes('/fields') ||
+        targetLink?.includes('/lecturers');
+
+      if (isFieldChangeReq) {
+        targetLink = '/admin/lecturers';
+      } else if (targetLink) {
+        if (
+          targetLink.startsWith('/tbm/academic-terms') ||
+          targetLink.startsWith('/tbm/students') ||
+          targetLink.startsWith('/tbm/lecturers')
+        ) {
+          targetLink = targetLink.replace('/tbm/', '/admin/');
+        } else if (
+          targetLink.startsWith('/tbm/') ||
+          targetLink.startsWith('/lecturer/') ||
+          targetLink.startsWith('/student/')
+        ) {
+          // Do not navigate ADMIN to non-admin operational pages
+          return;
+        }
       }
     }
 
@@ -399,6 +414,9 @@ const NotificationDropdown = () => {
   const getIconForType = (type, title = '') => {
     if (type === 'EVALUATION_RECREATE' || title?.toLowerCase().includes('tạo lại link')) {
       return <RotateCcw className="w-4 h-4 text-amber-600" />;
+    }
+    if (title?.toLowerCase().includes('lĩnh vực')) {
+      return <Tag className="w-4 h-4 text-[#123891]" />;
     }
     switch (type) {
       case 'EVALUATION':

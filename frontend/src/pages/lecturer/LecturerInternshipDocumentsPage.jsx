@@ -525,14 +525,14 @@ const LecturerInternshipDocumentsPage = () => {
       </div>
 
       {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => {
             setActiveTab('GUIDES');
             setSearch('');
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'GUIDES'
               ? 'bg-[#123891] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -557,7 +557,7 @@ const LecturerInternshipDocumentsPage = () => {
             setActiveTab('SUBMISSIONS');
             setSearch('');
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'SUBMISSIONS'
               ? 'bg-[#123891] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -634,7 +634,7 @@ const LecturerInternshipDocumentsPage = () => {
                 />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full min-w-[700px] text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -902,7 +902,7 @@ const LecturerInternshipDocumentsPage = () => {
                   />
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full min-w-[760px] text-left border-collapse">
                       <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                           <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -1049,7 +1049,7 @@ const LecturerInternshipDocumentsPage = () => {
                   />
                 ) : (
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
+                    <table className="w-full min-w-[760px] text-left border-collapse">
                       <thead>
                         <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                           <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -1127,12 +1127,12 @@ const LecturerInternshipDocumentsPage = () => {
 
       {/* MODAL: THÊM TÀI LIỆU HƯỚNG DẪN MỚI */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                   <Upload className="w-5 h-5" />
                 </div>
                 <div>
@@ -1154,7 +1154,7 @@ const LecturerInternshipDocumentsPage = () => {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmitAdd} className="space-y-4">
+            <form onSubmit={handleSubmitAdd} className="space-y-4 overflow-y-auto flex-1 overscroll-contain pr-0.5">
               {formError && (
                 <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs flex items-center gap-2 border border-rose-200">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1297,19 +1297,19 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setAddModalOpen(false)}
                   disabled={uploading}
-                  className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !selectedFile}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer text-center"
                 >
                   {uploading ? (
                     <>
@@ -1331,12 +1331,12 @@ const LecturerInternshipDocumentsPage = () => {
 
       {/* MODAL: CHỈNH SỬA TÀI LIỆU */}
       {editModalOpen && editingDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5 animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
                   <Edit className="w-5 h-5" />
                 </div>
                 <div>
@@ -1358,7 +1358,7 @@ const LecturerInternshipDocumentsPage = () => {
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmitEdit} className="space-y-4">
+            <form onSubmit={handleSubmitEdit} className="space-y-4 overflow-y-auto flex-1 overscroll-contain pr-0.5">
               {editFormError && (
                 <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs flex items-center gap-2 border border-rose-200">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -1504,19 +1504,19 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setEditModalOpen(false)}
                   disabled={savingEdit}
-                  className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={savingEdit}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer text-center"
                 >
                   {savingEdit ? (
                     <>
@@ -1535,8 +1535,8 @@ const LecturerInternshipDocumentsPage = () => {
 
       {/* MODAL: XÁC NHẬN XÓA TÀI LIỆU */}
       {deleteModalOpen && deletingDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-sm w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
               <Trash2 className="w-6 h-6" />
             </div>
@@ -1554,12 +1554,12 @@ const LecturerInternshipDocumentsPage = () => {
               </p>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteModalOpen(false)}
                 disabled={deleting}
-                className="w-full py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto py-2.5 px-4 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Hủy bỏ
               </button>
@@ -1567,7 +1567,7 @@ const LecturerInternshipDocumentsPage = () => {
                 type="button"
                 onClick={handleConfirmDelete}
                 disabled={deleting}
-                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full sm:w-auto py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-1.5 text-center"
               >
                 {deleting ? (
                   <>
@@ -1585,8 +1585,8 @@ const LecturerInternshipDocumentsPage = () => {
 
       {/* MODAL: GVGS GỠ FILE BÁO CÁO CỦA SINH VIÊN */}
       {removeReportModalOpen && targetSubmission && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 animate-in zoom-in-95 duration-200 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
                 <Trash2 className="w-6 h-6" />
@@ -1673,7 +1673,7 @@ const LecturerInternshipDocumentsPage = () => {
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"
                 disabled={removingReport}
@@ -1683,7 +1683,7 @@ const LecturerInternshipDocumentsPage = () => {
                   setRemoveReason('');
                   setRemoveError('');
                 }}
-                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Hủy bỏ
               </button>
@@ -1691,7 +1691,7 @@ const LecturerInternshipDocumentsPage = () => {
                 type="button"
                 disabled={removingReport || !removeReason.trim()}
                 onClick={handleConfirmRemoveReport}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center"
               >
                 {removingReport ? (
                   <>

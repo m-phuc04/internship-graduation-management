@@ -443,22 +443,22 @@ const StudentReportModal = ({
         </div>
 
         {/* Modal Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100 gap-3">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between pt-3 border-t border-slate-100 gap-2 sm:gap-3">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
           >
             Hủy bỏ
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
             <button
               type="button"
               onClick={() => handleSubmit('DRAFT')}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition cursor-pointer disabled:opacity-50 text-center"
             >
               <Save className="w-3.5 h-3.5" />
               <span>Lưu nháp</span>
@@ -468,7 +468,7 @@ const StudentReportModal = ({
               type="button"
               onClick={() => handleSubmit('SUBMITTED')}
               disabled={submitting}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition cursor-pointer disabled:opacity-50 text-center"
             >
               <Send className="w-3.5 h-3.5" />
               <span>{submitting ? 'Đang gửi...' : hasStudent2 ? 'Gửi cho SV2 duyệt' : 'Nộp nhật ký'}</span>

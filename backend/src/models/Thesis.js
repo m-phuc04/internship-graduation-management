@@ -127,6 +127,12 @@ const thesisSchema = new mongoose.Schema(
       default: null,
     },
 
+    expiresAt: {
+      type: Date,
+      default: null,
+      index: true,
+    },
+
     rejectionReason: {
       type: String,
       trim: true,

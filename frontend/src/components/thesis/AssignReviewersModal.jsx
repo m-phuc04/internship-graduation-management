@@ -306,12 +306,12 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
           >
             Hủy
           </button>
@@ -325,7 +325,7 @@ const AssignReviewersModal = ({ isOpen, onClose, thesis, onSuccess }) => {
               (thesis.scores?.supervisorScore !== null && thesis.scores?.supervisorScore !== undefined && Number(thesis.scores.supervisorScore) < 4.0) ||
               (thesis.scores?.student1SupervisorScore !== null && thesis.scores?.student1SupervisorScore !== undefined && Number(thesis.scores.student1SupervisorScore) < 4.0)
             }
-            className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full sm:w-auto px-5 py-2.5 sm:py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold rounded-xl shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center"
           >
             {submitting ? 'Đang lưu...' : 'Xác nhận'}
           </button>

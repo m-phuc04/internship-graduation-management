@@ -206,21 +206,30 @@ const LecturerDashboard = () => {
               <span>Khoa: <strong className="text-slate-800">{lecturer?.department || 'Công nghệ Thông tin'}</strong></span>
             </div>
 
-            {/* Mục hiển thị Lĩnh vực của Giảng viên */}
-            <div className="text-xs text-slate-500 mt-2 flex flex-wrap items-center gap-1.5">
-              <span className="font-semibold text-slate-700">Lĩnh vực:</span>
+            {/* Mục hiển thị Lĩnh vực của Giảng viên & Nút yêu cầu nằm ngang chung một dòng */}
+            <div className="text-xs text-slate-500 mt-2 flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-slate-700 shrink-0">Lĩnh vực:</span>
               {currentFields && currentFields.length > 0 ? (
                 currentFields.map((f, idx) => (
                   <span
                     key={idx}
-                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200"
+                    className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0"
                   >
                     {f}
                   </span>
                 ))
               ) : (
-                <span className="text-xs text-slate-400 italic">Chưa có lĩnh vực</span>
+                <span className="text-xs text-slate-400 italic shrink-0">Chưa có lĩnh vực</span>
               )}
+
+              <button
+                type="button"
+                onClick={handleOpenFieldModal}
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-xl bg-blue-50 hover:bg-blue-100 text-[#123891] border border-blue-200 transition shadow-2xs cursor-pointer shrink-0 ml-0.5"
+              >
+                <Tag className="w-3.5 h-3.5 text-[#123891]" />
+                <span>Yêu cầu thay đổi lĩnh vực</span>
+              </button>
             </div>
 
             {/* Trạng thái chờ TBM duyệt yêu cầu thay đổi lĩnh vực */}
@@ -233,17 +242,8 @@ const LecturerDashboard = () => {
           </div>
         </div>
 
-        {/* Nút Yêu cầu thay đổi lĩnh vực và Làm mới */}
+        {/* Nút Làm mới */}
         <div className="flex items-center gap-2 self-start md:self-auto shrink-0">
-          <button
-            type="button"
-            onClick={handleOpenFieldModal}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-xl bg-blue-50 hover:bg-blue-100 text-[#123891] border border-blue-200 transition shadow-2xs cursor-pointer"
-          >
-            <Tag className="w-3.5 h-3.5 text-[#123891]" />
-            <span>Yêu cầu thay đổi lĩnh vực</span>
-          </button>
-
           <button
             type="button"
             onClick={fetchDashboard}

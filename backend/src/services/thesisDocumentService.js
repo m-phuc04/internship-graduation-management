@@ -5,6 +5,8 @@ import ThesisDocument from "../models/ThesisDocument.js";
 import Thesis from "../models/Thesis.js";
 import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
+import User from "../models/User.js";
+import AcademicTerm from "../models/AcademicTerm.js";
 import ThesisTopic from "../models/ThesisTopic.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -262,21 +264,51 @@ export const getLecturerSubmissions = async (
 ) => {
   if (!userId) return [];
   const lecturer = await Lecturer.findOne({ userId });
-  if (!lecturer) {
-    return [];
-  }
+  const user = await User.findById(userId);
 
   const query = {
-    supervisorId: lecturer._id,
     documentType: "SUBMISSION",
   };
 
-  if (academicTermId && academicTermId !== "ALL") {
-    query.$or = [{ academicTermId }, { academicTermId: null }];
-  }
-
   if (thesisId && thesisId !== "ALL") {
     query.thesisId = thesisId;
+
+    // If specific thesisId is requested:
+    // If user is not Admin/TBM, verify they have permission to view this thesis
+    if (user?.role !== "ADMIN" && user?.role !== "TBM") {
+      if (!lecturer) return [];
+      const thesis = await Thesis.findById(thesisId);
+      if (!thesis) return [];
+
+      const lecIdStr = lecturer._id.toString();
+      const isSupervisor = thesis.supervisorId?.toString() === lecIdStr;
+      const isReviewer1 = thesis.reviewer1Id?.toString() === lecIdStr;
+      const isReviewer2 = thesis.reviewer2Id?.toString() === lecIdStr;
+      const isReviewer =
+        Array.isArray(thesis.reviewers) &&
+        thesis.reviewers.some(
+          (r) =>
+            (r.lecturerId?.toString() || r.lecturerId?._id?.toString()) ===
+            lecIdStr,
+        );
+      const isCouncil =
+        Array.isArray(thesis.councilMembers) &&
+        thesis.councilMembers.some(
+          (c) =>
+            (c.lecturerId?.toString() || c.lecturerId?._id?.toString()) ===
+            lecIdStr,
+        );
+
+      if (!isSupervisor && !isReviewer1 && !isReviewer2 && !isReviewer && !isCouncil) {
+        query.supervisorId = lecturer._id;
+      }
+    }
+  } else {
+    if (!lecturer) {
+      if (user?.role !== "ADMIN" && user?.role !== "TBM") return [];
+    } else {
+      query.supervisorId = lecturer._id;
+    }
   }
 
   if (search && search.trim()) {

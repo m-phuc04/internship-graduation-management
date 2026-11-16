@@ -250,23 +250,23 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"
-            onClick={() => setDiaryModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl transition cursor-pointer shadow-2xs"
-            title="Xem chi tiết nhật ký thực tập của sinh viên"
+            onClick={onClose}
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
           >
-            <BookOpen className="w-4 h-4 text-[#102d7d]" />
-            <span>Chi tiết nhật ký thực tập</span>
+            Đóng
           </button>
 
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+            onClick={() => setDiaryModalOpen(true)}
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 border border-blue-200/80 rounded-xl transition cursor-pointer shadow-2xs text-center"
+            title="Xem chi tiết nhật ký thực tập của sinh viên"
           >
-            Đóng
+            <BookOpen className="w-4 h-4 text-[#102d7d]" />
+            <span>Chi tiết nhật ký thực tập</span>
           </button>
         </div>
       </div>

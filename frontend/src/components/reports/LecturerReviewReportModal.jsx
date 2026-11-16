@@ -215,11 +215,11 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between pt-3 border-t border-slate-100 gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+            className="w-full sm:w-auto px-4 py-2.5 sm:py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition text-center"
           >
             Đóng
           </button>
@@ -228,7 +228,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
             type="button"
             disabled={submitting}
             onClick={handleReview}
-            className="inline-flex items-center gap-1.5 px-5 py-2 font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50"
+            className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 sm:py-2 font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-sm shadow-blue-200 transition disabled:opacity-50 text-center"
           >
             <Award className="w-3.5 h-3.5" />
             <span>{submitting ? 'Đang lưu...' : 'Lưu kết quả đánh giá'}</span>

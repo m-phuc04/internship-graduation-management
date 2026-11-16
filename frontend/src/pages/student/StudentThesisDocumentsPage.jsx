@@ -258,14 +258,14 @@ const StudentThesisDocumentsPage = () => {
       )}
 
       {/* Tabs Switcher */}
-      <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+      <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           type="button"
           onClick={() => {
             setActiveTab('GUIDES');
             setSearch('');
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'GUIDES'
               ? 'bg-[#123891] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -286,7 +286,7 @@ const StudentThesisDocumentsPage = () => {
             setActiveTab('SUBMISSIONS');
             setSearch('');
           }}
-          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${
+          className={`px-5 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap ${
             activeTab === 'SUBMISSIONS'
               ? 'bg-[#123891] text-white shadow-xs'
               : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
@@ -348,7 +348,7 @@ const StudentThesisDocumentsPage = () => {
                 />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full min-w-[700px] text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -462,7 +462,7 @@ const StudentThesisDocumentsPage = () => {
                 />
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse">
+                  <table className="w-full min-w-[700px] text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                         <th className="py-3.5 px-4 text-center w-14">STT</th>
@@ -549,9 +549,9 @@ const StudentThesisDocumentsPage = () => {
 
       {/* MODAL: NỘP FILE MỚI */}
       {submitModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95">
-            <div className="px-6 py-5 bg-[#123891] text-white flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-in zoom-in-95">
+            <div className="px-4 py-3.5 sm:px-6 sm:py-5 bg-[#123891] text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
                   <Upload className="w-5 h-5" />
@@ -572,7 +572,7 @@ const StudentThesisDocumentsPage = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmitFile} className="p-6 space-y-4">
+            <form onSubmit={handleSubmitFile} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain">
               {formError && (
                 <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl flex items-start gap-2.5 text-xs text-rose-700">
                   <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -636,19 +636,19 @@ const StudentThesisDocumentsPage = () => {
               </div>
 
               {/* Actions */}
-              <div className="pt-2 flex items-center justify-end gap-2.5 border-t border-slate-100">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setSubmitModalOpen(false)}
                   disabled={uploading}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-4 py-2 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={uploading || !selectedFile}
-                  className="px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] disabled:opacity-50 disabled:cursor-not-allowed rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
                 >
                   {uploading ? (
                     <>
@@ -667,9 +667,9 @@ const StudentThesisDocumentsPage = () => {
 
       {/* MODAL: XÁC NHẬN GỠ FILE NỘP */}
       {deleteModalOpen && deletingDoc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95">
-            <div className="p-6 text-center space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden animate-in zoom-in-95">
+            <div className="p-4 sm:p-6 text-center space-y-4">
               <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
                 <Trash2 className="w-6 h-6" />
               </div>
@@ -683,12 +683,12 @@ const StudentThesisDocumentsPage = () => {
                 </p>
               </div>
 
-              <div className="pt-2 flex items-center justify-center gap-3">
+              <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-center gap-2.5 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => setDeleteModalOpen(false)}
                   disabled={deleting}
-                  className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
                 >
                   Hủy bỏ
                 </button>
@@ -696,7 +696,7 @@ const StudentThesisDocumentsPage = () => {
                   type="button"
                   onClick={handleConfirmDelete}
                   disabled={deleting}
-                  className="px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition flex items-center gap-2 shadow-xs cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 disabled:opacity-50 rounded-xl transition flex items-center justify-center gap-2 shadow-xs cursor-pointer text-center"
                 >
                   {deleting ? (
                     <>

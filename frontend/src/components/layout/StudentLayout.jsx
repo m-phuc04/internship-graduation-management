@@ -77,10 +77,11 @@ const StudentLayout = () => {
       {mobileDrawerOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs transition-opacity animate-in fade-in duration-200"
             onClick={() => setMobileDrawerOpen(false)}
+            aria-label="Đóng menu"
           />
-          <div className="relative w-64 bg-white z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
+          <div className="relative w-64 max-w-[85vw] bg-[#123891] z-10 h-full shadow-2xl flex flex-col animate-in slide-in-from-left duration-200">
             <StudentSidebar
               onCloseMobile={() => setMobileDrawerOpen(false)}
             />

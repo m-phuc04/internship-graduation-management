@@ -323,7 +323,7 @@ const RegisterThesisPage = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full min-w-[700px] text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                     <th className="py-3.5 px-4 text-center w-12">STT</th>
@@ -422,8 +422,8 @@ const RegisterThesisPage = () => {
       {/* MODAL: REGISTER SELECTED APPROVED TOPIC */}
       {/* ========================================================================= */}
       {registerTopicModalOpen && selectedTopicForRegistration && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] sm:max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
@@ -663,11 +663,11 @@ const RegisterThesisPage = () => {
             )}
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-3 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setRegisterTopicModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Hủy
               </button>
@@ -676,7 +676,7 @@ const RegisterThesisPage = () => {
                 type="button"
                 disabled={registeringTopic || (topicStudentCount === 2 && !topicStudent2)}
                 onClick={handleConfirmTopicRegistration}
-                className="px-5 py-2.5 text-xs font-bold text-white bg-[#123891] hover:bg-blue-700 disabled:opacity-50 rounded-xl transition cursor-pointer shadow-sm"
+                className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold text-white bg-[#123891] hover:bg-blue-700 disabled:opacity-50 rounded-xl transition cursor-pointer shadow-sm text-center"
               >
                 {registeringTopic ? 'Đang đăng ký...' : 'Xác nhận đăng ký'}
               </button>
