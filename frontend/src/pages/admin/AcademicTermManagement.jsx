@@ -236,13 +236,13 @@ const AcademicTermManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <Calendar className="w-7 h-7" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <Calendar className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               Quản lý Học kỳ & Năm học
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -254,7 +254,7 @@ const AcademicTermManagement = () => {
         <button
           type="button"
           onClick={openCreateModal}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Học Kỳ Mới</span>
@@ -262,7 +262,7 @@ const AcademicTermManagement = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -274,12 +274,12 @@ const AcademicTermManagement = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-end">
           {/* Status Filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700 cursor-pointer"
+            className="w-full sm:w-auto px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700 cursor-pointer"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="ACTIVE">🟢 Đang diễn ra</option>
@@ -292,7 +292,7 @@ const AcademicTermManagement = () => {
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
-            className="px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700 cursor-pointer"
+            className="w-full sm:w-auto px-3 py-2 rounded-xl text-xs bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-medium text-slate-700 cursor-pointer"
           >
             <option value="ALL">Tất cả năm học</option>
             {uniqueYears.map((y) => (
@@ -304,161 +304,280 @@ const AcademicTermManagement = () => {
         </div>
       </div>
 
-      {/* Table of Academic Terms */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[720px]">
-            <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                <th className="py-3.5 px-4 text-center w-14">STT</th>
-                <th className="py-3.5 px-4">Học kỳ / Mã</th>
-                <th className="py-3.5 px-4">Năm học</th>
-                <th className="py-3.5 px-4">Thời gian học kỳ</th>
-                <th className="py-3.5 px-4">Dữ liệu liên kết</th>
-                <th className="py-3.5 px-4">Trạng thái</th>
-                <th className="py-3.5 px-4 text-right"></th>
-              </tr>
-            </thead>
+      {/* Table & Mobile Cards */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+        {filteredTerms.length === 0 ? (
+          <div className="py-12 text-center text-slate-400 text-xs">
+            Không tìm thấy học kỳ nào phù hợp với bộ lọc.
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[720px]">
+                <thead>
+                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                    <th className="py-3.5 px-4 text-center w-14">STT</th>
+                    <th className="py-3.5 px-4">Học kỳ / Mã</th>
+                    <th className="py-3.5 px-4">Năm học</th>
+                    <th className="py-3.5 px-4">Thời gian học kỳ</th>
+                    <th className="py-3.5 px-4">Dữ liệu liên kết</th>
+                    <th className="py-3.5 px-4">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right"></th>
+                  </tr>
+                </thead>
 
-            <tbody className="divide-y divide-slate-100 text-xs">
-              {filteredTerms.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-400">
-                    Không tìm thấy học kỳ nào phù hợp với bộ lọc.
-                  </td>
-                </tr>
-              ) : (
-                filteredTerms.map((term, idx) => {
-                  const statusConf = STATUS_CONFIG[term.status] || STATUS_CONFIG.DRAFT;
-                  const StatusIcon = statusConf.icon;
-                  const isCurrentActive = term.status === 'ACTIVE';
+                <tbody className="divide-y divide-slate-100 text-xs">
+                  {filteredTerms.map((term, idx) => {
+                    const statusConf = STATUS_CONFIG[term.status] || STATUS_CONFIG.DRAFT;
+                    const StatusIcon = statusConf.icon;
+                    const isCurrentActive = term.status === 'ACTIVE';
 
-                  return (
-                    <tr key={term._id} className="hover:bg-slate-50/60 transition-colors">
-                      {/* STT */}
-                      <td className="py-3.5 px-4 text-center font-medium text-slate-500">
-                        {idx + 1}
-                      </td>
+                    return (
+                      <tr key={term._id} className="hover:bg-slate-50/60 transition-colors">
+                        {/* STT */}
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                          {idx + 1}
+                        </td>
 
-                      {/* Name & Code */}
-                      <td className="py-3.5 px-4">
-                        <div className="font-bold text-slate-900">{term.name}</div>
-                        <div className="text-[11px] font-mono font-medium text-[#123891] mt-0.5">
-                          {term.code}
-                        </div>
-                      </td>
+                        {/* Name & Code */}
+                        <td className="py-3.5 px-4">
+                          <div className="font-bold text-slate-900">{term.name}</div>
+                          <div className="text-[11px] font-mono font-medium text-[#123891] mt-0.5">
+                            {term.code}
+                          </div>
+                        </td>
 
-                      {/* Year */}
-                      <td className="py-3.5 px-4 font-semibold text-slate-700">
-                        {term.academicYear}
-                      </td>
+                        {/* Year */}
+                        <td className="py-3.5 px-4 font-semibold text-slate-700">
+                          {term.academicYear}
+                        </td>
 
-                      {/* Dates */}
-                      <td className="py-3.5 px-4 text-slate-600">
-                        <div className="flex items-center gap-1.5 font-medium">
-                          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                          <span>
-                            {formatDate(term.startDate)} — {formatDate(term.endDate)}
-                          </span>
-                        </div>
-                      </td>
+                        {/* Dates */}
+                        <td className="py-3.5 px-4 text-slate-600">
+                          <div className="flex items-center gap-1.5 font-medium">
+                            <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                            <span>
+                              {formatDate(term.startDate)} — {formatDate(term.endDate)}
+                            </span>
+                          </div>
+                        </td>
 
-                      {/* Attached Counts */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
+                        {/* Attached Counts */}
+                        <td className="py-3.5 px-4">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium text-[11px] border border-blue-100"
+                              title="Số hồ sơ thực tập"
+                            >
+                              <Briefcase className="w-3 h-3" /> {term.internshipCount || 0} TTDN
+                            </span>
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] font-medium text-[11px] border border-blue-100"
+                              title="Số đề tài khóa luận"
+                            >
+                              <Layers className="w-3 h-3" /> {term.thesisCount || 0} KLTN
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="py-3.5 px-4">
                           <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium text-[11px] border border-blue-100"
-                            title="Số hồ sơ thực tập"
+                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusConf.badge}`}
                           >
-                            <Briefcase className="w-3 h-3" /> {term.internshipCount || 0} TTDN
+                            <StatusIcon className="w-3 h-3" />
+                            <span>{statusConf.label}</span>
                           </span>
-                          <span
-                            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] font-medium text-[11px] border border-blue-100"
-                            title="Số đề tài khóa luận"
-                          >
-                            <Layers className="w-3 h-3" /> {term.thesisCount || 0} KLTN
+                        </td>
+
+                        {/* Actions */}
+                        <td className="py-3.5 px-4 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {/* View Detail */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setViewingTerm(term);
+                                setDetailModalOpen(true);
+                              }}
+                              className="p-1.5 rounded-lg text-slate-600 hover:text-[#123891] hover:bg-blue-50 transition"
+                              title="Xem chi tiết các mốc thời gian"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
+
+                            {/* Edit */}
+                            <button
+                              type="button"
+                              onClick={() => openEditModal(term)}
+                              className="p-1.5 rounded-lg text-slate-600 hover:text-amber-600 hover:bg-amber-50 transition"
+                              title="Chỉnh sửa thông tin học kỳ"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+
+                            {/* Activate */}
+                            {!isCurrentActive && (
+                              <button
+                                type="button"
+                                onClick={() => handleActivate(term)}
+                                className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition"
+                                title="Đặt làm học kỳ hiện tại (ACTIVE)"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {/* Close */}
+                            {term.status !== 'CLOSED' && (
+                              <button
+                                type="button"
+                                onClick={() => handleClose(term)}
+                                className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition"
+                                title="Đóng học kỳ (Chuyển sang chỉ xem)"
+                              >
+                                <Lock className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {/* Delete */}
+                            <button
+                              type="button"
+                              onClick={() => handleDelete(term)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                              title="Xóa học kỳ (Chỉ khi chưa có dữ liệu)"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {filteredTerms.map((term, idx) => {
+                const statusConf = STATUS_CONFIG[term.status] || STATUS_CONFIG.DRAFT;
+                const StatusIcon = statusConf.icon;
+                const isCurrentActive = term.status === 'ACTIVE';
+
+                return (
+                  <div key={term._id} className="p-4 space-y-3 hover:bg-slate-50/60 transition">
+                    {/* Header Row: STT + Name + Code + Status */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                            {idx + 1}
+                          </span>
+                          <span className="font-bold text-slate-900 text-sm">
+                            {term.name}
+                          </span>
+                          <span className="text-[11px] font-mono font-medium text-[#123891] bg-blue-50 px-1.5 py-0.5 rounded">
+                            {term.code}
                           </span>
                         </div>
-                      </td>
+                        <div className="text-xs text-slate-500 font-medium mt-1">
+                          Năm học: <strong className="text-slate-800">{term.academicYear}</strong>
+                        </div>
+                      </div>
 
-                      {/* Status */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusConf.badge}`}
-                        >
-                          <StatusIcon className="w-3 h-3" />
-                          <span>{statusConf.label}</span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-bold border shrink-0 ${statusConf.badge}`}
+                      >
+                        <StatusIcon className="w-3 h-3" />
+                        <span>{statusConf.label}</span>
+                      </span>
+                    </div>
+
+                    {/* Timeline & Linked stats */}
+                    <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
+                      <div className="flex items-center gap-1.5 text-slate-600">
+                        <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                        <span>
+                          {formatDate(term.startDate)} — {formatDate(term.endDate)}
                         </span>
-                      </td>
+                      </div>
 
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          {/* View Detail */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setViewingTerm(term);
-                              setDetailModalOpen(true);
-                            }}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-[#123891] hover:bg-blue-50 transition"
-                            title="Xem chi tiết các mốc thời gian"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                      <div className="flex items-center gap-2 pt-1">
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium text-[10.5px] border border-blue-100"
+                        >
+                          <Briefcase className="w-3 h-3" /> {term.internshipCount || 0} TTDN
+                        </span>
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] font-medium text-[10.5px] border border-blue-100"
+                        >
+                          <Layers className="w-3 h-3" /> {term.thesisCount || 0} KLTN
+                        </span>
+                      </div>
+                    </div>
 
-                          {/* Edit */}
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(term)}
-                            className="p-1.5 rounded-lg text-slate-600 hover:text-amber-600 hover:bg-amber-50 transition"
-                            title="Chỉnh sửa thông tin học kỳ"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
+                    {/* Actions Row */}
+                    <div className="flex items-center justify-end gap-1.5 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setViewingTerm(term);
+                          setDetailModalOpen(true);
+                        }}
+                        className="p-2 rounded-xl text-slate-600 hover:text-[#123891] hover:bg-blue-50 border border-slate-200 transition active:scale-95 cursor-pointer"
+                        title="Xem chi tiết các mốc thời gian"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
 
-                          {/* Activate */}
-                          {!isCurrentActive && (
-                            <button
-                              type="button"
-                              onClick={() => handleActivate(term)}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-emerald-600 hover:bg-emerald-50 transition"
-                              title="Đặt làm học kỳ hiện tại (ACTIVE)"
-                            >
-                              <CheckCircle2 className="w-4 h-4" />
-                            </button>
-                          )}
+                      <button
+                        type="button"
+                        onClick={() => openEditModal(term)}
+                        className="p-2 rounded-xl text-slate-600 hover:text-amber-600 hover:bg-amber-50 border border-slate-200 transition active:scale-95 cursor-pointer"
+                        title="Chỉnh sửa thông tin học kỳ"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
 
-                          {/* Close */}
-                          {term.status !== 'CLOSED' && (
-                            <button
-                              type="button"
-                              onClick={() => handleClose(term)}
-                              className="p-1.5 rounded-lg text-slate-600 hover:text-blue-600 hover:bg-blue-50 transition"
-                              title="Đóng học kỳ (Chuyển sang chỉ xem)"
-                            >
-                              <Lock className="w-4 h-4" />
-                            </button>
-                          )}
+                      {!isCurrentActive && (
+                        <button
+                          type="button"
+                          onClick={() => handleActivate(term)}
+                          className="p-2 rounded-xl text-emerald-600 hover:bg-emerald-50 border border-emerald-200 transition active:scale-95 cursor-pointer"
+                          title="Đặt làm học kỳ hiện tại (ACTIVE)"
+                        >
+                          <CheckCircle2 className="w-4 h-4" />
+                        </button>
+                      )}
 
-                          {/* Delete */}
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(term)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
-                            title="Xóa học kỳ (Chỉ khi chưa có dữ liệu)"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
+                      {term.status !== 'CLOSED' && (
+                        <button
+                          type="button"
+                          onClick={() => handleClose(term)}
+                          className="p-2 rounded-xl text-blue-600 hover:bg-blue-50 border border-blue-200 transition active:scale-95 cursor-pointer"
+                          title="Đóng học kỳ (Chuyển sang chỉ xem)"
+                        >
+                          <Lock className="w-4 h-4" />
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(term)}
+                        className="p-2 rounded-xl text-rose-500 hover:bg-rose-50 border border-rose-200 transition active:scale-95 cursor-pointer"
+                        title="Xóa học kỳ"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Modal Tạo Mới / Chỉnh Sửa Học Kỳ */}

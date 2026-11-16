@@ -94,13 +94,13 @@ const AdminUsersPage = () => {
   return (
     <div className="space-y-6">
       {/* 1. Header Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-            <Users className="w-7 h-7" />
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <Users className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               Quản lý Toàn bộ Tài khoản Người dùng
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -111,7 +111,7 @@ const AdminUsersPage = () => {
       </div>
 
       {/* Filter & Search Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
             value={search}
@@ -120,7 +120,7 @@ const AdminUsersPage = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto justify-end">
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
@@ -133,76 +133,165 @@ const AdminUsersPage = () => {
             ))}
           </select>
 
-          <div className="text-xs text-slate-500 font-medium whitespace-nowrap">
+          <div className="text-xs text-slate-500 font-medium whitespace-nowrap text-right sm:text-left">
             Tổng cộng: <strong>{users.length}</strong> tài khoản
           </div>
         </div>
       </div>
 
-      {/* 3. Table */}
-      <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+      {/* 3. Table / Cards */}
+      <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
             <LoadingSkeleton rows={5} cols={5} />
           </div>
         ) : users.length === 0 ? (
-          <div className="p-12">
+          <div className="p-8 sm:p-12">
             <EmptyState
               title="Không có tài khoản nào"
               description="Không tìm thấy người dùng phù hợp với bộ lọc."
             />
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs min-w-[700px]">
-              <thead>
-                <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                  <th className="py-3.5 px-4 text-center w-14">STT</th>
-                  <th className="py-3.5 px-4">Họ và Tên</th>
-                  <th className="py-3.5 px-4">Email / Mã</th>
-                  <th className="py-3.5 px-4">Role</th>
-                  <th className="py-3.5 px-4">Số điện thoại</th>
-                  <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 text-right"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.map((item, idx) => (
-                  <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                    <td className="py-3.5 px-4 text-center font-medium text-slate-500">
-                      {idx + 1}
-                    </td>
-                    <td className="py-3.5 px-4 font-bold text-slate-900">
-                      {item.fullName}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <div className="text-slate-800">{item.email || '—'}</div>
-                      {item.code && (
-                        <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
-                          Mã: {item.code}
+          <>
+            {/* Desktop Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs min-w-[700px]">
+                <thead>
+                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
+                    <th className="py-3.5 px-4 text-center w-14">STT</th>
+                    <th className="py-3.5 px-4">Họ và Tên</th>
+                    <th className="py-3.5 px-4">Email / Mã</th>
+                    <th className="py-3.5 px-4">Role</th>
+                    <th className="py-3.5 px-4">Số điện thoại</th>
+                    <th className="py-3.5 px-4">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {users.map((item, idx) => (
+                    <tr key={item._id} className="hover:bg-slate-50/80 transition">
+                      <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                        {idx + 1}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        {item.fullName}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="text-slate-800">{item.email || '—'}</div>
+                        {item.code && (
+                          <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
+                            Mã: {item.code}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4">{getRoleBadge(item.role)}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                        {item.phone || '—'}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {item.isActive !== false ? (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3" /> Active
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                            <XCircle className="w-3 h-3" /> Inactive
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 text-right space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => handleResetPassword(item)}
+                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
+                          title="Đặt lại mật khẩu về 1111"
+                        >
+                          Reset PW
+                        </button>
+
+                        {item.role !== 'ADMIN' && (
+                          <button
+                            type="button"
+                            onClick={() => handleToggleStatus(item)}
+                            className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                              item.isActive !== false
+                                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700'
+                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
+                            }`}
+                          >
+                            {item.isActive !== false ? 'Khóa' : 'Kích hoạt'}
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (< 768px) */}
+            <div className="md:hidden divide-y divide-slate-100">
+              {users.map((item, idx) => (
+                <div key={item._id} className="p-4 space-y-3 hover:bg-slate-50/60 transition">
+                  {/* Top Line: STT + FullName + Role Badge */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
+                      <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="min-w-0">
+                        <span className="font-bold text-slate-900 text-sm block truncate">
+                          {item.fullName}
                         </span>
-                      )}
-                    </td>
-                    <td className="py-3.5 px-4">{getRoleBadge(item.role)}</td>
-                    <td className="py-3.5 px-4 font-mono text-slate-600">
-                      {item.phone || '—'}
-                    </td>
-                    <td className="py-3.5 px-4">
+                      </div>
+                    </div>
+                    <div className="shrink-0">{getRoleBadge(item.role)}</div>
+                  </div>
+
+                  {/* Info: Email, Code, Phone */}
+                  <div className="space-y-1 text-xs text-slate-600 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-400 text-[11px]">Email:</span>
+                      <span className="font-medium text-slate-800 truncate text-[11px]">
+                        {item.email || '—'}
+                      </span>
+                    </div>
+                    {item.code && (
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-slate-400 text-[11px]">Mã định danh:</span>
+                        <span className="font-mono text-slate-800 font-semibold text-[11px]">
+                          {item.code}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-slate-400 text-[11px]">Số điện thoại:</span>
+                      <span className="font-mono text-slate-700 text-[11px]">
+                        {item.phone || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bottom Line: Status + Actions */}
+                  <div className="flex items-center justify-between pt-1 gap-2">
+                    <div>
                       {item.isActive !== false ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3" /> Active
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
                           <XCircle className="w-3 h-3" /> Inactive
                         </span>
                       )}
-                    </td>
-                    <td className="py-3.5 px-4 text-right space-x-2">
+                    </div>
+
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
                         onClick={() => handleResetPassword(item)}
-                        className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
+                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition active:scale-95 cursor-pointer"
                         title="Đặt lại mật khẩu về 1111"
                       >
                         Reset PW
@@ -212,21 +301,21 @@ const AdminUsersPage = () => {
                         <button
                           type="button"
                           onClick={() => handleToggleStatus(item)}
-                          className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition active:scale-95 cursor-pointer ${
                             item.isActive !== false
-                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-700'
-                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
+                              ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200'
                           }`}
                         >
                           {item.isActive !== false ? 'Khóa' : 'Kích hoạt'}
                         </button>
                       )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
     </div>

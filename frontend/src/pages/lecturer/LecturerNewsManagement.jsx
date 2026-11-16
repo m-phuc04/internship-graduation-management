@@ -189,13 +189,13 @@ const LecturerNewsManagement = () => {
   return (
     <div className="space-y-6">
       {/* 1. Header Banner */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
-            <Newspaper className="w-7 h-7" />
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 sm:gap-4">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
+            <Newspaper className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 leading-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               Quản Lý Tin Tức & Sự Kiện
             </h1>
           </div>
@@ -204,7 +204,7 @@ const LecturerNewsManagement = () => {
         <button
           type="button"
           onClick={handleOpenCreateModal}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-sm shadow-blue-200 transition active:scale-95 cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-sm shadow-blue-200 transition active:scale-95 cursor-pointer shrink-0 w-full sm:w-auto"
         >
           <Plus className="w-4 h-4" />
           <span>Tạo Tin Tức Mới</span>
@@ -212,7 +212,7 @@ const LecturerNewsManagement = () => {
       </div>
 
       {/* 2. Search & Filter Bar */}
-      <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -224,11 +224,11 @@ const LecturerNewsManagement = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-wrap items-center gap-2.5 w-full md:w-auto justify-end">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-[#123891] cursor-pointer"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-[#123891] cursor-pointer"
           >
             <option value="ALL">Tất cả danh mục</option>
             <option value="THONG_BAO">Thông báo</option>
@@ -239,7 +239,7 @@ const LecturerNewsManagement = () => {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-[#123891] cursor-pointer"
+            className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 font-semibold focus:outline-none focus:border-[#123891] cursor-pointer"
           >
             <option value="ALL">Tất cả trạng thái</option>
             <option value="PUBLISHED">Đang hiển thị</option>
@@ -250,7 +250,8 @@ const LecturerNewsManagement = () => {
 
       {/* 3. News Table List */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        <div className="overflow-x-auto">
+        {/* Desktop Table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full min-w-[760px] text-left text-xs text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
               <tr>
@@ -355,18 +356,114 @@ const LecturerNewsManagement = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Cards */}
+        <div className="md:hidden divide-y divide-slate-100">
+          {loading ? (
+            <div className="p-8 text-center text-slate-400">
+              <div className="flex items-center justify-center gap-2">
+                <span className="w-4 h-4 border-2 border-slate-300 border-t-[#123891] rounded-full animate-spin" />
+                <span className="text-xs">Đang tải danh sách tin tức...</span>
+              </div>
+            </div>
+          ) : newsList.length === 0 ? (
+            <div className="p-8 text-center text-slate-400">
+              <Newspaper className="w-10 h-10 mx-auto text-slate-300 mb-2" />
+              <div className="font-semibold text-slate-600 text-sm">Chưa có tin tức nào</div>
+            </div>
+          ) : (
+            newsList.map((item) => {
+              const cat = getCategoryBadge(item.category);
+              return (
+                <div key={item._id} className="p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className={`inline-flex px-2 py-0.5 rounded-md text-[10.5px] font-bold border shrink-0 ${cat.bg}`}>
+                      {cat.label}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleTogglePublish(item._id, item.isPublished)}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10.5px] font-bold transition cursor-pointer shrink-0 ${
+                        item.isPublished
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 active:bg-emerald-100'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200 active:bg-slate-200'
+                      }`}
+                    >
+                      {item.isPublished ? (
+                        <>
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          <span>Hiển thị</span>
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="w-3 h-3 text-slate-400" />
+                          <span>Đang ẩn</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm leading-snug line-clamp-2">
+                      {item.title}
+                    </h4>
+                    {item.summary && (
+                      <p className="text-xs text-slate-500 line-clamp-2 mt-1">
+                        {item.summary}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
+                    <span className="flex items-center gap-1 font-medium text-slate-700">
+                      <User className="w-3 h-3 text-slate-400" />
+                      {item.authorName || item.authorId?.fullName || 'Khoa CNTT'}
+                    </span>
+                    <span className="flex items-center gap-1 font-mono">
+                      <Calendar className="w-3 h-3 text-slate-400" />
+                      {formatDate(item.publishedAt || item.createdAt)}
+                    </span>
+                    <span className="flex items-center gap-1 font-mono">
+                      <Eye className="w-3 h-3 text-slate-400" />
+                      {item.views || 0} lượt xem
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(item)}
+                      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-50 text-[#123891] hover:bg-blue-100 font-bold text-xs transition cursor-pointer"
+                    >
+                      <Edit className="w-3.5 h-3.5" />
+                      <span>Chỉnh sửa</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(item._id, item.title)}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 font-bold text-xs transition cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Xóa</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
       </div>
 
       {/* 4. Modal Create / Edit News */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="fixed inset-0" onClick={() => !submitting && setModalOpen(false)} />
 
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-10 my-8 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-10 my-auto sm:my-8 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] sm:max-h-[90vh]">
             {/* Modal Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#102d7d] flex items-center justify-center font-bold">
+                <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#102d7d] flex items-center justify-center font-bold shrink-0">
                   <Newspaper className="w-4 h-4" />
                 </div>
                 <div>
@@ -390,7 +487,7 @@ const LecturerNewsManagement = () => {
             </div>
 
             {/* Modal Form */}
-            <form onSubmit={handleSubmit} className="p-6 overflow-y-auto custom-scrollbar space-y-4">
+            <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4 flex-1 overscroll-contain">
               {/* Category & Status */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -468,12 +565,12 @@ const LecturerNewsManagement = () => {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
                   disabled={submitting}
-                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer"
+                  className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition cursor-pointer text-center"
                 >
                   Hủy
                 </button>
@@ -481,7 +578,7 @@ const LecturerNewsManagement = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-6 py-2.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-md shadow-blue-900/10 transition duration-150 cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                  className="px-6 py-2.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-md shadow-blue-900/10 transition duration-150 cursor-pointer disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting && <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />}
                   <span>{modalMode === 'CREATE' ? 'Đăng Bài Viết' : 'Lưu Thay Đổi'}</span>

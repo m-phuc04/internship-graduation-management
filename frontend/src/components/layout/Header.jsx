@@ -19,6 +19,9 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
     if (location.pathname.includes('/admin/permissions')) return 'Phân quyền Giảng viên & Bộ môn';
     if (location.pathname.includes('/tbm/dashboard') || location.pathname.includes('/admin/dashboard')) return 'Bảng Tổng quan';
     if (location.pathname.includes('/admin/users')) return 'Quản lý Người dùng';
+    if (location.pathname.includes('/admin/logs')) return 'Nhật ký hệ thống';
+    if (location.pathname.includes('/admin/news') || location.pathname.includes('/tbm/news')) return 'Quản lý Bản tin';
+    if (location.pathname.includes('/profile')) return 'Hồ sơ cá nhân';
     if (location.pathname.includes('/tbm/students') || location.pathname.includes('/admin/students')) return 'Quản lý Sinh viên';
     if (location.pathname.includes('/tbm/lecturers') || location.pathname.includes('/admin/lecturers')) return 'Quản lý Giảng viên';
     if (location.pathname.includes('/tbm/companies')) return 'Quản lý Doanh nghiệp';
@@ -147,7 +150,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
-                      navigate('/tbm/profile');
+                      navigate(isAdmin ? '/admin/profile' : '/tbm/profile');
                     }}
                     className="w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 hover:text-[#ECA124] rounded-lg transition"
                   >

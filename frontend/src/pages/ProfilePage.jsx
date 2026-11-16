@@ -349,15 +349,15 @@ const ProfilePage = () => {
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
       {/* Top Banner Card */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
-        <div className="flex items-start gap-4 sm:gap-5">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-black text-2xl sm:text-3xl flex items-center justify-center shadow-md shadow-blue-100 shrink-0">
+      <div className="p-4 sm:p-7 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
+          <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-black text-xl sm:text-3xl flex items-center justify-center shadow-md shadow-blue-100 shrink-0">
             {lecturer?.academicTitle ? lecturer.academicTitle.charAt(0) : (user?.fullName?.charAt(0).toUpperCase() || 'U')}
           </div>
 
-          <div className="flex-1 min-w-0 space-y-1.5">
+          <div className="flex-1 min-w-0 space-y-1.5 w-full">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
+              <h1 className="text-lg sm:text-2xl font-bold text-slate-900 leading-tight">
                 {lecturer?.academicTitle ? `${lecturer.academicTitle} ` : ''}{user?.fullName}
               </h1>
               <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${roleInfo.color}`}>
@@ -421,13 +421,13 @@ const ProfilePage = () => {
       </div>
 
       {/* Action Buttons: Positioned OUTSIDE and completely separated below the main profile card, aligned to the right */}
-      <div className="flex items-center justify-end gap-2.5 -mt-2">
+      <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2.5 -mt-2">
         {!isEditing ? (
           <>
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.99] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
             >
               <Edit3 className="w-4 h-4" />
               <span>Chỉnh sửa hồ sơ</span>
@@ -436,7 +436,7 @@ const ProfilePage = () => {
             <button
               type="button"
               onClick={() => setChangePasswordOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl shadow-2xs transition cursor-pointer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs font-semibold rounded-xl shadow-2xs transition cursor-pointer"
             >
               <Key className="w-4 h-4 text-slate-500" />
               <span>Đổi mật khẩu</span>
@@ -448,7 +448,7 @@ const ProfilePage = () => {
               type="button"
               onClick={handleCancelEdit}
               disabled={saving}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition cursor-pointer"
             >
               <X className="w-4 h-4" />
               <span>Hủy</span>
@@ -458,7 +458,7 @@ const ProfilePage = () => {
               type="button"
               onClick={handleSaveProfile}
               disabled={saving}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>{saving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
@@ -470,7 +470,7 @@ const ProfilePage = () => {
       {/* Main Profile Content Form */}
       <form onSubmit={handleSaveProfile} className="space-y-6">
         {/* Section 1: Thông tin liên hệ cá nhân (Editable) */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 text-[#123891] font-bold text-sm">
               <Mail className="w-4 h-4" />
@@ -537,7 +537,7 @@ const ProfilePage = () => {
         </div>
 
         {/* Section 2: Thông tin hệ thống / Học vụ (Read-Only 🔒) */}
-        <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 text-slate-800 font-bold text-sm">
               <Shield className="w-4 h-4 text-slate-500" />
@@ -746,19 +746,19 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+          <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={() => setChangePasswordOpen(false)}
               disabled={pwLoading}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
             >
               Hủy
             </button>
             <button
               type="submit"
               disabled={pwLoading}
-              className="px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-xs transition"
+              className="px-5 py-2 text-xs font-bold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5"
             >
               {pwLoading ? 'Đang đổi...' : 'Xác nhận đổi mật khẩu'}
             </button>
@@ -768,30 +768,30 @@ const ProfilePage = () => {
 
       {/* Modal Yêu cầu thay đổi lĩnh vực */}
       {isFieldModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center">
-                  <Tag className="w-5 h-5" />
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 sm:pb-4 shrink-0">
+              <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
+                  <Tag className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
-                <div>
-                  <h2 className="text-base font-bold text-slate-900">Yêu cầu thay đổi lĩnh vực nghiên cứu</h2>
-                  <p className="text-xs text-slate-500">Chọn các lĩnh vực hiện có hoặc đề xuất tag lĩnh vực mới</p>
+                <div className="min-w-0">
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 truncate">Yêu cầu thay đổi lĩnh vực nghiên cứu</h2>
+                  <p className="text-[11px] sm:text-xs text-slate-500 truncate">Chọn các lĩnh vực hiện có hoặc đề xuất tag lĩnh vực mới</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setIsFieldModalOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             {/* Body */}
-            <div className="space-y-4 overflow-y-auto pr-1 flex-1">
+            <div className="space-y-4 overflow-y-auto pr-1 flex-1 overscroll-contain">
               {/* Existing System Fields */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
@@ -887,11 +887,11 @@ const ProfilePage = () => {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 shrink-0">
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 border-t border-slate-100 pt-3.5 sm:pt-4 shrink-0">
               <button
                 type="button"
                 onClick={() => setIsFieldModalOpen(false)}
-                className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+                className="px-4 py-2 text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer text-center"
               >
                 Hủy
               </button>
@@ -899,7 +899,7 @@ const ProfilePage = () => {
                 type="button"
                 onClick={handleSubmitFieldRequest}
                 disabled={submittingFieldRequest || selectedFields.length === 0}
-                className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#123891] hover:bg-[#102d7d] rounded-xl transition shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submittingFieldRequest ? (
                   <span>Đang gửi...</span>
