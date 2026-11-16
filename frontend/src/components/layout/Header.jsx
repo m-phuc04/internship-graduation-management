@@ -39,27 +39,27 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
   const isAdmin = user?.role === 'ADMIN';
 
   return (
-    <header className="h-16 bg-white border-b border-slate-200/80 px-3 sm:px-6 lg:px-8 flex items-center justify-between sticky top-0 z-30 shadow-2xs gap-2 sm:gap-4 w-full">
+    <header className="admin-sticky-header h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-5 lg:px-8 flex items-center justify-between sticky top-0 z-40 shadow-xs gap-2 sm:gap-4 w-full">
       {/* Left: Hamburger & Title */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        {/* Mobile Hamburger Toggle */}
+        {/* Mobile & Tablet Hamburger Toggle (< 1300px: Mobile, iPad, Nest Hub Max) */}
         <button
           type="button"
           onClick={onOpenMobile}
           aria-label="Mở menu"
-          className="lg:hidden p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
+          className="admin-hamburger-btn p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
           title="Mở menu điều hướng"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Desktop Hamburger Toggle */}
+        {/* Desktop Hamburger Toggle (>= 1300px) */}
         {onToggleCollapse && (
           <button
             type="button"
             onClick={onToggleCollapse}
             aria-label="Đóng/mở menu"
-            className="hidden lg:flex p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
+            className="admin-desktop-toggle p-2 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer shrink-0"
             title={isCollapsed ? 'Mở rộng thanh điều hướng' : 'Thu gọn thanh điều hướng'}
           >
             <Menu className="w-5 h-5" />

@@ -250,18 +250,18 @@ const LecturerNewsManagement = () => {
 
       {/* 3. News Table List */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        {/* Desktop Table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full min-w-[760px] text-left text-xs text-slate-600">
-            <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+        {/* Desktop & Tablet Table */}
+        <div className="hidden md:block overflow-x-auto custom-scrollbar">
+          <table className="w-full min-w-[850px] text-left text-xs text-slate-600">
+            <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-700 uppercase tracking-wider whitespace-nowrap">
               <tr>
-                <th className="px-5 py-3.5">Tiêu đề bài viết</th>
-                <th className="px-4 py-3.5">Danh mục</th>
-                <th className="px-4 py-3.5">Người đăng</th>
-                <th className="px-4 py-3.5">Ngày đăng</th>
-                <th className="px-4 py-3.5 text-center">Trạng thái</th>
-                <th className="px-4 py-3.5 text-center">Lượt xem</th>
-                <th className="px-5 py-3.5 text-right"></th>
+                <th className="px-5 py-3.5 min-w-[220px]">Tiêu đề bài viết</th>
+                <th className="px-4 py-3.5 min-w-[110px]">Danh mục</th>
+                <th className="px-4 py-3.5 min-w-[130px]">Người đăng</th>
+                <th className="px-4 py-3.5 min-w-[110px]">Ngày đăng</th>
+                <th className="px-4 py-3.5 text-center min-w-[110px]">Trạng thái</th>
+                <th className="px-4 py-3.5 text-center min-w-[90px]">Lượt xem</th>
+                <th className="px-5 py-3.5 text-right min-w-[100px]">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

@@ -162,17 +162,17 @@ const AdminPermissionsPage = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs min-w-[700px]">
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse text-xs min-w-[850px]">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-14">STT</th>
-                    <th className="py-3.5 px-4">Họ và Tên</th>
-                    <th className="py-3.5 px-4">Role</th>
-                    <th className="py-3.5 px-4">Quyền Nghiệp Vụ</th>
-                    <th className="py-3.5 px-4">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-right"></th>
+                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">Họ và Tên</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Role</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Quyền Nghiệp Vụ</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right min-w-[120px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -184,12 +184,12 @@ const AdminPermissionsPage = () => {
                     return (
                       <tr key={item._id} className="hover:bg-slate-50/80 transition">
                         {/* STT */}
-                        <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                        <td className="py-3.5 px-4 text-center font-medium text-slate-500 whitespace-nowrap">
                           {idx + 1}
                         </td>
 
                         {/* Name & Academic Title */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="font-bold text-slate-900">
                             {item.academicTitle ? `${item.academicTitle} ` : ''}
                             {item.user?.fullName || '—'}
@@ -200,15 +200,15 @@ const AdminPermissionsPage = () => {
                         </td>
 
                         {/* Role */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           {isTbm ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
-                              <Building className="w-3 h-3" />
+                              <Building className="w-3 h-3 shrink-0" />
                               TBM
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
-                              <User className="w-3 h-3" />
+                              <User className="w-3 h-3 shrink-0" />
                               LECTURER
                             </span>
                           )}
@@ -218,22 +218,22 @@ const AdminPermissionsPage = () => {
                         <td className="py-3.5 px-4">
                           <div className="flex flex-wrap gap-1">
                             {perms.includes('GVHD') && (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200 whitespace-nowrap">
                                 GVHD
                               </span>
                             )}
                             {perms.includes('GVPB_KIN') && (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200 whitespace-nowrap">
                                 GVPB KÍN
                               </span>
                             )}
                             {perms.includes('GVPB_HOIDONG') && (
-                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200 whitespace-nowrap">
                                 GVPB HỘI ĐỒNG
                               </span>
                             )}
                             {perms.length === 0 && (
-                              <span className="text-[11px] text-slate-400 italic">
+                              <span className="text-[11px] text-slate-400 italic whitespace-nowrap">
                                 Chưa phân quyền
                               </span>
                             )}
@@ -241,26 +241,26 @@ const AdminPermissionsPage = () => {
                         </td>
 
                         {/* Status */}
-                        <td className="py-3.5 px-4">
+                        <td className="py-3.5 px-4 whitespace-nowrap">
                           {item.user?.isActive !== false ? (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                              <CheckCircle2 className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 shrink-0" />
                               Active
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                              <XCircle className="w-3 h-3" />
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                              <XCircle className="w-3 h-3 shrink-0" />
                               Inactive
                             </span>
                           )}
                         </td>
 
                         {/* Actions */}
-                        <td className="py-3.5 px-4 text-right">
+                        <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <button
                             type="button"
                             onClick={() => handleOpenEdit(item)}
-                            className="px-3 py-1.5 rounded-xl bg-blue-50 text-[#123891] font-bold border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
+                            className="inline-flex items-center justify-center min-w-[95px] px-3.5 py-1.5 rounded-xl bg-blue-50 text-[#123891] font-bold border border-blue-200 hover:bg-blue-100 transition cursor-pointer whitespace-nowrap shadow-2xs"
                           >
                             Phân quyền
                           </button>

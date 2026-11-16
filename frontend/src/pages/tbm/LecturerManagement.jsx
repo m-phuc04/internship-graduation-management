@@ -572,18 +572,18 @@ const LecturerManagement = () => {
           />
         ) : (
           <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[700px]">
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[850px]">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-14">STT</th>
-                    <th className="py-3.5 px-4">Giảng viên</th>
-                    <th className="py-3.5 px-4">Học vị</th>
-                    <th className="py-3.5 px-4">Lĩnh vực</th>
-                    <th className="py-3.5 px-4 text-center">Tiếp nhận</th>
-                    <th className="py-3.5 px-4 text-center">Trạng thái</th>
-                    <th className="py-3.5 px-4 pr-6 text-right"></th>
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Giảng viên</th>
+                    <th className="py-3.5 px-4 min-w-[100px]">Học vị</th>
+                    <th className="py-3.5 px-4 min-w-[220px]">Lĩnh vực</th>
+                    <th className="py-3.5 px-4 text-center min-w-[120px]">Tiếp nhận</th>
+                    <th className="py-3.5 px-4 text-center min-w-[130px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 pr-6 text-right min-w-[120px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">

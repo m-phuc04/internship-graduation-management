@@ -312,18 +312,18 @@ const AcademicTermManagement = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[720px]">
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
-                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-14">STT</th>
-                    <th className="py-3.5 px-4">Học kỳ / Mã</th>
-                    <th className="py-3.5 px-4">Năm học</th>
-                    <th className="py-3.5 px-4">Thời gian học kỳ</th>
-                    <th className="py-3.5 px-4">Dữ liệu liên kết</th>
-                    <th className="py-3.5 px-4">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-right"></th>
+                  <tr className="bg-slate-50/80 border-b border-slate-200/80 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">Học kỳ / Mã</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Năm học</th>
+                    <th className="py-3.5 px-4 min-w-[180px]">Thời gian học kỳ</th>
+                    <th className="py-3.5 px-4 min-w-[170px]">Dữ liệu liên kết</th>
+                    <th className="py-3.5 px-4 min-w-[120px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right min-w-[150px]">Thao tác</th>
                   </tr>
                 </thead>
 

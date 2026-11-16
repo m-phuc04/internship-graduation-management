@@ -257,20 +257,20 @@ const StudentManagement = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[780px]">
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-14">STT</th>
-                    <th className="py-3.5 px-4">Sinh viên</th>
-                    <th className="py-3.5 px-4">Lớp</th>
-                    <th className="py-3.5 px-4">GPA / Tín chỉ</th>
-                    <th className="py-3.5 px-4">ĐK Tiên quyết</th>
-                    <th className="py-3.5 px-4">TTDN</th>
-                    <th className="py-3.5 px-4">KLTN</th>
-                    <th className="py-3.5 px-4">Trạng thái</th>
-                    <th className="py-3.5 px-4 pr-6 text-right"></th>
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[200px]">Sinh viên</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Lớp</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">GPA / Tín chỉ</th>
+                    <th className="py-3.5 px-4 min-w-[130px]">ĐK Tiên quyết</th>
+                    <th className="py-3.5 px-4 min-w-[80px]">TTDN</th>
+                    <th className="py-3.5 px-4 min-w-[80px]">KLTN</th>
+                    <th className="py-3.5 px-4 min-w-[130px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 pr-6 text-right min-w-[110px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">

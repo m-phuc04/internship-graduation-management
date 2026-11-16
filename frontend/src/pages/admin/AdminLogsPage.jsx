@@ -189,12 +189,12 @@ const AdminLogsPage = () => {
           />
         ) : (
           <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full min-w-[850px] text-left border-collapse">
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full min-w-[880px] text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-14">STT</th>
+                  <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
                     <th className="py-3.5 px-4 w-44">Thời gian</th>
                     <th className="py-3.5 px-4 min-w-[200px]">Người thực hiện</th>
                     <th className="py-3.5 px-4 text-center w-36">Vai trò</th>

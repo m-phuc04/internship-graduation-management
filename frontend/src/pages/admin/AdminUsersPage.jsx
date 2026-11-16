@@ -154,75 +154,77 @@ const AdminUsersPage = () => {
           </div>
         ) : (
           <>
-            {/* Desktop Table View (>= 768px) */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs min-w-[700px]">
+            {/* Desktop & Tablet Table View (>= 768px) */}
+            <div className="hidden md:block overflow-x-auto custom-scrollbar">
+              <table className="w-full text-left border-collapse text-xs min-w-[880px]">
                 <thead>
-                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
-                    <th className="py-3.5 px-4 text-center w-14">STT</th>
-                    <th className="py-3.5 px-4">Họ và Tên</th>
-                    <th className="py-3.5 px-4">Email / Mã</th>
-                    <th className="py-3.5 px-4">Role</th>
-                    <th className="py-3.5 px-4">Số điện thoại</th>
-                    <th className="py-3.5 px-4">Trạng thái</th>
-                    <th className="py-3.5 px-4 text-right"></th>
+                  <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider whitespace-nowrap">
+                    <th className="py-3.5 px-4 text-center w-14 shrink-0">STT</th>
+                    <th className="py-3.5 px-4 min-w-[170px]">Họ và Tên</th>
+                    <th className="py-3.5 px-4 min-w-[190px]">Email / Mã</th>
+                    <th className="py-3.5 px-4 min-w-[100px]">Role</th>
+                    <th className="py-3.5 px-4 min-w-[120px]">Số điện thoại</th>
+                    <th className="py-3.5 px-4 min-w-[110px]">Trạng thái</th>
+                    <th className="py-3.5 px-4 text-right min-w-[170px]">Thao tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {users.map((item, idx) => (
                     <tr key={item._id} className="hover:bg-slate-50/80 transition">
-                      <td className="py-3.5 px-4 text-center font-medium text-slate-500">
+                      <td className="py-3.5 px-4 text-center font-medium text-slate-500 whitespace-nowrap">
                         {idx + 1}
                       </td>
-                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                      <td className="py-3.5 px-4 font-bold text-slate-900 whitespace-nowrap">
                         {item.fullName}
                       </td>
-                      <td className="py-3.5 px-4">
-                        <div className="text-slate-800">{item.email || '—'}</div>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        <div className="text-slate-800 font-medium">{item.email || '—'}</div>
                         {item.code && (
                           <span className="text-[10px] font-mono text-slate-400 block mt-0.5">
                             Mã: {item.code}
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4">{getRoleBadge(item.role)}</td>
-                      <td className="py-3.5 px-4 font-mono text-slate-600">
+                      <td className="py-3.5 px-4 whitespace-nowrap">{getRoleBadge(item.role)}</td>
+                      <td className="py-3.5 px-4 font-mono text-slate-600 whitespace-nowrap">
                         {item.phone || '—'}
                       </td>
-                      <td className="py-3.5 px-4">
+                      <td className="py-3.5 px-4 whitespace-nowrap">
                         {item.isActive !== false ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            <CheckCircle2 className="w-3 h-3" /> Active
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                            <CheckCircle2 className="w-3 h-3 shrink-0" /> Active
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
-                            <XCircle className="w-3 h-3" /> Inactive
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
+                            <XCircle className="w-3 h-3 shrink-0" /> Inactive
                           </span>
                         )}
                       </td>
-                      <td className="py-3.5 px-4 text-right space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleResetPassword(item)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer"
-                          title="Đặt lại mật khẩu về 1111"
-                        >
-                          Reset PW
-                        </button>
-
-                        {item.role !== 'ADMIN' && (
+                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                        <div className="inline-flex items-center justify-end gap-2 shrink-0">
                           <button
                             type="button"
-                            onClick={() => handleToggleStatus(item)}
-                            className={`px-2.5 py-1 rounded-lg font-bold transition cursor-pointer ${
-                              item.isActive !== false
-                                ? 'bg-rose-50 hover:bg-rose-100 text-rose-700'
-                                : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700'
-                            }`}
+                            onClick={() => handleResetPassword(item)}
+                            className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+                            title="Đặt lại mật khẩu về 1111"
                           >
-                            {item.isActive !== false ? 'Khóa' : 'Kích hoạt'}
+                            Reset PW
                           </button>
-                        )}
+
+                          {item.role !== 'ADMIN' && (
+                            <button
+                              type="button"
+                              onClick={() => handleToggleStatus(item)}
+                              className={`inline-flex items-center justify-center min-w-[78px] px-3 py-1.5 rounded-xl font-bold transition cursor-pointer whitespace-nowrap shrink-0 shadow-2xs ${
+                                item.isActive !== false
+                                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200/60'
+                                  : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/60'
+                              }`}
+                            >
+                              {item.isActive !== false ? 'Khóa' : 'Kích hoạt'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
