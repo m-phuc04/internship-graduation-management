@@ -15,6 +15,7 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import UserNameClickable from '../../components/common/UserNameClickable';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import Pagination from '../../components/common/Pagination';
 
 import getFileUrl from '../../utils/fileUrlHelper';
 
@@ -129,6 +130,8 @@ const LecturerThesesPage = () => {
   const [approvedTopics, setApprovedTopics] = useState([]);
   const [loadingApprovedTopics, setLoadingApprovedTopics] = useState(false);
   const [onlyMyApprovedTopics, setOnlyMyApprovedTopics] = useState(false);
+  const [approvedTopicsPage, setApprovedTopicsPage] = useState(1);
+  const APPROVED_TOPICS_PAGE_SIZE = 10;
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
@@ -2158,6 +2161,24 @@ const LecturerThesesPage = () => {
     );
   });
 
+  // Phân trang danh sách Tất cả đề tài (tab=topics, sub-tab=APPROVED_BANK)
+  const totalApprovedPages = Math.max(1, Math.ceil(filteredApprovedTopics.length / APPROVED_TOPICS_PAGE_SIZE));
+
+  useEffect(() => {
+    if (approvedTopicsPage > totalApprovedPages) {
+      setApprovedTopicsPage(1);
+    }
+  }, [approvedTopicsPage, totalApprovedPages]);
+
+  useEffect(() => {
+    setApprovedTopicsPage(1);
+  }, [search, currentTerm?._id]);
+
+  const paginatedApprovedTopics = useMemo(() => {
+    const startIndex = (approvedTopicsPage - 1) * APPROVED_TOPICS_PAGE_SIZE;
+    return filteredApprovedTopics.slice(startIndex, startIndex + APPROVED_TOPICS_PAGE_SIZE);
+  }, [filteredApprovedTopics, approvedTopicsPage]);
+
   const filteredMyTopics = myTopics.filter((topic) => {
     const q = (search || '').trim().toLowerCase();
     if (!q) return true;
@@ -2701,7 +2722,7 @@ const LecturerThesesPage = () => {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredApprovedTopics.map((topic, idx) => {
+                        {paginatedApprovedTopics.map((topic, idx) => {
                           const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
                           const maxCount = topic.maxGroups || 1;
                           const isLocked = topic.isFull || currentCount >= maxCount || (topic.registeredGroups && topic.registeredGroups.length > 0);
@@ -2711,7 +2732,7 @@ const LecturerThesesPage = () => {
                           return (
                             <tr key={topic._id} className="hover:bg-slate-50/80 transition">
                               <td className="py-3.5 px-4 text-center text-slate-400 font-mono font-semibold">
-                                {idx + 1}
+                                {(approvedTopicsPage - 1) * APPROVED_TOPICS_PAGE_SIZE + idx + 1}
                               </td>
                               <td className="py-3.5 px-4">
                                 <button
@@ -2780,7 +2801,7 @@ const LecturerThesesPage = () => {
 
                   {/* Mobile Cards List */}
                   <div className="md:hidden divide-y divide-slate-100">
-                    {filteredApprovedTopics.map((topic, idx) => {
+                    {paginatedApprovedTopics.map((topic, idx) => {
                       const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
                       const maxCount = topic.maxGroups || 1;
                       const isLocked = topic.isFull || currentCount >= maxCount || (topic.registeredGroups && topic.registeredGroups.length > 0);
@@ -2791,7 +2812,7 @@ const LecturerThesesPage = () => {
                         <div key={topic._id} className="p-4 space-y-3 bg-white hover:bg-slate-50/50 transition">
                           <div className="flex items-start gap-2.5">
                             <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#123891] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
-                              {idx + 1}
+                              {(approvedTopicsPage - 1) * APPROVED_TOPICS_PAGE_SIZE + idx + 1}
                             </span>
                             <div className="flex-1 min-w-0">
                               <button
@@ -2864,6 +2885,20 @@ const LecturerThesesPage = () => {
                       );
                     })}
                   </div>
+
+                  {/* Phân trang danh sách Tất cả đề tài */}
+                  {filteredApprovedTopics.length > APPROVED_TOPICS_PAGE_SIZE && (
+                    <div className="border-t border-slate-100 bg-slate-50/50 px-4">
+                      <Pagination
+                        currentPage={approvedTopicsPage}
+                        totalPages={totalApprovedPages}
+                        total={filteredApprovedTopics.length}
+                        limit={APPROVED_TOPICS_PAGE_SIZE}
+                        onPageChange={(p) => setApprovedTopicsPage(p)}
+                        itemLabel="đề tài"
+                      />
+                    </div>
+                  )}
                 </>
               )}
             </div>

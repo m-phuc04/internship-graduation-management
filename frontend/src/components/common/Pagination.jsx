@@ -4,13 +4,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const Pagination = ({
   pagination,
   currentPage,
+  page: propPage,
   totalPages: propTotalPages,
   total: propTotal,
   limit: propLimit,
   onPageChange,
+  itemLabel = 'mục',
 }) => {
   // Normalize pagination props (support both object and separate props)
-  const page = currentPage || pagination?.page || 1;
+  const page = currentPage || propPage || pagination?.page || 1;
   const totalPages = propTotalPages || pagination?.totalPages || 1;
   const total = propTotal ?? pagination?.total ?? 0;
   const limit = propLimit || pagination?.limit || 10;
@@ -46,11 +48,10 @@ const Pagination = ({
   return (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-2">
       <div className="text-xs text-slate-500 font-medium">
-        Hiển thị <span className="text-slate-800 font-semibold">{from}</span> -{' '}
-        <span className="text-slate-800 font-semibold">{to}</span>
+        Hiển thị <span className="text-slate-800 font-semibold">{from}</span>–<span className="text-slate-800 font-semibold">{to}</span>
         {total > 0 && (
           <>
-            {' '}trong tổng số <span className="text-slate-800 font-semibold">{total}</span> mục
+            {' '}trong tổng số <span className="text-slate-800 font-semibold">{total}</span> {itemLabel}
           </>
         )}
       </div>
