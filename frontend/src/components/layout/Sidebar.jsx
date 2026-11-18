@@ -38,7 +38,6 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
     to: '/tbm/dashboard',
     label: 'Tổng quan TBM',
     icon: LayoutDashboard,
-    badge: 'TQ',
   };
 
   // 2. Dành cho TBM: Nhóm Thực tập Doanh nghiệp (TTDN)
@@ -47,13 +46,11 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
       to: '/tbm/internships',
       label: 'Quản lý Thực tập',
       icon: Briefcase,
-      badge: 'TTĐN',
     },
     {
       to: '/tbm/evaluations',
       label: 'Đánh giá Thực tập',
       icon: Award,
-      badge: 'ĐN',
     },
   ];
 
@@ -63,19 +60,16 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
       to: '/tbm/thesis-evaluations',
       label: 'Quản lý Khóa luận',
       icon: Award,
-      badge: 'KLTN',
     },
     {
       to: '/tbm/theses',
       label: 'Phân công Khóa luận',
       icon: GraduationCap,
-      badge: 'PC',
     },
     {
       to: '/tbm/fields',
       label: 'Quản lý Lĩnh vực',
       icon: Tag,
-      badge: 'LV',
     },
   ];
 
@@ -84,7 +78,6 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
     to: '/tbm/news',
     label: 'Quản lý Bản tin',
     icon: Newspaper,
-    badge: 'TIN',
   };
 
   // 3. Dành cho ADMIN: Quản trị phân quyền & tài khoản
@@ -171,15 +164,10 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
           <Link
             to="/lecturer/dashboard"
             onClick={handleNavClick}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-[#0e2c73] hover:bg-white/10 border border-[#0e2c73] transition-all group shadow-xs cursor-pointer"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-[#0e2c73] hover:bg-white/10 border border-[#0e2c73] transition-all group shadow-xs cursor-pointer"
           >
-            <div className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4 text-[#ECA124] group-hover:-translate-x-1 transition-transform" />
-              <span>Về Cổng Giảng Viên</span>
-            </div>
-            <span className="text-[10px] bg-[#ECA124] text-slate-950 font-black px-1.5 py-0.5 rounded font-mono shadow-xs">
-              GV
-            </span>
+            <ArrowLeft className="w-4 h-4 text-[#ECA124] group-hover:-translate-x-1 transition-transform" />
+            <span>Về Cổng Giảng Viên</span>
           </Link>
         </div>
       )}
@@ -195,30 +183,15 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
                 to={tbmOverviewItem.to}
                 onClick={handleNavClick}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                     isActive
                       ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                       : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                   }`
                 }
               >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <LayoutDashboard className="w-4 h-4 shrink-0" />
-                      <span className="whitespace-nowrap truncate">{tbmOverviewItem.label}</span>
-                    </div>
-                    {tbmOverviewItem.badge && (
-                      <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                        isActive
-                          ? 'bg-slate-950/15 text-slate-950'
-                          : 'bg-white/15 text-white'
-                      }`}>
-                        {tbmOverviewItem.badge}
-                      </span>
-                    )}
-                  </>
-                )}
+                <LayoutDashboard className="w-4 h-4 shrink-0" />
+                <span className="whitespace-nowrap truncate">{tbmOverviewItem.label}</span>
               </NavLink>
             </div>
 
@@ -235,30 +208,15 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                      `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
                           ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                           : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span className="whitespace-nowrap truncate">{item.label}</span>
-                        </div>
-                        {item.badge && (
-                          <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                            isActive
-                              ? 'bg-slate-950/15 text-slate-950'
-                              : 'bg-white/15 text-white'
-                          }`}>
-                            {item.badge}
-                          </span>
-                        )}
-                      </>
-                    )}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap truncate">{item.label}</span>
                   </NavLink>
                 );
               })}
@@ -277,30 +235,15 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
                     to={item.to}
                     onClick={handleNavClick}
                     className={({ isActive }) =>
-                      `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                      `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                         isActive
                           ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                           : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                       }`
                     }
                   >
-                    {({ isActive }) => (
-                      <>
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Icon className="w-4 h-4 shrink-0" />
-                          <span className="whitespace-nowrap truncate">{item.label}</span>
-                        </div>
-                        {item.badge && (
-                          <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                            isActive
-                              ? 'bg-slate-950/15 text-slate-950'
-                              : 'bg-white/15 text-white'
-                          }`}>
-                            {item.badge}
-                          </span>
-                        )}
-                      </>
-                    )}
+                    <Icon className="w-4 h-4 shrink-0" />
+                    <span className="whitespace-nowrap truncate">{item.label}</span>
                   </NavLink>
                 );
               })}
@@ -315,30 +258,15 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
                 to={tbmNewsItem.to}
                 onClick={handleNavClick}
                 className={({ isActive }) =>
-                  `flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
+                  `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs transition-all group cursor-pointer ${
                     isActive
                       ? 'bg-[#ECA124] text-slate-950 font-bold shadow-md'
                       : 'text-slate-200 hover:text-white hover:bg-white/10 font-semibold'
                   }`
                 }
               >
-                {({ isActive }) => (
-                  <>
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Newspaper className="w-4 h-4 shrink-0" />
-                      <span className="whitespace-nowrap truncate">{tbmNewsItem.label}</span>
-                    </div>
-                    {tbmNewsItem.badge && (
-                      <span className={`text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded shadow-2xs shrink-0 whitespace-nowrap ${
-                        isActive
-                          ? 'bg-slate-950/15 text-slate-950'
-                          : 'bg-white/15 text-white'
-                      }`}>
-                        {tbmNewsItem.badge}
-                      </span>
-                    )}
-                  </>
-                )}
+                <Newspaper className="w-4 h-4 shrink-0" />
+                <span className="whitespace-nowrap truncate">{tbmNewsItem.label}</span>
               </NavLink>
             </div>
           </div>

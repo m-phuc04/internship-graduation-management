@@ -1402,7 +1402,7 @@ const TbmThesisManagement = () => {
       <div className="p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5">
           <div className="flex items-center gap-3.5 sm:gap-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
               <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <div>
@@ -1412,40 +1412,17 @@ const TbmThesisManagement = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center md:justify-end gap-2.5 w-full md:w-auto">
-            {/* Configure KLTN Timeline Button */}
-            <button
-              type="button"
-              onClick={() => setTimelineModalOpen(true)}
-              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0"
-              title="Cấu hình thời gian mở cổng đăng ký, phân công & bảo vệ KLTN"
-            >
-              <Clock className="w-3.5 h-3.5 text-[#123891] shrink-0" />
-              <span>Thời gian mở KLTN</span>
-              <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color} shrink-0`}>
-                {windowBadge.text}
-              </span>
-            </button>
-
-            {/* Quick Link to KLTN Grading Periods Management */}
-            <Link
-              to="/tbm/thesis-evaluations"
-              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0"
-              title="Quản lý đợt nhập điểm, tiêu chí đánh giá và bảng điểm KLTN"
-            >
-              <Award className="w-3.5 h-3.5 text-[#123891] shrink-0" />
-              <span>Thời gian nhập điểm KLTN</span>
-            </Link>
-
+          <div className="flex items-center gap-2.5 self-end md:self-auto">
             {/* Nút Xuất danh sách */}
             <button
               type="button"
               onClick={() => setExportModalOpen(true)}
-              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm shadow-emerald-600/20 transition cursor-pointer w-full sm:w-auto shrink-0"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer shrink-0"
               title="Xuất danh sách sinh viên & đề tài KLTN ra Excel"
+              aria-label="Xuất danh sách"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-              <span>Xuất danh sách</span>
+              <FileSpreadsheet className="w-4 h-4 shrink-0" />
+              <span>Xuất file</span>
             </button>
           </div>
         </div>
@@ -1871,8 +1848,9 @@ const TbmThesisManagement = () => {
                                               type="button"
                                               onClick={() => handleApproveTopic(topic)}
                                               disabled={actionLoading}
-                                              className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50"
+                                              className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
                                               title="Phê duyệt đề tài"
+                                              aria-label="Phê duyệt đề tài"
                                             >
                                               <Check className="w-4 h-4" />
                                             </button>
@@ -1885,8 +1863,9 @@ const TbmThesisManagement = () => {
                                                 setRejectTopicModalOpen(true);
                                               }}
                                               disabled={actionLoading}
-                                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-50"
+                                              className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
                                               title="Từ chối đề tài"
+                                              aria-label="Từ chối đề tài"
                                             >
                                               <X className="w-4 h-4" />
                                             </button>
@@ -2101,28 +2080,30 @@ const TbmThesisManagement = () => {
                                 {isPending && (
                                   <>
                                     <button
-                                              type="button"
-                                              onClick={() => handleApproveTopic(topic)}
-                                              disabled={actionLoading}
-                                              className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition shadow-xs cursor-pointer disabled:opacity-50"
-                                              title="Phê duyệt đề tài"
-                                            >
-                                              <Check className="w-4 h-4" />
-                                            </button>
+                                      type="button"
+                                      onClick={() => handleApproveTopic(topic)}
+                                      disabled={actionLoading}
+                                      className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
+                                      title="Phê duyệt đề tài"
+                                      aria-label="Phê duyệt đề tài"
+                                    >
+                                      <Check className="w-4 h-4" />
+                                    </button>
 
                                     <button
-                                              type="button"
-                                              onClick={() => {
-                                                setTargetTopic(topic);
-                                                setTopicRejectReason('');
-                                                setRejectTopicModalOpen(true);
-                                              }}
-                                              disabled={actionLoading}
-                                              className="p-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-lg transition cursor-pointer disabled:opacity-50"
-                                              title="Từ chối đề tài"
-                                            >
-                                              <X className="w-4 h-4" />
-                                            </button>
+                                      type="button"
+                                      onClick={() => {
+                                        setTargetTopic(topic);
+                                        setTopicRejectReason('');
+                                        setRejectTopicModalOpen(true);
+                                      }}
+                                      disabled={actionLoading}
+                                      className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
+                                      title="Từ chối đề tài"
+                                      aria-label="Từ chối đề tài"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
                                   </>
                                 )}
 
@@ -2302,11 +2283,11 @@ const TbmThesisManagement = () => {
                                   type="button"
                                   onClick={() => handleApproveTopic(topic)}
                                   disabled={actionLoading}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer disabled:opacity-50"
+                                  className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
                                   title="Phê duyệt đề tài"
+                                  aria-label="Phê duyệt đề tài"
                                 >
-                                  <Check className="w-3.5 h-3.5" />
-                                  <span>Duyệt</span>
+                                  <Check className="w-4 h-4" />
                                 </button>
 
                                 <button
@@ -2317,11 +2298,11 @@ const TbmThesisManagement = () => {
                                     setRejectTopicModalOpen(true);
                                   }}
                                   disabled={actionLoading}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition cursor-pointer disabled:opacity-50"
+                                  className="p-1.5 text-rose-600 hover:text-rose-700 hover:bg-slate-100 rounded-lg transition cursor-pointer disabled:opacity-50"
                                   title="Từ chối đề tài"
+                                  aria-label="Từ chối đề tài"
                                 >
-                                  <X className="w-3.5 h-3.5" />
-                                  <span>Từ chối</span>
+                                  <X className="w-4 h-4" />
                                 </button>
                               </>
                             )}
@@ -3277,10 +3258,7 @@ const TbmThesisManagement = () => {
         onExport={(params) => thesisApi.exportExcel(params)}
       />
 
-      <ThesisTimelineModal
-        isOpen={timelineModalOpen}
-        onClose={() => setTimelineModalOpen(false)}
-      />
+
     </div>
   );
 };

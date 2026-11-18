@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import notificationApi from '../../api/notificationApi';
+import { useNavigate, useLocation } from 'react-router-dom';
+import notificationApi, { triggerNotificationRefresh } from '../../api/notificationApi';
 import { useAuth } from '../../context/AuthContext';
 import {
   Bell,
@@ -18,6 +18,7 @@ import {
 const NotificationDropdown = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -32,20 +33,24 @@ const NotificationDropdown = () => {
     }
     try {
       const res = await notificationApi.getUnreadCount();
-      if (res?.success) {
-        setUnreadCount(res.data?.unreadCount || 0);
-      }
+      const rawCount =
+        res?.data?.unreadCount ??
+        (typeof res?.data === 'number' ? res.data : undefined) ??
+        res?.unreadCount ??
+        res?.data?.count ??
+        0;
+      setUnreadCount(Number(rawCount) || 0);
     } catch {
       // ignore
     }
   }, [user]);
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(async (silent = false) => {
     if (!user) {
       setNotifications([]);
       return;
     }
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
       const res = await notificationApi.getNotifications({ limit: 15 });
       if (res?.success) {
@@ -71,27 +76,72 @@ const NotificationDropdown = () => {
           });
         }
         setNotifications(items);
-        if (res.unreadCount !== undefined) {
-          setUnreadCount(res.unreadCount);
+        const unreadInItems = items.filter((n) => !n.isRead).length;
+        const apiUnread = res.unreadCount ?? res.data?.unreadCount;
+        if (apiUnread !== undefined) {
+          setUnreadCount(Math.max(Number(apiUnread) || 0, unreadInItems));
+        } else {
+          setUnreadCount((prev) => Math.max(prev, unreadInItems));
         }
       }
     } catch {
       // ignore
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [user]);
 
+  // Synchronized unread count: either from API or computed from loaded unread items
+  const displayUnreadCount = Math.max(
+    Number(unreadCount) || 0,
+    (notifications || []).filter((n) => !n.isRead).length
+  );
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      setNotifications([]);
+      return;
+    }
+
+    // Initial fetch
+    fetchUnreadCount();
+    fetchNotifications(true); // background silent fetch
+
+    // Poll every 10 seconds for timely notification badge updates
+    const interval = setInterval(fetchUnreadCount, 10000);
+
+    // Refetch when tab regains focus or becomes visible
+    const handleFocusOrVisible = () => {
+      if (document.visibilityState === 'visible') {
+        fetchUnreadCount();
+        fetchNotifications(true);
+      }
+    };
+    window.addEventListener('focus', handleFocusOrVisible);
+    document.addEventListener('visibilitychange', handleFocusOrVisible);
+
+    // Refetch when notifications_updated event fires
+    const handleCustomUpdate = () => {
+      fetchUnreadCount();
+      fetchNotifications(true);
+    };
+    window.addEventListener('notifications_updated', handleCustomUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocusOrVisible);
+      document.removeEventListener('visibilitychange', handleFocusOrVisible);
+      window.removeEventListener('notifications_updated', handleCustomUpdate);
+    };
+  }, [user, fetchUnreadCount, fetchNotifications]);
+
+  // Re-check unread notifications on route changes
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
-      const interval = setInterval(fetchUnreadCount, 30000); // 30s poll
-      return () => clearInterval(interval);
-    } else {
-      setUnreadCount(0);
-      setNotifications([]);
     }
-  }, [user, fetchUnreadCount]);
+  }, [location.pathname, user, fetchUnreadCount]);
 
   useEffect(() => {
     if (open) {
@@ -118,6 +168,7 @@ const NotificationDropdown = () => {
         prev.map((n) => (n._id === id ? { ...n, isRead: true } : n)),
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
+      triggerNotificationRefresh();
     } catch {
       // ignore
     }
@@ -406,6 +457,7 @@ const NotificationDropdown = () => {
       await notificationApi.markAllAsRead();
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
       setUnreadCount(0);
+      triggerNotificationRefresh();
     } catch {
       // ignore
     }
@@ -452,11 +504,12 @@ const NotificationDropdown = () => {
         onClick={() => setOpen((prev) => !prev)}
         className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
         title="Thông báo"
+        aria-label="Thông báo"
       >
         <Bell className="w-5 h-5" />
-        {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white shadow-xs">
-            {unreadCount > 99 ? '99+' : unreadCount}
+        {displayUnreadCount > 0 && (
+          <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black shadow-sm ring-2 ring-white z-10 pointer-events-none animate-in zoom-in-75 duration-150">
+            {displayUnreadCount > 99 ? '99+' : displayUnreadCount}
           </span>
         )}
       </button>
@@ -468,14 +521,14 @@ const NotificationDropdown = () => {
           <div className="flex items-center justify-between p-3.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <span className="font-bold text-xs text-slate-900 truncate">Thông báo</span>
-              {unreadCount > 0 && (
+              {displayUnreadCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full bg-blue-50 text-[#083e96] text-[10px] font-bold border border-blue-200 shrink-0">
-                  {unreadCount} mới
+                  {displayUnreadCount} mới
                 </span>
               )}
             </div>
 
-            {unreadCount > 0 && (
+            {displayUnreadCount > 0 && (
               <button
                 type="button"
                 onClick={handleMarkAllAsRead}

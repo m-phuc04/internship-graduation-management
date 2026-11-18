@@ -27,6 +27,7 @@ import {
   User,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
   Clock,
   RefreshCw,
   Search,
@@ -1914,6 +1915,244 @@ const LecturerThesesPage = () => {
     location.search.includes('tab=reviewer2') ||
     location.search.includes('tab=council');
   const isEvaluationView = location.search.includes('view=evaluation');
+  const isSupervisorPage =
+    (activeTab === 'SUPERVISOR' || location.search.includes('tab=supervisor') || (!location.search && !isTopicsView && !isReviewView && !isEvaluationView)) &&
+    !isTopicsView &&
+    !isReviewView &&
+    !isEvaluationView;
+
+  // Xuất danh sách đề tài hướng dẫn (tab=supervisor) - chỉ xuất các đề tài đang hiển thị trong bảng theo bộ lọc/tìm kiếm
+  const [exportingTheses, setExportingTheses] = useState(false);
+
+  const handleExportTheses = () => {
+    const listToExport = filteredSupervisedTheses || [];
+
+    if (!listToExport || listToExport.length === 0) {
+      showToast('Không có dữ liệu đề tài phù hợp để xuất file', 'info');
+      return;
+    }
+
+    try {
+      setExportingTheses(true);
+      const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+      const termName = currentTerm?.name ? `${currentTerm.name} - ${currentTerm.academicYear || ''}` : '';
+      const lecturerName = `${lecturerInfo?.academicTitle ? lecturerInfo.academicTitle + ' ' : ''}${lecturerInfo?.userId?.fullName || user?.fullName || ''}`;
+
+      const statusMap = {
+        PENDING: 'Chờ duyệt',
+        PENDING_TBM_APPROVAL: 'Chờ TBM duyệt',
+        WAITING_FOR_STUDENT2_CONFIRMATION: 'Chờ SV2 xác nhận',
+        WAITING_FOR_SUPERVISOR_REQUEST: 'Chờ gửi yêu cầu GVHD',
+        PENDING_SUPERVISOR_APPROVAL: 'Chờ GVHD duyệt',
+        PENDING_SUPERVISOR_ACCEPTANCE: 'Đã phân công GVGS',
+        APPROVED: 'Đã phê duyệt',
+        ASSIGNED_REVIEWERS: 'Đã phân công PB',
+        IN_PROGRESS: 'Đang thực hiện',
+        SUBMITTED: 'Đã nộp báo cáo',
+        GRADED: 'Đã chấm điểm',
+        COMPLETED: 'Hoàn thành',
+        REJECTED: 'Từ chối',
+      };
+
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      };
+
+      let tableHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+            th { background-color: #123891; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; }
+            td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; }
+            .text-center { text-align: center; }
+            .text-left { text-align: left; }
+            .header-title { font-size: 14pt; font-weight: bold; color: #123891; text-align: center; }
+            .header-sub { font-size: 11pt; text-align: center; color: #475569; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr><td colspan="16" class="header-title">DANH SÁCH ĐỀ TÀI KHÓA LUẬN HƯỚNG DẪN</td></tr>
+            ${termName ? `<tr><td colspan="16" class="header-sub">Học kỳ: ${escapeHtml(termName)}</td></tr>` : ''}
+            ${lecturerName ? `<tr><td colspan="16" class="header-sub">Giảng viên hướng dẫn: ${escapeHtml(lecturerName)} (Mã GV: ${escapeHtml(lecturerInfo?.lecturerCode || user?.username || '')})</td></tr>` : ''}
+            ${search ? `<tr><td colspan="16" class="header-sub">Từ khóa tìm kiếm: "${escapeHtml(search.trim())}" (Số lượng: ${listToExport.length} đề tài)</td></tr>` : ''}
+            <tr><td colspan="16"></td></tr>
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th style="width: 320px;">Tên đề tài KLTN</th>
+                <th style="width: 130px;">Loại đề tài</th>
+                <th style="width: 180px;">Sinh viên 1</th>
+                <th style="width: 110px;">MSSV 1</th>
+                <th style="width: 180px;">Sinh viên 2</th>
+                <th style="width: 110px;">MSSV 2</th>
+                <th style="width: 180px;">GV Hướng Dẫn</th>
+                <th style="width: 160px;">GVPB 1</th>
+                <th style="width: 160px;">GVPB 2</th>
+                <th style="width: 160px;">Hội đồng</th>
+                <th style="width: 100px;">Điểm GVHD</th>
+                <th style="width: 100px;">Điểm PB kín</th>
+                <th style="width: 110px;">Điểm Hội đồng</th>
+                <th style="width: 100px;">Tổng điểm</th>
+                <th style="width: 140px;">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      listToExport.forEach((item, idx) => {
+        const sv1Name = item.studentId?.userId?.fullName || item.studentId?.fullName || '-';
+        const sv1Code = item.studentId?.studentCode || '-';
+        const sv2Name = item.secondStudentId?.userId?.fullName || item.secondStudentId?.fullName || '-';
+        const sv2Code = item.secondStudentId?.studentCode || '-';
+        const supervisorName = formatLecturerDisplay(item.supervisorId);
+        const rev1 = getReviewer1Display(item);
+        const rev2 = getReviewer2Display(item);
+        const council = getAssignedCouncil(item);
+        const councilName = council ? (council.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim() : 'Chưa phân công';
+
+        // 1. Điểm GVHD
+        const isTwo = item.studentCount === 2 && item.secondStudentId;
+        const s1_gvhd = item.scores?.student1SupervisorScore ?? item.scores?.supervisorScore;
+        const s2_gvhd = item.scores?.student2SupervisorScore;
+        let gvhdScore = '-';
+        if (s1_gvhd !== null && s1_gvhd !== undefined && s1_gvhd !== '') {
+          if (isTwo && s2_gvhd !== null && s2_gvhd !== undefined && s2_gvhd !== '') {
+            gvhdScore = `SV1: ${s1_gvhd} | SV2: ${s2_gvhd}`;
+          } else {
+            gvhdScore = String(s1_gvhd);
+          }
+        }
+
+        // 2. Điểm PB kín
+        const s1_pb1 = item.scores?.student1Reviewer1Score ?? item.scores?.reviewer1Score;
+        const s1_pb2 = item.scores?.student1Reviewer2Score ?? item.scores?.reviewer2Score;
+        const s2_pb1 = item.scores?.student2Reviewer1Score;
+        const s2_pb2 = item.scores?.student2Reviewer2Score;
+        const hasAssignedRev1 = Boolean(
+          item.reviewer1Id ||
+          (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isPrivateReviewer && r.lecturerId))
+        );
+        const hasAssignedRev2 = Boolean(
+          item.reviewer2Id ||
+          (Array.isArray(item.reviewers) && item.reviewers.some((r) => r.isCouncilReviewer && r.lecturerId))
+        );
+        const calcCombined = (pb1, pb2) => {
+          const has1 = pb1 !== null && pb1 !== undefined && pb1 !== '' && !isNaN(Number(pb1));
+          const has2 = pb2 !== null && pb2 !== undefined && pb2 !== '' && !isNaN(Number(pb2));
+          if (hasAssignedRev1 && hasAssignedRev2) {
+            if (has1 && has2) return Number(((Number(pb1) + Number(pb2)) / 2).toFixed(2));
+            return null;
+          }
+          if (hasAssignedRev1 && has1) return Number(Number(pb1).toFixed(2));
+          if (hasAssignedRev2 && has2) return Number(Number(pb2).toFixed(2));
+          return null;
+        };
+        const c1 = calcCombined(s1_pb1, s1_pb2);
+        const c2 = isTwo ? calcCombined(s2_pb1, s2_pb2) : null;
+        let gvpbScore = '-';
+        if (c1 !== null) {
+          if (isTwo && c2 !== null) {
+            gvpbScore = `SV1: ${c1} | SV2: ${c2}`;
+          } else {
+            gvpbScore = String(c1);
+          }
+        }
+
+        // 3. Điểm Hội đồng
+        const gv1 = getCouncilLecturerScoreInfo(item, 0);
+        const gv2 = getCouncilLecturerScoreInfo(item, 1);
+        const hasGV1 = gv1.hasScore && (!isTwo || (gv1.s2 !== null && !isNaN(gv1.s2)));
+        const hasGV2 = gv2.hasScore && (!isTwo || (gv2.s2 !== null && !isNaN(gv2.s2)));
+        let hdScore = '-';
+        if (hasGV1 && hasGV2) {
+          const avgSv1 = Number(((gv1.s1 + gv2.s1) / 2).toFixed(2));
+          if (isTwo) {
+            const avgSv2 = Number(((gv1.s2 + gv2.s2) / 2).toFixed(2));
+            hdScore = `SV1: ${avgSv1} | SV2: ${avgSv2}`;
+          } else {
+            hdScore = String(avgSv1);
+          }
+        } else if (hasGV1 || hasGV2) {
+          const active = hasGV1 ? gv1 : gv2;
+          if (isTwo && active.s2 !== null && !isNaN(active.s2)) {
+            hdScore = `SV1: ${active.s1} | SV2: ${active.s2}`;
+          } else {
+            hdScore = String(active.s1);
+          }
+        }
+
+        // 4. Tổng điểm
+        const s1_final = item.scores?.student1FinalScore ?? item.scores?.finalScore;
+        const s2_final = item.scores?.student2FinalScore;
+        let finalScore = '-';
+        if (s1_final !== null && s1_final !== undefined && s1_final !== '') {
+          if (isTwo && s2_final !== null && s2_final !== undefined && s2_final !== '') {
+            finalScore = `SV1: ${s1_final} | SV2: ${s2_final}`;
+          } else {
+            finalScore = String(s1_final);
+          }
+        }
+
+        const statusText = statusMap[item.status] || item.status || '-';
+        const topicType = item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)';
+
+        tableHtml += `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="text-left">${escapeHtml(item.thesisTitle || '')}</td>
+            <td class="text-center">${escapeHtml(topicType)}</td>
+            <td class="text-left">${escapeHtml(sv1Name)}</td>
+            <td class="text-center">${escapeHtml(sv1Code)}</td>
+            <td class="text-left">${item.studentCount === 2 ? escapeHtml(sv2Name) : '-'}</td>
+            <td class="text-center">${item.studentCount === 2 ? escapeHtml(sv2Code) : '-'}</td>
+            <td class="text-left">${escapeHtml(supervisorName)}</td>
+            <td class="text-left">${escapeHtml(rev1)}</td>
+            <td class="text-left">${escapeHtml(rev2)}</td>
+            <td class="text-left">${escapeHtml(councilName)}</td>
+            <td class="text-center">${escapeHtml(gvhdScore)}</td>
+            <td class="text-center">${escapeHtml(gvpbScore)}</td>
+            <td class="text-center">${escapeHtml(hdScore)}</td>
+            <td class="text-center">${escapeHtml(finalScore)}</td>
+            <td class="text-center">${escapeHtml(statusText)}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\uFEFF' + tableHtml], {
+        type: 'application/vnd.ms-excel;charset=utf-8',
+      });
+      const filename = `Danh_sach_de_tai_huong_dan_${termCode}.xls`;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showToast(`Xuất file danh sách đề tài thành công (${listToExport.length} đề tài)!`, 'success');
+    } catch (err) {
+      console.error('Export error:', err);
+      showToast('Không thể xuất danh sách đề tài. Vui lòng thử lại.', 'error');
+    } finally {
+      setExportingTheses(false);
+    }
+  };
 
   const filteredApprovedTopics = approvedTopics.filter((topic) => {
     const q = (search || '').trim().toLowerCase();
@@ -1937,6 +2176,131 @@ const LecturerThesesPage = () => {
       (Array.isArray(topic.fields) && topic.fields.some((f) => f?.toLowerCase().includes(q)))
     );
   });
+
+  // Xuất danh sách đề tài đề xuất (tab=topics) - chỉ xuất các đề tài đang hiển thị trong bảng theo sub-tab và bộ lọc tìm kiếm
+  const [exportingTopics, setExportingTopics] = useState(false);
+
+  const handleExportTopics = () => {
+    const listToExport = topicsSubTab === 'MY_PROPOSALS' ? filteredMyTopics : filteredApprovedTopics;
+
+    if (!listToExport || listToExport.length === 0) {
+      showToast('Không có dữ liệu đề tài phù hợp để xuất file', 'info');
+      return;
+    }
+
+    try {
+      setExportingTopics(true);
+      const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+      const termName = currentTerm?.name ? `${currentTerm.name} - ${currentTerm.academicYear || ''}` : '';
+      const currentLecturerName = `${lecturerInfo?.academicTitle ? lecturerInfo.academicTitle + ' ' : ''}${lecturerInfo?.userId?.fullName || user?.fullName || ''}`;
+      const subTabTitle = topicsSubTab === 'MY_PROPOSALS' ? 'ĐỀ TÀI TÔI ĐÃ ĐỀ XUẤT' : 'TẤT CẢ ĐỀ TÀI KHÓA LUẬN';
+
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      };
+
+      let tableHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+            th { background-color: #123891; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; }
+            td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; }
+            .text-center { text-align: center; }
+            .text-left { text-align: left; }
+            .header-title { font-size: 14pt; font-weight: bold; color: #123891; text-align: center; }
+            .header-sub { font-size: 11pt; text-align: center; color: #475569; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr><td colspan="8" class="header-title">DANH SÁCH ${subTabTitle}</td></tr>
+            ${termName ? `<tr><td colspan="8" class="header-sub">Học kỳ: ${escapeHtml(termName)}</td></tr>` : ''}
+            ${currentLecturerName ? `<tr><td colspan="8" class="header-sub">Giảng viên: ${escapeHtml(currentLecturerName)} (Mã GV: ${escapeHtml(lecturerInfo?.lecturerCode || user?.username || '')})</td></tr>` : ''}
+            ${search ? `<tr><td colspan="8" class="header-sub">Từ khóa tìm kiếm: "${escapeHtml(search.trim())}" (Số lượng: ${listToExport.length} đề tài)</td></tr>` : ''}
+            <tr><td colspan="8"></td></tr>
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th style="width: 320px;">Tên đề tài KLTN</th>
+                <th style="width: 180px;">Lĩnh vực</th>
+                <th style="width: 200px;">Giảng viên</th>
+                <th style="width: 110px;">Mã GV</th>
+                <th style="width: 350px;">Mô tả tóm tắt</th>
+                <th style="width: 120px;">Ngày tạo</th>
+                <th style="width: 150px;">Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      listToExport.forEach((topic, idx) => {
+        const currentCount = topic.currentGroups || topic.registeredGroups?.length || 0;
+        const maxCount = topic.maxGroups || 1;
+        const isLocked = topic.isFull || currentCount >= maxCount || (topic.registeredGroups && topic.registeredGroups.length > 0);
+        const lecturerName = topic.supervisor?.fullName || topic.supervisorId?.userId?.fullName || (user?._id === topic.supervisorId ? user?.fullName : user?.fullName || '—');
+        const lecturerCode = topic.supervisor?.lecturerCode || topic.supervisorId?.lecturerCode || user?.username || '';
+        const fieldsStr = Array.isArray(topic.fields) && topic.fields.length > 0 ? topic.fields.join(', ') : 'Chưa gắn lĩnh vực';
+        const descriptionStr = topic.description || 'Không có mô tả';
+        const createdDateStr = formatDate(topic.createdAt) || '-';
+
+        let statusText = 'Cho phép đăng ký';
+        if (topic.status === 'PENDING') {
+          statusText = 'Chờ duyệt';
+        } else if (topic.status === 'REJECTED') {
+          statusText = 'Từ chối';
+        } else if (isLocked) {
+          statusText = 'Đã khóa';
+        }
+
+        tableHtml += `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="text-left">${escapeHtml(topic.title || '')}</td>
+            <td class="text-left">${escapeHtml(fieldsStr)}</td>
+            <td class="text-left">${escapeHtml(lecturerName)}</td>
+            <td class="text-center">${escapeHtml(lecturerCode)}</td>
+            <td class="text-left">${escapeHtml(descriptionStr)}</td>
+            <td class="text-center">${escapeHtml(createdDateStr)}</td>
+            <td class="text-center">${escapeHtml(statusText)}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\uFEFF' + tableHtml], {
+        type: 'application/vnd.ms-excel;charset=utf-8',
+      });
+      const subTabSuffix = topicsSubTab === 'MY_PROPOSALS' ? 'de_xuat_cua_toi' : 'tat_ca_de_tai';
+      const filename = `Danh_sach_${subTabSuffix}_${termCode}.xls`;
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showToast(`Xuất file danh sách đề tài thành công (${listToExport.length} đề tài)!`, 'success');
+    } catch (err) {
+      console.error('Export topics error:', err);
+      showToast('Không thể xuất danh sách đề tài. Vui lòng thử lại.', 'error');
+    } finally {
+      setExportingTopics(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -1979,15 +2343,14 @@ const LecturerThesesPage = () => {
 
               <div className="flex items-center gap-2.5">
                 <button
-                  onClick={() => {
-                    fetchAssignedTheses();
-                    fetchMyTopics();
-                    fetchApprovedTopics();
-                  }}
+                  type="button"
+                  onClick={handleExportTopics}
+                  disabled={exportingTopics}
                   className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-                  title="Làm mới"
+                  title="Xuất file"
+                  aria-label="Xuất file danh sách đề tài đang hiển thị"
                 >
-                  <RefreshCw className="w-4 h-4" />
+                  <FileSpreadsheet className={`w-4 h-4 ${exportingTopics ? 'animate-bounce text-[#123891]' : ''}`} />
                 </button>
               </div>
             </div>
@@ -2082,10 +2445,9 @@ const LecturerThesesPage = () => {
                     setSelectedTopicFields([]);
                     setCreateTopicModalOpen(true);
                   }}
-                  className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-bold transition bg-[#123891] hover:bg-[#102d7d] text-white shadow-xs hover:shadow cursor-pointer shrink-0 inline-flex items-center gap-2"
+                  className="w-full sm:w-auto justify-center px-4 py-2.5 rounded-xl text-xs font-bold transition bg-[#123891] hover:bg-[#102d7d] text-white shadow-xs hover:shadow cursor-pointer shrink-0 inline-flex items-center"
                   title="Đề xuất đề tài"
                 >
-                  <BookOpen className="w-4 h-4" />
                   <span>Đề xuất đề tài</span>
                 </button>
               )}
@@ -2178,11 +2540,6 @@ const LecturerThesesPage = () => {
                                 <div className="font-semibold text-slate-800">
                                   {lecturerName}
                                 </div>
-                                {lecturerCode && (
-                                  <span className="text-slate-400 font-mono text-[11px]">
-                                    {lecturerCode}
-                                  </span>
-                                )}
                               </td>
                               <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
                                 {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
@@ -2275,7 +2632,6 @@ const LecturerThesesPage = () => {
                             <div>
                               <span className="text-[10px] text-slate-400 block font-medium">Giảng viên:</span>
                               <span className="font-semibold text-slate-800">{lecturerName}</span>
-                              {lecturerCode && <span className="text-slate-400 font-mono text-[10px] ml-1">({lecturerCode})</span>}
                             </div>
                             <div className="text-right">
                               <span className="text-[10px] text-slate-400 block font-medium">Ngày tạo:</span>
@@ -2397,11 +2753,6 @@ const LecturerThesesPage = () => {
                                 <div className="font-semibold text-slate-800">
                                   {lecturerName}
                                 </div>
-                                {lecturerCode && (
-                                  <span className="text-slate-400 font-mono text-[11px]">
-                                    {lecturerCode}
-                                  </span>
-                                )}
                               </td>
                               <td className="py-3.5 px-4 max-w-xs truncate text-slate-600">
                                 {topic.description || <span className="italic text-slate-400">Không có mô tả</span>}
@@ -2494,7 +2845,6 @@ const LecturerThesesPage = () => {
                             <div>
                               <span className="text-[10px] text-slate-400 block font-medium">Giảng viên:</span>
                               <span className="font-semibold text-slate-800">{lecturerName}</span>
-                              {lecturerCode && <span className="text-slate-400 font-mono text-[10px] ml-1">({lecturerCode})</span>}
                             </div>
                             <div className="text-right">
                               <span className="text-[10px] text-slate-400 block font-medium">Ngày tạo:</span>
@@ -2603,17 +2953,32 @@ const LecturerThesesPage = () => {
 
               {!isReviewView && (
                 <div className="flex items-center gap-2.5 self-end sm:self-auto">
-                  <button
-                    onClick={() => {
-                      fetchAssignedTheses();
-                      fetchMyTopics();
-                      fetchApprovedTopics();
-                    }}
-                    className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-                    title="Làm mới"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                  </button>
+                  {isSupervisorPage && (
+                    <button
+                      type="button"
+                      onClick={handleExportTheses}
+                      disabled={exportingTheses}
+                      className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                      title="Xuất file"
+                      aria-label="Xuất file danh sách đề tài đang hiển thị"
+                    >
+                      <FileSpreadsheet className={`w-4 h-4 ${exportingTheses ? 'animate-bounce text-[#123891]' : ''}`} />
+                    </button>
+                  )}
+
+                  {!isSupervisorPage && (
+                    <button
+                      onClick={() => {
+                        fetchAssignedTheses();
+                        fetchMyTopics();
+                        fetchApprovedTopics();
+                      }}
+                      className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
+                      title="Làm mới"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               )}
             </div>

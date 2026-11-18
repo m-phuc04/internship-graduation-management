@@ -68,6 +68,46 @@ const getUnreadCount = async (req, res, next) => {
       success: true,
       message: "Lấy số lượng thông báo chưa đọc thành công",
       data: result,
+      unreadCount: result?.unreadCount ?? 0,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create a new notification
+const createNotification = async (req, res, next) => {
+  try {
+    const {
+      recipientId,
+      userId,
+      type = "SYSTEM",
+      title,
+      message,
+      referenceId = null,
+      referenceModel = null,
+      link = null,
+      priority = "NORMAL",
+      metadata = {},
+    } = req.body;
+
+    const notification = await notificationService.createNotification({
+      recipientId: recipientId || userId,
+      senderId: req.user?.userId || null,
+      type,
+      title,
+      message,
+      referenceId,
+      referenceModel,
+      link,
+      priority,
+      metadata,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Tạo thông báo thành công",
+      data: notification,
     });
   } catch (error) {
     next(error);
@@ -218,6 +258,7 @@ export default {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
+  createNotification,
   notifyCouncilAssignment,
   getEmailSettings,
   updateEmailSettings,

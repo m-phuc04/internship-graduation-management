@@ -134,7 +134,7 @@ const InternshipManagement = () => {
       {/* Top Header Card */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3.5 sm:gap-4">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
             <Briefcase className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div>
@@ -160,12 +160,14 @@ const InternshipManagement = () => {
           </button>
 
           <button
+            type="button"
             onClick={() => setExportModalOpen(true)}
-            className="flex items-center justify-center sm:justify-start gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-sm shadow-emerald-600/20 rounded-xl transition cursor-pointer w-full sm:w-auto shrink-0"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer shrink-0"
             title="Xuất danh sách sinh viên TTDN ra Excel"
+            aria-label="Xuất danh sách"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-            <span>Xuất danh sách</span>
+            <FileSpreadsheet className="w-4 h-4 shrink-0" />
+            <span>Xuất file</span>
           </button>
         </div>
       </div>
@@ -181,24 +183,6 @@ const InternshipManagement = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-start md:justify-end">
-          {/* Academic Term Selector */}
-          <select
-            value={currentTerm?._id || ''}
-            onChange={(e) => {
-              if (setCurrentTerm && e.target.value) {
-                setCurrentTerm(e.target.value);
-              }
-            }}
-            className="w-full sm:w-auto min-w-[200px] py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
-          >
-            {Array.isArray(terms) &&
-              terms.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
-                </option>
-              ))}
-          </select>
-
           {/* Status Filter */}
           <select
             value={status}
