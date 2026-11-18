@@ -10,6 +10,9 @@ router.use(authMiddleware);
 // Get my notifications (paginated)
 router.get("/", notificationController.getMyNotifications);
 
+// Create a new notification
+router.post("/", notificationController.createNotification);
+
 // Get unread count
 router.get("/unread-count", notificationController.getUnreadCount);
 

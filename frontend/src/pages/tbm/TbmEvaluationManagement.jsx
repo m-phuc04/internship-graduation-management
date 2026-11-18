@@ -8,14 +8,14 @@ import StatusBadge from '../../components/common/StatusBadge';
 import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
+import EvaluationDetailModal from '../../components/evaluations/EvaluationDetailModal';
 
 import {
   Award,
   Building2,
   Calendar,
-    RefreshCw,
+  RefreshCw,
   Clock,
-  Filter,
   CheckCircle2,
   Trash2,
   Send,
@@ -25,7 +25,11 @@ import {
   Users,
   Check,
   X,
+  Eye,
   EyeOff,
+  Lock,
+  FileSpreadsheet,
+  Search,
 } from 'lucide-react';
 
 const EVAL_STATUS_FILTERS = [
@@ -38,7 +42,8 @@ const EVAL_STATUS_FILTERS = [
 ];
 
 const TbmEvaluationManagement = () => {
-  const { currentTerm } = useAcademicTerm();
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
+  const isTermActive = currentTerm?.status === 'ACTIVE';
 
   // Evaluations State
   const [evaluations, setEvaluations] = useState([]);
@@ -47,6 +52,10 @@ const TbmEvaluationManagement = () => {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
+
+  // Detail Modal
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [detailItem, setDetailItem] = useState(null);
 
   // Modals
 
@@ -77,6 +86,7 @@ const TbmEvaluationManagement = () => {
   const [hideBulkModalOpen, setHideBulkModalOpen] = useState(false);
   const [selectedHideIds, setSelectedHideIds] = useState([]);
   const [hideBulkReason, setHideBulkReason] = useState('');
+  const [hideBulkSearch, setHideBulkSearch] = useState('');
   const [hiding, setHiding] = useState(false);
 
   const { showToast } = useToast();
@@ -377,6 +387,7 @@ const TbmEvaluationManagement = () => {
     setHideBulkModalOpen(true);
     setLoadingAllInternships(true);
     setHideBulkReason('');
+    setHideBulkSearch('');
     try {
       const res = await evaluationApi.getForTbm({
         page: 1,
@@ -450,12 +461,182 @@ const TbmEvaluationManagement = () => {
     );
   }, [allTermInternships]);
 
+  const filteredHideBulkList = useMemo(() => {
+    if (!hideBulkSearch.trim()) return publishedBulkList;
+    const q = hideBulkSearch.toLowerCase().trim();
+    return publishedBulkList.filter((item) => {
+      const studentName = (item.studentId?.userId?.fullName || '').toLowerCase();
+      const studentCode = (item.studentId?.studentCode || '').toLowerCase();
+      const companyName = (item.companyId?.name || '').toLowerCase();
+      return (
+        studentName.includes(q) ||
+        studentCode.includes(q) ||
+        companyName.includes(q)
+      );
+    });
+  }, [publishedBulkList, hideBulkSearch]);
+
   const toggleSelectAllHide = () => {
-    const allPublishedIds = publishedBulkList.map((it) => it._id);
-    if (selectedHideIds.length === allPublishedIds.length) {
-      setSelectedHideIds([]);
+    const currentIds = filteredHideBulkList.map((it) => it._id);
+    const allSelected = currentIds.length > 0 && currentIds.every((id) => selectedHideIds.includes(id));
+    if (allSelected) {
+      setSelectedHideIds((prev) => prev.filter((id) => !currentIds.includes(id)));
     } else {
-      setSelectedHideIds(allPublishedIds);
+      setSelectedHideIds((prev) => Array.from(new Set([...prev, ...currentIds])));
+    }
+  };
+
+  const [exportingData, setExportingData] = useState(false);
+
+  const handleExportEvaluations = async () => {
+    if (!evaluations || evaluations.length === 0) {
+      showToast('Không có dữ liệu đánh giá phù hợp để xuất file', 'info');
+      return;
+    }
+
+    try {
+      setExportingData(true);
+      let listToExport = evaluations;
+
+      if (pagination?.total && pagination.total > evaluations.length) {
+        try {
+          const res = await evaluationApi.getForTbm({
+            page: 1,
+            limit: pagination.total,
+            search,
+            status,
+            academicTermId: currentTerm?._id || '',
+          });
+          if (res?.success && res.data) {
+            let list = res.data || [];
+            if (status === 'PUBLISHED') {
+              list = list.filter((it) => it.scorePublishStatus === 'PUBLISHED' || (!it.scorePublishStatus && it.isScorePublished));
+            } else if (status === 'HIDDEN') {
+              list = list.filter((it) => it.scorePublishStatus === 'HIDDEN');
+            } else if (status === 'UNPUBLISHED') {
+              list = list.filter((it) => it.scorePublishStatus === 'UNPUBLISHED' || (!it.isScorePublished && it.scorePublishStatus !== 'HIDDEN'));
+            }
+            if (list.length > 0) listToExport = list;
+          }
+        } catch {
+          listToExport = evaluations;
+        }
+      }
+
+      const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+      const termName = currentTerm?.name ? `${currentTerm.name} - ${currentTerm.academicYear || ''}` : '';
+      const statusLabel = EVAL_STATUS_FILTERS.find((o) => o.value === status)?.label || 'Tất cả trạng thái';
+
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      };
+
+      let tableHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+            th { background-color: #123891; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; }
+            td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; }
+            .text-center { text-align: center; }
+            .text-left { text-align: left; }
+            .header-title { font-size: 14pt; font-weight: bold; color: #123891; text-align: center; }
+            .header-sub { font-size: 11pt; text-align: center; color: #475569; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr><td colspan="10" class="header-title">BẢNG TỔNG HỢP ĐÁNH GIÁ THỰC TẬP DOANH NGHIỆP (TTDN)</td></tr>
+            ${termName ? `<tr><td colspan="10" class="header-sub">Học kỳ: ${escapeHtml(termName)}</td></tr>` : ''}
+            <tr><td colspan="10" class="header-sub">Bộ lọc trạng thái: ${escapeHtml(statusLabel)}${search ? ` | Từ khóa tìm kiếm: "${escapeHtml(search.trim())}"` : ''} (Số lượng: ${listToExport.length} sinh viên)</td></tr>
+            <tr><td colspan="10"></td></tr>
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th style="width: 120px;">MSSV</th>
+                <th style="width: 220px;">Họ và tên sinh viên</th>
+                <th style="width: 120px;">Lớp</th>
+                <th style="width: 260px;">Doanh nghiệp tiếp nhận</th>
+                <th style="width: 180px;">Vị trí thực tập</th>
+                <th style="width: 200px;">Giảng viên giám sát</th>
+                <th style="width: 110px;">Điểm số</th>
+                <th style="width: 120px;">Kết quả</th>
+                <th style="width: 160px;">Trạng thái công bố</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      listToExport.forEach((item, idx) => {
+        const studentName = item.studentId?.userId?.fullName || '—';
+        const studentCode = item.studentId?.studentCode || '—';
+        const className = item.studentId?.className || item.studentId?.class || '—';
+        const companyName = item.companyId?.name || item.companyId?.companyName || '—';
+        const position = item.position || 'Thực tập sinh';
+        const lecturerName = item.lecturerId?.userId?.fullName
+          ? `${item.lecturerId?.academicTitle ? item.lecturerId.academicTitle + ' ' : ''}${item.lecturerId.userId.fullName}`
+          : 'Chưa phân công';
+
+        const hasValidScore = Boolean(
+          item.evaluation?.score !== undefined &&
+          item.evaluation?.score !== null &&
+          !isNaN(item.evaluation?.score)
+        );
+        const scoreStr = hasValidScore ? (Number(item.evaluation.score) % 1 === 0 ? Number(item.evaluation.score).toFixed(1) : item.evaluation.score) : 'Chưa có điểm';
+
+        const isItemPass = hasValidScore && Number(item.evaluation.score) >= 4.0;
+        const isItemFail = hasValidScore && Number(item.evaluation.score) < 4.0;
+        const resultStr = isItemPass ? 'Đạt (PASS)' : isItemFail ? 'Rớt (FAIL)' : 'Đang thực hiện';
+
+        const isHidden = item.scorePublishStatus === 'HIDDEN';
+        const isPublished = item.scorePublishStatus === 'PUBLISHED' || (!item.scorePublishStatus && item.isScorePublished);
+        const publishStatusStr = isHidden ? 'Đã ẩn' : isPublished ? 'Đã công bố' : 'Chưa công bố';
+
+        tableHtml += `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="text-center">${escapeHtml(studentCode)}</td>
+            <td class="text-left">${escapeHtml(studentName)}</td>
+            <td class="text-center">${escapeHtml(className)}</td>
+            <td class="text-left">${escapeHtml(companyName)}</td>
+            <td class="text-left">${escapeHtml(position)}</td>
+            <td class="text-left">${escapeHtml(lecturerName)}</td>
+            <td class="text-center">${escapeHtml(scoreStr)}</td>
+            <td class="text-center">${escapeHtml(resultStr)}</td>
+            <td class="text-center">${escapeHtml(publishStatusStr)}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\uFEFF' + tableHtml], {
+        type: 'application/vnd.ms-excel;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Danh_sach_danh_gia_TTDN_${termCode}_${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Xuất danh sách đánh giá TTDN thành công!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Lỗi khi xuất file', 'error');
+    } finally {
+      setExportingData(false);
     }
   };
 
@@ -513,7 +694,7 @@ const TbmEvaluationManagement = () => {
       {/* Header Card */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
             <Award className="w-7 h-7" />
           </div>
           <div>
@@ -523,13 +704,14 @@ const TbmEvaluationManagement = () => {
           </div>
         </div>
 
-        {/* Nút Công Bố & Ẩn Điểm */}
+        {/* Nút Công Bố & Ẩn Điểm & Xuất file */}
         <div className="flex items-center gap-2.5 flex-wrap">
           <button
             type="button"
+            disabled={!isTermActive}
             onClick={handleOpenHideBulkModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-            title="Mở hộp thoại ẩn điểm các sinh viên đã được công bố điểm"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-xl transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!isTermActive ? 'Học kỳ đã đóng, không thể thao tác' : 'Mở hộp thoại ẩn điểm các sinh viên đã được công bố điểm'}
           >
             <EyeOff className="w-4 h-4" />
             <span>Ẩn điểm đã công bố</span>
@@ -537,12 +719,25 @@ const TbmEvaluationManagement = () => {
 
           <button
             type="button"
+            disabled={!isTermActive}
             onClick={handleOpenPublishAllModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-            title="Mở hộp thoại công bố điểm cho toàn bộ sinh viên có điểm"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+            title={!isTermActive ? 'Học kỳ đã đóng, không thể thao tác' : 'Mở hộp thoại công bố điểm cho toàn bộ sinh viên có điểm'}
           >
             <CheckSquare className="w-4 h-4" />
             <span>Công bố điểm tất cả</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleExportEvaluations}
+            disabled={exportingData}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer shrink-0"
+            title="Xuất danh sách đánh giá TTDN ra Excel"
+            aria-label="Xuất danh sách"
+          >
+            <FileSpreadsheet className={`w-4 h-4 shrink-0 ${exportingData ? 'animate-bounce text-[#123891]' : ''}`} />
+            <span>Xuất file</span>
           </button>
         </div>
       </div>
@@ -562,15 +757,34 @@ const TbmEvaluationManagement = () => {
             />
           </div>
 
-          <div className="flex items-center gap-2 w-full md:w-auto justify-start md:justify-end">
-            <Filter className="w-4 h-4 text-slate-400 shrink-0" />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-start md:justify-end">
+            {/* Academic Term Selector */}
+            <select
+              value={currentTerm?._id || ''}
+              onChange={(e) => {
+                if (setCurrentTerm && e.target.value) {
+                  setCurrentTerm(e.target.value);
+                  setPage(1);
+                }
+              }}
+              className="w-full sm:w-auto min-w-[200px] py-2 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+            >
+              {Array.isArray(terms) &&
+                terms.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
+                  </option>
+                ))}
+            </select>
+
+            {/* Status Filter */}
             <select
               value={status}
               onChange={(e) => {
                 setStatus(e.target.value);
                 setPage(1);
               }}
-              className="w-full sm:w-auto bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
+              className="w-full sm:w-auto min-w-[180px] bg-slate-50 border border-slate-200 text-xs rounded-xl px-3 py-2 text-slate-700 outline-none focus:border-[#123891] cursor-pointer"
             >
               {EVAL_STATUS_FILTERS.map((f) => (
                 <option key={f.value} value={f.value}>
@@ -580,6 +794,16 @@ const TbmEvaluationManagement = () => {
             </select>
           </div>
         </div>
+
+        {/* Closed term notice banner */}
+        {!isTermActive && (
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-2.5 text-xs text-amber-900">
+            <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Học kỳ đã đóng ({currentTerm?.name || 'Học kỳ cũ'}):</strong> Dữ liệu đánh giá TTDN đã được khóa và chỉ cho phép xem chi tiết. Các thao tác công bố, ẩn điểm và sửa đổi đã bị vô hiệu hóa.
+            </span>
+          </div>
+        )}
 
         {/* Evaluations Table */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
@@ -737,62 +961,84 @@ const TbmEvaluationManagement = () => {
                             className="flex items-center justify-end gap-1.5"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            {/* Ẩn điểm đã công bố */}
-                            {isPublished && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenHideSingle(item)}
-                                className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition cursor-pointer"
-                                title="Ẩn điểm đã công bố của sinh viên này"
-                              >
-                                <EyeOff className="w-4 h-4" />
-                              </button>
-                            )}
+                            {/* Nút Xem chi tiết (luôn hiển thị) */}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setDetailItem(item);
+                                setDetailModalOpen(true);
+                              }}
+                              className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#123891] rounded-lg transition cursor-pointer"
+                              title="Xem chi tiết phiếu đánh giá"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
 
-                            {/* Công bố lại điểm (cho sinh viên Đã ẩn) */}
-                            {isHidden && hasValidScore && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenRepublishSingle(item)}
-                                className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
-                                title="Công bố lại điểm cho sinh viên này"
-                              >
-                                <Send className="w-4 h-4" />
-                              </button>
-                            )}
+                            {/* Các thao tác khác chỉ cho phép khi học kỳ đang mở (isTermActive) */}
+                            {isTermActive ? (
+                              <>
+                                {/* Ẩn điểm đã công bố */}
+                                {isPublished && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenHideSingle(item)}
+                                    className="p-1.5 text-amber-600 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition cursor-pointer"
+                                    title="Ẩn điểm đã công bố của sinh viên này"
+                                  >
+                                    <EyeOff className="w-4 h-4" />
+                                  </button>
+                                )}
 
-                            {/* Công bố điểm lần đầu */}
-                            {!isPublished && !isHidden && hasValidScore && (
-                              <button
-                                type="button"
-                                onClick={() => handlePublishSingle(item)}
-                                className="p-1.5 text-blue-600 hover:text-[#102d7d] hover:bg-blue-50 rounded-lg transition cursor-pointer"
-                                title="Công bố điểm cho sinh viên này"
-                              >
-                                <Send className="w-4 h-4" />
-                              </button>
-                            )}
+                                {/* Công bố lại điểm (cho sinh viên Đã ẩn) */}
+                                {isHidden && hasValidScore && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenRepublishSingle(item)}
+                                    className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                                    title="Công bố lại điểm cho sinh viên này"
+                                  >
+                                    <Send className="w-4 h-4" />
+                                  </button>
+                                )}
 
-                            {hasValidScore && item.status !== 'COMPLETED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenComplete(item)}
-                                className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
-                                title="Hoàn tất và khóa kết quả"
-                              >
-                                <CheckCircle2 className="w-4 h-4" />
-                              </button>
-                            )}
+                                {/* Công bố điểm lần đầu */}
+                                {!isPublished && !isHidden && hasValidScore && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePublishSingle(item)}
+                                    className="p-1.5 text-blue-600 hover:text-[#102d7d] hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                    title="Công bố điểm cho sinh viên này"
+                                  >
+                                    <Send className="w-4 h-4" />
+                                  </button>
+                                )}
 
-                            {hasValidScore && item.status !== 'COMPLETED' && (
-                              <button
-                                type="button"
-                                onClick={() => handleOpenDeleteEvaluation(item)}
-                                className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                title="Xóa kết quả đánh giá"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                                {hasValidScore && item.status !== 'COMPLETED' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenComplete(item)}
+                                    className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                                    title="Hoàn tất và khóa kết quả"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </button>
+                                )}
+
+                                {hasValidScore && item.status !== 'COMPLETED' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDeleteEvaluation(item)}
+                                    className="p-1.5 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                    title="Xóa kết quả đánh giá"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                )}
+                              </>
+                            ) : (
+                              <span className="p-1 text-slate-300" title="Học kỳ đã đóng - Chỉ xem chi tiết">
+                                <Lock className="w-3.5 h-3.5" />
+                              </span>
                             )}
                           </div>
                         </td>
@@ -897,48 +1143,68 @@ const TbmEvaluationManagement = () => {
                       </div>
 
                       <div className="flex items-center gap-1">
-                        {isPublished && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenHideSingle(item)}
-                            className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition"
-                            title="Ẩn điểm"
-                          >
-                            <EyeOff className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setDetailItem(item);
+                            setDetailModalOpen(true);
+                          }}
+                          className="p-1.5 text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer"
+                          title="Xem chi tiết phiếu đánh giá"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
 
-                        {isHidden && hasValidScore && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenRepublishSingle(item)}
-                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
-                            title="Công bố lại"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        )}
+                        {isTermActive ? (
+                          <>
+                            {isPublished && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenHideSingle(item)}
+                                className="p-1.5 text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer"
+                                title="Ẩn điểm"
+                              >
+                                <EyeOff className="w-4 h-4" />
+                              </button>
+                            )}
 
-                        {!isPublished && !isHidden && hasValidScore && (
-                          <button
-                            type="button"
-                            onClick={() => handlePublishSingle(item)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                            title="Công bố điểm"
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        )}
+                            {isHidden && hasValidScore && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenRepublishSingle(item)}
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                                title="Công bố lại"
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                            )}
 
-                        {hasValidScore && item.status !== 'COMPLETED' && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenComplete(item)}
-                            className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition"
-                            title="Hoàn tất và khóa"
-                          >
-                            <CheckCircle2 className="w-4 h-4" />
-                          </button>
+                            {!isPublished && !isHidden && hasValidScore && (
+                              <button
+                                type="button"
+                                onClick={() => handlePublishSingle(item)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                                title="Công bố điểm"
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                            )}
+
+                            {hasValidScore && item.status !== 'COMPLETED' && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenComplete(item)}
+                                className="p-1.5 text-emerald-600 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                                title="Hoàn tất và khóa"
+                              >
+                                <CheckCircle2 className="w-4 h-4" />
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <span className="p-1 text-slate-300" title="Học kỳ đã đóng">
+                            <Lock className="w-3.5 h-3.5" />
+                          </span>
                         )}
                       </div>
                     </div>
@@ -966,22 +1232,12 @@ const TbmEvaluationManagement = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95 flex flex-col max-h-[85vh]">
             {/* Modal Header */}
-            <div className="px-6 py-5 bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
-                  <CheckSquare className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base">Xác nhận công bố điểm Thực tập Doanh nghiệp</h3>
-                  <p className="text-xs text-emerald-100">
-                    Chọn các đề tài/sinh viên sẽ được công bố điểm chính thức
-                  </p>
-                </div>
-              </div>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+              <h3 className="font-bold text-lg sm:text-xl text-slate-900">Xác nhận công bố điểm Thực tập Doanh nghiệp</h3>
               <button
                 type="button"
                 onClick={() => setPublishAllModalOpen(false)}
-                className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-xl transition cursor-pointer"
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1004,14 +1260,14 @@ const TbmEvaluationManagement = () => {
                 </button>
 
                 <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-lg bg-emerald-100/70 text-emerald-800 font-semibold">
+                  <span className="px-2.5 py-1 rounded-lg bg-blue-100/80 text-[#123891] font-semibold">
                     Đủ điều kiện có điểm: <strong>{eligibleCount}</strong>
                   </span>
                   <span className="px-2.5 py-1 rounded-lg bg-rose-100/70 text-rose-800 font-semibold">
                     Chưa có điểm: <strong>{ineligibleCount}</strong>
                   </span>
                   <span className="text-slate-600 ml-1">
-                    (Đã chọn <strong className="text-emerald-700 font-bold">{selectedPublishIds.length}</strong>)
+                    (Đã chọn <strong className="text-[#123891] font-bold">{selectedPublishIds.length}</strong>)
                   </span>
                 </div>
               </div>
@@ -1020,7 +1276,7 @@ const TbmEvaluationManagement = () => {
                 <div className="p-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-[11px] leading-relaxed">
-                    Có <strong>{ineligibleCount}</strong> sinh viên chưa có điểm đánh giá từ Giảng viên Giám sát. Hệ thống chỉ công bố cho sinh viên đã có điểm và bỏ qua các trường hợp chưa đủ điều kiện.
+                    Có <strong>{ineligibleCount}</strong> sinh viên chưa có điểm đánh giá từ Giảng viên Giám sát.
                   </p>
                 </div>
               )}
@@ -1121,38 +1377,32 @@ const TbmEvaluationManagement = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0">
-              <div className="text-xs text-slate-500">
-                Chỉ công bố cho những sinh viên được chọn.
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setPublishAllModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  disabled={publishing || selectedPublishIds.length === 0}
-                  onClick={handleConfirmBulkPublish}
-                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-2"
-                >
-                  {publishing ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Đang công bố...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Xác nhận công bố ({selectedPublishIds.length})</span>
-                    </>
-                  )}
-                </button>
-              </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setPublishAllModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={publishing || selectedPublishIds.length === 0}
+                onClick={handleConfirmBulkPublish}
+                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-2"
+              >
+                {publishing ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang công bố...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Xác nhận công bố ({selectedPublishIds.length})</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -1250,13 +1500,13 @@ const TbmEvaluationManagement = () => {
       {hideSingleModalOpen && targetHideItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-amber-700 pb-3 border-b border-amber-100">
-              <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 text-[#123891] pb-3 border-b border-blue-100">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                 <EyeOff className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-amber-900">Ẩn điểm đã công bố</h3>
-                <p className="text-xs text-amber-700">Tạm thời không hiển thị điểm với sinh viên</p>
+                <h3 className="font-bold text-base text-[#123891]">Ẩn điểm đã công bố</h3>
+                <p className="text-xs text-slate-500">Tạm thời không hiển thị điểm với sinh viên</p>
               </div>
             </div>
 
@@ -1266,8 +1516,8 @@ const TbmEvaluationManagement = () => {
                 <strong>{targetHideItem.studentId?.userId?.fullName}</strong> (MSSV:{' '}
                 <strong>{targetHideItem.studentId?.studentCode}</strong>)?
               </p>
-              <div className="p-3 bg-amber-50/70 border border-amber-200/80 rounded-xl text-[11px] text-amber-900 space-y-1">
-                <p className="font-bold">Lưu ý sau khi ẩn điểm:</p>
+              <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-[11px] text-[#123891] space-y-1">
+                <p className="font-bold text-[#123891]">Lưu ý sau khi ẩn điểm:</p>
                 <ul className="list-disc list-inside space-y-0.5 text-slate-700">
                   <li>Điểm số sẽ <strong>ngay lập tức không hiển thị</strong> trên Cổng sinh viên.</li>
                   <li>Điểm, nhận xét và dữ liệu đánh giá <strong>vẫn được giữ nguyên</strong> trong Database.</li>
@@ -1287,7 +1537,7 @@ const TbmEvaluationManagement = () => {
                 onChange={(e) => setHideReason(e.target.value)}
                 placeholder="Nhập lý do ẩn điểm (ví dụ: Cần rà soát cột điểm, kiểm tra lại hồ sơ...)"
                 rows={3}
-                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 transition resize-none"
+                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#123891] transition resize-none"
               />
             </div>
 
@@ -1308,7 +1558,7 @@ const TbmEvaluationManagement = () => {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleConfirmHideSingle}
-                className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
               >
                 {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <EyeOff className="w-3.5 h-3.5" />}
                 <span>{actionLoading ? 'Đang ẩn...' : 'Xác nhận ẩn điểm'}</span>
@@ -1322,13 +1572,13 @@ const TbmEvaluationManagement = () => {
       {republishSingleModalOpen && targetRepublishItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
-            <div className="flex items-center gap-3 text-emerald-700 pb-3 border-b border-emerald-100">
-              <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+            <div className="flex items-center gap-3 text-[#123891] pb-3 border-b border-blue-100">
+              <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
                 <Send className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-emerald-900">Công bố lại điểm TTDN</h3>
-                <p className="text-xs text-emerald-700">Hiển thị lại điểm số cho sinh viên</p>
+                <h3 className="font-bold text-base text-[#123891]">Công bố lại điểm TTDN</h3>
+                <p className="text-xs text-slate-500">Hiển thị lại điểm số cho sinh viên</p>
               </div>
             </div>
 
@@ -1338,7 +1588,7 @@ const TbmEvaluationManagement = () => {
                 <strong>{targetRepublishItem.studentId?.userId?.fullName}</strong> (MSSV:{' '}
                 <strong>{targetRepublishItem.studentId?.studentCode}</strong>).
               </p>
-              <div className="p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-[11px] text-emerald-900 space-y-1">
+              <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl text-[11px] text-[#123891] space-y-1">
                 <p>
                   Điểm số được công bố lại: <strong>{targetRepublishItem.evaluation?.score} / 10</strong>
                 </p>
@@ -1358,7 +1608,7 @@ const TbmEvaluationManagement = () => {
                 onChange={(e) => setRepublishReason(e.target.value)}
                 placeholder="Nhập ghi chú hoặc lý do công bố lại..."
                 rows={2}
-                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-emerald-500 transition resize-none"
+                className="w-full text-xs p-3 rounded-xl border border-slate-200 focus:outline-none focus:border-[#123891] transition resize-none"
               />
             </div>
 
@@ -1379,7 +1629,7 @@ const TbmEvaluationManagement = () => {
                 type="button"
                 disabled={actionLoading}
                 onClick={handleConfirmRepublishSingle}
-                className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
               >
                 {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                 <span>{actionLoading ? 'Đang công bố...' : 'Xác nhận công bố lại'}</span>
@@ -1394,57 +1644,49 @@ const TbmEvaluationManagement = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95 flex flex-col max-h-[85vh]">
             {/* Modal Header */}
-            <div className="px-6 py-5 bg-gradient-to-r from-amber-600 to-amber-700 text-white flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-white shrink-0">
-                  <EyeOff className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base">Ẩn điểm đã công bố hàng loạt</h3>
-                  <p className="text-xs text-amber-100">
-                    Chọn các sinh viên cần ẩn điểm trên Cổng sinh viên
-                  </p>
-                </div>
-              </div>
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+              <h3 className="font-bold text-lg sm:text-xl text-slate-900">Ẩn điểm đã công bố hàng loạt</h3>
               <button
                 type="button"
                 onClick={() => setHideBulkModalOpen(false)}
-                className="p-1.5 rounded-xl hover:bg-white/10 text-white transition cursor-pointer"
+                className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Selection Bar & Reason Input */}
-            <div className="p-4 bg-amber-50/50 border-b border-amber-100 space-y-3 shrink-0">
+            {/* Toolbar: Search & Selection Bar */}
+            <div className="p-4 bg-slate-50 border-b border-slate-200/80 space-y-3 shrink-0">
+              {/* Thanh search */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={hideBulkSearch}
+                  onChange={(e) => setHideBulkSearch(e.target.value)}
+                  placeholder="Tìm theo tên sinh viên, MSSV, doanh nghiệp..."
+                  className="w-full text-xs pl-9 pr-3.5 py-2 bg-white rounded-xl border border-slate-200 placeholder:text-slate-400 focus:outline-none focus:border-[#123891] focus:ring-1 focus:ring-[#123891]/20 transition"
+                />
+              </div>
+
               <div className="flex items-center justify-between text-xs">
                 <button
                   type="button"
                   onClick={toggleSelectAllHide}
-                  className="font-bold text-amber-900 hover:text-amber-700 inline-flex items-center gap-1.5 transition cursor-pointer"
+                  className="font-bold text-[#123891] hover:underline inline-flex items-center gap-1.5 transition cursor-pointer"
                 >
-                  {selectedHideIds.length === publishedBulkList.length && publishedBulkList.length > 0 ? (
-                    <CheckSquare className="w-4 h-4 text-amber-600" />
+                  {filteredHideBulkList.length > 0 &&
+                  filteredHideBulkList.every((it) => selectedHideIds.includes(it._id)) ? (
+                    <CheckSquare className="w-4 h-4 text-[#123891]" />
                   ) : (
                     <Square className="w-4 h-4 text-slate-400" />
                   )}
-                  <span>Chọn tất cả ({publishedBulkList.length})</span>
+                  <span>Chọn tất cả ({filteredHideBulkList.length})</span>
                 </button>
 
                 <span className="text-slate-600 text-xs">
-                  (Đã chọn <strong className="text-amber-700 font-bold">{selectedHideIds.length}</strong>)
+                  (Đã chọn <strong className="text-[#123891] font-bold">{selectedHideIds.length}</strong>)
                 </span>
-              </div>
-
-              {/* Lý do ẩn */}
-              <div>
-                <input
-                  type="text"
-                  value={hideBulkReason}
-                  onChange={(e) => setHideBulkReason(e.target.value)}
-                  placeholder="Lý do ẩn điểm hàng loạt (tùy chọn)..."
-                  className="w-full text-xs px-3.5 py-2 bg-white rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 transition"
-                />
               </div>
             </div>
 
@@ -1452,15 +1694,19 @@ const TbmEvaluationManagement = () => {
             <div className="flex-1 overflow-y-auto p-4 space-y-2 divide-y divide-slate-100">
               {loadingAllInternships ? (
                 <div className="p-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
-                  <RefreshCw className="w-4 h-4 animate-spin text-amber-600" />
+                  <RefreshCw className="w-4 h-4 animate-spin text-[#123891]" />
                   <span>Đang tải danh sách sinh viên...</span>
                 </div>
               ) : publishedBulkList.length === 0 ? (
                 <div className="p-8 text-center text-xs text-slate-400">
                   Không có sinh viên nào đang ở trạng thái đã công bố điểm trong học kỳ này.
                 </div>
+              ) : filteredHideBulkList.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  Không tìm thấy sinh viên nào khớp với từ khóa tìm kiếm.
+                </div>
               ) : (
-                publishedBulkList.map((item) => {
+                filteredHideBulkList.map((item) => {
                   const isChecked = selectedHideIds.includes(item._id);
                   return (
                     <div
@@ -1468,14 +1714,14 @@ const TbmEvaluationManagement = () => {
                       onClick={() => toggleSelectHide(item._id)}
                       className={`p-3.5 rounded-2xl border transition flex items-center justify-between gap-3 cursor-pointer ${
                         isChecked
-                          ? 'bg-amber-50/60 border-amber-300 shadow-2xs'
+                          ? 'bg-blue-50/60 border-blue-300 shadow-2xs'
                           : 'bg-white border-slate-100 hover:bg-slate-50'
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="shrink-0 text-amber-600">
+                        <div className="shrink-0 text-[#123891]">
                           {isChecked ? (
-                            <CheckSquare className="w-5 h-5 text-amber-600" />
+                            <CheckSquare className="w-5 h-5 text-[#123891]" />
                           ) : (
                             <Square className="w-5 h-5 text-slate-300" />
                           )}
@@ -1491,7 +1737,7 @@ const TbmEvaluationManagement = () => {
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <div className="inline-flex items-baseline gap-1 font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                        <div className="inline-flex items-baseline gap-1 font-bold text-[#123891] bg-white px-2.5 py-1 rounded-lg border border-blue-200 shadow-2xs">
                           <span className="text-sm">{item.evaluation?.score}</span>
                           <span className="text-[10px] text-slate-500">/ 10</span>
                         </div>
@@ -1503,42 +1749,47 @@ const TbmEvaluationManagement = () => {
             </div>
 
             {/* Modal Footer */}
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-between gap-3 shrink-0">
-              <div className="text-xs text-slate-500">
-                Chỉ ẩn điểm cho các sinh viên được tích chọn.
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setHideBulkModalOpen(false)}
-                  className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition cursor-pointer"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  disabled={hiding || selectedHideIds.length === 0}
-                  onClick={handleConfirmBulkHide}
-                  className="px-5 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-2"
-                >
-                  {hiding ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Đang ẩn...</span>
-                    </>
-                  ) : (
-                    <>
-                      <EyeOff className="w-3.5 h-3.5" />
-                      <span>Xác nhận ẩn điểm ({selectedHideIds.length})</span>
-                    </>
-                  )}
-                </button>
-              </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end gap-2.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setHideBulkModalOpen(false)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button
+                type="button"
+                disabled={hiding || selectedHideIds.length === 0}
+                onClick={handleConfirmBulkHide}
+                className="px-5 py-2 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 cursor-pointer inline-flex items-center gap-2"
+              >
+                {hiding ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang ẩn...</span>
+                  </>
+                ) : (
+                  <>
+                    <EyeOff className="w-3.5 h-3.5" />
+                    <span>Xác nhận ẩn điểm ({selectedHideIds.length})</span>
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* 8. Evaluation Detail Modal */}
+      <EvaluationDetailModal
+        isOpen={detailModalOpen}
+        onClose={() => {
+          setDetailModalOpen(false);
+          setDetailItem(null);
+        }}
+        internship={detailItem}
+        onDeleteEvaluation={isTermActive ? handleOpenDeleteEvaluation : null}
+      />
     </div>
   );
 };

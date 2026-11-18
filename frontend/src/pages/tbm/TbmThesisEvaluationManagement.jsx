@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import thesisApi from '../../api/thesisApi';
+import thesisDocumentApi from '../../api/thesisDocumentApi';
+import getFileUrl from '../../utils/fileUrlHelper';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import SearchInput from '../../components/common/SearchInput';
@@ -8,7 +10,9 @@ import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Modal from '../../components/common/Modal';
 import PublishScoresModal from '../../components/thesis/PublishScoresModal';
+import HideScoresModal from '../../components/thesis/HideScoresModal';
 import ThesisDetailModal from '../../components/thesis/ThesisDetailModal';
+import ThesisTimelineModal from '../../components/thesis/ThesisTimelineModal';
 
 import {
   Award,
@@ -18,7 +22,9 @@ import {
   RotateCcw,
   Clock,
   RefreshCw,
+  FileSpreadsheet,
   Eye,
+  EyeOff,
   Check,
   AlertCircle,
   FileText,
@@ -38,6 +44,12 @@ import {
   ToggleRight,
   ShieldAlert,
   Building,
+  Paperclip,
+  ExternalLink,
+  Download,
+  FileArchive,
+  FileCode,
+  BookOpen,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -49,7 +61,8 @@ const STATUS_OPTIONS = [
 ];
 
 const TbmThesisEvaluationManagement = () => {
-  const { currentTerm } = useAcademicTerm();
+  const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
+  const isTermActive = currentTerm?.status === 'ACTIVE';
   const { showToast } = useToast();
 
   // Active Main Tab: 'EVALUATIONS' | 'CRITERIA' | 'GRADING_PERIODS'
@@ -79,9 +92,20 @@ const TbmThesisEvaluationManagement = () => {
   const [thesisDetailModalOpen, setThesisDetailModalOpen] = useState(false);
   const [selectedThesisForDetail, setSelectedThesisForDetail] = useState(null);
 
+  // Student Submissions State & Cache
+  const [submissionCounts, setSubmissionCounts] = useState({});
+  const [submissionCache, setSubmissionCache] = useState({});
+  const [submissionModalOpen, setSubmissionModalOpen] = useState(false);
+  const [submissionModalThesis, setSubmissionModalThesis] = useState(null);
+  const [modalSubmissions, setModalSubmissions] = useState([]);
+  const [loadingModalSubmissions, setLoadingModalSubmissions] = useState(false);
+
   // Publish Scores Modal
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [publishTargetThesis, setPublishTargetThesis] = useState(null);
+
+  // Hide Published Scores Modal
+  const [hideScoresModalOpen, setHideScoresModalOpen] = useState(false);
 
   // ==========================================
   // TAB 2: CRITERIA STATE
@@ -506,6 +530,131 @@ const TbmThesisEvaluationManagement = () => {
   }, [mainTab, fetchEvaluations, fetchCriteria, fetchGradingPeriods]);
 
   // ==========================================
+  // STUDENT SUBMISSION FILES LOGIC & HELPERS
+  // ==========================================
+  const formatFileSize = useCallback((bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+  }, []);
+
+  const formatDateTime = useCallback((d) => {
+    if (!d) return '—';
+    const date = new Date(d);
+    return `${date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} ${date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+  }, []);
+
+  const getSubmissionFileIcon = useCallback((fileName) => {
+    if (!fileName) return <FileText className="w-5 h-5 text-slate-500" />;
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    if (ext === 'pdf') return <FileText className="w-5 h-5 text-rose-600" />;
+    if (['doc', 'docx'].includes(ext)) return <FileText className="w-5 h-5 text-blue-600" />;
+    if (['xls', 'xlsx'].includes(ext)) return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
+    if (['ppt', 'pptx'].includes(ext)) return <FileCode className="w-5 h-5 text-amber-600" />;
+    if (['zip', 'rar', '7z'].includes(ext)) return <FileArchive className="w-5 h-5 text-purple-600" />;
+    return <FileText className="w-5 h-5 text-slate-500" />;
+  }, []);
+
+  const handlePreviewSubmissionFile = useCallback((sub) => {
+    if (!sub?.fileUrl) {
+      showToast('Không tìm thấy đường dẫn tệp tài liệu', 'error');
+      return;
+    }
+    const fullUrl = getFileUrl(sub.fileUrl);
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  }, [showToast]);
+
+  const handleDownloadSubmissionFile = useCallback((e, doc) => {
+    e.stopPropagation();
+    if (!doc?.fileUrl) {
+      showToast('Không tìm thấy đường dẫn tệp tài liệu để tải về', 'error');
+      return;
+    }
+    const fullUrl = getFileUrl(doc.fileUrl);
+    const link = document.createElement('a');
+    link.href = fullUrl;
+    link.setAttribute('download', doc.fileName || 'file-nop-khoa-luan');
+    link.setAttribute('target', '_blank');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [showToast]);
+
+  const handleOpenSubmissionModal = useCallback(async (thesis) => {
+    setSubmissionModalThesis(thesis);
+    setSubmissionModalOpen(true);
+
+    if (submissionCache[thesis._id]) {
+      setModalSubmissions(submissionCache[thesis._id]);
+    } else {
+      setModalSubmissions([]);
+    }
+
+    setLoadingModalSubmissions(true);
+    try {
+      const res = await thesisDocumentApi.getLecturerSubmissions({ thesisId: thesis._id });
+      if (res?.success && Array.isArray(res.data)) {
+        setModalSubmissions(res.data);
+        setSubmissionCache((prev) => ({ ...prev, [thesis._id]: res.data }));
+        setSubmissionCounts((prev) => ({ ...prev, [thesis._id]: res.data.length }));
+      } else {
+        setModalSubmissions([]);
+      }
+    } catch (err) {
+      console.warn('Error fetching submissions for modal:', err);
+      showToast('Không thể tải danh sách file nộp', 'error');
+    } finally {
+      setLoadingModalSubmissions(false);
+    }
+  }, [submissionCache, showToast]);
+
+  // Fetch file submission counts for all theses
+  useEffect(() => {
+    if (!theses || theses.length === 0) {
+      setSubmissionCounts({});
+      return;
+    }
+
+    let isMounted = true;
+    const fetchCounts = async () => {
+      try {
+        const counts = {};
+        const cache = {};
+        await Promise.all(
+          theses.map(async (t) => {
+            try {
+              const res = await thesisDocumentApi.getLecturerSubmissions({ thesisId: t._id });
+              if (res?.success && Array.isArray(res.data)) {
+                counts[t._id] = res.data.length;
+                cache[t._id] = res.data;
+              } else {
+                counts[t._id] = 0;
+                cache[t._id] = [];
+              }
+            } catch {
+              counts[t._id] = 0;
+              cache[t._id] = [];
+            }
+          })
+        );
+        if (isMounted) {
+          setSubmissionCounts(counts);
+          setSubmissionCache((prev) => ({ ...prev, ...cache }));
+        }
+      } catch (err) {
+        console.warn('Could not load submission counts:', err);
+      }
+    };
+
+    fetchCounts();
+    return () => {
+      isMounted = false;
+    };
+  }, [theses]);
+
+  // ==========================================
   // FILTERED THESES (CLIENT FILTER TABS)
   // ==========================================
   const filteredTheses = useMemo(() => {
@@ -531,35 +680,6 @@ const TbmThesisEvaluationManagement = () => {
     });
   }, [theses, statusFilter, getThesisScoreInfo]);
 
-  // ==========================================
-  // COMPUTED STATS FOR TOP STATS CARDS
-  // ==========================================
-  const computedStats = useMemo(() => {
-    const totalEligible = theses.length;
-    let pendingGradeCount = 0;
-    let gradedCount = 0;
-    let completedCount = 0;
-
-    theses.forEach((item) => {
-      const info = getThesisScoreInfo(item);
-      if (item.status === 'COMPLETED') {
-        completedCount += 1;
-      }
-      if (info.finalScore !== null) {
-        gradedCount += 1;
-      }
-      if (!info.hasHD || !info.hasPB || !info.hasCouncil) {
-        pendingGradeCount += 1;
-      }
-    });
-
-    return {
-      totalEligible,
-      pendingGradeCount,
-      gradedCount,
-      completedCount,
-    };
-  }, [theses, getThesisScoreInfo]);
 
   // ==========================================
   // TAB 1 ACTIONS
@@ -701,15 +821,36 @@ const TbmThesisEvaluationManagement = () => {
     setPublishModalOpen(true);
   };
 
-  const handleSavePublishedScores = async (selectedScores) => {
+  const handleSavePublishedScores = async (selectedScores, targetThesisIds = null) => {
     const termId = currentTerm?._id || 'default';
     const key = `tbm_published_scores_${termId}`;
     const updated = { ...publishedScores };
 
-    theses.forEach((t) => {
-      updated[t._id] = { ...selectedScores };
-    });
-    updated['GLOBAL_ALL'] = { ...selectedScores };
+    if (Array.isArray(targetThesisIds)) {
+      theses.forEach((t) => {
+        if (targetThesisIds.includes(t._id)) {
+          updated[t._id] = {
+            ...(updated[t._id] || {}),
+            ...selectedScores,
+          };
+        } else {
+          // If this thesis was unselected, remove publication for the newly selected components
+          const prev = updated[t._id] || {};
+          const nextScores = { ...prev };
+          Object.keys(selectedScores).forEach((k) => {
+            if (selectedScores[k]) {
+              nextScores[k] = false;
+            }
+          });
+          updated[t._id] = nextScores;
+        }
+      });
+    } else {
+      theses.forEach((t) => {
+        updated[t._id] = { ...selectedScores };
+      });
+      updated['GLOBAL_ALL'] = { ...selectedScores };
+    }
 
     setPublishedScores(updated);
     localStorage.setItem(key, JSON.stringify(updated));
@@ -722,9 +863,81 @@ const TbmThesisEvaluationManagement = () => {
       await thesisApi.publishScores({
         academicTermId: currentTerm?._id || '',
         selectedScores,
+        thesisIds: targetThesisIds,
       });
     } catch (err) {
       console.warn('Could not sync published scores to database:', err);
+    }
+  };
+
+  // Batch Availability of currently published scores for the Hide Scores Modal
+  const batchPublishedAvailability = useMemo(() => {
+    let hdPublished = 0;
+    let pb1Published = 0;
+    let councilPublished = 0;
+    let finalPublished = 0;
+
+    theses.forEach((t) => {
+      const pub = publishedScores[t._id] || t.publishedScores || {};
+      if (pub.supervisorScore) hdPublished++;
+      if (pub.reviewer1Score || pub.reviewerScore) pb1Published++;
+      if (pub.councilScore) councilPublished++;
+      if (pub.finalScore) finalPublished++;
+    });
+
+    const total = theses.length;
+    return {
+      totalTheses: total,
+      supervisorScore: { count: hdPublished, total },
+      reviewer1Score: { count: pb1Published, total },
+      councilScore: { count: councilPublished, total },
+      finalScore: { count: finalPublished, total },
+    };
+  }, [theses, publishedScores]);
+
+  const handleOpenHideBulkModal = () => {
+    setHideScoresModalOpen(true);
+  };
+
+  const handleHidePublishedScores = async (selectedScoresToHide, targetThesisIds) => {
+    const termId = currentTerm?._id || 'default';
+    const key = `tbm_published_scores_${termId}`;
+    const updated = { ...publishedScores };
+
+    if (Array.isArray(targetThesisIds) && targetThesisIds.length > 0) {
+      theses.forEach((t) => {
+        if (targetThesisIds.includes(t._id)) {
+          const prev = updated[t._id] || {};
+          const nextScores = { ...prev };
+          Object.keys(selectedScoresToHide).forEach((k) => {
+            if (selectedScoresToHide[k]) {
+              nextScores[k] = false;
+            }
+          });
+          updated[t._id] = nextScores;
+        }
+      });
+    }
+
+    setPublishedScores(updated);
+    localStorage.setItem(key, JSON.stringify(updated));
+    localStorage.setItem('tbm_published_scores_default', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+
+    try {
+      const hidePayload = {};
+      Object.keys(selectedScoresToHide).forEach((k) => {
+        if (selectedScoresToHide[k]) {
+          hidePayload[k] = false;
+        }
+      });
+      await thesisApi.publishScores({
+        academicTermId: currentTerm?._id || '',
+        selectedScores: hidePayload,
+        thesisIds: targetThesisIds,
+      });
+    } catch (err) {
+      console.warn('Could not sync hidden scores to database:', err);
     }
   };
 
@@ -940,14 +1153,301 @@ const TbmThesisEvaluationManagement = () => {
     }
   };
 
+  const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+
+  // Get KLTN Window Badge for current term
+  const getThesisWindowBadge = () => {
+    if (currentTerm?.thesis?.isRegistrationLocked) {
+      return { text: 'Đã khóa', color: 'bg-rose-100 text-rose-800', isLocked: true };
+    }
+    if (!currentTerm?.thesis?.registrationStart && !currentTerm?.thesis?.registrationEnd) {
+      return { text: 'Mở tự do', color: 'bg-slate-100 text-slate-700', isLocked: false };
+    }
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const start = currentTerm?.thesis?.registrationStart ? new Date(currentTerm.thesis.registrationStart) : null;
+    const end = currentTerm?.thesis?.registrationEnd ? new Date(currentTerm.thesis.registrationEnd) : null;
+    if (end) end.setHours(23, 59, 59, 999);
+
+    if (start && now < start) {
+      return { text: 'Sắp mở', color: 'bg-amber-100 text-amber-800', isLocked: false };
+    }
+    if (end && now > end) {
+      return { text: 'Hết hạn', color: 'bg-rose-100 text-rose-800', isLocked: true };
+    }
+    return { text: 'Đang mở', color: 'bg-emerald-100 text-emerald-800', isLocked: false };
+  };
+
+  const windowBadge = getThesisWindowBadge();
+
+  // Export table data (chỉ xuất các bản ghi đang hiển thị theo bộ lọc và từ khóa tìm kiếm)
+  const [exportingData, setExportingData] = useState(false);
+
+  const handleExportTableData = () => {
+    // 1. Nếu đang ở Tab EVALUATIONS (Tổng hợp Đánh giá KLTN)
+    if (mainTab === 'EVALUATIONS') {
+      const listToExport = filteredTheses || [];
+      if (!listToExport || listToExport.length === 0) {
+        showToast('Không có dữ liệu đề tài phù hợp để xuất file', 'info');
+        return;
+      }
+
+      try {
+        setExportingData(true);
+        const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+        const termName = currentTerm?.name ? `${currentTerm.name} - ${currentTerm.academicYear || ''}` : '';
+        const statusLabel = STATUS_OPTIONS.find((o) => o.value === statusFilter)?.label || 'Tất cả';
+
+        const escapeHtml = (str) => {
+          if (!str) return '';
+          return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+        };
+
+        let tableHtml = `
+          <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+          <head>
+            <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+            <style>
+              table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+              th { background-color: #123891; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; }
+              td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; }
+              .text-center { text-align: center; }
+              .text-left { text-align: left; }
+              .header-title { font-size: 14pt; font-weight: bold; color: #123891; text-align: center; }
+              .header-sub { font-size: 11pt; text-align: center; color: #475569; }
+            </style>
+          </head>
+          <body>
+            <table>
+              <tr><td colspan="16" class="header-title">BẢNG TỔNG HỢP ĐÁNH GIÁ KHÓA LUẬN TỐT NGHIỆP</td></tr>
+              ${termName ? `<tr><td colspan="16" class="header-sub">Học kỳ: ${escapeHtml(termName)}</td></tr>` : ''}
+              <tr><td colspan="16" class="header-sub">Bộ lọc trạng thái: ${escapeHtml(statusLabel)}${search ? ` | Từ khóa tìm kiếm: "${escapeHtml(search.trim())}"` : ''} (Số lượng: ${listToExport.length} đề tài)</td></tr>
+              <tr><td colspan="16"></td></tr>
+              <thead>
+                <tr>
+                  <th style="width: 50px;">STT</th>
+                  <th style="width: 320px;">Tên đề tài KLTN</th>
+                  <th style="width: 120px;">Loại đề tài</th>
+                  <th style="width: 180px;">Sinh viên 1</th>
+                  <th style="width: 110px;">MSSV 1</th>
+                  <th style="width: 180px;">Sinh viên 2</th>
+                  <th style="width: 110px;">MSSV 2</th>
+                  <th style="width: 180px;">GV Hướng Dẫn</th>
+                  <th style="width: 160px;">GVPB 1</th>
+                  <th style="width: 160px;">GVPB 2</th>
+                  <th style="width: 160px;">Hội đồng</th>
+                  <th style="width: 100px;">Điểm GVHD</th>
+                  <th style="width: 100px;">Điểm PB kín</th>
+                  <th style="width: 110px;">Điểm Hội đồng</th>
+                  <th style="width: 100px;">Tổng điểm</th>
+                  <th style="width: 120px;">Kết quả</th>
+                </tr>
+              </thead>
+              <tbody>
+        `;
+
+        listToExport.forEach((item, idx) => {
+          const isGroup = item.studentCount === 2 && Boolean(item.secondStudentId);
+          const s1 = getThesisScoreInfo(item, 1);
+          const s2 = isGroup ? getThesisScoreInfo(item, 2) : null;
+
+          const sv1Name = item.studentId?.userId?.fullName || item.studentId?.fullName || '-';
+          const sv1Code = item.studentId?.studentCode || '-';
+          const sv2Name = isGroup ? (item.secondStudentId?.userId?.fullName || item.secondStudentId?.fullName || '-') : '-';
+          const sv2Code = isGroup ? (item.secondStudentId?.studentCode || '-') : '-';
+
+          const supervisorName = item.supervisorId?.userId?.fullName || item.supervisorId?.fullName || '-';
+          const rev1Name = item.reviewer1Id?.userId?.fullName || item.reviewer1Id?.fullName || 'Chưa phân công';
+          const rev2Name = item.reviewer2Id?.userId?.fullName || item.reviewer2Id?.fullName || 'Chưa phân công';
+
+          const council = councilsMap[item._id] || s1.assignedCouncil;
+          const councilName = council ? (council.name || 'Hội đồng').replace(/\s*\([^)]*\)/g, '').trim() : 'Chưa phân công';
+
+          const formatColScore = (score1Val, score2Val) => {
+            if (score1Val === null || score1Val === undefined) return '-';
+            if (isGroup && score2Val !== null && score2Val !== undefined && score2Val !== score1Val) {
+              return `SV1: ${score1Val} | SV2: ${score2Val}`;
+            }
+            return String(score1Val);
+          };
+
+          const gvhdScore = formatColScore(s1.scoreHD, s2?.scoreHD);
+          const pbScore = formatColScore(s1.scorePB, s2?.scorePB);
+          const hdScore = formatColScore(s1.scoreCouncil, s2?.scoreCouncil);
+          const finalScore = formatColScore(s1.finalScore, s2?.finalScore);
+
+          let resultText = 'Đang thực hiện';
+          if (s1.isFailed || (s2 && s2.isFailed)) {
+            resultText = 'Rớt (FAIL)';
+          } else if (s1.isPassed) {
+            resultText = 'Đạt';
+          }
+
+          tableHtml += `
+            <tr>
+              <td class="text-center">${idx + 1}</td>
+              <td class="text-left">${escapeHtml(item.thesisTitle || '')}</td>
+              <td class="text-center">${isGroup ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}</td>
+              <td class="text-left">${escapeHtml(sv1Name)}</td>
+              <td class="text-center">${escapeHtml(sv1Code)}</td>
+              <td class="text-left">${escapeHtml(sv2Name)}</td>
+              <td class="text-center">${escapeHtml(sv2Code)}</td>
+              <td class="text-left">${escapeHtml(supervisorName)}</td>
+              <td class="text-left">${escapeHtml(rev1Name)}</td>
+              <td class="text-left">${escapeHtml(rev2Name)}</td>
+              <td class="text-left">${escapeHtml(councilName)}</td>
+              <td class="text-center">${escapeHtml(gvhdScore)}</td>
+              <td class="text-center">${escapeHtml(pbScore)}</td>
+              <td class="text-center">${escapeHtml(hdScore)}</td>
+              <td class="text-center">${escapeHtml(finalScore)}</td>
+              <td class="text-center">${escapeHtml(resultText)}</td>
+            </tr>
+          `;
+        });
+
+        tableHtml += `
+              </tbody>
+            </table>
+          </body>
+          </html>
+        `;
+
+        const blob = new Blob(['\uFEFF' + tableHtml], {
+          type: 'application/vnd.ms-excel;charset=utf-8',
+        });
+        const filename = `Bang_tong_hop_danh_gia_KLTN_${termCode}.xls`;
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        showToast(`Xuất bảng tổng hợp đánh giá thành công (${listToExport.length} đề tài)!`, 'success');
+      } catch (err) {
+        console.error('Export error:', err);
+        showToast('Không thể xuất file. Vui lòng thử lại.', 'error');
+      } finally {
+        setExportingData(false);
+      }
+    } else if (mainTab === 'CRITERIA') {
+      const listToExport = criteria || [];
+      if (!listToExport || listToExport.length === 0) {
+        showToast('Không có dữ liệu tiêu chí để xuất file', 'info');
+        return;
+      }
+      try {
+        setExportingData(true);
+        const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+        let tableHtml = `
+          <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+          <head><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"></head><body>
+          <table border="1">
+            <thead>
+              <tr style="background:#123891;color:#fff;">
+                <th>STT</th>
+                <th>Tên tiêu chí đánh giá</th>
+                <th>Điểm tối đa</th>
+                <th>Trọng số (%)</th>
+                <th>Thứ tự</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        listToExport.forEach((c, idx) => {
+          tableHtml += `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${c.name || ''}</td>
+              <td>${c.maxScore ?? ''}</td>
+              <td>${c.weight ? c.weight + '%' : ''}</td>
+              <td>${c.order ?? ''}</td>
+              <td>${c.isActive ? 'Đang áp dụng' : 'Tạm ngưng'}</td>
+            </tr>
+          `;
+        });
+        tableHtml += `</tbody></table></body></html>`;
+        const blob = new Blob(['\uFEFF' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const filename = `Danh_sach_tieu_chi_danh_gia_${termCode}.xls`;
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        showToast('Xuất danh sách tiêu chí thành công!', 'success');
+      } finally {
+        setExportingData(false);
+      }
+    } else if (mainTab === 'GRADING_PERIODS') {
+      const listToExport = gradingPeriods || [];
+      if (!listToExport || listToExport.length === 0) {
+        showToast('Không có dữ liệu đợt nhập điểm để xuất file', 'info');
+        return;
+      }
+      try {
+        setExportingData(true);
+        const termCode = currentTerm?.code ? currentTerm.code.replace(/[^a-zA-Z0-9_-]/g, '_') : 'HocKy';
+        let tableHtml = `
+          <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+          <head><meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8"></head><body>
+          <table border="1">
+            <thead>
+              <tr style="background:#123891;color:#fff;">
+                <th>STT</th>
+                <th>Tên đợt nhập điểm</th>
+                <th>Thời gian bắt đầu</th>
+                <th>Thời gian kết thúc</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+        `;
+        listToExport.forEach((p, idx) => {
+          tableHtml += `
+            <tr>
+              <td>${idx + 1}</td>
+              <td>${p.name || ''}</td>
+              <td>${p.startDate ? new Date(p.startDate).toLocaleString('vi-VN') : ''}</td>
+              <td>${p.endDate ? new Date(p.endDate).toLocaleString('vi-VN') : ''}</td>
+              <td>${p.computedStatus === 'ACTIVE' ? 'Đang diễn ra' : (p.computedStatus === 'UPCOMING' ? 'Sắp diễn ra' : 'Đã kết thúc')}</td>
+            </tr>
+          `;
+        });
+        tableHtml += `</tbody></table></body></html>`;
+        const blob = new Blob(['\uFEFF' + tableHtml], { type: 'application/vnd.ms-excel;charset=utf-8' });
+        const filename = `Danh_sach_dot_nhap_diem_${termCode}.xls`;
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        showToast('Xuất danh sách đợt nhập điểm thành công!', 'success');
+      } finally {
+        setExportingData(false);
+      }
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Top Banner */}
       <div className="p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-5">
           <div className="flex items-center gap-3.5 sm:gap-4">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
-              <Award className="w-6 h-6 sm:w-7 sm:h-7" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
+              <GraduationCap className="w-6 h-6 sm:w-7 sm:h-7" />
             </div>
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
@@ -956,22 +1456,43 @@ const TbmThesisEvaluationManagement = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5 self-end md:self-auto">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center md:justify-end gap-2.5 w-full md:w-auto">
+            {/* Configure KLTN Timeline Button */}
             <button
-              onClick={() => {
-                if (mainTab === 'EVALUATIONS') {
-                  loadLocalMappings();
-                  fetchEvaluations();
-                } else if (mainTab === 'CRITERIA') {
-                  fetchCriteria();
-                } else if (mainTab === 'GRADING_PERIODS') {
-                  fetchGradingPeriods();
-                }
-              }}
-              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer"
-              title="Làm mới dữ liệu"
+              type="button"
+              disabled={!isTermActive}
+              onClick={() => setTimelineModalOpen(true)}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#102d7d] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!isTermActive ? 'Học kỳ đã đóng, không thể cấu hình thời gian' : 'Cấu hình thời gian mở cổng đăng ký, phân công & bảo vệ KLTN'}
             >
-              <RefreshCw className="w-4 h-4" />
+              <Clock className="w-3.5 h-3.5 text-[#123891] shrink-0" />
+              <span>Thời gian mở KLTN</span>
+              <span className={`px-1.5 py-0.5 text-[10px] font-bold rounded-md ${windowBadge.color} shrink-0`}>
+                {windowBadge.text}
+              </span>
+            </button>
+
+            {/* Quick Switch to KLTN Grading Periods Management */}
+            <button
+              type="button"
+              onClick={() => setMainTab('GRADING_PERIODS')}
+              className="inline-flex items-center justify-center sm:justify-start gap-1.5 px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer shadow-2xs w-full sm:w-auto shrink-0"
+              title="Quản lý đợt nhập điểm, tiêu chí đánh giá và bảng điểm KLTN"
+            >
+              <Award className="w-3.5 h-3.5 text-[#123891] shrink-0" />
+              <span>Thời gian nhập điểm KLTN</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleExportTableData}
+              disabled={exportingData}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer shrink-0"
+              title="Xuất file"
+              aria-label="Xuất file danh sách đang hiển thị"
+            >
+              <FileSpreadsheet className={`w-4 h-4 shrink-0 ${exportingData ? 'animate-bounce text-[#123891]' : ''}`} />
+              <span>Xuất file</span>
             </button>
           </div>
         </div>
@@ -1017,39 +1538,6 @@ const TbmThesisEvaluationManagement = () => {
             <span>3. Quản lý Thời gian Nhập điểm</span>
           </button>
         </div>
-
-        {/* Stats Grid (Only on EVALUATIONS tab) */}
-        {mainTab === 'EVALUATIONS' && (
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3 mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-slate-100">
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
-              <div className="text-[10.5px] sm:text-[11px] text-[#123891] font-semibold leading-tight">Đủ điều kiện hội đồng</div>
-              <div className="text-base sm:text-lg font-bold text-[#123891] font-mono mt-0.5">
-                {computedStats.totalEligible}
-              </div>
-            </div>
-
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
-              <div className="text-[10.5px] sm:text-[11px] text-[#123891] font-semibold leading-tight">Chờ chấm điểm</div>
-              <div className="text-base sm:text-lg font-bold text-[#123891] font-mono mt-0.5">
-                {computedStats.pendingGradeCount}
-              </div>
-            </div>
-
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
-              <div className="text-[10.5px] sm:text-[11px] text-[#123891] font-semibold leading-tight">Đã có điểm tổng kết</div>
-              <div className="text-base sm:text-lg font-bold text-[#123891] font-mono mt-0.5">
-                {computedStats.gradedCount}
-              </div>
-            </div>
-
-            <div className="p-3 sm:p-3.5 rounded-2xl bg-[#123891]/5 border border-[#123891]/20">
-              <div className="text-[10.5px] sm:text-[11px] text-[#123891] font-semibold leading-tight">Đã hoàn tất bảo vệ</div>
-              <div className="text-base sm:text-lg font-bold text-[#123891] font-mono mt-0.5">
-                {computedStats.completedCount}
-              </div>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ========================================== */}
@@ -1057,9 +1545,10 @@ const TbmThesisEvaluationManagement = () => {
       {/* ========================================== */}
       {mainTab === 'EVALUATIONS' && (
         <div className="space-y-4">
-          {/* Search Bar & Action */}
-          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
-            <div className="w-full flex-1 sm:max-w-md">
+          {/* Search Bar, Action Buttons & Semester Filter */}
+          <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+            {/* Search Input on the left */}
+            <div className="w-full lg:w-80 xl:w-96 shrink-0">
               <SearchInput
                 value={search}
                 onChange={(val) => setSearch(val)}
@@ -1067,17 +1556,61 @@ const TbmThesisEvaluationManagement = () => {
               />
             </div>
 
-            {/* Nút Công bố điểm tất cả đề tài */}
-            <button
-              type="button"
-              onClick={handleOpenPublishAllModal}
-              className="w-full sm:w-auto justify-center inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer shrink-0"
-              title="Công bố điểm hướng dẫn, phản biện, hội đồng đồng loạt cho các đề tài"
-            >
-              <Send className="w-3.5 h-3.5 shrink-0" />
-              <span>Công bố điểm tất cả đề tài</span>
-            </button>
+            {/* Right side controls: Action buttons & Far-Right Semester Selector */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto justify-start lg:justify-end flex-wrap">
+              {/* Nút Ẩn công bố điểm */}
+              <button
+                type="button"
+                disabled={!isTermActive}
+                onClick={handleOpenHideBulkModal}
+                className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 border border-slate-200 font-bold text-xs rounded-xl shadow-2xs hover:shadow-xs transition cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!isTermActive ? 'Học kỳ đã đóng, không thể thao tác' : 'Mở hộp thoại ẩn các điểm đã công bố cho sinh viên'}
+              >
+                <EyeOff className="w-3.5 h-3.5" />
+                <span>Ẩn điểm đã công bố</span>
+              </button>
+
+              {/* Nút Công bố điểm */}
+              <button
+                type="button"
+                disabled={!isTermActive}
+                onClick={handleOpenPublishAllModal}
+                className="w-full sm:w-auto justify-center inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-xl shadow-xs transition cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!isTermActive ? 'Học kỳ đã đóng, không thể thao tác' : 'Công bố điểm hướng dẫn, phản biện, hội đồng đồng loạt cho các đề tài'}
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Công bố điểm</span>
+              </button>
+
+              {/* Semester Dropdown Filter (All the way to the far right side) */}
+              <select
+                value={currentTerm?._id || ''}
+                onChange={(e) => {
+                  if (setCurrentTerm && e.target.value) {
+                    setCurrentTerm(e.target.value);
+                  }
+                }}
+                className="w-full sm:w-auto min-w-[210px] py-2.5 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer shrink-0"
+              >
+                {Array.isArray(terms) &&
+                  terms.map((t) => (
+                    <option key={t._id} value={t._id}>
+                      {t.name} ({t.academicYear}) {t.status === 'ACTIVE' ? '• Đang diễn ra' : '• Đã đóng'}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
+
+          {/* Closed term notice banner */}
+          {!isTermActive && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-2.5 text-xs text-amber-900">
+              <Lock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Học kỳ đã đóng ({currentTerm?.name || 'Học kỳ cũ'}):</strong> Dữ liệu đánh giá KLTN đã được khóa và chỉ cho phép xem chi tiết. Các thao tác công bố, ẩn điểm và sửa đổi đã bị vô hiệu hóa.
+              </span>
+            </div>
+          )}
 
           {/* Cụm tab lọc trạng thái - 1 hàng cuộn ngang mượt mà */}
           <div className="w-full overflow-x-auto no-scrollbar scroll-smooth pb-1">
@@ -1123,6 +1656,7 @@ const TbmThesisEvaluationManagement = () => {
                       <th className="py-3.5 px-4">Tên đề tài KLTN</th>
                       <th className="py-3.5 px-4">Sinh viên thực hiện</th>
                       <th className="py-3.5 px-4">Điều kiện GVHD</th>
+                      <th className="py-3.5 px-4 text-center whitespace-nowrap min-w-[130px]">File nộp</th>
                       <th className="py-3.5 px-4">Giảng viên Khóa Luận</th>
                       <th className="py-3.5 px-4">Bảng điểm thành phần</th>
                       <th className="py-3.5 px-4">Điểm Tổng Kết</th>
@@ -1291,7 +1825,7 @@ const TbmThesisEvaluationManagement = () => {
                                 <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                                 <span>FAIL (K.Đạt)</span>
                               </span>
-                              {!isCompleted && (
+                              {!isCompleted && isTermActive && (
                                 <button
                                   type="button"
                                   onClick={() => handleRequestUnfailStudent(item, studentIndex, studentName || `Sinh viên ${studentIndex}`)}
@@ -1395,6 +1929,35 @@ const TbmThesisEvaluationManagement = () => {
                                 <span>Chưa đánh giá</span>
                               </span>
                             )}
+                          </td>
+
+                          {/* File nộp Column */}
+                          <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                            {submissionCounts[item._id] === undefined ? (
+                              <div className="flex items-center justify-center gap-1 text-[11px] text-slate-400">
+                                <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
+                                <span>Đang tải...</span>
+                              </div>
+                            ) : submissionCounts[item._id] > 0 ? (
+                              <span className="text-xs font-semibold text-slate-800">
+                                Đã nộp <span className="font-bold text-[#123891]">{submissionCounts[item._id]}</span> file
+                              </span>
+                            ) : (
+                              <span className="text-xs text-slate-400 italic">
+                                Chưa nộp file
+                              </span>
+                            )}
+                            <div className="mt-1">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSubmissionModal(item)}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#123891] hover:text-[#0d2a75] hover:underline cursor-pointer transition"
+                                title="Xem chi tiết danh sách file nộp"
+                              >
+                                <span>Xem chi tiết</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </button>
+                            </div>
                           </td>
 
                           {/* Giảng viên Khóa Luận */}
@@ -1527,7 +2090,7 @@ const TbmThesisEvaluationManagement = () => {
                               </button>
 
 {/* Xác nhận hoàn tất button */}
-                              {!isCompleted && isFullyGraded && (
+                              {!isCompleted && isFullyGraded && isTermActive && (
                                 <button
                                   type="button"
                                   onClick={() => {
@@ -1708,7 +2271,7 @@ const TbmThesisEvaluationManagement = () => {
                               <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
                               <span>FAIL (K.Đạt)</span>
                             </span>
-                            {!isCompleted && (
+                            {!isCompleted && isTermActive && (
                               <button
                                 type="button"
                                 onClick={() => handleRequestUnfailStudent(item, studentIndex, studentName || `Sinh viên ${studentIndex}`)}
@@ -1791,6 +2354,33 @@ const TbmThesisEvaluationManagement = () => {
                               <span className="text-[11px] font-mono text-slate-400">({item.secondStudentId?.studentCode})</span>
                             </div>
                           )}
+                        </div>
+
+                        {/* File nộp (Mobile) */}
+                        <div className="ml-8.5 p-2.5 bg-slate-50/70 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-medium uppercase">File nộp:</span>
+                            {submissionCounts[item._id] === undefined ? (
+                              <span className="text-[11px] text-slate-400 italic flex items-center gap-1">
+                                <RefreshCw className="w-2.5 h-2.5 animate-spin text-[#123891]" />
+                                Đang tải...
+                              </span>
+                            ) : submissionCounts[item._id] > 0 ? (
+                              <span className="font-semibold text-slate-800">
+                                Đã nộp <strong className="text-[#123891]">{submissionCounts[item._id]}</strong> file
+                              </span>
+                            ) : (
+                              <span className="text-slate-400 italic">Chưa nộp file</span>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenSubmissionModal(item)}
+                            className="inline-flex items-center gap-1 text-[11px] font-bold text-[#123891] hover:underline cursor-pointer"
+                          >
+                            <span>Xem chi tiết</span>
+                            <ExternalLink className="w-3 h-3" />
+                          </button>
                         </div>
 
                         {/* Lecturers */}
@@ -1893,7 +2483,7 @@ const TbmThesisEvaluationManagement = () => {
                             <span>Chi tiết</span>
                           </button>
 
-                          {!isCompleted && isFullyGraded && (
+                          {!isCompleted && isFullyGraded && isTermActive && (
                             <button
                               type="button"
                               onClick={() => {
@@ -1934,8 +2524,10 @@ const TbmThesisEvaluationManagement = () => {
 
             <button
               type="button"
+              disabled={!isTermActive}
               onClick={() => handleOpenCriteriaModal()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!isTermActive ? 'Học kỳ đã đóng, không thể thêm tiêu chí' : 'Thêm tiêu chí mới'}
             >
               <Plus className="w-4 h-4" />
               <span>Thêm tiêu chí mới</span>
@@ -1995,11 +2587,14 @@ const TbmThesisEvaluationManagement = () => {
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <button
                             type="button"
+                            disabled={!isTermActive}
                             onClick={() => handleToggleCriteriaActive(crit)}
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition cursor-pointer border ${
-                              crit.isActive
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200'
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold transition border ${
+                              !isTermActive
+                                ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-500 border-slate-200'
+                                : crit.isActive
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100 cursor-pointer'
+                                : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200 cursor-pointer'
                             }`}
                           >
                             <span
@@ -2011,24 +2606,30 @@ const TbmThesisEvaluationManagement = () => {
                           </button>
                         </td>
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenCriteriaModal(crit)}
-                              className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#123891] rounded-lg transition cursor-pointer"
-                              title="Sửa tiêu chí"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteCriteria(crit)}
-                              className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
-                              title="Xóa tiêu chí"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </div>
+                          {isTermActive ? (
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleOpenCriteriaModal(crit)}
+                                className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#123891] rounded-lg transition cursor-pointer"
+                                title="Sửa tiêu chí"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteCriteria(crit)}
+                                className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
+                                title="Xóa tiêu chí"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <span className="p-1 text-slate-300" title="Học kỳ đã đóng">
+                              <Lock className="w-3.5 h-3.5" />
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -2058,9 +2659,10 @@ const TbmThesisEvaluationManagement = () => {
             <div className="flex items-center gap-2">
               <button
                 type="button"
+                disabled={!isTermActive}
                 onClick={() => setProcessFailDialogOpen(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-2xl border border-rose-200 transition cursor-pointer"
-                title="Quét và đánh dấu FAIL cho sinh viên quá hạn"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-2xl border border-rose-200 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!isTermActive ? 'Học kỳ đã đóng, không thể xử lý' : 'Quét và đánh dấu FAIL cho sinh viên quá hạn'}
               >
                 <ShieldAlert className="w-4 h-4 text-rose-600" />
                 <span>Xử lý sinh viên quá hạn</span>
@@ -2068,8 +2670,10 @@ const TbmThesisEvaluationManagement = () => {
 
               <button
                 type="button"
+                disabled={!isTermActive}
                 onClick={() => handleOpenPeriodModal()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#123891] hover:bg-[#102d7d] text-white font-bold text-xs rounded-2xl shadow-sm transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                title={!isTermActive ? 'Học kỳ đã đóng, không thể tạo đợt mới' : 'Tạo đợt nhập điểm mới'}
               >
                 <Plus className="w-4 h-4" />
                 <span>Tạo đợt nhập điểm mới</span>
@@ -2175,24 +2779,30 @@ const TbmThesisEvaluationManagement = () => {
                           </td>
 
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() => handleOpenPeriodModal(period)}
-                                className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#123891] rounded-lg transition cursor-pointer"
-                                title="Sửa đợt nhập điểm"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleDeletePeriod(period)}
-                                className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
-                                title="Xóa đợt nhập điểm"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
+                            {isTermActive ? (
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenPeriodModal(period)}
+                                  className="p-1.5 hover:bg-slate-100 text-slate-600 hover:text-[#123891] rounded-lg transition cursor-pointer"
+                                  title="Sửa đợt nhập điểm"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeletePeriod(period)}
+                                  className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition cursor-pointer"
+                                  title="Xóa đợt nhập điểm"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
+                            ) : (
+                              <span className="p-1 text-slate-300" title="Học kỳ đã đóng">
+                                <Lock className="w-3.5 h-3.5" />
+                              </span>
+                            )}
                           </td>
                         </tr>
                       );
@@ -2215,12 +2825,32 @@ const TbmThesisEvaluationManagement = () => {
           setPublishTargetThesis(null);
         }}
         isAll={!publishTargetThesis}
+        theses={theses}
         thesesCount={theses.length}
+        submissionCounts={submissionCounts}
+        getThesisScoreInfo={getThesisScoreInfo}
         thesis={publishTargetThesis}
         scoreInfo={publishTargetThesis ? getThesisScoreInfo(publishTargetThesis) : null}
         batchScoreAvailability={batchScoreAvailability}
         publishedScores={publishedScores}
         onPublishScores={handleSavePublishedScores}
+        onViewDetails={handleOpenSubmissionModal}
+      />
+
+      {/* ========================================== */}
+      {/* MODAL: HIDE PUBLISHED SCORES */}
+      {/* ========================================== */}
+      <HideScoresModal
+        isOpen={hideScoresModalOpen}
+        onClose={() => setHideScoresModalOpen(false)}
+        theses={theses}
+        thesesCount={theses.length}
+        submissionCounts={submissionCounts}
+        getThesisScoreInfo={getThesisScoreInfo}
+        batchPublishedAvailability={batchPublishedAvailability}
+        publishedScores={publishedScores}
+        onHideScores={handleHidePublishedScores}
+        onViewDetails={handleOpenSubmissionModal}
       />
 
       {/* ========================================== */}
@@ -2687,6 +3317,207 @@ const TbmThesisEvaluationManagement = () => {
         );
       })()}
 
+      {/* ========================================== */}
+      {/* MODAL: SUBMITTED FILES DETAIL POPUP */}
+      {/* ========================================== */}
+      <Modal
+        isOpen={submissionModalOpen}
+        onClose={() => {
+          setSubmissionModalOpen(false);
+          setSubmissionModalThesis(null);
+        }}
+        title="Chi Tiết File Nộp Khóa Luận"
+        maxWidth="max-w-2xl"
+      >
+        {submissionModalThesis && (
+          <div className="space-y-4 text-xs">
+            {/* Header Thesis Summary Card */}
+            <div className="p-3.5 bg-blue-50/50 rounded-2xl border border-blue-100/80">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-[#123891]/10 flex items-center justify-center shrink-0 mt-0.5 text-[#123891]">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[10px] font-bold text-[#102d7d] uppercase tracking-wider">
+                    Đề tài khóa luận
+                  </div>
+                  <h4 className="font-bold text-slate-900 text-sm mt-0.5 leading-snug">
+                    {submissionModalThesis.thesisTitle}
+                  </h4>
+                  <div className="mt-2.5 pt-2 border-t border-blue-100/80 grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                    <div>
+                      <span className="text-slate-400">Sinh viên:</span>{' '}
+                      <span className="font-semibold text-slate-800">
+                        {submissionModalThesis.studentId?.userId?.fullName || '—'}
+                        {submissionModalThesis.studentId?.studentCode ? ` (${submissionModalThesis.studentId.studentCode})` : ''}
+                      </span>
+                      {submissionModalThesis.secondStudentId && (
+                        <div className="text-slate-700 mt-0.5">
+                          <span className="text-slate-400">SV2:</span>{' '}
+                          <span className="font-semibold text-slate-800">
+                            {submissionModalThesis.secondStudentId?.userId?.fullName || '—'}
+                            {submissionModalThesis.secondStudentId?.studentCode ? ` (${submissionModalThesis.secondStudentId.studentCode})` : ''}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="text-slate-400">GVHD:</span>{' '}
+                      <span className="font-semibold text-slate-800">
+                        {submissionModalThesis.supervisorId?.userId?.fullName || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Scores Summary inside File Detail Modal */}
+                  {(() => {
+                    const info1 = getThesisScoreInfo(submissionModalThesis, 1);
+                    const isGroup = submissionModalThesis.studentCount === 2 && Boolean(submissionModalThesis.secondStudentId);
+                    const info2 = isGroup ? getThesisScoreInfo(submissionModalThesis, 2) : null;
+                    return (
+                      <div className="mt-2.5 pt-2 border-t border-blue-100/80">
+                        <div className="text-[10px] font-bold text-[#102d7d] uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+                          <Award className="w-3.5 h-3.5 text-[#123891]" />
+                          <span>Điểm số đánh giá</span>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-[11px]">
+                          <div className="p-2 rounded-xl bg-white/90 border border-blue-100 text-center shadow-2xs">
+                            <span className="text-[10px] text-slate-400 block font-sans">GVHD (50%)</span>
+                            <span className="font-bold text-[#123891] text-xs">
+                              {isGroup ? `${info1?.scoreHD ?? '—'} / ${info2?.scoreHD ?? '—'}` : (info1?.scoreHD ?? '—')}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-white/90 border border-blue-100 text-center shadow-2xs">
+                            <span className="text-[10px] text-slate-400 block font-sans">PB Kín (30%)</span>
+                            <span className="font-bold text-indigo-700 text-xs">
+                              {isGroup ? `${info1?.scorePB ?? '—'} / ${info2?.scorePB ?? '—'}` : (info1?.scorePB ?? '—')}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-white/90 border border-blue-100 text-center shadow-2xs">
+                            <span className="text-[10px] text-slate-400 block font-sans">Hội đồng (20%)</span>
+                            <span className="font-bold text-amber-700 text-xs">
+                              {isGroup ? `${info1?.scoreCouncil ?? '—'} / ${info2?.scoreCouncil ?? '—'}` : (info1?.scoreCouncil ?? '—')}
+                            </span>
+                          </div>
+                          <div className="p-2 rounded-xl bg-white/90 border border-blue-100 text-center shadow-2xs">
+                            <span className="text-[10px] text-slate-400 block font-sans">Tổng kết (100%)</span>
+                            <span className="font-bold text-emerald-700 text-xs">
+                              {isGroup ? `${info1?.finalScore ?? '—'} / ${info2?.finalScore ?? '—'}` : (info1?.finalScore ?? '—')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Submissions Section Header */}
+            <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-[#123891]" />
+                <span className="font-bold text-xs text-[#123891] uppercase tracking-wider">
+                  Danh sách file đã nộp ({modalSubmissions.length})
+                </span>
+              </div>
+            </div>
+
+            {/* Submissions Content */}
+            {loadingModalSubmissions ? (
+              <div className="py-8 flex items-center justify-center gap-2 text-xs text-slate-500 font-medium">
+                <RefreshCw className="w-4 h-4 animate-spin text-[#123891]" />
+                <span>Đang tải danh sách file nộp...</span>
+              </div>
+            ) : modalSubmissions.length === 0 ? (
+              <div className="p-8 rounded-2xl bg-white border border-dashed border-slate-200 text-center">
+                <Paperclip className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                <p className="text-xs font-semibold text-slate-600">Chưa có file nào do sinh viên nộp cho đề tài này</p>
+                <p className="text-[11px] text-slate-400 mt-1 max-w-sm mx-auto">
+                  Các tài liệu báo cáo, mã nguồn hoặc sản phẩm do sinh viên tải lên sẽ hiển thị tại đây khi hoàn thành nộp bài.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                {modalSubmissions.map((sub, sIdx) => {
+                  const studentName =
+                    sub.studentId?.userId?.fullName || sub.uploadedBy?.fullName || 'Sinh viên';
+                  const studentCode = sub.studentId?.studentCode;
+                  return (
+                    <div
+                      key={sub._id || sIdx}
+                      className="p-3 bg-white rounded-xl border border-slate-200/80 hover:border-blue-200 hover:shadow-2xs transition flex items-center justify-between gap-3 group"
+                    >
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-blue-50 transition">
+                          {getSubmissionFileIcon(sub.fileName)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div
+                            className="text-xs font-bold text-slate-800 hover:text-[#123891] truncate cursor-pointer transition"
+                            onClick={() => handlePreviewSubmissionFile(sub)}
+                            title={sub.fileName}
+                          >
+                            {sub.fileName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-0.5">
+                            <span className="font-mono text-slate-500 font-medium">{formatFileSize(sub.fileSize)}</span>
+                            <span>•</span>
+                            <span>{formatDateTime(sub.createdAt)}</span>
+                            <span>•</span>
+                            <span className="text-slate-600 font-medium">
+                              {studentName} {studentCode ? `(${studentCode})` : ''}
+                            </span>
+                          </div>
+                          {sub.description && (
+                            <div className="text-[11px] text-slate-500 italic mt-0.5 line-clamp-1" title={sub.description}>
+                              "{sub.description}"
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handlePreviewSubmissionFile(sub)}
+                          className="p-2 text-slate-500 hover:text-[#123891] hover:bg-blue-50 rounded-lg transition cursor-pointer"
+                          title="Xem / Mở file trong tab mới"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDownloadSubmissionFile(e, sub)}
+                          className="p-2 text-slate-500 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition cursor-pointer"
+                          title="Tải về file"
+                        >
+                          <Download className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Modal Footer */}
+            <div className="flex justify-end pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => {
+                  setSubmissionModalOpen(false);
+                  setSubmissionModalThesis(null);
+                }}
+                className="px-4 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
       {/* Unified Thesis Detail Modal */}
       <ThesisDetailModal
         isOpen={thesisDetailModalOpen}
@@ -2695,6 +3526,12 @@ const TbmThesisEvaluationManagement = () => {
           setSelectedThesisForDetail(null);
         }}
         thesis={selectedThesisForDetail}
+      />
+
+      {/* Thesis Timeline Configuration Modal */}
+      <ThesisTimelineModal
+        isOpen={timelineModalOpen}
+        onClose={() => setTimelineModalOpen(false)}
       />
     </div>
   );

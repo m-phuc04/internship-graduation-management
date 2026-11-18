@@ -18,7 +18,7 @@ import {
   RefreshCw,
   AlertCircle,
   HelpCircle,
-  ShieldCheck,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 const TbmLecturerFieldsPage = () => {
@@ -318,6 +318,100 @@ const TbmLecturerFieldsPage = () => {
     });
   };
 
+  const handleExportLecturers = () => {
+    if (!lecturers || lecturers.length === 0) {
+      showToast('Không có dữ liệu giảng viên để xuất file', 'info');
+      return;
+    }
+
+    try {
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      };
+
+      let tableHtml = `
+        <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+        <head>
+          <meta http-equiv="content-type" content="application/vnd.ms-excel; charset=UTF-8">
+          <style>
+            table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; }
+            th { background-color: #123891; color: #ffffff; font-weight: bold; text-align: center; border: 1px solid #cbd5e1; padding: 8px 10px; font-size: 11pt; }
+            td { border: 1px solid #cbd5e1; padding: 6px 10px; font-size: 10pt; vertical-align: middle; }
+            .text-center { text-align: center; }
+            .text-left { text-align: left; }
+            .header-title { font-size: 14pt; font-weight: bold; color: #123891; text-align: center; }
+            .header-sub { font-size: 11pt; text-align: center; color: #475569; }
+          </style>
+        </head>
+        <body>
+          <table>
+            <tr><td colspan="7" class="header-title">DANH SÁCH GIẢNG VIÊN VÀ LĨNH VỰC NGHIÊN CỨU</td></tr>
+            <tr><td colspan="7" class="header-sub">Tổng số: ${lecturers.length} giảng viên | Ngày xuất: ${new Date().toLocaleDateString('vi-VN')}</td></tr>
+            <tr><td colspan="7"></td></tr>
+            <thead>
+              <tr>
+                <th style="width: 50px;">STT</th>
+                <th style="width: 130px;">Mã giảng viên</th>
+                <th style="width: 220px;">Họ và tên</th>
+                <th style="width: 140px;">Học hàm / Học vị</th>
+                <th style="width: 240px;">Email</th>
+                <th style="width: 140px;">Vai trò</th>
+                <th style="width: 380px;">Lĩnh vực nghiên cứu</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+
+      lecturers.forEach((lec, idx) => {
+        const code = lec.lecturerCode || '';
+        const name = lec.userId?.fullName || 'Chưa cập nhật';
+        const title = lec.academicTitle || '';
+        const email = lec.userId?.email || '';
+        const role = lec.userId?.role === 'TBM' ? 'Trưởng bộ môn' : 'Giảng viên';
+        const fieldsStr = Array.isArray(lec.fields) && lec.fields.length > 0 ? lec.fields.join(', ') : 'Chưa cập nhật';
+
+        tableHtml += `
+          <tr>
+            <td class="text-center">${idx + 1}</td>
+            <td class="text-center">${escapeHtml(code)}</td>
+            <td class="text-left">${escapeHtml(name)}</td>
+            <td class="text-center">${escapeHtml(title)}</td>
+            <td class="text-left">${escapeHtml(email)}</td>
+            <td class="text-center">${escapeHtml(role)}</td>
+            <td class="text-left">${escapeHtml(fieldsStr)}</td>
+          </tr>
+        `;
+      });
+
+      tableHtml += `
+            </tbody>
+          </table>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\uFEFF' + tableHtml], {
+        type: 'application/vnd.ms-excel;charset=utf-8',
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Danh_sach_giang_vien_linh_vuc_${new Date().toISOString().slice(0, 10)}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Xuất danh sách giảng viên thành công!', 'success');
+    } catch (err) {
+      showToast(err.message || 'Lỗi khi xuất file', 'error');
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 p-6">
@@ -337,27 +431,11 @@ const TbmLecturerFieldsPage = () => {
             <Tag className="w-7 h-7" />
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-blue-50 text-[#123891] text-[11px] font-bold tracking-wide uppercase">
-              <ShieldCheck className="w-3.5 h-3.5 text-[#1B4DA1]" />
-              <span>Nghiệp Vụ Trưởng Bộ Môn</span>
-            </div>
-            <h1 className="text-xl font-black text-slate-900 mt-1">
+            <h1 className="text-xl font-bold text-slate-900">
               Quản Lý Lĩnh Vực Giảng Viên
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Phê duyệt đề xuất thay đổi lĩnh vực và quản lý danh mục lĩnh vực nghiên cứu của giảng viên
-            </p>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={fetchData}
-          className="self-start sm:self-auto p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition shadow-2xs cursor-pointer shrink-0"
-          title="Làm mới dữ liệu"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
       </div>
 
       {/* ============================================================== */}
@@ -602,6 +680,15 @@ const TbmLecturerFieldsPage = () => {
                 {lecturers.length}
               </span>
             </div>
+            <button
+              type="button"
+              onClick={handleExportLecturers}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold rounded-xl shadow-2xs transition cursor-pointer"
+              title="Xuất danh sách giảng viên ra Excel"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-slate-600" />
+              <span>Xuất file</span>
+            </button>
           </div>
 
           {/* Selection counter & bulk action */}
@@ -785,16 +872,13 @@ const TbmLecturerFieldsPage = () => {
 
           {/* Interactive Tag Container */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-700 uppercase tracking-wider text-[11px]">
-                Tag hệ thống ({allFields.length})
-              </span>
-              {selectedLecturerIds.length > 0 && (
+            {selectedLecturerIds.length > 0 && (
+              <div className="flex items-center justify-end text-xs">
                 <span className="text-slate-500">
                   Đang chọn: <strong className="text-slate-900">{activeTags.length}</strong> tag
                 </span>
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="flex flex-wrap gap-2 p-3 bg-slate-50/80 rounded-2xl border border-slate-200 max-h-80 overflow-y-auto">
               {allFields.map((field) => {
