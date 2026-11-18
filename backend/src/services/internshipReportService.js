@@ -513,10 +513,18 @@ const getReportsForLecturer = async (
   // Lọc theo Phân loại tài liệu đính kèm (Metadata thực tế trong DB)
   if (fileCategory && fileCategory.trim()) {
     const cat = fileCategory.trim();
-    if (cat === "Báo cáo tuần") {
-      // Đối với Báo cáo tuần: bao gồm các nhật ký có file đính kèm là Báo cáo tuần,
-      // hoặc các bản ghi nhật ký tuần (reportType: "WEEKLY") chưa bị gán loại tài liệu khác
+    if (cat === "Báo cáo thực tập") {
       andConditions.push({
+        $or: [
+          { reportType: "FINAL" },
+          { "file.category": "Báo cáo thực tập" },
+          { fileCategory: "Báo cáo thực tập" },
+          { category: "Báo cáo thực tập" },
+        ],
+      });
+    } else if (cat === "Báo cáo tuần") {
+      andConditions.push({
+        reportType: { $ne: "FINAL" },
         $or: [
           { "file.category": "Báo cáo tuần" },
           { fileCategory: "Báo cáo tuần" },
@@ -535,7 +543,7 @@ const getReportsForLecturer = async (
       });
     } else {
       andConditions.push({
-        "file.fileUrl": { $ne: null },
+        reportType: { $ne: "FINAL" },
         $or: [
           { "file.category": cat },
           { fileCategory: cat },
@@ -589,9 +597,25 @@ const getReportsForLecturer = async (
     })
     .lean();
 
+  const formattedReports = reports.map((rep) => {
+    if (rep.reportType === "FINAL") {
+      return {
+        ...rep,
+        fileCategory: rep.fileCategory || "Báo cáo thực tập",
+        file: rep.file
+          ? {
+              ...rep.file,
+              category: rep.file.category || "Báo cáo thực tập",
+            }
+          : rep.file,
+      };
+    }
+    return rep;
+  });
+
   return {
     lecturer,
-    data: reports,
+    data: formattedReports,
     pagination: {
       total,
       page: Number(page),
@@ -739,6 +763,11 @@ const getReportById = async (reportId, requestingUser) => {
         403,
       );
     }
+  }
+
+  if (report && report.reportType === "FINAL") {
+    if (!report.fileCategory) report.fileCategory = "Báo cáo thực tập";
+    if (report.file && !report.file.category) report.file.category = "Báo cáo thực tập";
   }
 
   return report;

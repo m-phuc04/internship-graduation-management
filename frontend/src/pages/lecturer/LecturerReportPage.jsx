@@ -95,7 +95,11 @@ const LecturerReportPage = () => {
 
       if (res.success) {
         setReports(res.data || []);
-        setPagination(res.pagination || null);
+        const pag = res.pagination || null;
+        setPagination(pag);
+        if (pag && pag.totalPages > 0 && page > pag.totalPages) {
+          setPage(pag.totalPages);
+        }
       }
     } catch (err) {
       showToast(err.message || 'Không thể tải danh sách báo cáo', 'error');
@@ -111,6 +115,20 @@ const LecturerReportPage = () => {
   const handleFilterChange = (setter, val) => {
     setter(val);
     setPage(1);
+  };
+
+  const getCategoryBadge = (report) => {
+    if (report.reportType === 'FINAL') {
+      return 'Báo cáo thực tập';
+    }
+    const cat = report.fileCategory || report.file?.category || report.category;
+    if (cat && cat !== 'Báo cáo tuần') {
+      return cat;
+    }
+    if (report.weekNumber) {
+      return `Tuần ${report.weekNumber}`;
+    }
+    return cat || (report.reportType === 'WEEKLY' ? 'Báo cáo tuần' : 'Nhật ký');
   };
 
   const formatDate = (d) => {
@@ -240,7 +258,7 @@ const LecturerReportPage = () => {
                     {/* Report Type */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
-                        {report.weekNumber ? `Tuần ${report.weekNumber}` : 'Nhật ký'}
+                        {getCategoryBadge(report)}
                       </span>
                     </td>
 
@@ -330,7 +348,7 @@ const LecturerReportPage = () => {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
-                      {report.weekNumber ? 'Tuần ' + report.weekNumber : 'Nhật ký'}
+                      {getCategoryBadge(report)}
                     </span>
                     <span className="text-[11px] text-slate-400 truncate">
                       {report.internshipId?.companyId?.name || 'Doanh nghiệp'}
@@ -362,9 +380,15 @@ const LecturerReportPage = () => {
         </>)}
 
         {/* Pagination */}
-        <div className="border-t border-slate-100 bg-slate-50/50 px-4">
-          <Pagination pagination={pagination} onPageChange={setPage} />
-        </div>
+        {pagination && pagination.total > 10 && (
+          <div className="border-t border-slate-100 bg-slate-50/50 px-4">
+            <Pagination
+              pagination={pagination}
+              onPageChange={setPage}
+              itemLabel="tài liệu"
+            />
+          </div>
+        )}
       </div>
 
       {/* Review Modal */}

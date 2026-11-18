@@ -1499,8 +1499,10 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
       fileUrl,
       mimeType: file.mimetype,
       size: file.size,
+      category: "Báo cáo thực tập",
       uploadedAt: new Date(),
     };
+    finalReport.fileCategory = "Báo cáo thực tập";
     finalReport.status = "SUBMITTED";
     finalReport.submittedAt = new Date();
     await finalReport.save();
@@ -1517,8 +1519,10 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
         fileUrl,
         mimeType: file.mimetype,
         size: file.size,
+        category: "Báo cáo thực tập",
         uploadedAt: new Date(),
       },
+      fileCategory: "Báo cáo thực tập",
       status: "SUBMITTED",
       submittedAt: new Date(),
     });
