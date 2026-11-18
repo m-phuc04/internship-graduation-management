@@ -9,7 +9,6 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import StudentReportModal from '../../components/reports/StudentReportModal';
 import StudentReportDetailModal from '../../components/reports/StudentReportDetailModal';
-import Student2ConfirmModal from '../../components/reports/Student2ConfirmModal';
 import ExportInternshipDiaryModal from '../../components/reports/ExportInternshipDiaryModal';
 import getFileUrl from '../../utils/fileUrlHelper';
 
@@ -85,9 +84,6 @@ const StudentReportPage = () => {
 
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [selectedReport, setSelectedReport] = useState(null);
-
-  const [confirmModalOpen, setConfirmModalOpen] = useState(false);
-  const [reportToConfirm, setReportToConfirm] = useState(null);
 
   const [exportModalOpen, setExportModalOpen] = useState(false);
 
@@ -306,11 +302,6 @@ const StudentReportPage = () => {
 
   const handleOpenUploadForWeek = (week) => {
     handleOpenCreateForWeek(week, null, true);
-  };
-
-  const handleOpenConfirm = (report) => {
-    setReportToConfirm(report);
-    setConfirmModalOpen(true);
   };
 
   const handleOpenDetail = (report) => {
@@ -608,7 +599,7 @@ const StudentReportPage = () => {
                         ) : status === 'SUBMITTED' || status === 'REVIEWING' ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-[#102d7d] border border-blue-200">
                             <CheckCircle2 className="w-3 h-3 text-blue-600" />
-                            <span>{hasStudent2 ? 'SV2 đã xác nhận • Đã gửi GVGS' : 'Đã nộp'}</span>
+                            <span>Đã nộp</span>
                           </span>
                         ) : status === 'WAITING_STUDENT_2' ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
@@ -833,18 +824,6 @@ const StudentReportPage = () => {
                           ) : null
                         )}
 
-                        {/* SV2 Xác nhận */}
-                        {report && report.status === 'WAITING_STUDENT_2' && isSV2 && !isLocked && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenConfirm(report)}
-                            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer text-xs"
-                          >
-                            <ShieldCheck className="w-3.5 h-3.5" />
-                            <span>Xác nhận</span>
-                          </button>
-                        )}
-
                         {/* Xem chi tiết */}
                         {report && (
                           <button
@@ -881,16 +860,6 @@ const StudentReportPage = () => {
         editingReport={editingReport}
         autoOpenFile={autoOpenFileForCreate}
         onCreated={fetchReports}
-      />
-
-      <Student2ConfirmModal
-        isOpen={confirmModalOpen}
-        onClose={() => {
-          setConfirmModalOpen(false);
-          setReportToConfirm(null);
-        }}
-        report={reportToConfirm}
-        onConfirmed={fetchReports}
       />
 
       <StudentReportDetailModal

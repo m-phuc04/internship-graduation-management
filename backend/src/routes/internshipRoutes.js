@@ -71,13 +71,6 @@ router.get(
   internshipController.getMyInternship,
 );
 
-// Get active companies for registration
-router.get(
-  "/active-companies",
-  authMiddleware,
-  internshipController.getActiveCompanies,
-);
-
 // Student: Register new internship
 router.post(
   "/",

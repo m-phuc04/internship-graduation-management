@@ -162,23 +162,6 @@ const getMyInternship = async (req, res, next) => {
 };
 
 // ====================
-// Get Active Companies for Dropdown Selection
-// ====================
-const getActiveCompanies = async (req, res, next) => {
-  try {
-    const companies = await internshipService.getActiveCompanies();
-
-    res.status(200).json({
-      success: true,
-      message: "Lấy danh sách doanh nghiệp thành công",
-      data: companies,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ====================
 // Get Internship By ID
 // ====================
 const getInternshipById = async (req, res, next) => {
@@ -519,7 +502,6 @@ export default {
   getMyInternship,
   getSupervisedInternships,
   getSupervisionDocument,
-  getActiveCompanies,
   getInternshipById,
   exportInternships,
   updateReportCycle,

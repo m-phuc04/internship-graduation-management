@@ -147,13 +147,7 @@ export const getLecturerSupervisedInternships = async (userId, academicTermId = 
   return internships.map((i) => {
     const s1Name = i.studentId?.userId?.fullName || "Sinh viên";
     const s1Code = i.studentId?.studentCode || "";
-    const s2Name = i.secondStudentId?.userId?.fullName;
-    const s2Code = i.secondStudentId?.studentCode;
-
-    let studentLabel = s1Code ? `${s1Name} (${s1Code})` : s1Name;
-    if (s2Name) {
-      studentLabel += ` & ${s2Code ? `${s2Name} (${s2Code})` : s2Name}`;
-    }
+    const studentLabel = s1Code ? `${s1Name} (${s1Code})` : s1Name;
 
     return {
       _id: i._id,

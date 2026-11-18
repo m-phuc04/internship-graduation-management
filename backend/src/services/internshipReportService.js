@@ -172,28 +172,12 @@ const createReport = async ({
     throw new AppError(`Báo cáo ${typeLabel} đã tồn tại cho đợt thực tập này`, 409);
   }
 
-  const hasStudent2 = !!internship.secondStudentId;
-  let initialStatus = "SUBMITTED";
-  let initialStudent2Status = "NOT_APPLICABLE";
-
-  if (status === "DRAFT") {
-    initialStatus = "DRAFT";
-    initialStudent2Status = hasStudent2 ? "PENDING" : "NOT_APPLICABLE";
-  } else {
-    // Submitting
-    if (hasStudent2) {
-      initialStatus = "WAITING_STUDENT_2";
-      initialStudent2Status = "PENDING";
-    } else {
-      initialStatus = "SUBMITTED";
-      initialStudent2Status = "NOT_APPLICABLE";
-    }
-  }
+  const initialStatus = status === "DRAFT" ? "DRAFT" : "SUBMITTED";
 
   const report = await InternshipReport.create({
     internshipId,
     studentId: student._id,
-    secondStudentId: internship.secondStudentId?._id || null,
+    secondStudentId: null,
     reportType,
     title: title ? title.trim() : `Nhật ký tuần ${validWeek}`,
     content: content || null,
@@ -204,24 +188,12 @@ const createReport = async ({
     file: file || null,
     fileCategory: file?.category || fileCategory || (reportType === "WEEKLY" ? "Báo cáo tuần" : null),
     status: initialStatus,
-    student2Status: initialStudent2Status,
-    submittedAt: initialStatus === "SUBMITTED" || initialStatus === "WAITING_STUDENT_2" ? new Date() : null,
+    student2Status: "NOT_APPLICABLE",
+    submittedAt: initialStatus === "SUBMITTED" ? new Date() : null,
   });
 
   // Handle Notifications
-  if (initialStatus === "WAITING_STUDENT_2" && internship.secondStudentId?.userId?._id) {
-    // Notify SV2
-    await notificationService.createNotification({
-      recipientId: internship.secondStudentId.userId._id,
-      type: "INTERNSHIP_REPORT",
-      title: "Yêu cầu xác nhận nhật ký thực tập",
-      message: `Sinh viên ${student.userId?.fullName || student.studentCode} đã gửi nhật ký ${reportType === "WEEKLY" ? `Tuần ${validWeek}` : title}. Vui lòng kiểm tra và xác nhận.`,
-      referenceId: report._id,
-      referenceModel: "InternshipReport",
-      link: "/student/reports",
-    });
-  } else if (initialStatus === "SUBMITTED" && internship.lecturerId?.userId?._id) {
-    // Notify Lecturer (only for 1 SV group upon initial submit)
+  if (initialStatus === "SUBMITTED" && internship.lecturerId?.userId?._id) {
     await notificationService.createNotification({
       recipientId: internship.lecturerId.userId._id,
       type: "INTERNSHIP_REPORT",
@@ -360,48 +332,25 @@ const updateReport = async ({
   if (weekStartDate !== undefined) report.weekStartDate = weekStartDate ? new Date(weekStartDate) : null;
   if (weekEndDate !== undefined) report.weekEndDate = weekEndDate ? new Date(weekEndDate) : null;
 
-  const hasStudent2 = !!internship.secondStudentId;
-
   if (status === "DRAFT") {
     report.status = "DRAFT";
-    report.student2Status = hasStudent2 ? "PENDING" : "NOT_APPLICABLE";
+    report.student2Status = "NOT_APPLICABLE";
   } else {
-    // Resubmitting
-    if (hasStudent2) {
-      report.status = "WAITING_STUDENT_2";
-      report.student2Status = "PENDING";
-      report.student2RejectedReason = null;
-      report.submittedAt = new Date();
+    report.status = "SUBMITTED";
+    report.student2Status = "NOT_APPLICABLE";
+    report.submittedAt = new Date();
 
-      // Notify SV2
-      if (internship.secondStudentId?.userId?._id) {
-        await notificationService.createNotification({
-          recipientId: internship.secondStudentId.userId._id,
-          type: "INTERNSHIP_REPORT",
-          title: "Nhật ký thực tập đã được cập nhật",
-          message: `Sinh viên ${student.userId?.fullName || student.studentCode} đã cập nhật lại nhật ký ${report.reportType === "WEEKLY" ? `Tuần ${report.weekNumber}` : report.title}. Vui lòng kiểm tra và xác nhận lại.`,
-          referenceId: report._id,
-          referenceModel: "InternshipReport",
-          link: "/student/reports",
-        });
-      }
-    } else {
-      report.status = "SUBMITTED";
-      report.student2Status = "NOT_APPLICABLE";
-      report.submittedAt = new Date();
-
-      // Notify Lecturer
-      if (internship.lecturerId?.userId?._id) {
-        await notificationService.createNotification({
-          recipientId: internship.lecturerId.userId._id,
-          type: "INTERNSHIP_REPORT",
-          title: "Nhật ký thực tập mới từ sinh viên",
-          message: `Sinh viên ${student.userId?.fullName || student.studentCode} đã cập nhật và nộp nhật ký: "${report.title}".`,
-          referenceId: report._id,
-          referenceModel: "InternshipReport",
-          link: "/lecturer/reports",
-        });
-      }
+    // Notify Lecturer
+    if (internship.lecturerId?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: internship.lecturerId.userId._id,
+        type: "INTERNSHIP_REPORT",
+        title: "Nhật ký thực tập mới từ sinh viên",
+        message: `Sinh viên ${student.userId?.fullName || student.studentCode} đã cập nhật và nộp nhật ký: "${report.title}".`,
+        referenceId: report._id,
+        referenceModel: "InternshipReport",
+        link: "/lecturer/reports",
+      });
     }
   }
 
@@ -423,135 +372,10 @@ const updateReport = async ({
 };
 
 // ====================
-// Student 2 Confirms or Rejects Report
+// Student 2 Confirms or Rejects Report (Đã loại bỏ trong luồng TTDN cá nhân)
 // ====================
-const confirmReportByStudent2 = async (reportId, userId, { action, rejectionReason }) => {
-  const student = await Student.findOne({ userId }).populate({
-    path: "userId",
-    select: "fullName email phone",
-  });
-  if (!student) {
-    throw new AppError("Không tìm thấy thông tin sinh viên", 404);
-  }
-
-  const report = await InternshipReport.findById(reportId).populate({
-    path: "internshipId",
-    populate: [
-      { path: "studentId", populate: { path: "userId", select: "fullName email phone" } },
-      { path: "secondStudentId", populate: { path: "userId", select: "fullName email phone" } },
-      { path: "lecturerId", populate: { path: "userId", select: "fullName email phone" } },
-    ],
-  });
-
-  if (!report) {
-    throw new AppError("Không tìm thấy nhật ký thực tập", 404);
-  }
-
-  const internship = report.internshipId;
-  if (
-    !internship.secondStudentId ||
-    internship.secondStudentId._id?.toString() !== student._id.toString()
-  ) {
-    throw new AppError("Bạn không phải là Sinh viên 2 trong đợt thực tập này", 403);
-  }
-
-  // Check if academic term is CLOSED
-  if (internship) {
-    let termDoc = null;
-    const termId = internship.academicTermId?._id || internship.academicTermId;
-    if (termId) {
-      termDoc = await AcademicTerm.findById(termId).lean();
-    }
-    if (!termDoc && internship.startDate) {
-      termDoc = await AcademicTerm.findOne({
-        startDate: { $lte: internship.startDate },
-        endDate: { $gte: internship.startDate },
-      }).lean();
-    }
-    if (termDoc && termDoc.status === "CLOSED") {
-      throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể xác nhận nhật ký thực tập.", 400);
-    }
-  }
-
-  if (report.status !== "WAITING_STUDENT_2") {
-    throw new AppError(
-      `Báo cáo đang ở trạng thái "${report.status}", không thể thực hiện xác nhận`,
-      400,
-    );
-  }
-
-  if (action === "CONFIRM") {
-    report.student2Status = "CONFIRMED";
-    report.student2ConfirmedAt = new Date();
-    report.student2RejectedReason = null;
-    report.status = "SUBMITTED";
-    report.submittedAt = new Date();
-
-    // 1. Notify SV1
-    if (internship.studentId?.userId?._id) {
-      await notificationService.createNotification({
-        recipientId: internship.studentId.userId._id,
-        type: "INTERNSHIP_REPORT",
-        title: "Sinh viên 2 đã xác nhận nhật ký",
-        message: `Sinh viên 2 (${student.userId?.fullName || student.studentCode}) đã đồng ý và xác nhận nhật ký ${report.reportType === "WEEKLY" ? `Tuần ${report.weekNumber}` : report.title}. Nhật ký đã được chuyển tới Giảng viên hướng dẫn.`,
-        referenceId: report._id,
-        referenceModel: "InternshipReport",
-        link: "/student/reports",
-      });
-    }
-
-    // 2. Notify Lecturer
-    if (internship.lecturerId?.userId?._id) {
-      await notificationService.createNotification({
-        recipientId: internship.lecturerId.userId._id,
-        type: "INTERNSHIP_REPORT",
-        title: "Nhật ký thực tập mới từ nhóm sinh viên",
-        message: `Nhóm sinh viên (${internship.studentId?.userId?.fullName || ""} + ${student.userId?.fullName || ""}) đã nộp nhật ký: "${report.title}".`,
-        referenceId: report._id,
-        referenceModel: "InternshipReport",
-        link: "/lecturer/reports",
-      });
-    }
-  } else if (action === "REJECT") {
-    if (!rejectionReason || !rejectionReason.trim()) {
-      throw new AppError("Vui lòng cung cấp lý do yêu cầu chỉnh sửa", 400);
-    }
-
-    report.student2Status = "REJECTED";
-    report.student2RejectedReason = rejectionReason.trim();
-    report.status = "NEEDS_REVISION";
-
-    // Notify SV1
-    if (internship.studentId?.userId?._id) {
-      await notificationService.createNotification({
-        recipientId: internship.studentId.userId._id,
-        type: "INTERNSHIP_REPORT",
-        title: "Sinh viên 2 yêu cầu chỉnh sửa nhật ký",
-        message: `Sinh viên 2 (${student.userId?.fullName || student.studentCode}) đã từ chối xác nhận nhật ký ${report.reportType === "WEEKLY" ? `Tuần ${report.weekNumber}` : report.title}. Lý do: "${rejectionReason.trim()}". Vui lòng chỉnh sửa và gửi lại.`,
-        referenceId: report._id,
-        referenceModel: "InternshipReport",
-        link: "/student/reports",
-      });
-    }
-  } else {
-    throw new AppError("Hành động không hợp lệ (CONFIRM hoặc REJECT)", 400);
-  }
-
-  await report.save();
-
-  return await InternshipReport.findById(report._id)
-    .populate({
-      path: "studentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate({
-      path: "secondStudentId",
-      populate: { path: "userId", select: "fullName email phone" },
-    })
-    .populate({
-      path: "internshipId",
-      populate: { path: "companyId", select: "name code" },
-    });
+const confirmReportByStudent2 = async () => {
+  throw new AppError("Chức năng xác nhận nhóm cho Thực tập Doanh nghiệp đã được loại bỏ", 400);
 };
 
 // ====================
