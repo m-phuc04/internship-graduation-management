@@ -7,8 +7,6 @@ import {
   X,
   GraduationCap,
   Filter,
-  CheckCircle2,
-  AlertCircle,
   Building2,
   BookOpen,
 } from 'lucide-react';

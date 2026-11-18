@@ -1,5 +1,5 @@
-import evaluationController from "../controllers/evaluationController.js";
 import express from "express";
+import evaluationController from "../controllers/evaluationController.js";
 import internshipController from "../controllers/internshipController.js";
 import authMiddleware from "../middlewares/authMiddleware.js";
 import authorizeRoles from "../middlewares/roleMiddleware.js";
@@ -8,10 +8,10 @@ import { uploadInternshipReportFile } from "../middlewares/uploadMiddleware.js";
 const router = express.Router();
 
 // ==========================================
-// 1. TBM Endpoints (Search, Filter, Management)
+// 1. Phía Trưởng Bộ Môn (TBM & Admin)
 // ==========================================
 
-// TBM: List all internships with search, filter, pagination
+// TBM: Lấy danh sách hồ sơ thực tập kèm tìm kiếm, lọc, phân trang
 router.get(
   "/",
   authMiddleware,
@@ -19,7 +19,7 @@ router.get(
   internshipController.getAllInternships,
 );
 
-// Export internships to Excel (TBM, ADMIN, LECTURER)
+// Xuất danh sách hồ sơ thực tập ra Excel (TBM, ADMIN, LECTURER)
 router.get(
   "/export",
   authMiddleware,
@@ -27,7 +27,7 @@ router.get(
   internshipController.exportInternships,
 );
 
-// TBM: Get available lecturers with active workload
+// TBM: Lấy danh sách giảng viên khả dụng để phân công
 router.get(
   "/available-lecturers",
   authMiddleware,
@@ -35,7 +35,7 @@ router.get(
   internshipController.getAvailableLecturers,
 );
 
-// TBM: Approve internship
+// TBM: Duyệt hồ sơ thực tập
 router.patch(
   "/:id/approve",
   authMiddleware,
@@ -43,7 +43,7 @@ router.patch(
   internshipController.approveInternship,
 );
 
-// TBM: Reject internship
+// TBM: Từ chối hồ sơ thực tập
 router.patch(
   "/:id/reject",
   authMiddleware,
@@ -51,7 +51,7 @@ router.patch(
   internshipController.rejectInternship,
 );
 
-// TBM: Assign lecturer to internship
+// TBM: Phân công giảng viên giám sát cho hồ sơ thực tập
 router.patch(
   "/:id/assign-lecturer",
   authMiddleware,
@@ -60,10 +60,10 @@ router.patch(
 );
 
 // ==========================================
-// 2. Student Endpoints
+// 2. Phía Sinh viên (Student)
 // ==========================================
 
-// Student: View own internship profile
+// Sinh viên: Xem thông tin hồ sơ thực tập của mình
 router.get(
   "/my",
   authMiddleware,
@@ -71,7 +71,7 @@ router.get(
   internshipController.getMyInternship,
 );
 
-// Student: Register new internship
+// Sinh viên: Đăng ký hồ sơ thực tập mới
 router.post(
   "/",
   authMiddleware,
@@ -79,7 +79,7 @@ router.post(
   internshipController.createInternship,
 );
 
-// Student: Upload internship report file (Prompt 2 - Requirement 1)
+// Sinh viên: Tải lên tệp báo cáo thực tập tổng kết
 router.post(
   "/my/report-file",
   authMiddleware,
@@ -96,7 +96,7 @@ router.post(
   internshipController.uploadReportFile,
 );
 
-// Student & Lecturer (GVGS): Delete / Remove internship report file
+// Sinh viên & GVGS: Xóa tệp báo cáo thực tập
 router.delete(
   "/my/report-file",
   authMiddleware,
@@ -112,10 +112,10 @@ router.delete(
 );
 
 // ==========================================
-// 3. Lecturer Endpoints
+// 3. Phía Giảng viên Giám sát (GVGS)
 // ==========================================
 
-// Lecturer / TBM / Admin: Get assigned supervised internships
+// GVGS / TBM / Admin: Lấy danh sách hồ sơ thực tập được phân công giám sát
 router.get(
   "/supervised",
   authMiddleware,
@@ -123,7 +123,7 @@ router.get(
   internshipController.getSupervisedInternships,
 );
 
-// Lecturer & TBM: Get Supervision Confirmation Document Data (Document A)
+// GVGS & TBM: Lấy dữ liệu giấy xác nhận giám sát (Document A)
 router.get(
   "/supervision-document",
   authMiddleware,
@@ -131,7 +131,7 @@ router.get(
   internshipController.getSupervisionDocument,
 );
 
-// Lecturer / TBM / Admin: Accept supervision of internship
+// GVGS / TBM / Admin: Tiếp nhận giám sát hồ sơ thực tập
 router.patch(
   "/:id/supervisor-accept",
   authMiddleware,
@@ -139,7 +139,7 @@ router.patch(
   internshipController.supervisorAcceptInternship,
 );
 
-// Lecturer / TBM / Admin: Reject supervision of internship
+// GVGS / TBM / Admin: Từ chối giám sát hồ sơ thực tập
 router.patch(
   "/:id/supervisor-reject",
   authMiddleware,
@@ -147,7 +147,7 @@ router.patch(
   internshipController.supervisorRejectInternship,
 );
 
-// Lecturer (GVGS): Confirm PASS PRETEST (Prompt 2 - Requirement 3)
+// GVGS: Xác nhận sinh viên đạt bài kiểm tra đầu vào (Pretest)
 router.patch(
   "/:id/pass-pretest",
   authMiddleware,
@@ -155,8 +155,7 @@ router.patch(
   internshipController.updatePretestStatus,
 );
 
-// Lecturer / TBM / Admin: Complete internship and permanently lock evaluation
-// Lecturer (GVGS): Grade Internship & Edit Score (Prompt 2 - Requirement 5)
+// GVGS: Đánh giá và chấm điểm thực tập
 router.post(
   "/:id/grade",
   authMiddleware,
@@ -177,6 +176,7 @@ router.put(
   },
 );
 
+// GVGS / TBM / Admin: Hoàn thành thực tập và khóa đánh giá vĩnh viễn
 router.patch(
   "/:id/complete",
   authMiddleware,
@@ -184,7 +184,7 @@ router.patch(
   internshipController.completeInternship,
 );
 
-// Lecturer / TBM / Admin: Update report cycle for whole term
+// GVGS / TBM / Admin: Cập nhật chu kỳ báo cáo cho toàn bộ học kỳ
 router.put(
   "/report-cycle",
   authMiddleware,
@@ -198,7 +198,7 @@ router.patch(
   internshipController.updateTermReportCycle,
 );
 
-// Lecturer / TBM / Admin: Update report cycle (1, 2, or 3 weeks/time)
+// GVGS / TBM / Admin: Cập nhật chu kỳ báo cáo (1, 2 hoặc 3 tuần/lần)
 router.patch(
   "/:id/report-cycle",
   authMiddleware,
@@ -207,17 +207,17 @@ router.patch(
 );
 
 // ==========================================
-// 4. Shared Detail & File Endpoints
+// 4. Chi tiết và Tệp dùng chung
 // ==========================================
 
-// Get report file info & access check
+// Lấy thông tin tệp báo cáo và kiểm tra quyền truy cập
 router.get(
   "/:id/report-file",
   authMiddleware,
   internshipController.getReportFile,
 );
 
-// Get internship by document ID (Secured with role & ownership check)
+// Lấy thông tin chi tiết hồ sơ thực tập theo ID
 router.get(
   "/:id",
   authMiddleware,

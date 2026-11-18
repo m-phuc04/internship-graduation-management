@@ -10,7 +10,6 @@ import {
   PlusCircle,
   Award,
   ChevronDown,
-  Menu,
   X,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';

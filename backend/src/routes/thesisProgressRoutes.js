@@ -7,10 +7,10 @@ import uploadProgressFile from "../middlewares/uploadMiddleware.js";
 const router = express.Router();
 
 // ==========================================
-// 1. Student Thesis Progress Routes
+// 1. Phía Sinh viên (Tiến độ KLTN)
 // ==========================================
 
-// Student: Create new progress report (WEEKLY / MONTHLY) with optional file upload
+// Sinh viên: Tạo báo cáo tiến độ mới (Tuần / Tháng) kèm tệp tùy chọn
 router.post(
   "/",
   authMiddleware,
@@ -19,7 +19,7 @@ router.post(
   thesisProgressController.createProgress,
 );
 
-// Student: Get own Thesis & Progress list
+// Sinh viên: Lấy danh sách đề tài và tiến độ của mình
 router.get(
   "/my",
   authMiddleware,
@@ -27,7 +27,7 @@ router.get(
   thesisProgressController.getMyThesisProgress,
 );
 
-// Student: Update progress report (when DRAFT or NEEDS_REVISION) with optional file upload
+// Sinh viên: Cập nhật báo cáo tiến độ (khi là BẢN NHÁP hoặc CẦN CHỈNH SỬA) kèm tệp tùy chọn
 router.put(
   "/:id",
   authMiddleware,
@@ -36,7 +36,7 @@ router.put(
   thesisProgressController.updateProgress,
 );
 
-// Student 2: Confirm or Reject thesis progress
+// Sinh viên 2: Xác nhận hoặc từ chối báo cáo tiến độ của nhóm
 router.patch(
   "/:id/confirm-student2",
   authMiddleware,
@@ -44,12 +44,11 @@ router.patch(
   thesisProgressController.confirmStudent2,
 );
 
-
 // ==========================================
-// 2. Lecturer Supervision Routes
+// 2. Phía Giảng viên hướng dẫn (Giám sát tiến độ)
 // ==========================================
 
-// Lecturer / TBM / Admin: Get all supervised theses with progress reports
+// GVHD / TBM / Admin: Lấy danh sách đề tài hướng dẫn kèm các báo cáo tiến độ
 router.get(
   "/lecturer/supervised",
   authMiddleware,
@@ -57,7 +56,7 @@ router.get(
   thesisProgressController.getSupervisedThesesProgress,
 );
 
-// Lecturer / TBM / Admin: Review, Grade, Approve, Reject progress
+// GVHD / TBM / Admin: Nhận xét, chấm điểm, duyệt hoặc yêu cầu sửa báo cáo tiến độ
 router.patch(
   "/:id/review",
   authMiddleware,
@@ -66,10 +65,10 @@ router.patch(
 );
 
 // ==========================================
-// 3. Detail Route
+// 3. Chi tiết và Mốc thời gian
 // ==========================================
 
-// View progress by thesis ID
+// Xem danh sách báo cáo tiến độ theo mã đề tài
 router.get(
   "/thesis/:thesisId",
   authMiddleware,
@@ -77,7 +76,7 @@ router.get(
   thesisProgressController.getProgressByThesis,
 );
 
-// Update Thesis timeline (startDate & endDate) - Only GVHD, TBM, ADMIN
+// Cập nhật mốc thời gian đề tài (ngày bắt đầu và kết thúc) - Chỉ GVHD, TBM, ADMIN
 router.patch(
   "/thesis/:thesisId/timeline",
   authMiddleware,

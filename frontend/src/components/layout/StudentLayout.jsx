@@ -3,7 +3,6 @@ import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-do
 import { useAuth } from '../../context/AuthContext';
 import StudentSidebar from './StudentSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
-import Modal from '../common/Modal';
 import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
 import {
@@ -12,13 +11,6 @@ import {
   ChevronDown,
   User,
   Menu,
-  X,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  FileText,
-  Briefcase,
-  BookOpen,
   Mail,
 } from 'lucide-react';
 

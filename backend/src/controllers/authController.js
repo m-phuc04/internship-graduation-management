@@ -2,7 +2,7 @@ import authService from "../services/authService.js";
 import captchaService from "../services/captchaService.js";
 
 // ====================
-// Get Captcha
+// Lấy mã CAPTCHA
 // ====================
 
 const getCaptcha = async (req, res, next) => {
@@ -19,7 +19,7 @@ const getCaptcha = async (req, res, next) => {
 };
 
 // ====================
-// Register
+// Đăng ký tài khoản
 // ====================
 
 const register = async (req, res, next) => {
@@ -37,7 +37,7 @@ const register = async (req, res, next) => {
 };
 
 // ====================
-// Login
+// Đăng nhập hệ thống
 // ====================
 
 const login = async (req, res, next) => {
@@ -55,7 +55,7 @@ const login = async (req, res, next) => {
 };
 
 // ====================
-// Refresh Token
+// Làm mới Access Token
 // ====================
 
 const refresh = async (req, res, next) => {
@@ -77,7 +77,7 @@ const refresh = async (req, res, next) => {
 };
 
 // ====================
-// Logout
+// Đăng xuất hệ thống
 // ====================
 
 const logout = async (req, res, next) => {
@@ -94,7 +94,7 @@ const logout = async (req, res, next) => {
 };
 
 // ====================
-// Get Profile
+// Lấy thông tin cá nhân
 // ====================
 
 const getProfile = async (req, res, next) => {
@@ -111,7 +111,7 @@ const getProfile = async (req, res, next) => {
 };
 
 // ====================
-// Get Public Profile
+// Lấy thông tin công khai
 // ====================
 
 const getPublicProfile = async (req, res, next) => {
@@ -128,7 +128,7 @@ const getPublicProfile = async (req, res, next) => {
 };
 
 // ====================
-// Update Profile
+// Cập nhật thông tin cá nhân
 // ====================
 
 const updateProfile = async (req, res, next) => {
@@ -146,7 +146,7 @@ const updateProfile = async (req, res, next) => {
 };
 
 // ====================
-// Change Password
+// Đổi mật khẩu
 // ====================
 
 const changePassword = async (req, res, next) => {

@@ -39,7 +39,7 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // ====================
-// Middleware
+// Cấu hình Middleware
 // ====================
 
 app.use(
@@ -53,17 +53,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-// Static Files
+// Cung cấp tệp tĩnh (Static files)
 app.use("/uploads", express.static(path.join(__dirname, "../public/uploads")));
 
-// Master Data & Core Routes
+// Tuyến đường dữ liệu danh mục & hệ thống
 app.use("/api/auth", authRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/lecturers", lecturerRoutes);
 app.use("/api/companies", companyRoutes);
 app.use("/api/academic-terms", academicTermRoutes);
 
-// Internship, Reports & Evaluation Routes
+// Tuyến đường Thực tập, Khóa luận, Báo cáo & Đánh giá
 app.use("/api/internships", internshipRoutes);
 app.use("/api/internship-reports", internshipReportRoutes);
 app.use("/api/internship-documents", internshipDocumentRoutes);
@@ -81,7 +81,7 @@ app.use("/api/councils", councilRoutes);
 app.use("/api/fields", researchFieldRoutes);
 
 // ====================
-// Health Check
+// Kiểm tra trạng thái máy chủ (Health Check)
 // ====================
 
 app.get("/api/health", (req, res) => {
@@ -93,7 +93,7 @@ app.get("/api/health", (req, res) => {
 });
 
 // ====================
-// 404 Handler
+// Xử lý tuyến đường không tồn tại (404 Handler)
 // ====================
 
 app.use((req, res) => {
@@ -104,23 +104,23 @@ app.use((req, res) => {
 });
 
 // ====================
-// Error Handler
+// Xử lý lỗi tập trung (Error Handler)
 // ====================
 
 app.use(errorMiddleware);
 
 // ====================
-// Start Server
+// Khởi chạy máy chủ (Start Server)
 // ====================
 
 const startServer = async () => {
   try {
     await connectDatabase();
 
-    // Auto-initialize Default Academic Term & Migrate existing records
+    // Khởi tạo học kỳ mặc định và đồng bộ dữ liệu
     await academicTermService.ensureDefaultActiveTerm();
 
-    // Auto-sync Lecturer maxSupervisedStudents & maxStudents to ensure 100% database consistency
+    // Đồng bộ số lượng sinh viên tối đa của giảng viên để đảm bảo tính nhất quán dữ liệu
     try {
       const Lecturer = (await import("./models/Lecturer.js")).default;
       const allLecs = await Lecturer.find({});
@@ -139,7 +139,7 @@ const startServer = async () => {
       console.error("Lecturer capacity startup sync notice:", err.message);
     }
 
-    // Initialize Socket.IO server
+    // Khởi tạo máy chủ Socket.IO
     initSocketServer(httpServer);
 
     httpServer.listen(env.port, () => {

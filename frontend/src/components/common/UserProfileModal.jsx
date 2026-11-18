@@ -8,11 +8,9 @@ import {
   Mail,
   GraduationCap,
   BookOpen,
-  Building2,
   ShieldCheck,
   Copy,
   Check,
-  ExternalLink,
   MessageSquare,
 } from 'lucide-react';
 

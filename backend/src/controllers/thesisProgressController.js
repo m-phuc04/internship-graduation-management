@@ -1,7 +1,7 @@
 import thesisProgressService from "../services/thesisProgressService.js";
 
 // ====================
-// Student Creates Progress / Diary
+// Sinh viên tạo báo cáo tiến độ / nhật ký KLTN
 // ====================
 const createProgress = async (req, res, next) => {
   try {
@@ -41,7 +41,7 @@ const createProgress = async (req, res, next) => {
 };
 
 // ====================
-// Student Updates Progress / Diary (Draft or Needs Revision)
+// Sinh viên cập nhật nhật ký tiến độ (Bản nháp hoặc Cần chỉnh sửa)
 // ====================
 const updateProgress = async (req, res, next) => {
   try {
@@ -82,7 +82,7 @@ const updateProgress = async (req, res, next) => {
 };
 
 // ====================
-// Student 2 Confirms or Rejects Progress
+// Sinh viên 2 xác nhận hoặc từ chối báo cáo tiến độ nhóm
 // ====================
 const confirmStudent2 = async (req, res, next) => {
   try {
@@ -108,7 +108,7 @@ const confirmStudent2 = async (req, res, next) => {
 };
 
 // ====================
-// Student Gets Own Progress
+// Sinh viên xem tiến độ của chính mình
 // ====================
 const getMyThesisProgress = async (req, res, next) => {
   try {
@@ -133,7 +133,7 @@ const getMyThesisProgress = async (req, res, next) => {
 };
 
 // ====================
-// Student Submits Draft Progress
+// Sinh viên nộp bản nháp tiến độ
 // ====================
 const submitDraftProgress = async (req, res, next) => {
   try {
@@ -153,7 +153,7 @@ const submitDraftProgress = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Gets Supervised Theses Progress
+// Giảng viên lấy danh sách tiến độ các đề tài đang hướng dẫn
 // ====================
 const getSupervisedThesesProgress = async (req, res, next) => {
   try {
@@ -175,7 +175,7 @@ const getSupervisedThesesProgress = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Reviews / Grades / Approves / Rejects Progress
+// Giảng viên đánh giá, nhận xét, chấm điểm tiến độ KLTN
 // ====================
 const reviewProgress = async (req, res, next) => {
   try {
@@ -203,7 +203,7 @@ const reviewProgress = async (req, res, next) => {
 };
 
 // ====================
-// Get Progress by Thesis ID
+// Lấy tiến độ theo ID đề tài KLTN
 // ====================
 const getProgressByThesis = async (req, res, next) => {
   try {
@@ -223,7 +223,7 @@ const getProgressByThesis = async (req, res, next) => {
 };
 
 // ====================
-// Update Timeline by Thesis ID
+// Cập nhật mốc thời gian thực hiện đề tài KLTN
 // ====================
 const updateTimeline = async (req, res, next) => {
   try {

@@ -64,7 +64,7 @@ const conversationSchema = new mongoose.Schema(
   },
 );
 
-// Indexes for rapid lookups
+// Chỉ mục tối ưu hóa tìm kiếm nhanh
 conversationSchema.index({ "participants.user": 1 });
 conversationSchema.index({ updatedAt: -1 });
 

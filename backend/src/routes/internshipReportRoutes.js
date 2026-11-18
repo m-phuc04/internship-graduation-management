@@ -7,10 +7,10 @@ import { uploadInternshipReportFile } from "../middlewares/uploadMiddleware.js";
 const router = express.Router();
 
 // ==========================================
-// 1. Student Endpoints
+// 1. Phía Sinh viên (Student)
 // ==========================================
 
-// Student: Create or submit report with file upload
+// Sinh viên: Tạo hoặc nộp báo cáo định kỳ kèm tệp
 router.post(
   "/",
   authMiddleware,
@@ -19,7 +19,7 @@ router.post(
   internshipReportController.createReport,
 );
 
-// Student: Update report (draft or needs revision) with file upload
+// Sinh viên: Cập nhật báo cáo (khi là bản nháp hoặc cần chỉnh sửa) kèm tệp
 router.put(
   "/:id",
   authMiddleware,
@@ -28,7 +28,7 @@ router.put(
   internshipReportController.updateReport,
 );
 
-// Student 2: Confirm or reject report with reason
+// Sinh viên 2: Xác nhận hoặc từ chối báo cáo nhóm kèm lý do
 router.patch(
   "/:id/confirm-student2",
   authMiddleware,
@@ -36,7 +36,7 @@ router.patch(
   internshipReportController.confirmStudent2,
 );
 
-// Student: View own reports list
+// Sinh viên: Xem danh sách báo cáo của mình
 router.get(
   "/my",
   authMiddleware,
@@ -45,10 +45,10 @@ router.get(
 );
 
 // ==========================================
-// 2. Lecturer Endpoints
+// 2. Phía Giảng viên (Lecturer)
 // ==========================================
 
-// Lecturer: View reports of supervised students (only confirmed/submitted)
+// Giảng viên: Xem báo cáo của sinh viên đang giám sát (đã nộp/xác nhận)
 router.get(
   "/lecturer/supervised",
   authMiddleware,
@@ -57,10 +57,10 @@ router.get(
 );
 
 // ==========================================
-// 3. TBM Endpoints
+// 3. Phía Trưởng bộ môn (TBM)
 // ==========================================
 
-// TBM: View all reports across university
+// TBM: Xem tất cả báo cáo thực tập trong khoa/trường
 router.get(
   "/tbm/all",
   authMiddleware,
@@ -69,24 +69,24 @@ router.get(
 );
 
 // ==========================================
-// 4. Shared Detail & Review Endpoints
+// 4. Chi tiết và Đánh giá báo cáo dùng chung
 // ==========================================
 
-// Get all weekly reports for a specific internship (Secured with role & ownership check)
+// Lấy toàn bộ báo cáo định kỳ theo mã hồ sơ thực tập
 router.get(
   "/internship/:internshipId",
   authMiddleware,
   internshipReportController.getReportsByInternshipId,
 );
 
-// Get report by ID (Secured with role & ownership check)
+// Lấy thông tin chi tiết một báo cáo theo ID
 router.get(
   "/:id",
   authMiddleware,
   internshipReportController.getReportById,
 );
 
-// Lecturer & TBM: Review report (score, comment, approve/reject)
+// Giảng viên & TBM: Đánh giá báo cáo (cho điểm, nhận xét, duyệt/từ chối)
 router.patch(
   "/:id/review",
   authMiddleware,

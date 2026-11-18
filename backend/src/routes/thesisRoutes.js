@@ -129,10 +129,10 @@ router.post(
 );
 
 // ==========================================
-// 2. Student Registration & Profile Routes
+// 2. Tuyến đường Đăng ký và Hồ sơ KLTN của Sinh viên
 // ==========================================
 
-// Student: Register a new Thesis (1 or 2 students)
+// Sinh viên: Đăng ký đề tài KLTN mới (1 hoặc 2 sinh viên)
 router.post(
   "/",
   authMiddleware,
@@ -140,7 +140,7 @@ router.post(
   thesisController.createThesis,
 );
 
-// Student: Get own Thesis profile
+// Sinh viên: Lấy thông tin đề tài của mình
 router.get(
   "/my",
   authMiddleware,
@@ -148,7 +148,7 @@ router.get(
   thesisController.getMyThesis,
 );
 
-// Student 2: Respond to group invitation (ACCEPT / REJECT)
+// Sinh viên 2: Trả lời lời mời vào nhóm (ĐỒNG Ý / TỪ CHỐI)
 router.patch(
   "/:id/respond-invitation",
   authMiddleware,
@@ -156,7 +156,7 @@ router.patch(
   thesisController.respondStudent2Invitation,
 );
 
-// Student 1: Send registration request to Supervisor
+// Sinh viên 1: Gửi yêu cầu đăng ký đề tài tới Giảng viên hướng dẫn
 router.patch(
   "/:id/send-supervisor-request",
   authMiddleware,
@@ -164,7 +164,7 @@ router.patch(
   thesisController.sendSupervisorRequest,
 );
 
-// Student 1: Invite student 2
+// Sinh viên 1: Mời sinh viên 2 vào nhóm
 router.patch(
   "/:id/invite-student2",
   authMiddleware,
@@ -172,7 +172,7 @@ router.patch(
   thesisController.inviteStudent2,
 );
 
-// Student 1: Cancel student 2 invitation
+// Sinh viên 1: Hủy lời mời gửi tới sinh viên 2
 router.patch(
   "/:id/cancel-student2-invite",
   authMiddleware,
@@ -180,7 +180,7 @@ router.patch(
   thesisController.cancelStudent2Invite,
 );
 
-// Student 2: Cancel group participation (before supervisor approval)
+// Sinh viên 2: Rút khỏi nhóm (trước khi GVHD phê duyệt)
 router.patch(
   "/:id/cancel-participation",
   authMiddleware,
@@ -188,7 +188,7 @@ router.patch(
   thesisController.cancelParticipationByStudent2,
 );
 
-// Student 1: Cancel group registration / thesis registration (before supervisor approval)
+// Sinh viên 1: Hủy đăng ký nhóm / hủy đề tài (trước khi GVHD phê duyệt)
 router.patch(
   "/:id/cancel-group",
   authMiddleware,
@@ -196,7 +196,7 @@ router.patch(
   thesisController.cancelGroupRegistrationByStudent1,
 );
 
-// Student: Cancel expired group registration (60-minute timeout)
+// Sinh viên: Hủy đăng ký nhóm đã hết hạn (quá hạn 60 phút)
 router.post(
   "/:id/cancel-expired",
   authMiddleware,
@@ -210,7 +210,7 @@ router.patch(
   thesisController.cancelExpiredThesis,
 );
 
-// Student 1: Remove Student 2 from group (before supervisor approval)
+// Sinh viên 1: Xóa sinh viên 2 khỏi nhóm (trước khi GVHD phê duyệt)
 router.patch(
   "/:id/remove-student2",
   authMiddleware,
@@ -219,24 +219,24 @@ router.patch(
 );
 
 // ==========================================
-// 2. Shared Utilities (Supervisors & Lookup)
+// 3. Tiện ích dùng chung (Tra cứu GVHD và Sinh viên)
 // ==========================================
 
-// Get available supervisor lecturers with capacity stats
+// Lấy danh sách GVHD khả dụng kèm thống kê số lượng hướng dẫn
 router.get(
   "/available-supervisors",
   authMiddleware,
   thesisController.getAvailableSupervisors,
 );
 
-// Search students by code or name for group selection
+// Tìm kiếm sinh viên theo mã số hoặc họ tên để chọn vào nhóm
 router.get(
   "/search-students",
   authMiddleware,
   thesisController.searchStudents,
 );
 
-// Lookup student by MSSV (for group partner selection)
+// Tra cứu thông tin sinh viên theo MSSV
 router.get(
   "/lookup-student/:studentCode",
   authMiddleware,
@@ -244,17 +244,17 @@ router.get(
 );
 
 // ==========================================
-// 3. Thesis Evaluation Criteria Routes
+// 4. Tiêu chí đánh giá Khóa luận tốt nghiệp
 // ==========================================
 
-// Get all active criteria (Accessible to all authenticated users)
+// Lấy danh sách tiêu chí đánh giá đang hoạt động (cho mọi người dùng đã đăng nhập)
 router.get(
   "/criteria",
   authMiddleware,
   thesisController.getThesisEvaluationCriteria,
 );
 
-// TBM / ADMIN: Create new evaluation criteria
+// TBM / ADMIN: Tạo mới tiêu chí đánh giá
 router.post(
   "/criteria",
   authMiddleware,
@@ -262,7 +262,7 @@ router.post(
   thesisController.createThesisEvaluationCriteria,
 );
 
-// TBM / ADMIN: Update evaluation criteria
+// TBM / ADMIN: Cập nhật tiêu chí đánh giá
 router.patch(
   "/criteria/:id",
   authMiddleware,
@@ -270,7 +270,7 @@ router.patch(
   thesisController.updateThesisEvaluationCriteria,
 );
 
-// TBM / ADMIN: Delete evaluation criteria
+// TBM / ADMIN: Xóa tiêu chí đánh giá
 router.delete(
   "/criteria/:id",
   authMiddleware,
@@ -279,17 +279,17 @@ router.delete(
 );
 
 // ==========================================
-// 4. Thesis Grading Periods Routes
+// 5. Đợt chấm điểm Khóa luận tốt nghiệp
 // ==========================================
 
-// Get all grading periods
+// Lấy tất cả các đợt chấm điểm
 router.get(
   "/grading-periods",
   authMiddleware,
   thesisController.getThesisGradingPeriods,
 );
 
-// TBM / ADMIN: Create new grading period
+// TBM / ADMIN: Tạo mới đợt chấm điểm
 router.post(
   "/grading-periods",
   authMiddleware,
@@ -297,7 +297,7 @@ router.post(
   thesisController.createThesisGradingPeriod,
 );
 
-// TBM / ADMIN: Update grading period
+// TBM / ADMIN: Cập nhật đợt chấm điểm
 router.patch(
   "/grading-periods/:id",
   authMiddleware,
@@ -305,7 +305,7 @@ router.patch(
   thesisController.updateThesisGradingPeriod,
 );
 
-// TBM / ADMIN: Delete grading period
+// TBM / ADMIN: Xóa đợt chấm điểm
 router.delete(
   "/grading-periods/:id",
   authMiddleware,
@@ -313,7 +313,7 @@ router.delete(
   thesisController.deleteThesisGradingPeriod,
 );
 
-// TBM / ADMIN: Process Expired Grading Periods (Mark FAIL for unsubmitted theses)
+// TBM / ADMIN: Xử lý các đợt chấm điểm hết hạn (Đánh dấu KHÔNG ĐẠT các đề tài chưa nộp)
 router.post(
   "/grading-periods/process-expired",
   authMiddleware,
@@ -322,10 +322,10 @@ router.post(
 );
 
 // ==========================================
-// 5. Thesis Evaluations (Only reviewer1Id != null AND reviewer2Id != null)
+// 6. Đánh giá Khóa luận tốt nghiệp
 // ==========================================
 
-// TBM, Lecturer, ADMIN: Get Theses For Evaluation with Stats
+// TBM, Giảng viên, ADMIN: Lấy danh sách đề tài để đánh giá kèm thống kê
 router.get(
   "/evaluations",
   authMiddleware,
@@ -333,7 +333,7 @@ router.get(
   thesisController.getThesesForEvaluation,
 );
 
-// TBM / ADMIN: Publish score columns for all theses in term
+// TBM / ADMIN: Công bố các cột điểm cho toàn bộ đề tài trong học kỳ
 router.post(
   "/publish-scores",
   authMiddleware,
@@ -342,10 +342,10 @@ router.post(
 );
 
 // ==========================================
-// 4. Lecturer / Reviewer / Admin Supervision & Grading Routes
+// 7. Giảng viên / Phản biện / Admin: Giám sát và Chấm điểm
 // ==========================================
 
-// Lecturer / Admin: Get all assigned theses (Supervisor / Reviewer 1 / Reviewer 2)
+// Giảng viên / Admin: Lấy tất cả đề tài được phân công (GVHD / Phản biện 1 / Phản biện 2)
 router.get(
   "/lecturer/assigned",
   authMiddleware,
@@ -353,7 +353,7 @@ router.get(
   thesisController.getAssignedThesesForLecturer,
 );
 
-// Lecturer / TBM / Admin: Mark student fail independently (KLTN)
+// Giảng viên / TBM / Admin: Đánh dấu sinh viên không đạt độc lập (KLTN)
 router.patch(
   "/:id/fail-student",
   authMiddleware,
@@ -361,7 +361,7 @@ router.patch(
   thesisController.markStudentFail,
 );
 
-// Lecturer / TBM / Admin: Unmark student fail (Bỏ đánh rớt)
+// Giảng viên / TBM / Admin: Hủy đánh dấu không đạt cho sinh viên
 router.patch(
   "/:id/unfail-student",
   authMiddleware,
@@ -369,7 +369,7 @@ router.patch(
   thesisController.unmarkStudentFail,
 );
 
-// Lecturer / Admin: Grade thesis with strict role-based score isolation
+// Giảng viên / Admin: Chấm điểm đề tài theo vai trò độc lập
 router.patch(
   "/:id/grade",
   authMiddleware,
@@ -377,7 +377,7 @@ router.patch(
   thesisController.gradeThesisByLecturer,
 );
 
-// Lecturer (GVHD) / Admin: Evaluate criteria condition for thesis
+// Giảng viên (GVHD) / Admin: Đánh giá điều kiện tiêu chí cho đề tài
 router.patch(
   "/:id/evaluate-criteria",
   authMiddleware,
@@ -385,7 +385,7 @@ router.patch(
   thesisController.evaluateThesisCriteriaBySupervisor,
 );
 
-// Lecturer / Admin: Toggle lock on single thesis score
+// Giảng viên / Admin: Khóa / Mở khóa điểm của một đề tài cụ thể
 router.patch(
   "/:id/score-lock",
   authMiddleware,
@@ -393,7 +393,7 @@ router.patch(
   thesisController.toggleThesisScoreLock,
 );
 
-// Lecturer / Admin: Toggle lock on all assigned theses scores
+// Giảng viên / Admin: Khóa / Mở khóa tất cả điểm các đề tài được phân công
 router.patch(
   "/lecturer/score-lock-all",
   authMiddleware,
@@ -401,7 +401,7 @@ router.patch(
   thesisController.toggleAllThesisScoresLock,
 );
 
-// Lecturer / Admin: Accept / Approve supervision of thesis
+// Giảng viên / Admin: Phê duyệt hướng dẫn đề tài
 router.patch(
   "/:id/supervisor-accept",
   authMiddleware,
@@ -416,7 +416,7 @@ router.patch(
   thesisController.supervisorAcceptThesis,
 );
 
-// Lecturer / Admin: Reject supervision of thesis
+// Giảng viên / Admin: Từ chối hướng dẫn đề tài
 router.patch(
   "/:id/supervisor-reject",
   authMiddleware,
@@ -424,7 +424,7 @@ router.patch(
   thesisController.supervisorRejectThesis,
 );
 
-// Lecturer / Admin: Cancel supervision / thesis
+// Giảng viên / Admin: Hủy hướng dẫn đề tài
 router.patch(
   "/:id/supervisor-cancel",
   authMiddleware,
@@ -432,7 +432,7 @@ router.patch(
   thesisController.supervisorCancelThesis,
 );
 
-// TBM & ADMIN: Export theses to Excel
+// TBM & ADMIN: Xuất danh sách đề tài ra Excel
 router.get(
   "/export",
   authMiddleware,
@@ -440,7 +440,7 @@ router.get(
   thesisController.exportTheses,
 );
 
-// TBM: Auto Assign Reviewers By Field
+// TBM: Tự động phân công cán bộ phản biện theo hướng nghiên cứu
 router.post(
   "/auto-assign-reviewers",
   authMiddleware,
@@ -448,7 +448,7 @@ router.post(
   thesisController.autoAssignReviewersByField,
 );
 
-// TBM: Get all Theses with Search & Filter
+// TBM: Lấy tất cả đề tài kèm tìm kiếm và lọc
 router.get(
   "/",
   authMiddleware,
@@ -456,7 +456,7 @@ router.get(
   thesisController.getAllThesesForTbm,
 );
 
-// TBM: Approve Thesis
+// TBM: Phê duyệt đề tài
 router.patch(
   "/:id/approve",
   authMiddleware,
@@ -464,7 +464,7 @@ router.patch(
   thesisController.approveThesis,
 );
 
-// TBM: Reject / Cancel Thesis
+// TBM: Từ chối / Hủy đề tài
 router.patch(
   "/:id/reject",
   authMiddleware,
@@ -479,7 +479,7 @@ router.patch(
   thesisController.rejectThesis,
 );
 
-// TBM: Assign / Change Supervisor
+// TBM: Phân công / Thay đổi GVHD
 router.patch(
   "/:id/assign-supervisor",
   authMiddleware,
@@ -487,7 +487,7 @@ router.patch(
   thesisController.assignSupervisor,
 );
 
-// TBM: Assign Reviewers (Reviewer 1 & 2)
+// TBM: Phân công cán bộ phản biện (Phản biện 1 & 2)
 router.patch(
   "/:id/assign-reviewers",
   authMiddleware,
@@ -495,7 +495,7 @@ router.patch(
   thesisController.assignReviewers,
 );
 
-// TBM: Complete Thesis Evaluation (COMPLETED)
+// TBM: Hoàn thành đánh giá đề tài (COMPLETED)
 router.patch(
   "/:id/complete",
   authMiddleware,
@@ -504,17 +504,17 @@ router.patch(
 );
 
 // ==========================================
-// 6. Detail by Student ID
+// 8. Chi tiết theo ID sinh viên
 // ==========================================
 
-// Get thesis by student ID (Shared detail)
+// Lấy thông tin đề tài theo ID sinh viên
 router.get(
   "/student/:studentId",
   authMiddleware,
   thesisController.getThesisByStudent,
 );
 
-// Get thesis by ID
+// Lấy thông tin đề tài theo ID
 router.get(
   "/:id",
   authMiddleware,

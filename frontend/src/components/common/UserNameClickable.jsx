@@ -1,14 +1,8 @@
 import React from 'react';
 import { useUserProfile } from '../../context/UserProfileContext';
-import { User, ExternalLink } from 'lucide-react';
 
 /**
- * Clickable User Name / Avatar component that opens the User Profile modal
- * @param {string|object} user - User object or userId
- * @param {string} name - Display name (optional fallback)
- * @param {string} subtitle - Subtitle (e.g. MSSV, email, or role)
- * @param {boolean} showAvatar - Whether to render avatar icon/image
- * @param {string} className - Additional CSS classes
+ * Thành phần hiển thị Họ tên / Ảnh đại diện người dùng có thể nhấp để xem thông tin chi tiết
  */
 const UserNameClickable = ({
   user,

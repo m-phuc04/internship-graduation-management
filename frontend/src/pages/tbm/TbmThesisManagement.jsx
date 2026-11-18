@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import thesisApi from '../../api/thesisApi';
 import councilApi from '../../api/councilApi';
 import researchFieldApi from '../../api/researchFieldApi';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
-import StatusBadge from '../../components/common/StatusBadge';
 import SearchInput from '../../components/common/SearchInput';
 import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
@@ -16,7 +15,6 @@ import AssignReviewersModal from '../../components/thesis/AssignReviewersModal';
 import AssignSupervisorModal from '../../components/thesis/AssignSupervisorModal';
 import TbmThesisDetailModal from '../../components/thesis/TbmThesisDetailModal';
 import ExportModal from '../../components/common/ExportModal';
-import ThesisTimelineModal from '../../components/thesis/ThesisTimelineModal';
 import CouncilManagementSection from '../../components/thesis/CouncilManagementSection';
 import AssignCouncilToThesisModal from '../../components/thesis/AssignCouncilToThesisModal';
 import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
@@ -24,32 +22,21 @@ import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
 import {
   GraduationCap,
   Users,
-  User,
   CheckCircle2,
   XCircle,
   Eye,
   UserCheck,
-  Sparkles,
-  Filter,
-  Layers,
   Clock,
   BookOpen,
   Award,
   FileSpreadsheet,
-  Download,
   AlertCircle,
   Check,
   X,
-  FileText,
   ChevronDown,
-  ChevronUp,
   CheckCheck,
   List,
-  LayoutGrid,
-  Lock,
-  Unlock,
   Ban,
-  Edit2,
   Trash2,
 } from 'lucide-react';
 

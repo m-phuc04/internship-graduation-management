@@ -2,21 +2,19 @@ import mongoose from "mongoose";
 import Council from "../models/Council.js";
 import Thesis from "../models/Thesis.js";
 import Lecturer from "../models/Lecturer.js";
-import User from "../models/User.js";
-import AcademicTerm from "../models/AcademicTerm.js";
 import Notification from "../models/Notification.js";
 import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
 
 /**
- * Check if the report time / defense time of a Council room has expired (ended)
+ * Kiểm tra xem thời gian bảo vệ của hội đồng đã kết thúc chưa
  */
 const isCouncilReportTimeExpired = (council) => {
   if (!council) return false;
   try {
     const now = new Date();
 
-    // 1. If reportDate is set
+    // 1. Trường hợp có ngày báo cáo riêng (reportDate)
     if (council.reportDate) {
       const dateObj = new Date(council.reportDate);
       if (!isNaN(dateObj.getTime())) {
@@ -32,7 +30,7 @@ const isCouncilReportTimeExpired = (council) => {
       }
     }
 
-    // 2. Parse from reportTime string (e.g. "08:00 - 11:30, 07/10/2026")
+    // 2. Phân tích từ chuỗi reportTime (ví dụ: "08:00 - 11:30, 07/10/2026")
     if (council.reportTime && typeof council.reportTime === "string") {
       const dateMatchVN = council.reportTime.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       const dateMatchISO = council.reportTime.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -187,7 +185,7 @@ const createCouncil = async (data, userId) => {
     createdBy: userId && mongoose.Types.ObjectId.isValid(userId) ? userId : null,
   });
 
-  // Notify newly assigned lecturers
+  // Gửi thông báo cho các giảng viên mới được phân công vào hội đồng
   if (formattedLecturers.length > 0) {
     for (const l of formattedLecturers) {
       try {
@@ -337,7 +335,7 @@ const deleteCouncil = async (id) => {
 
   const escapedName = council.name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  // Delete all notifications for this council
+  // Xóa toàn bộ thông báo liên quan đến hội đồng này
   await Notification.deleteMany({
     $or: [
       { referenceId: council._id },
@@ -350,14 +348,14 @@ const deleteCouncil = async (id) => {
 
   await Council.findByIdAndDelete(id);
 
-  // Unset councilId on any theses pointing to this council
+  // Gỡ liên kết councilId ở các đề tài thuộc hội đồng này
   await Thesis.updateMany({ councilId: id }, { $set: { councilId: null } });
 
   return { message: "Xóa phòng hội đồng thành công" };
 };
 
 // ====================
-// 6. Assign Council to Thesis
+// 6. Gán hội đồng cho đề tài KLTN
 // ====================
 const assignCouncilToThesis = async ({ thesisId, councilId }) => {
   const thesis = await Thesis.findById(thesisId);
@@ -422,7 +420,7 @@ const clearAllCouncils = async ({ academicTermId } = {}) => {
 
   const councilIds = await Council.find(query).distinct("_id");
 
-  // Delete all council notifications
+  // Xóa toàn bộ thông báo của các hội đồng
   await Notification.deleteMany({
     $or: [
       { referenceId: { $in: councilIds } },

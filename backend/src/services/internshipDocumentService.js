@@ -5,7 +5,6 @@ import InternshipDocument from "../models/InternshipDocument.js";
 import Internship from "../models/Internship.js";
 import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
-import Company from "../models/Company.js";
 import User from "../models/User.js";
 import InternshipReport from "../models/InternshipReport.js";
 import notificationService from "./notificationService.js";
@@ -14,7 +13,7 @@ import AppError from "../utils/AppError.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper to remove physical file
+// Hàm bổ trợ xóa tệp vật lý an toàn
 const unlinkFileSafe = (fileUrl) => {
   if (!fileUrl) return;
   try {
@@ -198,7 +197,7 @@ export const getLecturerGuides = async (
       });
     }
   } else {
-    // Admin or TBM
+    // Quản trị viên (Admin) hoặc Trưởng bộ môn (TBM)
     queryConditions.push({
       $or: [
         { scope: "ALL" },

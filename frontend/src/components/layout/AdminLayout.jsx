@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import AdminSidebar from './AdminSidebar';
 import { useAuth } from '../../context/AuthContext';
-import { ShieldCheck, Menu, X } from 'lucide-react';
+import { ShieldCheck, Menu } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
 import Footer from './Footer';
 

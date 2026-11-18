@@ -5,10 +5,10 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// 1. Get all fields (authenticated)
+// 1. Lấy tất cả hướng nghiên cứu (đã đăng nhập)
 router.get("/", authMiddleware, researchFieldController.getAllFields);
 
-// 2. Create field (TBM / ADMIN)
+// 2. Tạo hướng nghiên cứu mới (TBM / ADMIN)
 router.post(
   "/",
   authMiddleware,
@@ -16,7 +16,7 @@ router.post(
   researchFieldController.createField
 );
 
-// 3. Delete field (TBM / ADMIN)
+// 3. Xóa hướng nghiên cứu (TBM / ADMIN)
 router.delete(
   "/:id",
   authMiddleware,
@@ -24,7 +24,7 @@ router.delete(
   researchFieldController.deleteField
 );
 
-// 4. Get lecturers with fields (TBM / ADMIN)
+// 4. Lấy danh sách giảng viên kèm hướng nghiên cứu (TBM / ADMIN)
 router.get(
   "/lecturers",
   authMiddleware,
@@ -32,7 +32,7 @@ router.get(
   researchFieldController.getLecturersWithFields
 );
 
-// 5. Assign fields to lecturers (TBM / ADMIN)
+// 5. Gán hướng nghiên cứu cho giảng viên (TBM / ADMIN)
 router.put(
   "/lecturers/assign",
   authMiddleware,
@@ -40,7 +40,7 @@ router.put(
   researchFieldController.assignFields
 );
 
-// 6. Lecturer gets own pending request & current fields (LECTURER / TBM)
+// 6. Giảng viên xem yêu cầu thay đổi đang chờ và hướng hiện tại (LECTURER / TBM)
 router.get(
   "/my-request",
   authMiddleware,
@@ -48,7 +48,7 @@ router.get(
   researchFieldController.getMyRequest
 );
 
-// 7. Lecturer submits a field change request (LECTURER / TBM)
+// 7. Giảng viên gửi yêu cầu thay đổi hướng nghiên cứu (LECTURER / TBM)
 router.post(
   "/request",
   authMiddleware,
@@ -56,7 +56,7 @@ router.post(
   researchFieldController.createRequest
 );
 
-// 8. TBM gets all pending requests (TBM / ADMIN)
+// 8. TBM xem tất cả yêu cầu thay đổi đang chờ duyệt (TBM / ADMIN)
 router.get(
   "/requests",
   authMiddleware,
@@ -64,7 +64,7 @@ router.get(
   researchFieldController.getAllRequests
 );
 
-// 9. TBM approves request (TBM / ADMIN)
+// 9. TBM phê duyệt yêu cầu thay đổi (TBM / ADMIN)
 router.post(
   "/requests/:id/approve",
   authMiddleware,
@@ -72,7 +72,7 @@ router.post(
   researchFieldController.approveRequest
 );
 
-// 10. TBM rejects request (TBM / ADMIN)
+// 10. TBM từ chối yêu cầu thay đổi (TBM / ADMIN)
 router.post(
   "/requests/:id/reject",
   authMiddleware,

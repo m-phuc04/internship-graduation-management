@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Calendar, User, Eye, Tag, Share2 } from 'lucide-react';
+import { X, Calendar, User, Eye, Tag } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';
 
 const NewsDetailModal = ({ news, isOpen, onClose }) => {

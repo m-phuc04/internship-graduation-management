@@ -5,11 +5,11 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// Public routes
+// Tuyến đường công khai (xem danh sách và chi tiết tin tức)
 router.get("/", newsController.getPublicNews);
 router.get("/:id", newsController.getNewsById);
 
-// Protected routes (Lecturer, TBM, Admin)
+// Tuyến đường bảo vệ (Giảng viên, TBM, Admin)
 router.use(authMiddleware);
 router.use(authorizeRoles("LECTURER", "TBM", "ADMIN"));
 

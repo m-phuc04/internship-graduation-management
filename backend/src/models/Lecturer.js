@@ -67,7 +67,7 @@ const lecturerSchema = new mongoose.Schema(
   },
 );
 
-// Pre-save document hook: maxSupervisedStudents is Source of Truth
+// Hook tiền lưu trữ: đồng bộ nhất quán giữa maxSupervisedStudents và maxStudents
 lecturerSchema.pre("save", function (next) {
   const val =
     this.maxSupervisedStudents !== undefined && this.maxSupervisedStudents !== null
@@ -80,7 +80,7 @@ lecturerSchema.pre("save", function (next) {
   if (next && typeof next === "function") next();
 });
 
-// Pre-update query hook for findOneAndUpdate, updateOne, findByIdAndUpdate
+// Hook tiền cập nhật cho findOneAndUpdate, updateOne, findByIdAndUpdate
 function syncUpdateCapacity(next) {
   const update = this.getUpdate();
   if (!update) {

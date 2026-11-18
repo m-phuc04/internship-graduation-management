@@ -7,14 +7,13 @@ import AcademicTerm from "../models/AcademicTerm.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 import {
-  calculateInternshipWeeks,
   getWeekEndDate,
   isWeekEnded,
   getInternshipTotalWeeks,
 } from "../utils/internshipDateUtils.js";
 
 // ====================
-// Student Creates or Submits Report
+// 1. Sinh viên tạo hoặc nộp báo cáo thực tập
 // ====================
 const createReport = async ({
   userId,
@@ -221,7 +220,7 @@ const createReport = async ({
 };
 
 // ====================
-// Student Updates / Edits Report (Draft or Needs Revision)
+// 2. Sinh viên cập nhật / chỉnh sửa báo cáo (Bản nháp hoặc Cần chỉnh sửa)
 // ====================
 const updateReport = async ({
   reportId,
@@ -372,14 +371,14 @@ const updateReport = async ({
 };
 
 // ====================
-// Student 2 Confirms or Rejects Report (Đã loại bỏ trong luồng TTDN cá nhân)
+// 3. Sinh viên 2 xác nhận báo cáo (Đã loại bỏ trong luồng TTDN cá nhân)
 // ====================
 const confirmReportByStudent2 = async () => {
   throw new AppError("Chức năng xác nhận nhóm cho Thực tập Doanh nghiệp đã được loại bỏ", 400);
 };
 
 // ====================
-// Student Gets All Reports for their Internship
+// 4. Sinh viên xem danh sách báo cáo của mình
 // ====================
 const getReportsForStudent = async (userId) => {
   const student = await Student.findOne({ userId }).populate({
@@ -452,7 +451,7 @@ const getReportsForStudent = async (userId) => {
 };
 
 // ====================
-// Lecturer Gets Reports for Assigned Students (Only Confirmed / Submitted)
+// 5. Giảng viên lấy danh sách báo cáo của sinh viên được phân công
 // ====================
 const getReportsForLecturer = async (
   userId,
@@ -603,7 +602,7 @@ const getReportsForLecturer = async (
 };
 
 // ====================
-// TBM Gets All Reports
+// 6. TBM lấy danh sách tất cả báo cáo thực tập
 // ====================
 const getAllReportsForTbm = async ({
   page = 1,
@@ -678,7 +677,7 @@ const getAllReportsForTbm = async ({
 };
 
 // ====================
-// Get Report By ID with Role Access Verification
+// 7. Lấy chi tiết báo cáo theo ID kèm kiểm tra quyền truy cập
 // ====================
 const getReportById = async (reportId, requestingUser) => {
   const report = await InternshipReport.findById(reportId)
@@ -746,7 +745,7 @@ const getReportById = async (reportId, requestingUser) => {
 };
 
 // ====================
-// Lecturer / TBM Review Internship Report
+// 8. Giảng viên / TBM đánh giá báo cáo thực tập
 // ====================
 const reviewReport = async (
   reportId,
@@ -858,7 +857,7 @@ const reviewReport = async (
 };
 
 // ====================
-// Get All Reports for a Specific Internship with Role Verification
+// 9. Lấy toàn bộ báo cáo của một hồ sơ thực tập kèm kiểm tra quyền
 // ====================
 const getReportsByInternshipId = async (internshipId, requestingUser) => {
   const internship = await Internship.findById(internshipId)

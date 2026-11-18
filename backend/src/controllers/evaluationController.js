@@ -1,7 +1,7 @@
 import evaluationService from "../services/evaluationService.js";
 
 // ====================
-// Get Evaluation By ID
+// Lấy thông tin đánh giá theo ID
 // ====================
 const getEvaluationById = async (req, res, next) => {
   try {
@@ -22,7 +22,7 @@ const getEvaluationById = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Gets Evaluations of Supervised Students
+// Giảng viên lấy danh sách đánh giá của sinh viên hướng dẫn
 // ====================
 const getEvaluationsForLecturer = async (req, res, next) => {
   try {
@@ -48,7 +48,7 @@ const getEvaluationsForLecturer = async (req, res, next) => {
 };
 
 // ====================
-// TBM Gets All Evaluations
+// TBM lấy danh sách tất cả phiếu đánh giá
 // ====================
 const getAllEvaluationsForTbm = async (req, res, next) => {
   try {
@@ -74,7 +74,7 @@ const getAllEvaluationsForTbm = async (req, res, next) => {
 };
 
 // ====================
-// TBM Deletes Evaluation
+// TBM xóa kết quả đánh giá
 // ====================
 const tbmDeleteEvaluation = async (req, res, next) => {
   try {
@@ -91,7 +91,7 @@ const tbmDeleteEvaluation = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer (GVGS): Grade Internship
+// Giảng viên Giám sát (GVGS): Chấm điểm thực tập
 // ====================
 const gradeInternship = async (req, res, next) => {
   try {
@@ -117,7 +117,7 @@ const gradeInternship = async (req, res, next) => {
 };
 
 // ====================
-// TBM / Lecturer: Publish Single Score
+// TBM / Giảng viên: Công bố điểm một hồ sơ
 // ====================
 const publishScore = async (req, res, next) => {
   try {
@@ -139,7 +139,7 @@ const publishScore = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Publish Bulk Scores
+// TBM: Công bố điểm hàng loạt
 // ====================
 const publishScoresBulk = async (req, res, next) => {
   try {
@@ -160,7 +160,7 @@ const publishScoresBulk = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Hide Published Score
+// TBM: Ẩn điểm đã công bố
 // ====================
 const hideScore = async (req, res, next) => {
   try {
@@ -183,7 +183,7 @@ const hideScore = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Hide Bulk Scores
+// TBM: Ẩn điểm hàng loạt
 // ====================
 const hideScoresBulk = async (req, res, next) => {
   try {
@@ -205,7 +205,7 @@ const hideScoresBulk = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Republish Score
+// TBM: Công bố lại điểm
 // ====================
 const republishScore = async (req, res, next) => {
   try {

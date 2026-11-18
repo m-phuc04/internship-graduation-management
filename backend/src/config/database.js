@@ -7,11 +7,11 @@ const connectDatabase = async () => {
 
     console.log("MongoDB connected successfully");
 
-    // Drop legacy unique index on studentId if exists
+    // Xóa chỉ mục duy nhất cũ trên studentId nếu tồn tại
     try {
       await mongoose.connection.collection("internships").dropIndex("studentId_1");
     } catch {
-      // Ignore if index doesn't exist
+      // Bỏ qua nếu chỉ mục không tồn tại
     }
   } catch (error) {
     console.error("MongoDB connection failed:", error.message);
