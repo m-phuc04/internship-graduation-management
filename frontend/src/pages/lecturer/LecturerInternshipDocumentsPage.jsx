@@ -495,18 +495,18 @@ const LecturerInternshipDocumentsPage = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header Card */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
-            <FileText className="w-7 h-7" />
+      <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-5">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <FileText className="w-5 h-5 sm:w-7 sm:h-7" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-slate-900">
+          <div className="min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-900 leading-tight">
               Tài Liệu Thực Tập
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 mt-0.5 line-clamp-2 sm:line-clamp-none">
               Đăng tải tài liệu hướng dẫn cho sinh viên và theo dõi các file báo cáo thực tập do sinh viên nộp
             </p>
           </div>
@@ -516,7 +516,7 @@ const LecturerInternshipDocumentsPage = () => {
           <button
             type="button"
             onClick={handleOpenAddModal}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer shrink-0"
+            className="w-fit self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-2 sm:px-5 sm:py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
             <span>Thêm tài liệu mới</span>
@@ -1357,11 +1357,11 @@ const LecturerInternshipDocumentsPage = () => {
                   Mô tả / Hướng dẫn
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ghi chú thêm về nội dung tài liệu, hạn chót hoặc yêu cầu liên quan..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#123891] focus:ring-1 focus:ring-[#123891] transition resize-none"
+                  className="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-[#123891] focus:ring-1 focus:ring-[#123891] transition resize-none"
                 />
               </div>
 
