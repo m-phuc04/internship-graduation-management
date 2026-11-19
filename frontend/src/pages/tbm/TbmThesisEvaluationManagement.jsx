@@ -1839,7 +1839,7 @@ const TbmThesisEvaluationManagement = () => {
                               title={`${studentName || 'Sinh viên'} (${studentCode || ''}): Đạt yêu cầu`}
                             >
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                              <span>PASS (Đạt)</span>
+                              <span>PASS</span>
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200">
@@ -2285,7 +2285,7 @@ const TbmThesisEvaluationManagement = () => {
                             title={`${studentName || 'Sinh viên'} (${studentCode || ''}): Đạt yêu cầu`}
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            <span>PASS (Đạt)</span>
+                            <span>PASS</span>
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-medium text-slate-500 bg-slate-100 border border-slate-200">

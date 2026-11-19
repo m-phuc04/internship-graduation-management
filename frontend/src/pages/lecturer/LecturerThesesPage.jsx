@@ -3231,9 +3231,9 @@ const LecturerThesesPage = () => {
 
             {/* Table: Đề tài Hội đồng */}
             <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between">
+              <div className="p-4 sm:px-6 sm:py-4 bg-gradient-to-r from-blue-50/90 to-blue-50/40 border-b border-blue-100/80 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs">
+                  <div className="w-9 h-9 rounded-xl bg-[#123891] text-white flex items-center justify-center font-bold shadow-xs shrink-0">
                     <Award className="w-4 h-4" />
                   </div>
                   <div>
@@ -3245,7 +3245,7 @@ const LecturerThesesPage = () => {
                     </p>
                   </div>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs">
+                <span className="px-3 py-1 rounded-full bg-white text-[#102d7d] font-bold text-xs font-mono border border-blue-200 shadow-2xs shrink-0 whitespace-nowrap">
                   {councilTheses.length} đề tài
                 </span>
               </div>
@@ -3270,8 +3270,10 @@ const LecturerThesesPage = () => {
                   const isLec2Me = isSameLecturer(lec2, user, data?.lecturer);
 
                   return (
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[1050px] text-left border-collapse text-xs">
+                    <>
+                      {/* Desktop Table */}
+                      <div className="hidden md:block overflow-x-auto">
+                        <table className="w-full min-w-[1050px] text-left border-collapse text-xs">
                         <thead>
                           <tr className="bg-slate-50/80 text-slate-500 font-semibold border-b border-slate-200/80 uppercase text-[10px] tracking-wider">
                             <th className="py-3.5 px-4 w-12 text-center">STT</th>
@@ -3465,7 +3467,178 @@ const LecturerThesesPage = () => {
                           })}
                         </tbody>
                       </table>
-                    </div>
+                      </div>
+
+                      {/* Mobile Cards */}
+                      <div className="md:hidden divide-y divide-slate-100">
+                        {councilTheses.map((item, index) => {
+                          const gradeStatus = getGradingStatusForThesis(item, 'COUNCIL');
+                          const councilObj = effectiveActiveCouncil || getAssignedCouncil(item) || item?.councilId;
+                          const timeStr = formatCouncilTime(councilObj);
+                          const dateStr = formatCouncilDate(councilObj);
+
+                          return (
+                            <div key={item._id} className="p-4 space-y-3 bg-white hover:bg-slate-50/50 transition">
+                              {/* 1. Header: STT & Thesis Title */}
+                              <div className="flex items-start gap-2.5">
+                                <span className="w-6 h-6 rounded-lg bg-blue-50 text-[#123891] font-mono font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                                  {index + 1}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenDetail(item)}
+                                    className="text-left font-bold text-sm text-slate-900 hover:text-[#123891] leading-snug line-clamp-2 transition cursor-pointer"
+                                  >
+                                    {item.thesisTitle}
+                                  </button>
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-mono mt-1">
+                                    {item.studentCount === 2 ? 'Nhóm 2 SV' : 'Cá nhân (1 SV)'}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* 2. Students */}
+                              <div className="space-y-1.5 pl-8.5 text-xs">
+                                {item.studentCount === 2 && item.secondStudentId ? (
+                                  <>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV1
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.studentId}
+                                        name={item.studentId?.userId?.fullName}
+                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                        showAvatar={false}
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV2
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.secondStudentId}
+                                        name={item.secondStudentId?.userId?.fullName}
+                                        subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                        showAvatar={false}
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
+                                  <UserNameClickable
+                                    user={item.studentId}
+                                    name={item.studentId?.userId?.fullName}
+                                    subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                    showAvatar={false}
+                                  />
+                                )}
+                              </div>
+
+                              {/* 3. Lecturers & Council Room Info */}
+                              <div className="grid grid-cols-2 gap-2 text-xs pl-8.5 pt-2 border-t border-slate-50">
+                                <div>
+                                  <span className="text-[10px] text-slate-400 block font-medium">GV Hướng Dẫn:</span>
+                                  <span className="font-semibold text-slate-800">{formatLecturerDisplay(item.supervisorId)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[10px] text-slate-400 block font-medium">GVPB 1 / 2:</span>
+                                  <span className="text-slate-700 text-[11px] block truncate">
+                                    {getReviewer1Display(item)} • {getReviewer2Display(item)}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Council Room / Schedule */}
+                              <div className="pl-8.5 text-xs">
+                                <div className="p-2 bg-blue-50/50 rounded-xl border border-blue-100/60 flex flex-wrap items-center gap-1.5 text-[11px]">
+                                  <span className="font-bold text-[#123891]">{councilObj?.name || 'Hội đồng KLTN'}</span>
+                                  {councilObj?.room && (
+                                    <span className="text-[10px] font-mono text-[#123891] bg-white px-1.5 py-0.5 rounded border border-blue-200 font-semibold">
+                                      Phòng: {councilObj.room}
+                                    </span>
+                                  )}
+                                  {timeStr && (
+                                    <span className="text-[10px] font-mono text-slate-700 bg-white px-1.5 py-0.5 rounded border border-slate-200 font-medium inline-flex items-center gap-1">
+                                      <Clock className="w-2.5 h-2.5 text-[#123891]" />
+                                      {timeStr}
+                                    </span>
+                                  )}
+                                  {!timeStr && dateStr && (
+                                    <span className="text-[10px] font-mono text-slate-500 bg-white px-1.5 py-0.5 rounded border border-slate-200 inline-flex items-center gap-0.5">
+                                      <Calendar className="w-2.5 h-2.5 text-slate-400" />
+                                      {dateStr}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* 4. Scores Grid: GVHĐ 1, GVHĐ 2, Điểm Hội Đồng */}
+                              <div className="grid grid-cols-3 gap-1.5 pl-8.5 p-2 bg-slate-50/70 rounded-xl text-center text-xs">
+                                <div>
+                                  <span className="text-[9px] text-slate-400 block font-semibold uppercase truncate">
+                                    GVHĐ 1 {isLec1Me && '(Bạn)'}
+                                  </span>
+                                  <div className="font-bold text-slate-800 mt-0.5">
+                                    {renderCouncilLecturerScore(item, 0)}
+                                  </div>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] text-slate-400 block font-semibold uppercase truncate">
+                                    GVHĐ 2 {isLec2Me && '(Bạn)'}
+                                  </span>
+                                  <div className="font-bold text-slate-800 mt-0.5">
+                                    {renderCouncilLecturerScore(item, 1)}
+                                  </div>
+                                </div>
+                                <div className="bg-blue-50/80 rounded-lg py-0.5 border border-blue-100">
+                                  <span className="text-[9px] text-[#123891] block font-extrabold uppercase truncate">
+                                    Điểm HĐ
+                                  </span>
+                                  <div className="font-bold text-[#102d7d] mt-0.5">
+                                    {renderCouncilAverageScore(item)}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* 5. Actions */}
+                              <div className="flex items-center justify-end gap-2 pl-8.5 pt-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenDetail(item)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  title="Xem chi tiết đề tài"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Chi tiết</span>
+                                </button>
+                                {item.status !== 'REJECTED' && (() => {
+                                  return (
+                                    <button
+                                      type="button"
+                                      disabled={!gradeStatus.canGrade}
+                                      onClick={() => {
+                                        if (!gradeStatus.canGrade) return;
+                                        handleOpenGradeBox(item, 'COUNCIL');
+                                      }}
+                                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 font-bold rounded-xl text-xs shadow-xs transition ${
+                                        gradeStatus.canGrade
+                                          ? 'bg-[#123891] hover:bg-[#102d7d] text-white cursor-pointer'
+                                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                                      }`}
+                                      title={gradeStatus.reason}
+                                    >
+                                      <Award className="w-3.5 h-3.5" />
+                                      <span>Chấm điểm</span>
+                                    </button>
+                                  );
+                                })()}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
                   );
                 })()
               )}
@@ -5354,7 +5527,8 @@ const LecturerThesesPage = () => {
             {/* Actions inside Detail Modal */}
             <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100">
               <div className="flex items-center gap-2">
-                {targetThesis.status !== 'REJECTED' &&
+                {!isCouncilTab &&
+                  targetThesis.status !== 'REJECTED' &&
                   targetThesis.status !== 'PENDING_SUPERVISOR_APPROVAL' &&
                   targetThesis.status !== 'PENDING_TBM_APPROVAL' && (
                     <button
