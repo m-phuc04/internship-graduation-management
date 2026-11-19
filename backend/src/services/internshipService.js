@@ -1731,6 +1731,29 @@ const deleteReportFile = async ({ internshipId = null, userId, reason = "" }) =>
     throw new AppError("Hồ sơ thực tập hiện tại chưa có file báo cáo nào để gỡ", 400);
   }
 
+  // 3.1. Kiểm soát quyền gỡ file theo trạng thái điểm sinh viên
+  if (internship.isScorePublished || internship.scorePublishStatus === "PUBLISHED") {
+    throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+  }
+
+  const evalDoc = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (evalDoc?.isScorePublished || evalDoc?.scorePublishStatus === "PUBLISHED") {
+    throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+  }
+
+  const hasScore =
+    (evalDoc && evalDoc.score !== null && evalDoc.score !== undefined && !isNaN(evalDoc.score)) ||
+    (internship.evaluation && internship.evaluation.score !== null && internship.evaluation.score !== undefined) ||
+    internship.hasGraded;
+
+  if (hasScore) {
+    throw new AppError("Không thể gỡ file vì sinh viên đã được chấm điểm", 400);
+  }
+
   // 4. Lưu vết lịch sử thao tác gỡ file vào Database (Internship.reportRemovalHistory)
   const removedFile = {
     originalName: internship.reportFile.originalName || "",

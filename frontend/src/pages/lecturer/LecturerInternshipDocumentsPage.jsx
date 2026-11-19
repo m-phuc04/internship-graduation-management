@@ -453,6 +453,31 @@ const LecturerInternshipDocumentsPage = () => {
   };
 
   const handleOpenRemoveReport = (sub) => {
+    const isScorePublished = Boolean(
+      sub.isScorePublished ||
+      sub.internshipId?.isScorePublished ||
+      sub.internshipId?.scorePublishStatus === 'PUBLISHED'
+    );
+    const hasScore = Boolean(
+      sub.hasScore ||
+      sub.internshipId?.hasScore ||
+      (sub.internshipId?.evaluation &&
+        sub.internshipId.evaluation.score !== null &&
+        sub.internshipId.evaluation.score !== undefined) ||
+      (sub.evaluation &&
+        sub.evaluation.score !== null &&
+        sub.evaluation.score !== undefined)
+    );
+
+    if (isScorePublished) {
+      showToast('Không thể gỡ file vì điểm đã được công bố', 'error');
+      return;
+    }
+    if (hasScore) {
+      showToast('Không thể gỡ file vì sinh viên đã được chấm điểm', 'error');
+      return;
+    }
+
     setTargetSubmission(sub);
     setRemoveReason('');
     setRemoveError('');
@@ -461,34 +486,70 @@ const LecturerInternshipDocumentsPage = () => {
 
   const handleConfirmRemoveReport = async (e) => {
     if (e) e.preventDefault();
-    const trimmedReason = typeof removeReason === 'string' ? removeReason.trim() : '';
-    if (!trimmedReason) {
-      setRemoveError('Vui lòng nhập lý do gỡ file báo cáo');
+    const trimmedReason =
+      typeof removeReason === 'string' && removeReason.trim()
+        ? removeReason.trim()
+        : 'Giảng viên giám sát gỡ file tài liệu nộp của sinh viên';
+    if (!targetSubmission) return;
+
+    const isScorePublished = Boolean(
+      targetSubmission.isScorePublished ||
+      targetSubmission.internshipId?.isScorePublished ||
+      targetSubmission.internshipId?.scorePublishStatus === 'PUBLISHED'
+    );
+    const hasScore = Boolean(
+      targetSubmission.hasScore ||
+      targetSubmission.internshipId?.hasScore ||
+      (targetSubmission.internshipId?.evaluation &&
+        targetSubmission.internshipId.evaluation.score !== null &&
+        targetSubmission.internshipId.evaluation.score !== undefined) ||
+      (targetSubmission.evaluation &&
+        targetSubmission.evaluation.score !== null &&
+        targetSubmission.evaluation.score !== undefined)
+    );
+
+    if (isScorePublished) {
+      showToast('Không thể gỡ file vì điểm đã được công bố', 'error');
+      setRemoveReportModalOpen(false);
       return;
     }
-    if (!targetSubmission) return;
+    if (hasScore) {
+      showToast('Không thể gỡ file vì sinh viên đã được chấm điểm', 'error');
+      setRemoveReportModalOpen(false);
+      return;
+    }
 
     setRemovingReport(true);
     setRemoveError('');
     try {
+      const isReport = /báo cáo/i.test(targetSubmission.category || '');
       const internshipId =
         targetSubmission.internshipId?._id || targetSubmission.internshipId;
-      if (!internshipId) {
-        throw new Error('Không tìm thấy mã hồ sơ thực tập tương ứng');
-      }
 
-      const res = await internshipApi.deleteReportFile(internshipId, trimmedReason);
-      if (res?.success) {
-        showToast('Đã gỡ file báo cáo thực tập của sinh viên thành công!', 'success');
-        setRemoveReportModalOpen(false);
-        setTargetSubmission(null);
-        setRemoveReason('');
-        await loadData();
+      if (isReport && internshipId) {
+        const res = await internshipApi.deleteReportFile(internshipId, trimmedReason);
+        if (res?.success) {
+          showToast('Đã gỡ file tài liệu nộp của sinh viên thành công!', 'success');
+          setRemoveReportModalOpen(false);
+          setTargetSubmission(null);
+          setRemoveReason('');
+          await loadData();
+        }
+      } else {
+        const res = await internshipDocumentApi.deleteLecturerGuide(targetSubmission._id);
+        if (res?.success) {
+          showToast('Đã gỡ file tài liệu nộp của sinh viên thành công!', 'success');
+          setRemoveReportModalOpen(false);
+          setTargetSubmission(null);
+          setRemoveReason('');
+          await loadData();
+        }
       }
     } catch (err) {
       setRemoveError(
-        err.response?.data?.message || err.message || 'Không thể gỡ file báo cáo',
+        err.response?.data?.message || err.message || 'Không thể gỡ file tài liệu',
       );
+      showToast(err.response?.data?.message || err.message || 'Không thể gỡ file tài liệu', 'error');
     } finally {
       setRemovingReport(false);
     }
@@ -1068,17 +1129,60 @@ const LecturerInternshipDocumentsPage = () => {
 
                             {/* Thao tác */}
                             <td className="py-3.5 px-4 pr-6 text-right">
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDownload(sub)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-                                  title="Tải về file"
-                                >
-                                  <Download className="w-3.5 h-3.5" />
-                                  <span>Tải về</span>
-                                </button>
-                              </div>
+                              {(() => {
+                                const isScorePublished = Boolean(
+                                  sub.isScorePublished ||
+                                  sub.internshipId?.isScorePublished ||
+                                  sub.internshipId?.scorePublishStatus === 'PUBLISHED'
+                                );
+                                const hasScore = Boolean(
+                                  sub.hasScore ||
+                                  sub.internshipId?.hasScore ||
+                                  (sub.internshipId?.evaluation &&
+                                    sub.internshipId.evaluation.score !== null &&
+                                    sub.internshipId.evaluation.score !== undefined) ||
+                                  (sub.evaluation &&
+                                    sub.evaluation.score !== null &&
+                                    sub.evaluation.score !== undefined)
+                                );
+                                const canRemove = !isScorePublished && !hasScore;
+                                const removeTooltip = isScorePublished
+                                  ? 'Không thể gỡ file vì điểm đã được công bố'
+                                  : hasScore
+                                  ? 'Không thể gỡ file vì sinh viên đã được chấm điểm'
+                                  : 'Gỡ file';
+
+                                return (
+                                  <div className="flex items-center justify-end gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDownload(sub)}
+                                      className="p-2 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl shadow-xs transition cursor-pointer flex items-center justify-center"
+                                      title="Tải file"
+                                    >
+                                      <Download className="w-4 h-4" />
+                                    </button>
+
+                                    <button
+                                      type="button"
+                                      disabled={!canRemove}
+                                      onClick={() => {
+                                        if (canRemove) {
+                                          handleOpenRemoveReport(sub);
+                                        }
+                                      }}
+                                      className={`p-2 rounded-xl border transition shadow-2xs flex items-center justify-center ${
+                                        canRemove
+                                          ? 'bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 border-rose-200 cursor-pointer'
+                                          : 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                                      }`}
+                                      title={removeTooltip}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                );
+                              })()}
                             </td>
                           </tr>
                         );
@@ -1649,10 +1753,10 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
               <div>
                 <h3 className="text-base font-bold text-slate-900">
-                  Gỡ File Báo Cáo Thực Tập Của Sinh Viên
+                  Gỡ File Tài Liệu Nộp Của Sinh Viên
                 </h3>
                 <p className="text-xs text-slate-500">
-                  Hồ sơ sẽ chuyển về trạng thái Chưa nộp và cho phép sinh viên tải lại file mới
+                  Xác nhận gỡ file đã nộp này của sinh viên để sinh viên có thể cập nhật lại file mới
                 </p>
               </div>
             </div>
@@ -1682,7 +1786,7 @@ const LecturerInternshipDocumentsPage = () => {
             {/* Lý do gỡ file */}
             <div className="space-y-2">
               <label className="block text-xs font-bold text-slate-800">
-                Lý do gỡ file báo cáo <span className="text-rose-500">(*)</span>:
+                Lý do gỡ file:
               </label>
 
               {/* Quick select reasons */}
@@ -1713,7 +1817,7 @@ const LecturerInternshipDocumentsPage = () => {
                   setRemoveReason(e.target.value);
                   if (removeError) setRemoveError('');
                 }}
-                placeholder="Nhập chi tiết lý do gỡ file báo cáo (bắt buộc)..."
+                placeholder="Nhập lý do hoặc hướng dẫn sinh viên cập nhật lại file này..."
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition resize-none"
               />
               {removeError && (
@@ -1725,7 +1829,7 @@ const LecturerInternshipDocumentsPage = () => {
             </div>
 
             <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-[11px] text-amber-800 leading-relaxed">
-              Thao tác này sẽ xóa file báo cáo hiện tại và được ghi nhận vào lịch sử hệ thống. Hệ thống sẽ gửi thông báo đến sinh viên để nộp lại file mới.
+              Thao tác này sẽ gỡ file tài liệu đã nộp này của sinh viên và gửi thông báo để sinh viên có thể cập nhật lại file mới.
             </div>
 
             {/* Actions */}
@@ -1745,7 +1849,7 @@ const LecturerInternshipDocumentsPage = () => {
               </button>
               <button
                 type="button"
-                disabled={removingReport || !removeReason.trim()}
+                disabled={removingReport}
                 onClick={handleConfirmRemoveReport}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer text-center"
               >

@@ -7,6 +7,7 @@ import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import InternshipReport from "../models/InternshipReport.js";
+import Evaluation from "../models/Evaluation.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -471,6 +472,29 @@ export const deleteLecturerGuide = async (id, userId) => {
     throw new AppError("Bạn không có quyền xóa tài liệu này", 403);
   }
 
+  // Kiểm soát quyền gỡ file theo trạng thái điểm sinh viên nếu là tài liệu nộp
+  if (doc.internshipId) {
+    const internship = await Internship.findById(doc.internshipId);
+    if (internship) {
+      if (internship.isScorePublished || internship.scorePublishStatus === "PUBLISHED") {
+        throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+      }
+      const evalDoc = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      });
+      if (evalDoc?.isScorePublished || evalDoc?.scorePublishStatus === "PUBLISHED") {
+        throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+      }
+      const hasScore =
+        (evalDoc && evalDoc.score !== null && evalDoc.score !== undefined && !isNaN(evalDoc.score)) ||
+        internship.hasGraded;
+      if (hasScore) {
+        throw new AppError("Không thể gỡ file vì sinh viên đã được chấm điểm", 400);
+      }
+    }
+  }
+
   unlinkFileSafe(doc.fileUrl);
   await InternshipDocument.findByIdAndDelete(id);
 
@@ -534,7 +558,7 @@ export const getLecturerSubmissions = async (
     .populate({
       path: "internshipId",
       populate: { path: "companyId", select: "name" },
-      select: "position companyId",
+      select: "position companyId isScorePublished scorePublishStatus hasGraded",
     })
     .populate("uploadedBy", "fullName email")
     .populate("academicTermId", "termName code")
@@ -579,7 +603,7 @@ export const getLecturerSubmissions = async (
             .populate({
               path: "internshipId",
               populate: { path: "companyId", select: "name" },
-              select: "position companyId",
+              select: "position companyId isScorePublished scorePublishStatus hasGraded",
             })
             .populate("uploadedBy", "fullName email")
             .populate("academicTermId", "termName code");
@@ -619,6 +643,59 @@ export const getLecturerSubmissions = async (
       }
     }
     return true;
+  });
+
+  // Gắn thông tin điểm và trạng thái công bố điểm vào từng submission
+  const allSupervisedInternshipIds = supervisedInternships.map((i) => i._id);
+  const evaluations = await Evaluation.find({
+    evaluationType: "INTERNSHIP",
+    targetId: { $in: allSupervisedInternshipIds },
+  }).lean();
+
+  const evalMap = new Map();
+  evaluations.forEach((ev) => {
+    evalMap.set(ev.targetId.toString(), ev);
+  });
+  const internshipMap = new Map();
+  supervisedInternships.forEach((i) => {
+    internshipMap.set(i._id.toString(), i);
+  });
+
+  submissions = submissions.map((sub) => {
+    const sObj = sub.toObject ? sub.toObject() : { ...sub };
+    const iId = sObj.internshipId?._id
+      ? sObj.internshipId._id.toString()
+      : sObj.internshipId?.toString();
+    const ev = iId ? evalMap.get(iId) || null : null;
+    const internDoc = iId ? internshipMap.get(iId) || null : null;
+
+    const isPublished = Boolean(
+      sObj.internshipId?.isScorePublished ||
+      sObj.internshipId?.scorePublishStatus === "PUBLISHED" ||
+      internDoc?.isScorePublished ||
+      internDoc?.scorePublishStatus === "PUBLISHED" ||
+      ev?.isScorePublished ||
+      ev?.scorePublishStatus === "PUBLISHED"
+    );
+
+    const hasScore = Boolean(
+      (ev && ev.score !== null && ev.score !== undefined && !isNaN(ev.score)) ||
+      (sObj.internshipId?.evaluation && sObj.internshipId.evaluation.score !== null && sObj.internshipId.evaluation.score !== undefined) ||
+      sObj.internshipId?.hasGraded ||
+      internDoc?.hasGraded
+    );
+
+    if (sObj.internshipId && typeof sObj.internshipId === "object") {
+      sObj.internshipId.evaluation = ev;
+      sObj.internshipId.isScorePublished = isPublished;
+      sObj.internshipId.hasScore = hasScore;
+    }
+
+    sObj.evaluation = ev;
+    sObj.isScorePublished = isPublished;
+    sObj.hasScore = hasScore;
+
+    return sObj;
   });
 
   // Lọc theo search (nếu có)
@@ -1233,6 +1310,29 @@ export const deleteStudentSubmission = async (id, userId) => {
   const targetInternshipId = doc.internshipId;
   const deletedFileUrl = doc.fileUrl;
   const deletedFileName = doc.fileName;
+
+  // Kiểm soát quyền gỡ file theo trạng thái điểm sinh viên
+  if (targetInternshipId) {
+    const internship = await Internship.findById(targetInternshipId);
+    if (internship) {
+      if (internship.isScorePublished || internship.scorePublishStatus === "PUBLISHED") {
+        throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+      }
+      const evalDoc = await Evaluation.findOne({
+        evaluationType: "INTERNSHIP",
+        targetId: internship._id,
+      });
+      if (evalDoc?.isScorePublished || evalDoc?.scorePublishStatus === "PUBLISHED") {
+        throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+      }
+      const hasScore =
+        (evalDoc && evalDoc.score !== null && evalDoc.score !== undefined && !isNaN(evalDoc.score)) ||
+        internship.hasGraded;
+      if (hasScore) {
+        throw new AppError("Không thể gỡ file vì sinh viên đã được chấm điểm", 400);
+      }
+    }
+  }
 
   unlinkFileSafe(doc.fileUrl);
   await InternshipDocument.findByIdAndDelete(id);
