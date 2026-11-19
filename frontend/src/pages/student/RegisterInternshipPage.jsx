@@ -280,6 +280,11 @@ const RegisterInternshipPage = () => {
     };
 
     try {
+      if (isCompleted || hasActiveInternship || !canRegisterNew) {
+        showToast('Bạn không thể đăng ký thực tập do đã có hồ sơ trên hệ thống', 'error');
+        return;
+      }
+
       const res = await internshipApi.register(payload);
       if (res.success) {
         showToast('Đăng ký thực tập thành công! Hồ sơ đang chờ xét duyệt.', 'success');
@@ -300,10 +305,55 @@ const RegisterInternshipPage = () => {
     );
   }
 
-  const { student, hasActiveInternship } = profileData || {};
+  const { student } = profileData || {};
+  const internship = profileData?.internship;
+  const isRejected = internship?.status === 'REJECTED';
+  const isCancelled = internship?.status === 'CANCELLED';
 
-  // If already has active internship -> Block registration
-  if (hasActiveInternship) {
+  const isCompleted = Boolean(
+    profileData?.isCompleted ||
+    internship?.status === 'COMPLETED' ||
+    profileData?.isScorePublished ||
+    internship?.isScorePublished ||
+    profileData?.evaluation?.isScorePublished
+  );
+
+  const hasActiveInternship = Boolean(
+    profileData?.hasActiveInternship ?? (internship && !isRejected && !isCancelled)
+  );
+
+  const canRegisterNew = Boolean(
+    profileData?.canRegisterNew ?? (!hasActiveInternship && !isCompleted)
+  );
+
+  // If already finished internship (completed/graded/published) -> Block registration with Completed card
+  if (isCompleted) {
+    return (
+      <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-2xs text-center max-w-xl mx-auto space-y-4">
+        <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-600 flex items-center justify-center mx-auto shadow-xs">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <h3 className="text-lg font-bold text-slate-900">
+          Bạn đã hoàn thành Thực tập Doanh nghiệp
+        </h3>
+        <p className="text-xs text-slate-500 leading-relaxed">
+          Hồ sơ thực tập của bạn đã hoàn thành và kết quả đánh giá đã được ghi nhận trên hệ thống. Bạn không thể đăng ký thêm hồ sơ thực tập mới.
+        </p>
+        <div className="pt-2">
+          <Link
+            to="/student/internship?view=evaluation"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-semibold rounded-xl shadow-sm transition"
+          >
+            <Briefcase className="w-4 h-4" />
+            <span>Xem kết quả đánh giá thực tập</span>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // If already has active ongoing internship -> Block registration with Ongoing card
+  if (hasActiveInternship || !canRegisterNew) {
     return (
       <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-2xs text-center max-w-xl mx-auto space-y-4">
         <div className="w-16 h-16 rounded-2xl bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto shadow-xs">

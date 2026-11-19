@@ -167,16 +167,39 @@ const createInternship = async ({
     }
   }
 
-  // 4. Check 1 MSSV = 1 Active Internship Rule within active term
-  const activeInternship = await Internship.findOne({
+  // 4. Kiểm tra quy tắc 1 MSSV: không được đăng ký mới nếu đã có hồ sơ trong kỳ (ngoại trừ bị từ chối hoặc hủy)
+  const existingInternshipInTerm = await Internship.findOne({
     studentId: student._id,
     academicTermId: activeTerm._id,
-    status: { $in: ACTIVE_STATUSES },
+    status: { $nin: ["REJECTED", "CANCELLED"] },
   });
 
-  if (activeInternship) {
+  if (existingInternshipInTerm) {
+    if (existingInternshipInTerm.status === "COMPLETED") {
+      throw new AppError(
+        `Sinh viên đã hoàn thành hồ sơ thực tập trong học kỳ ${activeTerm.code}. Không thể đăng ký thêm hồ sơ mới.`,
+        409,
+      );
+    }
     throw new AppError(
-      `Sinh viên đang có một hồ sơ thực tập ở trạng thái hoạt động (${activeInternship.status}) trong học kỳ ${activeTerm.code}. Không thể đăng ký thêm hồ sơ mới.`,
+      `Sinh viên đang có một hồ sơ thực tập ở trạng thái (${existingInternshipInTerm.status}) trong học kỳ ${activeTerm.code}. Không thể đăng ký thêm hồ sơ mới.`,
+      409,
+    );
+  }
+
+  // Kiểm tra nếu sinh viên đã từng hoàn thành thực tập và đã được công bố điểm ở bất kỳ học kỳ nào
+  const completedInternshipWithScore = await Internship.findOne({
+    studentId: student._id,
+    status: "COMPLETED",
+    $or: [
+      { isScorePublished: true },
+      { scorePublishStatus: "PUBLISHED" },
+    ],
+  });
+
+  if (completedInternshipWithScore) {
+    throw new AppError(
+      "Sinh viên đã hoàn thành học phần Thực tập Doanh nghiệp và đã được công bố điểm. Không thể đăng ký thực tập mới.",
       409,
     );
   }
@@ -893,8 +916,32 @@ const getMyInternship = async (userId, academicTermId = null) => {
     .populate("academicTermId")
     .lean();
 
-  const hasActiveInternship =
-    internship && ACTIVE_STATUSES.includes(internship.status);
+  // Kiểm tra xem sinh viên đã từng hoàn thành thực tập và được công bố điểm ở bất kỳ học kỳ nào chưa
+  const completedAnyTerm = await Internship.findOne({
+    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+    status: "COMPLETED",
+    $or: [
+      { isScorePublished: true },
+      { scorePublishStatus: "PUBLISHED" },
+    ],
+  }).lean();
+
+  const isRejected = internship?.status === "REJECTED";
+  const isCancelled = internship?.status === "CANCELLED";
+  const isCompleted = Boolean(
+    internship?.status === "COMPLETED" || completedAnyTerm
+  );
+
+  // hasActiveInternship: true nếu sinh viên đang có hồ sơ thực tập hợp lệ (chưa bị hủy hoặc từ chối)
+  const hasActiveInternship = Boolean(
+    internship && !isRejected && !isCancelled
+  );
+
+  // canRegisterNew: chỉ cho phép đăng ký mới khi chưa có hồ sơ hoặc hồ sơ đã bị từ chối/hủy,
+  // và chưa từng hoàn thành thực tập đã công bố điểm
+  const canRegisterNew = Boolean(
+    !completedAnyTerm && (!internship || isRejected || isCancelled)
+  );
 
   if (internship && internship.academicTermId) {
     const termDoc = await AcademicTerm.findById(
@@ -907,6 +954,7 @@ const getMyInternship = async (userId, academicTermId = null) => {
 
   let diaryStatus = null;
   let evaluation = null;
+  let isPublished = false;
   if (internship) {
     const reports = await InternshipReport.find({ internshipId: internship._id }).lean();
     diaryStatus = checkInternshipDiaryCompletion(internship, reports);
@@ -917,7 +965,7 @@ const getMyInternship = async (userId, academicTermId = null) => {
     }).lean();
 
     if (evalDoc) {
-      const isPublished = Boolean(
+      isPublished = Boolean(
         internship.isScorePublished ||
         internship.scorePublishStatus === "PUBLISHED" ||
         evalDoc.isScorePublished ||
@@ -946,7 +994,13 @@ const getMyInternship = async (userId, academicTermId = null) => {
     internship: internship || null,
     evaluation,
     hasActiveInternship: Boolean(hasActiveInternship),
-    canRegisterNew: !hasActiveInternship,
+    isCompleted: Boolean(isCompleted),
+    isScorePublished: Boolean(
+      isPublished ||
+      completedAnyTerm?.isScorePublished ||
+      completedAnyTerm?.scorePublishStatus === "PUBLISHED"
+    ),
+    canRegisterNew: Boolean(canRegisterNew),
     diaryStatus,
   };
 };
@@ -1729,6 +1783,29 @@ const deleteReportFile = async ({ internshipId = null, userId, reason = "" }) =>
 
   if (!internship.reportFile || !internship.reportFile.fileUrl) {
     throw new AppError("Hồ sơ thực tập hiện tại chưa có file báo cáo nào để gỡ", 400);
+  }
+
+  // 3.1. Kiểm soát quyền gỡ file theo trạng thái điểm sinh viên
+  if (internship.isScorePublished || internship.scorePublishStatus === "PUBLISHED") {
+    throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+  }
+
+  const evalDoc = await Evaluation.findOne({
+    evaluationType: "INTERNSHIP",
+    targetId: internship._id,
+  });
+
+  if (evalDoc?.isScorePublished || evalDoc?.scorePublishStatus === "PUBLISHED") {
+    throw new AppError("Không thể gỡ file vì điểm đã được công bố", 400);
+  }
+
+  const hasScore =
+    (evalDoc && evalDoc.score !== null && evalDoc.score !== undefined && !isNaN(evalDoc.score)) ||
+    (internship.evaluation && internship.evaluation.score !== null && internship.evaluation.score !== undefined) ||
+    internship.hasGraded;
+
+  if (hasScore) {
+    throw new AppError("Không thể gỡ file vì sinh viên đã được chấm điểm", 400);
   }
 
   // 4. Lưu vết lịch sử thao tác gỡ file vào Database (Internship.reportRemovalHistory)
