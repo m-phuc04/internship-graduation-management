@@ -800,6 +800,7 @@ const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser 
   });
   await evaluation.save();
 
+  internship.status = "COMPLETED";
   internship.isScorePublished = true;
   internship.scorePublishStatus = "PUBLISHED";
   internship.scorePublishedAt = now;
@@ -976,6 +977,7 @@ const hideInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
   });
   await evaluation.save();
 
+  internship.status = "COMPLETED";
   internship.isScorePublished = false;
   internship.scorePublishStatus = "HIDDEN";
   if (!Array.isArray(internship.publishHistory)) internship.publishHistory = [];
@@ -1112,6 +1114,7 @@ const republishInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
   });
   await evaluation.save();
 
+  internship.status = "COMPLETED";
   internship.isScorePublished = true;
   internship.scorePublishStatus = "PUBLISHED";
   internship.scorePublishedAt = now;
