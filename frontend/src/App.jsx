@@ -4,8 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { AcademicTermProvider } from './context/AcademicTermContext';
 import { UserProfileProvider } from './context/UserProfileContext';
-import { ChatProvider } from './context/ChatContext';
-import FloatingChatBox from './components/chat/FloatingChatBox';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Layouts & Pages
@@ -104,11 +102,9 @@ function App() {
       <ToastProvider>
         <AuthProvider>
           <AcademicTermProvider>
-            <ChatProvider>
-              <UserProfileProvider>
-                <ErrorBoundary>
-                  <FloatingChatBox />
-                  <Routes>
+            <UserProfileProvider>
+              <ErrorBoundary>
+                <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />
@@ -237,7 +233,6 @@ function App() {
           </Routes>
           </ErrorBoundary>
           </UserProfileProvider>
-          </ChatProvider>
           </AcademicTermProvider>
         </AuthProvider>
       </ToastProvider>
