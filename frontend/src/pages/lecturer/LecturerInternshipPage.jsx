@@ -709,53 +709,34 @@ const LecturerInternshipPage = () => {
                               </button>
                             );
                           } else {
-                            // Đã có điểm -> Chỉnh sửa điểm & Công bố điểm
+                            // Đã có điểm -> Chỉnh sửa điểm
                             const isLocked = item.isScorePublished;
                             const canEdit = !isLocked && isEligibleToGrade;
 
                             return (
-                              <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  disabled={!canEdit}
-                                  onClick={() => {
-                                    if (canEdit) {
-                                      handleOpenGrading(item);
-                                    }
-                                  }}
-                                  className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${canEdit
-                                      ? 'text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 cursor-pointer'
-                                      : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
-                                    }`}
-                                  title={
-                                    isLocked
-                                      ? 'Điểm đã được công bố, không thể chỉnh sửa'
-                                      : canEdit
-                                        ? 'Chỉnh sửa điểm đã chấm cho sinh viên này'
-                                        : `Không thể sửa điểm: ${allReasons.join(' • ')}`
+                              <button
+                                type="button"
+                                disabled={!canEdit}
+                                onClick={() => {
+                                  if (canEdit) {
+                                    handleOpenGrading(item);
                                   }
-                                >
-                                  <Award className="w-3.5 h-3.5 text-amber-700" />
-                                  <span>Sửa điểm</span>
-                                </button>
-
-                                {!isLocked ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenPublishModal(item)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs cursor-pointer"
-                                    title="Công bố điểm chính thức cho sinh viên này"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>Công bố</span>
-                                  </button>
-                                ) : (
-                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold">
-                                    <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                                    <span>Đã công bố</span>
-                                  </span>
-                                )}
-                              </div>
+                                }}
+                                className={`inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl transition shadow-xs ${canEdit
+                                    ? 'text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 cursor-pointer'
+                                    : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed opacity-90'
+                                  }`}
+                                title={
+                                  isLocked
+                                    ? 'Điểm đã được công bố, không thể chỉnh sửa'
+                                    : canEdit
+                                      ? 'Chỉnh sửa điểm đã chấm cho sinh viên này'
+                                      : `Không thể sửa điểm: ${allReasons.join(' • ')}`
+                                }
+                              >
+                                <Award className="w-3.5 h-3.5 text-amber-700" />
+                                <span>Sửa điểm</span>
+                              </button>
                             );
                           }
                         })()}
@@ -949,38 +930,21 @@ const LecturerInternshipPage = () => {
                           <span>Chấm điểm</span>
                         </button>
                       ) : (
-                        <>
-                          <button
-                            type="button"
-                            disabled={!canEdit}
-                            onClick={() => {
-                              if (canEdit) handleOpenGrading(item);
-                            }}
-                            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl transition ${
-                              canEdit
-                                ? 'text-amber-900 bg-amber-100 border border-amber-300'
-                                : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed'
-                            }`}
-                          >
-                            <Award className="w-3.5 h-3.5 text-amber-700" />
-                            <span>Sửa</span>
-                          </button>
-                          {!isLocked ? (
-                            <button
-                              type="button"
-                              onClick={() => handleOpenPublishModal(item)}
-                              className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition shadow-xs"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Công bố</span>
-                            </button>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10.5px] font-bold">
-                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                              <span>Đã công bố</span>
-                            </span>
-                          )}
-                        </>
+                        <button
+                          type="button"
+                          disabled={!canEdit}
+                          onClick={() => {
+                            if (canEdit) handleOpenGrading(item);
+                          }}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-xl transition ${
+                            canEdit
+                              ? 'text-amber-900 bg-amber-100 border border-amber-300'
+                              : 'text-slate-400 bg-slate-100 border border-slate-200 cursor-not-allowed'
+                          }`}
+                        >
+                          <Award className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Sửa</span>
+                        </button>
                       )}
 
                       <button

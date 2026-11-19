@@ -83,6 +83,41 @@ const CATEGORY_OPTIONS = [
   'Khác',
 ];
 
+const renderSubmissionStatus = (status) => {
+  switch (status) {
+    case 'APPROVED':
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+          <span>Đã duyệt</span>
+        </span>
+      );
+    case 'REVIEWING':
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-amber-600"></span>
+          <span>Đang xem xét</span>
+        </span>
+      );
+    case 'REJECTED':
+    case 'NEEDS_REVISION':
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+          <span>Yêu cầu chỉnh sửa</span>
+        </span>
+      );
+    case 'SUBMITTED':
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
+          <span>Đã nộp</span>
+        </span>
+      );
+  }
+};
+
 const StudentInternshipDocumentsPage = () => {
   const { currentTerm } = useAcademicTerm();
   const { showToast } = useToast();
@@ -231,9 +266,12 @@ const StudentInternshipDocumentsPage = () => {
       return;
     }
 
-    const hasActiveReport =
-      submissions.some((sub) => /báo cáo/i.test(sub.category || '')) ||
-      Boolean(guidesData.internship?.reportFile?.fileUrl);
+    const hasActiveReport = submissions.some(
+      (sub) =>
+        /báo cáo/i.test(sub.category || '') &&
+        sub.status !== 'REJECTED' &&
+        sub.status !== 'NEEDS_REVISION',
+    );
 
     if (hasActiveReport && /báo cáo/i.test(safeCategory)) {
       setFormError(
@@ -733,10 +771,7 @@ const StudentInternshipDocumentsPage = () => {
                             <Tag className="w-3 h-3 text-slate-400" />
                             <span>{sub.category || 'Báo cáo thực tập'}</span>
                           </span>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                            <span>Đã nộp</span>
-                          </span>
+                          {renderSubmissionStatus(sub.status)}
                         </div>
 
                         {/* Note / Description (if any) */}
@@ -745,6 +780,16 @@ const StudentInternshipDocumentsPage = () => {
                             {sub.description}
                           </div>
                         ) : null}
+
+                        {/* Nhận xét / Góp ý của Giảng viên (nếu có) */}
+                        {sub.lecturerComment && (
+                          <div className="text-xs text-rose-700 bg-rose-50/80 p-2.5 rounded-xl border border-rose-200/70 leading-relaxed break-words flex items-start gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5 text-rose-600 shrink-0 mt-0.5" />
+                            <div>
+                              <strong className="font-bold">Góp ý từ Giảng viên:</strong> {sub.lecturerComment}
+                            </div>
+                          </div>
+                        )}
 
                         {/* Footer: Metadata & Actions */}
                         <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-50">
@@ -842,11 +887,18 @@ const StudentInternshipDocumentsPage = () => {
                             </td>
 
                             {/* Trạng thái */}
-                            <td className="py-3.5 px-4 text-xs">
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600"></span>
-                                <span>Đã nộp</span>
-                              </span>
+                            <td className="py-3.5 px-4 text-xs whitespace-nowrap">
+                              <div className="space-y-1">
+                                {renderSubmissionStatus(sub.status)}
+                                {sub.lecturerComment && (
+                                  <div
+                                    className="text-[11px] text-rose-700 bg-rose-50/80 px-2 py-0.5 rounded-md border border-rose-200/60 max-w-xs truncate"
+                                    title={`Góp ý của GV: ${sub.lecturerComment}`}
+                                  >
+                                    <strong>GV:</strong> {sub.lecturerComment}
+                                  </div>
+                                )}
+                              </div>
                             </td>
 
                             {/* Thao tác */}

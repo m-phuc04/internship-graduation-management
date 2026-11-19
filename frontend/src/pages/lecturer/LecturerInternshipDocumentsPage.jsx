@@ -1078,19 +1078,6 @@ const LecturerInternshipDocumentsPage = () => {
                                   <Download className="w-3.5 h-3.5" />
                                   <span>Tải về</span>
                                 </button>
-
-                                {/* Nút Gỡ file dành cho GVGS đối với file Báo cáo thực tập */}
-                                {/báo cáo/i.test(sub.category || '') && (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleOpenRemoveReport(sub)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition shadow-2xs cursor-pointer"
-                                    title="Gỡ file báo cáo thực tập của sinh viên này"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    <span>Gỡ file</span>
-                                  </button>
-                                )}
                               </div>
                             </td>
                           </tr>

@@ -922,7 +922,13 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     return [];
   }
 
-  // 3. Truy vấn danh sách tài liệu sinh viên đã nộp thuộc ĐÚNG hồ sơ thực tập hiện tại
+  // 3. Lấy báo cáo thực tập (FINAL) để đối chiếu trạng thái đánh giá chính xác nhất
+  const finalReport = await InternshipReport.findOne({
+    internshipId: internship._id,
+    reportType: "FINAL",
+  });
+
+  // 4. Truy vấn danh sách tài liệu sinh viên đã nộp thuộc ĐÚNG hồ sơ thực tập hiện tại
   // Tuyệt đối không dùng $or theo studentId đơn lẻ để tránh lấy nhầm file của hồ sơ cũ
   const docQuery = {
     internshipId: internship._id,
@@ -938,9 +944,22 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     .populate("uploadedBy", "fullName email")
     .sort({ createdAt: -1 });
 
-  // API GET hoàn toàn chỉ đọc (Read-only), không tự động tạo InternshipDocument.create()
-  // và không áp dụng filter che giấu theo internship.reportFile.fileUrl
-  return submissions;
+  // Trả về dữ liệu kèm trạng thái đánh giá chính xác từ Giảng viên
+  return submissions.map((doc) => {
+    const item = doc.toObject ? doc.toObject() : { ...doc };
+    if (/báo cáo/i.test(item.category || "") && finalReport) {
+      if (["REVIEWING", "APPROVED", "REJECTED"].includes(finalReport.status)) {
+        item.status = finalReport.status;
+      }
+      item.lecturerComment = finalReport.lecturerComment || item.lecturerComment || null;
+      item.lecturerScore =
+        finalReport.lecturerScore !== undefined && finalReport.lecturerScore !== null
+          ? finalReport.lecturerScore
+          : (item.lecturerScore || null);
+      item.reviewedAt = finalReport.reviewedAt || item.reviewedAt || null;
+    }
+    return item;
+  });
 };
 
 // 3.3 Sinh viên nộp file cho giảng viên giám sát
@@ -1038,7 +1057,17 @@ export const createStudentSubmission = async ({
       documentType: "SUBMISSION",
       category: { $regex: /báo cáo/i },
     });
-    if (internship.reportFile?.fileUrl || existingDoc) {
+    const finalReport = await InternshipReport.findOne({
+      internshipId: internship._id,
+      reportType: "FINAL",
+    });
+
+    const isRejected =
+      existingDoc?.status === "REJECTED" ||
+      finalReport?.status === "REJECTED" ||
+      finalReport?.status === "NEEDS_REVISION";
+
+    if (existingDoc && !isRejected) {
       if (file.filename) {
         unlinkFileSafe(`/uploads/internship-documents/${file.filename}`);
       }
@@ -1046,6 +1075,12 @@ export const createStudentSubmission = async ({
         "Hồ sơ thực tập đã có file báo cáo đang có hiệu lực. Vui lòng gỡ file cũ trước khi nộp file mới.",
         400,
       );
+    }
+
+    // Nếu file cũ đã bị Yêu cầu chỉnh sửa (REJECTED), dọn dẹp file cũ để thay thế bằng phiên bản mới
+    if (existingDoc && isRejected) {
+      unlinkFileSafe(existingDoc.fileUrl);
+      await InternshipDocument.findByIdAndDelete(existingDoc._id);
     }
   }
 
@@ -1099,6 +1134,9 @@ export const createStudentSubmission = async ({
         finalReport.fileCategory = "Báo cáo thực tập";
         finalReport.status = "SUBMITTED";
         finalReport.submittedAt = new Date();
+        finalReport.lecturerComment = null;
+        finalReport.lecturerScore = null;
+        finalReport.reviewedAt = null;
         await finalReport.save();
       } else {
         await InternshipReport.create({
@@ -1235,10 +1273,18 @@ export const deleteStudentSubmission = async (id, userId) => {
               fileType: null,
               uploadedAt: null,
             };
-            await InternshipReport.deleteMany({
+            const finalRep = await InternshipReport.findOne({
               internshipId: targetInternshipId,
               reportType: "FINAL",
             });
+            if (finalRep) {
+              finalRep.file = null;
+              finalRep.status = "DRAFT";
+              finalRep.lecturerComment = null;
+              finalRep.lecturerScore = null;
+              finalRep.reviewedAt = null;
+              await finalRep.save();
+            }
           }
           await internship.save();
         }

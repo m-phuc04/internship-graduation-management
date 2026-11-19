@@ -51,8 +51,19 @@ const internshipDocumentSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["SUBMITTED", "APPROVED", "REJECTED"],
+      enum: ["SUBMITTED", "REVIEWING", "APPROVED", "REJECTED"],
       default: "SUBMITTED",
+    },
+
+    lecturerComment: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+
+    reviewedAt: {
+      type: Date,
+      default: null,
     },
 
     title: {

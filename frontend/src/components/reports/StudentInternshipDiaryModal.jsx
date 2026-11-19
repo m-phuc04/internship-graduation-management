@@ -184,7 +184,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
                           {/* 1. Tuần */}
                           <td className="py-3 px-4 pl-5 text-center whitespace-nowrap">
                             <span className="inline-flex items-center justify-center font-bold text-xs px-2.5 py-1 rounded-xl bg-[#102d7d] text-white font-mono shadow-2xs">
-                              Tuần {report.weekNumber}
+                              {report.reportType === 'FINAL' ? 'Báo cáo' : `Tuần ${report.weekNumber}`}
                             </span>
                           </td>
 

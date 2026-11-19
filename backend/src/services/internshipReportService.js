@@ -1,4 +1,5 @@
 import InternshipReport from "../models/InternshipReport.js";
+import InternshipDocument from "../models/InternshipDocument.js";
 import Internship from "../models/Internship.js";
 import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
@@ -839,6 +840,46 @@ const reviewReport = async (
   report.reviewedAt = new Date();
 
   await report.save();
+
+  // Đồng bộ trạng thái đánh giá sang InternshipDocument tương ứng
+  try {
+    if (report.internshipId) {
+      const targetInternshipId = report.internshipId._id || report.internshipId;
+      if (report.reportType === "FINAL") {
+        await InternshipDocument.updateMany(
+          {
+            internshipId: targetInternshipId,
+            documentType: "SUBMISSION",
+            category: { $regex: /báo cáo/i },
+          },
+          {
+            $set: {
+              status,
+              lecturerComment: report.lecturerComment || null,
+              reviewedAt: report.reviewedAt,
+            },
+          },
+        );
+      } else if (report.file?.fileUrl) {
+        await InternshipDocument.updateMany(
+          {
+            internshipId: targetInternshipId,
+            documentType: "SUBMISSION",
+            fileUrl: report.file.fileUrl,
+          },
+          {
+            $set: {
+              status,
+              lecturerComment: report.lecturerComment || null,
+              reviewedAt: report.reviewedAt,
+            },
+          },
+        );
+      }
+    }
+  } catch (syncErr) {
+    console.warn("[reviewReport] Sync InternshipDocument error:", syncErr.message);
+  }
 
   // Notify Student 1 & Student 2
   const notifyStudents = async () => {
