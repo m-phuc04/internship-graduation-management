@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import profileApi from '../../api/profileApi';
 import { useAuth } from '../../context/AuthContext';
-import { useChat } from '../../context/ChatContext';
 import {
   User,
   Mail,
@@ -11,12 +10,10 @@ import {
   ShieldCheck,
   Copy,
   Check,
-  MessageSquare,
 } from 'lucide-react';
 
 const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
   const { user: currentUser } = useAuth();
-  const { openChatWithUser } = useChat();
   const [profile, setProfile] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
@@ -55,13 +52,6 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
     navigator.clipboard.writeText(email);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
-  };
-
-  const handleStartChat = () => {
-    onClose();
-    if (user) {
-      openChatWithUser(user);
-    }
   };
 
   const user = profile?.user || (initialData?.email ? initialData : null);
@@ -167,18 +157,6 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
               </span>
             </div>
           </div>
-
-          {/* Quick Chat Action Button (Hide for Admin) */}
-          {currentUser?.role !== 'ADMIN' && user?.role !== 'ADMIN' && (
-            <button
-              type="button"
-              onClick={handleStartChat}
-              className="w-full py-2.5 px-4 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-            >
-              <MessageSquare className="w-4 h-4" />
-              <span>Nhắn tin</span>
-            </button>
-          )}
 
           {/* Email Liên Lạc */}
           <div className="space-y-1.5">

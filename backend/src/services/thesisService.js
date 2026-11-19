@@ -1026,7 +1026,7 @@ const assignSupervisor = async (thesisId, { supervisorId, tbmUserId }) => {
   thesis.assignedBy = tbmUserId || null;
   await thesis.save();
 
-  // Send Notification strictly to the assigned Supervisor
+  // Send Notification to the assigned Supervisor
   if (supervisor.userId?._id) {
     await notificationService.createNotification({
       recipientId: supervisor.userId._id,
@@ -1037,6 +1037,23 @@ const assignSupervisor = async (thesisId, { supervisorId, tbmUserId }) => {
       referenceModel: "Thesis",
       link: "/lecturer/theses",
     });
+  }
+
+  // Send Notification to student(s)
+  const studentIds = [thesis.studentId, thesis.secondStudentId].filter(Boolean);
+  const students = await Student.find({ _id: { $in: studentIds } }).populate("userId");
+  for (const stu of students) {
+    if (stu?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: stu.userId._id,
+        type: "THESIS",
+        title: "Phân công Giảng viên Hướng dẫn",
+        message: `Đề tài khóa luận "${thesis.thesisTitle}" của bạn đã được Trưởng Bộ Môn phân công Giảng viên Hướng dẫn: ${supervisor.userId?.fullName || "Giảng viên"}.`,
+        referenceId: thesis._id,
+        referenceModel: "Thesis",
+        link: "/student/thesis/progress",
+      });
+    }
   }
 
   return await Thesis.findById(thesis._id)

@@ -463,9 +463,9 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
   }
   await internship.save();
 
-  // Send Notification strictly to assigned Lecturer
+  // Send Notification to assigned Lecturer
+  const comp = await Company.findById(internship.companyId);
   if (lecturer.userId?._id) {
-    const comp = await Company.findById(internship.companyId);
     await notificationService.createNotification({
       recipientId: lecturer.userId._id,
       type: "INTERNSHIP",
@@ -475,6 +475,26 @@ const assignLecturer = async (internshipId, lecturerId, tbmUserId = null) => {
       referenceModel: "Internship",
       link: "/lecturer/internships",
     });
+  }
+
+  // Send Notification to Student(s)
+  const studentIds = [internship.studentId, internship.secondStudentId].filter(Boolean);
+  const students = await Student.find({ _id: { $in: studentIds } }).populate("userId");
+  const lecturerName = lecturer.userId?.fullName || "Giảng viên";
+  const companyName = comp?.name || "Doanh nghiệp";
+
+  for (const stu of students) {
+    if (stu?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: stu.userId._id,
+        type: "INTERNSHIP",
+        title: "Phân công Giảng viên Giám sát thực tập",
+        message: `Hồ sơ thực tập của bạn tại "${companyName}" đã được Trưởng Bộ Môn phân công Giảng viên Giám sát: ${lecturerName}.`,
+        referenceId: internship._id,
+        referenceModel: "Internship",
+        link: "/student/internship",
+      });
+    }
   }
 
   return await Internship.findById(internship._id)
@@ -510,8 +530,9 @@ const approveInternship = async (internshipId, approvedBy, lecturerId) => {
   }
 
   // If lecturerId provided during approval, validate and assign
+  let lecturer = null;
   if (lecturerId) {
-    const lecturer = await Lecturer.findById(lecturerId).populate({
+    lecturer = await Lecturer.findById(lecturerId).populate({
       path: "userId",
       select: "fullName email",
     });
@@ -548,19 +569,30 @@ const approveInternship = async (internshipId, approvedBy, lecturerId) => {
   internship.approvedBy = approvedBy;
   await internship.save();
 
-  // Notify Student
-  const student = await Student.findById(internship.studentId).populate("userId");
+  // Notify Student(s)
+  const studentIds = [internship.studentId, internship.secondStudentId].filter(Boolean);
+  const students = await Student.find({ _id: { $in: studentIds } }).populate("userId");
   const comp = await Company.findById(internship.companyId);
-  if (student?.userId?._id) {
-    await notificationService.createNotification({
-      recipientId: student.userId._id,
-      type: "INTERNSHIP",
-      title: "Hồ sơ thực tập đã được phê duyệt",
-      message: `Hồ sơ thực tập của bạn tại "${comp?.name || "Doanh nghiệp"}" đã được Trưởng Bộ Môn phê duyệt.`,
-      referenceId: internship._id,
-      referenceModel: "Internship",
-      link: "/student/internship",
-    });
+  const companyName = comp?.name || "Doanh nghiệp";
+  const lecturerName = lecturer?.userId?.fullName;
+  const supervisorText = lecturerName
+    ? ` và phân công Giảng viên Giám sát: ${lecturerName}`
+    : "";
+
+  for (const stu of students) {
+    if (stu?.userId?._id) {
+      await notificationService.createNotification({
+        recipientId: stu.userId._id,
+        type: "INTERNSHIP",
+        title: lecturerName
+          ? "Hồ sơ thực tập đã được duyệt & phân công GVGS"
+          : "Hồ sơ thực tập đã được phê duyệt",
+        message: `Hồ sơ thực tập của bạn tại "${companyName}" đã được Trưởng Bộ Môn phê duyệt${supervisorText}.`,
+        referenceId: internship._id,
+        referenceModel: "Internship",
+        link: "/student/internship",
+      });
+    }
   }
 
   return await Internship.findById(internship._id)

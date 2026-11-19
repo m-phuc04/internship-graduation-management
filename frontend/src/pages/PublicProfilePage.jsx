@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { useChat } from '../context/ChatContext';
 import profileApi from '../api/profileApi';
 import Footer from '../components/layout/Footer';
 import {
@@ -15,14 +14,12 @@ import {
   Copy,
   Check,
   ExternalLink,
-  MessageSquare,
 } from 'lucide-react';
 
 const PublicProfilePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
-  const { openChatWithUser } = useChat();
 
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -66,12 +63,6 @@ const PublicProfilePage = () => {
     navigator.clipboard.writeText(email);
     setCopiedEmail(true);
     setTimeout(() => setCopiedEmail(false), 2000);
-  };
-
-  const handleStartChat = () => {
-    if (user) {
-      openChatWithUser(user);
-    }
   };
 
   const user = profile?.user;
@@ -178,18 +169,6 @@ const PublicProfilePage = () => {
                   </span>
                 </div>
               </div>
-
-              {/* Quick Chat Action Button (Hide for Admin) */}
-              {currentUser?.role !== 'ADMIN' && user?.role !== 'ADMIN' && (
-                <button
-                  type="button"
-                  onClick={handleStartChat}
-                  className="w-full py-3 px-4 bg-[#123891] hover:bg-[#102d7d] active:scale-[0.98] text-white rounded-2xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-                >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>Nhắn tin</span>
-                </button>
-              )}
 
               {/* Contact Info Card */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
