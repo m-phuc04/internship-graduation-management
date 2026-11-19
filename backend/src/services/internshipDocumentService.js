@@ -7,6 +7,7 @@ import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
 import InternshipReport from "../models/InternshipReport.js";
+import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 
@@ -876,36 +877,59 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     return [];
   }
 
-  // 1. Tìm hồ sơ thực tập đang hoạt động (không bị hủy hoặc từ chối)
-  const internshipQuery = {
-    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-    status: { $nin: ["CANCELLED", "REJECTED"] },
-  };
-
-  if (academicTermId && academicTermId !== "ALL") {
-    internshipQuery.academicTermId = academicTermId;
+  // 1. Xác định học kỳ mục tiêu
+  let targetTermId = academicTermId;
+  if (!targetTermId || targetTermId === "ALL") {
+    try {
+      const activeTerm = await academicTermService.getCurrentAcademicTerm();
+      targetTermId = activeTerm?._id || null;
+    } catch {}
   }
 
-  let internship = await Internship.findOne(internshipQuery).sort({ createdAt: -1 });
-  if (!internship && academicTermId && academicTermId !== "ALL") {
+  // 2. Tìm hồ sơ thực tập đang hoạt động của sinh viên (ưu tiên theo kỳ học hiện tại)
+  const activeQuery = {
+    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+    status: { $in: ["INTERNING", "APPROVED", "PENDING_SUPERVISOR_ACCEPTANCE"] },
+  };
+  if (targetTermId && targetTermId !== "ALL") {
+    activeQuery.academicTermId = targetTermId;
+  }
+
+  let internship = await Internship.findOne(activeQuery).sort({ createdAt: -1 });
+
+  // Nếu không tìm thấy hồ sơ đang hoạt động theo kỳ, tìm hồ sơ đang hoạt động bất kỳ
+  if (!internship && targetTermId && targetTermId !== "ALL") {
     internship = await Internship.findOne({
       $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-      status: { $nin: ["CANCELLED", "REJECTED"] },
+      status: { $in: ["INTERNING", "APPROVED", "PENDING_SUPERVISOR_ACCEPTANCE"] },
     }).sort({ createdAt: -1 });
   }
 
-  // 2. Truy vấn danh sách tài liệu sinh viên đã nộp
-  const docConditions = [{ studentId: student._id }, { uploadedBy: userId }];
-  if (internship) {
-    docConditions.push({ internshipId: internship._id });
+  // Nếu vẫn không có, tìm hồ sơ hợp lệ mới nhất không bị hủy / từ chối
+  if (!internship) {
+    const fallbackQuery = {
+      $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+      status: { $nin: ["CANCELLED", "REJECTED"] },
+    };
+    if (targetTermId && targetTermId !== "ALL") {
+      fallbackQuery.academicTermId = targetTermId;
+    }
+    internship = await Internship.findOne(fallbackQuery).sort({ createdAt: -1 });
   }
 
+  // Nếu không có hồ sơ thực tập nào hợp lệ, sinh viên chưa có tài liệu nào để hiển thị
+  if (!internship) {
+    return [];
+  }
+
+  // 3. Truy vấn danh sách tài liệu sinh viên đã nộp thuộc ĐÚNG hồ sơ thực tập hiện tại
+  // Tuyệt đối không dùng $or theo studentId đơn lẻ để tránh lấy nhầm file của hồ sơ cũ
   const docQuery = {
+    internshipId: internship._id,
     documentType: "SUBMISSION",
-    $or: docConditions,
   };
 
-  let submissions = await InternshipDocument.find(docQuery)
+  const submissions = await InternshipDocument.find(docQuery)
     .populate({
       path: "studentId",
       populate: { path: "userId", select: "fullName email" },
@@ -914,63 +938,8 @@ export const getStudentSubmissions = async (userId, { academicTermId = null } = 
     .populate("uploadedBy", "fullName email")
     .sort({ createdAt: -1 });
 
-  // 3. Tự động đồng bộ: nếu hồ sơ thực tập đã có file báo cáo nhưng chưa có trong danh sách tài liệu nộp
-  if (internship?.reportFile?.fileUrl) {
-    const hasReportDoc = submissions.some(
-      (s) =>
-        /báo cáo/i.test(s.category || "") ||
-        /báo cáo/i.test(s.title || "") ||
-        s.fileUrl === internship.reportFile.fileUrl,
-    );
-    if (!hasReportDoc) {
-      try {
-        const newDoc = await InternshipDocument.create({
-          academicTermId: internship.academicTermId || null,
-          supervisorId: internship.lecturerId || null,
-          internshipId: internship._id,
-          studentId: student._id,
-          documentType: "SUBMISSION",
-          scope: "SPECIFIC",
-          title: internship.reportFile.originalName || "Báo cáo thực tập",
-          fileName: internship.reportFile.fileName || internship.reportFile.originalName || "bao_cao_thuc_tap.docx",
-          fileUrl: internship.reportFile.fileUrl,
-          fileSize: internship.reportFile.fileSize || 0,
-          fileType: internship.reportFile.fileType || "application/octet-stream",
-          category: "Báo cáo thực tập",
-          description: "File báo cáo thực tập đồng bộ từ hồ sơ thực tập",
-          status: "SUBMITTED",
-          uploadedBy: userId,
-          createdAt: internship.reportFile.uploadedAt || new Date(),
-        });
-        const populated = await InternshipDocument.findById(newDoc._id)
-          .populate({
-            path: "studentId",
-            populate: { path: "userId", select: "fullName email" },
-            select: "studentCode className userId",
-          })
-          .populate("uploadedBy", "fullName email");
-        if (populated) submissions.unshift(populated);
-      } catch (e) {
-        console.warn("[getStudentSubmissions] Auto-sync doc error:", e.message);
-      }
-    }
-  }
-
-  // 4. Nếu file báo cáo đã bị gỡ khỏi internship (reportFile rỗng), loại bỏ tài liệu báo cáo cũ để không hiển thị sai
-  if (internship && (!internship.reportFile || !internship.reportFile.fileUrl)) {
-    submissions = submissions.filter((s) => !/báo cáo/i.test(s.category || ""));
-  }
-
-  // 5. Khử trùng lặp file báo cáo (chỉ giữ bản mới nhất)
-  const seenReportUrls = new Set();
-  submissions = submissions.filter((s) => {
-    if (/báo cáo/i.test(s.category || "")) {
-      if (seenReportUrls.has(s.fileUrl)) return false;
-      seenReportUrls.add(s.fileUrl);
-    }
-    return true;
-  });
-
+  // API GET hoàn toàn chỉ đọc (Read-only), không tự động tạo InternshipDocument.create()
+  // và không áp dụng filter che giấu theo internship.reportFile.fileUrl
   return submissions;
 };
 
@@ -992,11 +961,37 @@ export const createStudentSubmission = async ({
   }
 
   // 1. Kiểm tra điều kiện bắt buộc: Phải có hồ sơ thực tập hợp lệ đã được duyệt
-  const anyInternship = await Internship.findOne({
-    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-  }).sort({ createdAt: -1 });
+  let activeTermId = null;
+  try {
+    const activeTerm = await academicTermService.getCurrentAcademicTerm();
+    activeTermId = activeTerm?._id || null;
+  } catch {}
 
-  if (!anyInternship) {
+  const activeQuery = {
+    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+    status: { $in: ["INTERNING", "APPROVED", "PENDING_SUPERVISOR_ACCEPTANCE"] },
+  };
+  if (activeTermId) {
+    activeQuery.academicTermId = activeTermId;
+  }
+
+  let internship = await Internship.findOne(activeQuery).sort({ createdAt: -1 });
+
+  if (!internship && activeTermId) {
+    internship = await Internship.findOne({
+      $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+      status: { $in: ["INTERNING", "APPROVED", "PENDING_SUPERVISOR_ACCEPTANCE"] },
+    }).sort({ createdAt: -1 });
+  }
+
+  if (!internship) {
+    internship = await Internship.findOne({
+      $or: [{ studentId: student._id }, { secondStudentId: student._id }],
+      status: { $nin: ["CANCELLED", "REJECTED"] },
+    }).sort({ createdAt: -1 });
+  }
+
+  if (!internship) {
     throw new AppError(
       "Bạn chưa đăng ký thực tập doanh nghiệp. Vui lòng đăng ký thực tập trước khi nộp file tài liệu.",
       403,
@@ -1004,15 +999,15 @@ export const createStudentSubmission = async ({
   }
 
   const isApproved =
-    (Boolean(anyInternship.approvedAt) ||
-      Boolean(anyInternship.lecturerId) ||
-      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(anyInternship.status)) &&
-    anyInternship.status !== "CANCELLED" &&
-    anyInternship.status !== "REJECTED" &&
-    !anyInternship.rejectedAt;
+    (Boolean(internship.approvedAt) ||
+      Boolean(internship.lecturerId) ||
+      ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE", "COMPLETED"].includes(internship.status)) &&
+    internship.status !== "CANCELLED" &&
+    internship.status !== "REJECTED" &&
+    !internship.rejectedAt;
 
   if (!isApproved) {
-    if (anyInternship.status === "PENDING") {
+    if (internship.status === "PENDING") {
       throw new AppError(
         "Hồ sơ thực tập của bạn đang chờ phê duyệt. Bạn chỉ có thể nộp tài liệu sau khi hồ sơ được duyệt thành công.",
         403,
@@ -1023,8 +1018,6 @@ export const createStudentSubmission = async ({
       403,
     );
   }
-
-  const internship = anyInternship;
 
   // 2. Xử lý an toàn dữ liệu đầu vào (không gọi .trim() trực tiếp nếu chưa kiểm tra type)
   const safeTitle =
@@ -1200,6 +1193,8 @@ export const deleteStudentSubmission = async (id, userId) => {
 
   const deletedCategory = doc.category;
   const targetInternshipId = doc.internshipId;
+  const deletedFileUrl = doc.fileUrl;
+  const deletedFileName = doc.fileName;
 
   unlinkFileSafe(doc.fileUrl);
   await InternshipDocument.findByIdAndDelete(id);
@@ -1209,36 +1204,44 @@ export const deleteStudentSubmission = async (id, userId) => {
     try {
       const internship = await Internship.findById(targetInternshipId);
       if (internship) {
-        const remainingReportDoc = await InternshipDocument.findOne({
-          internshipId: targetInternshipId,
-          documentType: "SUBMISSION",
-          category: { $regex: /báo cáo/i },
-        }).sort({ createdAt: -1 });
+        // Chỉ đồng bộ/cập nhật reportFile nếu chính file bị xóa đang được tham chiếu trong reportFile
+        const isReferencedInReport =
+          internship.reportFile?.fileUrl === deletedFileUrl ||
+          (internship.reportFile?.fileName && internship.reportFile.fileName === deletedFileName);
 
-        if (remainingReportDoc) {
-          internship.reportFile = {
-            originalName: remainingReportDoc.title || remainingReportDoc.fileName,
-            fileName: remainingReportDoc.fileName,
-            fileUrl: remainingReportDoc.fileUrl,
-            fileSize: remainingReportDoc.fileSize || 0,
-            fileType: remainingReportDoc.fileType || null,
-            uploadedAt: remainingReportDoc.createdAt || new Date(),
-          };
-        } else {
-          internship.reportFile = {
-            originalName: null,
-            fileName: null,
-            fileUrl: null,
-            fileSize: 0,
-            fileType: null,
-            uploadedAt: null,
-          };
-          await InternshipReport.deleteMany({
+        if (isReferencedInReport) {
+          const remainingReportDoc = await InternshipDocument.findOne({
+            _id: { $ne: doc._id },
             internshipId: targetInternshipId,
-            reportType: "FINAL",
-          });
+            documentType: "SUBMISSION",
+            category: { $regex: /báo cáo/i },
+          }).sort({ createdAt: -1 });
+
+          if (remainingReportDoc) {
+            internship.reportFile = {
+              originalName: remainingReportDoc.title || remainingReportDoc.fileName,
+              fileName: remainingReportDoc.fileName,
+              fileUrl: remainingReportDoc.fileUrl,
+              fileSize: remainingReportDoc.fileSize || 0,
+              fileType: remainingReportDoc.fileType || null,
+              uploadedAt: remainingReportDoc.createdAt || new Date(),
+            };
+          } else {
+            internship.reportFile = {
+              originalName: null,
+              fileName: null,
+              fileUrl: null,
+              fileSize: 0,
+              fileType: null,
+              uploadedAt: null,
+            };
+            await InternshipReport.deleteMany({
+              internshipId: targetInternshipId,
+              reportType: "FINAL",
+            });
+          }
+          await internship.save();
         }
-        await internship.save();
       }
     } catch (syncErr) {
       console.warn("[deleteStudentSubmission] Sync reportFile error:", syncErr.message);
