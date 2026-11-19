@@ -97,13 +97,12 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
               const displayName = title && !rawName.toLowerCase().startsWith(title.toLowerCase())
                 ? `${title} ${rawName}`
                 : rawName;
-              const countText = lec.activeStudentsCount !== undefined ? ` (${lec.activeStudentsCount} SV)` : '';
               return (
                 <option
                   key={lec._id}
                   value={lec._id}
                 >
-                  {displayName}{countText}
+                  {displayName}
                 </option>
               );
             })}

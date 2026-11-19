@@ -181,18 +181,10 @@ const createInternship = async ({
     );
   }
 
-  // 5. Handle Company (Existing selection OR New company creation)
-  let targetCompanyId = companyId;
+  // 5. Handle Company (Sinh viên nhập thông tin doanh nghiệp mới)
+  let targetCompanyId = null;
 
-  if (companyId) {
-    const existingCompany = await Company.findById(companyId);
-    if (!existingCompany) {
-      throw new AppError("Không tìm thấy doanh nghiệp được chọn", 404);
-    }
-    if (existingCompany.status !== "ACTIVE") {
-      throw new AppError("Doanh nghiệp được chọn hiện đang tạm ngưng tiếp nhận thực tập", 400);
-    }
-  } else if (newCompany && newCompany.name && newCompany.address) {
+  if (newCompany && newCompany.name && newCompany.address) {
     let companyDoc = null;
     if (newCompany.code && newCompany.code.trim()) {
       companyDoc = await Company.findOne({
@@ -236,8 +228,15 @@ const createInternship = async ({
       });
       targetCompanyId = createdCompany._id;
     }
+  } else if (companyId) {
+    // Tương thích ngược cho các bài kiểm thử hoặc dữ liệu hiện có truyền trực tiếp companyId
+    const existingCompany = await Company.findById(companyId);
+    if (!existingCompany) {
+      throw new AppError("Không tìm thấy thông tin doanh nghiệp được chỉ định", 404);
+    }
+    targetCompanyId = existingCompany._id;
   } else {
-    throw new AppError("Vui lòng chọn doanh nghiệp có sẵn hoặc nhập đầy đủ thông tin doanh nghiệp mới", 400);
+    throw new AppError("Vui lòng nhập đầy đủ thông tin doanh nghiệp (Tên và địa chỉ doanh nghiệp là bắt buộc)", 400);
   }
 
   // 6. Optional Lecturer Check (if provided)
@@ -400,7 +399,7 @@ const getAllInternships = async ({
 };
 
 // ====================
-// TBM: Get Available Lecturers with Workload Count
+// TBM: Get Available Lecturers for Supervision Assignment
 // ====================
 const getAvailableLecturers = async (academicTermId = null) => {
   const lecturers = await Lecturer.find({ isAvailable: true })
@@ -411,43 +410,16 @@ const getAvailableLecturers = async (academicTermId = null) => {
     .sort({ academicTitle: 1 })
     .lean();
 
-  let targetTermId = academicTermId;
-  if (!targetTermId || targetTermId === "ALL") {
-    const activeTerm = await academicTermService.getActiveTerm();
-    targetTermId = activeTerm?._id || null;
-  }
-
-  const results = await Promise.all(
-    lecturers.map(async (lec) => {
-      const countFilter = {
-        lecturerId: lec._id,
-        status: { $in: ["APPROVED", "INTERNING", "PENDING_SUPERVISOR_ACCEPTANCE"] },
-      };
-      if (targetTermId) {
-        countFilter.academicTermId = targetTermId;
-      }
-
-      const activeStudentsCount = await Internship.countDocuments(countFilter);
-
-      const remainingQuota = Math.max(0, lec.maxStudents - activeStudentsCount);
-      const canAssign = lec.isAvailable !== false;
-
-      return {
-        _id: lec._id,
-        lecturerCode: lec.lecturerCode,
-        fullName: lec.userId?.fullName || "Chưa cập nhật",
-        email: lec.userId?.email || "—",
-        phone: lec.userId?.phone || "—",
-        academicTitle: lec.academicTitle || "",
-        maxStudents: lec.maxStudents,
-        activeStudentsCount,
-        remainingQuota,
-        canAssign,
-      };
-    }),
-  );
-
-  return results;
+  return lecturers.map((lec) => ({
+    _id: lec._id,
+    lecturerCode: lec.lecturerCode,
+    fullName: lec.userId?.fullName || "Chưa cập nhật",
+    email: lec.userId?.email || "—",
+    phone: lec.userId?.phone || "—",
+    academicTitle: lec.academicTitle || "",
+    isAvailable: lec.isAvailable,
+    canAssign: true,
+  }));
 };
 
 // ====================
@@ -1165,8 +1137,6 @@ const getSupervisedInternships = async (
     stats: {
       totalAssigned: total,
       activeCount,
-      maxStudents: lecturer.maxStudents,
-      remainingQuota: Math.max(0, lecturer.maxStudents - activeCount),
     },
     pagination: {
       total,
@@ -1455,16 +1425,6 @@ const updateReportCycle = async (internshipId, requestingUser, reportCycle) => {
 };
 
 // ====================
-// Get Active Companies for Registration Dropdown
-// ====================
-const getActiveCompanies = async () => {
-  return await Company.find({ status: "ACTIVE" })
-    .select("name code address email phone website contactPerson contactEmail")
-    .sort({ name: 1 })
-    .lean();
-};
-
-// ====================
 // Student Uploads Internship Report File (Prompt 2 - Requirement 1)
 // ====================
 const uploadReportFile = async ({ internshipId = null, userId, file }) => {
@@ -1539,8 +1499,10 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
       fileUrl,
       mimeType: file.mimetype,
       size: file.size,
+      category: "Báo cáo thực tập",
       uploadedAt: new Date(),
     };
+    finalReport.fileCategory = "Báo cáo thực tập";
     finalReport.status = "SUBMITTED";
     finalReport.submittedAt = new Date();
     await finalReport.save();
@@ -1557,8 +1519,10 @@ const uploadReportFile = async ({ internshipId = null, userId, file }) => {
         fileUrl,
         mimeType: file.mimetype,
         size: file.size,
+        category: "Báo cáo thực tập",
         uploadedAt: new Date(),
       },
+      fileCategory: "Báo cáo thực tập",
       status: "SUBMITTED",
       submittedAt: new Date(),
     });
@@ -1957,7 +1921,6 @@ export default {
   getSupervisedInternships,
   getSupervisionConfirmationDocument,
   getInternshipById,
-  getActiveCompanies,
   completeInternship,
   updateReportCycle,
   updateAcademicTermReportCycle,

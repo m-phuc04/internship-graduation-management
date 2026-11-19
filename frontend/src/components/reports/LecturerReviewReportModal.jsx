@@ -54,7 +54,10 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
   if (!report) return null;
 
   const getTypeLabel = () => {
-    return report.weekNumber ? `Nhật ký Tuần ${report.weekNumber}` : 'Nhật ký thực tập';
+    if (report.reportType === 'FINAL') return 'Báo cáo thực tập (Bản chính thức)';
+    const cat = report.fileCategory || report.file?.category || report.category;
+    if (cat && cat !== 'Báo cáo tuần') return cat;
+    return report.weekNumber ? `Nhật ký Tuần ${report.weekNumber}` : 'Báo cáo tuần';
   };
 
   const formatFileSize = (bytes) => {

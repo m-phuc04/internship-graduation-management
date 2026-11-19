@@ -5,7 +5,7 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// Student Dashboard
+// Bảng điều khiển sinh viên
 router.get(
   "/student",
   authMiddleware,
@@ -13,7 +13,7 @@ router.get(
   dashboardController.getStudentDashboard,
 );
 
-// TBM Dashboard
+// Bảng điều khiển TBM
 router.get(
   "/tbm",
   authMiddleware,
@@ -21,7 +21,7 @@ router.get(
   dashboardController.getTbmDashboard,
 );
 
-// Lecturer Dashboard
+// Bảng điều khiển giảng viên
 router.get(
   "/lecturer",
   authMiddleware,

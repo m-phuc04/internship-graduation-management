@@ -5,10 +5,11 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// All company master data operations are restricted to TBM
+// Chỉ TBM và ADMIN được quản lý danh mục doanh nghiệp
 router.use(authMiddleware);
 router.use(authorizeRoles("TBM", "ADMIN"));
 
+// Quản lý thông tin doanh nghiệp
 router.get("/", companyController.getAllCompanies);
 router.get("/:id", companyController.getCompanyById);
 router.post("/", companyController.createCompany);

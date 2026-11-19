@@ -35,8 +35,6 @@ const createReport = async (req, res, next) => {
       message:
         report.status === "DRAFT"
           ? "Lưu bản nháp nhật ký thành công"
-          : report.status === "WAITING_STUDENT_2"
-          ? "Đã gửi nhật ký, đang chờ Sinh viên 2 xác nhận"
           : "Nộp nhật ký thực tập thành công",
       data: report,
     });
@@ -81,8 +79,6 @@ const updateReport = async (req, res, next) => {
       message:
         report.status === "DRAFT"
           ? "Lưu bản nháp thành công"
-          : report.status === "WAITING_STUDENT_2"
-          ? "Đã cập nhật nhật ký, đang chờ Sinh viên 2 xác nhận"
           : "Cập nhật và nộp nhật ký thực tập thành công",
       data: report,
     });
@@ -96,21 +92,9 @@ const updateReport = async (req, res, next) => {
 // ====================
 const confirmStudent2 = async (req, res, next) => {
   try {
-    const { action, rejectionReason } = req.body;
-
-    const report = await internshipReportService.confirmReportByStudent2(
-      req.params.id,
-      req.user.userId,
-      { action, rejectionReason },
-    );
-
-    res.status(200).json({
-      success: true,
-      message:
-        action === "CONFIRM"
-          ? "Đã xác nhận nhật ký thực tập và chuyển tới Giảng viên hướng dẫn"
-          : "Đã yêu cầu Sinh viên 1 chỉnh sửa lại nhật ký",
-      data: report,
+    return res.status(400).json({
+      success: false,
+      message: "Chức năng xác nhận nhóm cho Thực tập Doanh nghiệp đã được loại bỏ",
     });
   } catch (error) {
     next(error);

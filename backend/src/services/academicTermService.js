@@ -1,11 +1,10 @@
 import AcademicTerm, { calculateInternshipGradingDates } from "../models/AcademicTerm.js";
 import Internship from "../models/Internship.js";
 import Thesis from "../models/Thesis.js";
-import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 
 // ====================
-// 1. Get All Academic Terms
+// 1. Lấy danh sách tất cả học kỳ
 // ====================
 const getAllTerms = async ({ status = "", academicYear = "", search = "" } = {}) => {
   const query = {};
@@ -29,7 +28,7 @@ const getAllTerms = async ({ status = "", academicYear = "", search = "" } = {})
     .populate({ path: "createdBy", select: "fullName email role" })
     .lean();
 
-  // Attach basic stats (count of internships & theses)
+  // Đính kèm thống kê cơ bản (số lượng hồ sơ TTDN và đề tài KLTN)
   const termIds = terms.map((t) => t._id);
   const [internshipCounts, thesisCounts] = await Promise.all([
     Internship.aggregate([
@@ -60,12 +59,12 @@ const getAllTerms = async ({ status = "", academicYear = "", search = "" } = {})
 };
 
 // ====================
-// 2. Get Current Academic Term (Auto-match by Date or Active Status)
+// 2. Lấy học kỳ hiện tại (Tự động khớp theo ngày hoặc trạng thái ACTIVE)
 // ====================
 const getCurrentAcademicTerm = async (targetDate = new Date()) => {
   const date = new Date(targetDate);
 
-  // 1. Try finding term that covers the target date: startDate <= date <= endDate
+  // 1. Tìm học kỳ bao trùm ngày mục tiêu: startDate <= date <= endDate
   const dateMatchingTerms = await AcademicTerm.find({
     startDate: { $lte: date },
     endDate: { $gte: date },
@@ -81,7 +80,7 @@ const getCurrentAcademicTerm = async (targetDate = new Date()) => {
     return dateMatchingTerms[0];
   }
 
-  // 2. Fallback: Find currently ACTIVE term
+  // 2. Dự phòng: Tìm học kỳ đang có trạng thái ACTIVE
   const activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" })
     .populate({ path: "createdBy", select: "fullName email role" })
     .lean();
@@ -90,7 +89,7 @@ const getCurrentAcademicTerm = async (targetDate = new Date()) => {
     return activeTerm;
   }
 
-  // 3. Throw clear error if out of term range
+  // 3. Báo lỗi nếu không có học kỳ nào phù hợp
   throw new AppError(
     "Không xác định được học kỳ hiện tại. Vui lòng liên hệ quản trị viên.",
     404,
@@ -99,7 +98,7 @@ const getCurrentAcademicTerm = async (targetDate = new Date()) => {
 };
 
 // ====================
-// 2b. Get Active Academic Term
+// 2b. Lấy học kỳ đang kích hoạt (ACTIVE)
 // ====================
 const getActiveTerm = async () => {
   const activeTerm = await AcademicTerm.findOne({ status: "ACTIVE" })
@@ -110,7 +109,7 @@ const getActiveTerm = async () => {
 };
 
 // ====================
-// 3. Get Term Details by ID
+// 3. Lấy thông tin chi tiết học kỳ theo ID
 // ====================
 const getTermById = async (id) => {
   const term = await AcademicTerm.findById(id)
@@ -134,7 +133,7 @@ const getTermById = async (id) => {
 };
 
 // ====================
-// 4. Create Academic Term
+// 4. Tạo mới học kỳ
 // ====================
 const createTerm = async (data, userId) => {
   const {
@@ -263,7 +262,7 @@ const createTerm = async (data, userId) => {
 };
 
 // ====================
-// 5. Update Academic Term
+// 5. Cập nhật thông tin học kỳ
 // ====================
 const updateTerm = async (id, data) => {
   const term = await AcademicTerm.findById(id);
@@ -307,7 +306,7 @@ const updateTerm = async (id, data) => {
 
   if (status !== undefined && status !== term.status) {
     if (status === "ACTIVE") {
-      // Auto-close any other active term
+      // Tự động đóng các học kỳ đang mở khác
       await AcademicTerm.updateMany({ _id: { $ne: term._id }, status: "ACTIVE" }, { status: "CLOSED" });
     }
     term.status = status;
@@ -379,7 +378,7 @@ const updateTerm = async (id, data) => {
 };
 
 // ====================
-// 6. Activate Academic Term
+// 6. Kích hoạt học kỳ (Chuyển sang ACTIVE)
 // ====================
 const activateTerm = async (id) => {
   const term = await AcademicTerm.findById(id);
@@ -387,7 +386,7 @@ const activateTerm = async (id) => {
     throw new AppError("Không tìm thấy học kỳ", 404);
   }
 
-  // Switch all other active terms to CLOSED
+  // Chuyển toàn bộ học kỳ ACTIVE khác về CLOSED
   await AcademicTerm.updateMany({ _id: { $ne: term._id }, status: "ACTIVE" }, { status: "CLOSED" });
 
   term.status = "ACTIVE";
@@ -397,7 +396,7 @@ const activateTerm = async (id) => {
 };
 
 // ====================
-// 7. Close Academic Term
+// 7. Đóng học kỳ (Chuyển sang CLOSED)
 // ====================
 const closeTerm = async (id) => {
   const term = await AcademicTerm.findById(id);
@@ -412,7 +411,7 @@ const closeTerm = async (id) => {
 };
 
 // ====================
-// 8. Delete Academic Term (Safe Delete)
+// 8. Xóa học kỳ an toàn (Kiểm tra dữ liệu liên kết)
 // ====================
 const deleteTerm = async (id) => {
   const term = await AcademicTerm.findById(id);
@@ -420,7 +419,7 @@ const deleteTerm = async (id) => {
     throw new AppError("Không tìm thấy học kỳ", 404);
   }
 
-  // Check if any business data is attached
+  // Kiểm tra nếu có dữ liệu hồ sơ hoặc đề tài đã liên kết
   const [internshipCount, thesisCount] = await Promise.all([
     Internship.countDocuments({ academicTermId: term._id }),
     Thesis.countDocuments({ academicTermId: term._id }),
@@ -438,7 +437,7 @@ const deleteTerm = async (id) => {
 };
 
 // ====================
-// 8b. Toggle Thesis Registration Lock (TBM / ADMIN)
+// 8b. Đóng / Mở khóa đăng ký đề tài KLTN (TBM / ADMIN)
 // ====================
 const toggleThesisRegistrationLock = async (id, { isLocked, newDeadline = null, userId = null }) => {
   const term = await AcademicTerm.findById(id);
@@ -467,7 +466,7 @@ const toggleThesisRegistrationLock = async (id, { isLocked, newDeadline = null, 
       }
       term.thesis.registrationEnd = deadlineDate;
     } else if (term.thesis.registrationEnd && new Date() > new Date(term.thesis.registrationEnd)) {
-      // If reopening past the previous deadline without specifying a new date, extend deadline to term end or +7 days
+      // Khi mở lại nếu đã quá hạn mà không chỉ định hạn mới -> gia hạn thêm 7 ngày
       const extendedDate = new Date();
       extendedDate.setDate(extendedDate.getDate() + 7);
       extendedDate.setHours(23, 59, 59, 999);
@@ -484,7 +483,7 @@ const toggleThesisRegistrationLock = async (id, { isLocked, newDeadline = null, 
 };
 
 // ====================
-// 9. Startup Seed & Safe Data Migration
+// 9. Khởi tạo dữ liệu học kỳ mặc định ban đầu
 // ====================
 const ensureDefaultActiveTerm = async () => {
   try {

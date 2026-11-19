@@ -7,7 +7,7 @@ import AppError from "../utils/AppError.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure upload directories exist
+// Đảm bảo các thư mục tải lên tồn tại
 const thesisProgressDir = path.join(__dirname, "../../public/uploads/thesis-progress");
 if (!fs.existsSync(thesisProgressDir)) {
   fs.mkdirSync(thesisProgressDir, { recursive: true });
@@ -27,7 +27,7 @@ if (!fs.existsSync(internshipReportsDir)) {
   fs.mkdirSync(internshipReportsDir, { recursive: true });
 }
 
-// Storage for Thesis Progress
+// Cấu hình lưu trữ cho Tiến độ KLTN
 const storageThesisProgress = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, thesisProgressDir);
@@ -42,8 +42,7 @@ const storageThesisProgress = multer.diskStorage({
   },
 });
 
-
-// Storage for Internship Documents (Forms, templates, instructions)
+// Cấu hình lưu trữ cho Tài liệu hướng dẫn TTDN
 const storageInternshipDocuments = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, internshipDocumentsDir);
@@ -58,7 +57,7 @@ const storageInternshipDocuments = multer.diskStorage({
   },
 });
 
-// Storage for Thesis Documents
+// Cấu hình lưu trữ cho Tài liệu hướng dẫn KLTN
 const storageThesisDocuments = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, thesisDocumentsDir);
@@ -73,7 +72,7 @@ const storageThesisDocuments = multer.diskStorage({
   },
 });
 
-// Storage for Internship Reports
+// Cấu hình lưu trữ cho Báo cáo TTDN
 const storageInternshipReports = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, internshipReportsDir);

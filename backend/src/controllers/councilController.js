@@ -1,7 +1,7 @@
 import councilService from "../services/councilService.js";
 
 // ====================
-// Get Councils
+// Lấy danh sách hội đồng
 // ====================
 const getCouncils = async (req, res, next) => {
   try {
@@ -22,7 +22,7 @@ const getCouncils = async (req, res, next) => {
 };
 
 // ====================
-// Get Council by ID
+// Lấy thông tin hội đồng theo ID
 // ====================
 const getCouncilById = async (req, res, next) => {
   try {
@@ -39,7 +39,7 @@ const getCouncilById = async (req, res, next) => {
 };
 
 // ====================
-// Create Council
+// Tạo mới hội đồng
 // ====================
 const createCouncil = async (req, res, next) => {
   try {
@@ -59,7 +59,7 @@ const createCouncil = async (req, res, next) => {
 };
 
 // ====================
-// Update Council
+// Cập nhật thông tin hội đồng
 // ====================
 const updateCouncil = async (req, res, next) => {
   try {
@@ -80,7 +80,7 @@ const updateCouncil = async (req, res, next) => {
 };
 
 // ====================
-// Delete Council
+// Xóa hội đồng
 // ====================
 const deleteCouncil = async (req, res, next) => {
   try {
@@ -96,7 +96,7 @@ const deleteCouncil = async (req, res, next) => {
 };
 
 // ====================
-// Assign Council to Thesis
+// Phân công hội đồng cho đề tài KLTN
 // ====================
 const assignCouncilToThesis = async (req, res, next) => {
   try {
@@ -119,7 +119,7 @@ const assignCouncilToThesis = async (req, res, next) => {
 };
 
 // ====================
-// Clear All Councils
+// Xóa tất cả hội đồng theo học kỳ
 // ====================
 const clearAllCouncils = async (req, res, next) => {
   try {
@@ -138,7 +138,7 @@ const clearAllCouncils = async (req, res, next) => {
 };
 
 // ====================
-// Bulk Update Report Date
+// Cập nhật ngày báo cáo hội đồng hàng loạt
 // ====================
 const bulkUpdateReportDate = async (req, res, next) => {
   try {
@@ -159,7 +159,7 @@ const bulkUpdateReportDate = async (req, res, next) => {
 };
 
 // ====================
-// Batch Assign Theses to Council
+// Phân công đề tài vào hội đồng hàng loạt
 // ====================
 const batchAssignTheses = async (req, res, next) => {
   try {

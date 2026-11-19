@@ -204,7 +204,7 @@ const internshipSchema = new mongoose.Schema(
       },
     ],
 
-    // File báo cáo thực tập doanh nghiệp (Yêu cầu Prompt 2)
+    // Tệp báo cáo thực tập doanh nghiệp tổng kết
     reportFile: {
       originalName: {
         type: String,
@@ -236,7 +236,7 @@ const internshipSchema = new mongoose.Schema(
       },
     },
 
-    // Trạng thái PASS PRETEST trước khi chấm điểm (Yêu cầu Prompt 2)
+    // Trạng thái đạt bài kiểm tra đầu vào (Pretest) trước khi chấm điểm
     pretest: {
       isPassed: {
         type: Boolean,

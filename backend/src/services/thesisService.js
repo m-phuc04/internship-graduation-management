@@ -7,7 +7,6 @@ import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
 import Permission from "../models/Permission.js";
 import AcademicTerm from "../models/AcademicTerm.js";
-import Council from "../models/Council.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -5303,7 +5302,6 @@ const respondStudent2Invitation = async (thesisId, userId, action) => {
   }
 
   const sv1 = thesis.studentId;
-  const sv1Name = sv1.userId?.fullName || sv1.studentCode;
   const sv2Name = student2.userId?.fullName || student2.studentCode;
   const sv2Code = student2.studentCode;
 
@@ -5751,7 +5749,6 @@ const cancelGroupParticipationByStudent2 = async (thesisId, userId) => {
   }
 
   const sv1 = thesis.studentId;
-  const sv1Name = sv1.userId?.fullName || sv1.studentCode;
   const sv2Name = student2.userId?.fullName || student2.studentCode;
   const sv2Code = student2.studentCode;
   const prevStatus = thesis.status;

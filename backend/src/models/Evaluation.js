@@ -74,7 +74,7 @@ const evaluationSchema = new mongoose.Schema(
       },
     ],
 
-    // Detailed Company Internship Evaluation Fields
+    // Thông tin chi tiết đánh giá thực tập tại doanh nghiệp
     companyInfo: {
       businessField: { type: String, trim: true, default: null },
       companySize: { type: String, trim: true, default: null },

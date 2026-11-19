@@ -5,46 +5,35 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// ====================
-// Public / Authenticated Read Routes
-// ====================
-
-// Get current academic term (by date matching or active status)
+// Lấy học kỳ hiện tại
 router.get("/current", academicTermController.getCurrentTerm);
 
-// Get active academic term
+// Lấy học kỳ đang kích hoạt
 router.get("/active", academicTermController.getActiveTerm);
 
-// Get all academic terms
+// Lấy danh sách tất cả học kỳ
 router.get(
   "/",
   authMiddleware,
   academicTermController.getAllTerms,
 );
 
-// Get term by ID
+// Lấy thông tin chi tiết học kỳ theo ID
 router.get(
   "/:id",
   authMiddleware,
   academicTermController.getTermById,
 );
 
-// ====================
-// Admin / TBM Management Routes
-// ====================
-
-// Create term
-// Create term (Admin only)
+// Tạo học kỳ mới (chỉ ADMIN)
 router.post(
   "/",
   authMiddleware,
-  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.createTerm,
 );
 
-// Update term
-// Update term (Admin for general term info, TBM for registration timelines)
+// Cập nhật thông tin học kỳ (ADMIN hoặc TBM)
 router.patch(
   "/:id",
   authMiddleware,
@@ -52,27 +41,23 @@ router.patch(
   academicTermController.updateTerm,
 );
 
-// Activate term
-// Activate term (Admin only)
+// Kích hoạt học kỳ (chỉ ADMIN)
 router.patch(
   "/:id/activate",
   authMiddleware,
-  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.activateTerm,
 );
 
-// Close term
-// Close term (Admin only)
+// Đóng học kỳ (chỉ ADMIN)
 router.patch(
   "/:id/close",
   authMiddleware,
-  authorizeRoles("ADMIN", "TBM"),
   authorizeRoles("ADMIN"),
   academicTermController.closeTerm,
 );
 
-// Toggle thesis registration lock (TBM / ADMIN)
+// Bật/tắt khóa đăng ký khóa luận (ADMIN hoặc TBM)
 router.patch(
   "/:id/toggle-thesis-registration-lock",
   authMiddleware,
@@ -80,7 +65,7 @@ router.patch(
   academicTermController.toggleThesisRegistrationLock,
 );
 
-// Delete term (Safe delete, Admin only)
+// Xóa học kỳ (chỉ ADMIN)
 router.delete(
   "/:id",
   authMiddleware,

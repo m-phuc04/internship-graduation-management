@@ -24,7 +24,7 @@ const permissionSchema = new mongoose.Schema(
   },
 );
 
-// Compound Unique Index: Enforce 1 record per (userId, permission) pair
+// Chỉ mục duy nhất phức hợp: Đảm bảo 1 bản ghi cho mỗi cặp (userId, permission)
 permissionSchema.index({ userId: 1, permission: 1 }, { unique: true });
 permissionSchema.index({ userId: 1, isActive: 1 });
 

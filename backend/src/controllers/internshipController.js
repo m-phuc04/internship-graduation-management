@@ -3,7 +3,7 @@ import exportService from "../services/exportService.js";
 import Lecturer from "../models/Lecturer.js";
 
 // ====================
-// Student Creates Internship Registration
+// Sinh viên đăng ký thực tập doanh nghiệp
 // ====================
 const createInternship = async (req, res, next) => {
   try {
@@ -23,7 +23,7 @@ const createInternship = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Get All Internships (Search, Filter, Pagination)
+// TBM: Lấy danh sách hồ sơ thực tập (Tìm kiếm, lọc, phân trang)
 // ====================
 const getAllInternships = async (req, res, next) => {
   try {
@@ -49,7 +49,7 @@ const getAllInternships = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Get Available Lecturers for Assignment
+// TBM: Lấy danh sách giảng viên khả dụng để phân công
 // ====================
 const getAvailableLecturers = async (req, res, next) => {
   try {
@@ -67,7 +67,7 @@ const getAvailableLecturers = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Assign Lecturer to Internship
+// TBM: Phân công Giảng viên Giám sát cho hồ sơ thực tập
 // ====================
 const assignLecturer = async (req, res, next) => {
   try {
@@ -96,7 +96,7 @@ const assignLecturer = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Approve Internship
+// TBM: Phê duyệt hồ sơ thực tập
 // ====================
 const approveInternship = async (req, res, next) => {
   try {
@@ -118,7 +118,7 @@ const approveInternship = async (req, res, next) => {
 };
 
 // ====================
-// TBM: Reject Internship
+// TBM: Từ chối hồ sơ thực tập
 // ====================
 const rejectInternship = async (req, res, next) => {
   try {
@@ -141,7 +141,7 @@ const rejectInternship = async (req, res, next) => {
 };
 
 // ====================
-// Logged-in Student Gets Their Internship Profile
+// Sinh viên xem thông tin hồ sơ thực tập của mình
 // ====================
 const getMyInternship = async (req, res, next) => {
   try {
@@ -162,24 +162,7 @@ const getMyInternship = async (req, res, next) => {
 };
 
 // ====================
-// Get Active Companies for Dropdown Selection
-// ====================
-const getActiveCompanies = async (req, res, next) => {
-  try {
-    const companies = await internshipService.getActiveCompanies();
-
-    res.status(200).json({
-      success: true,
-      message: "Lấy danh sách doanh nghiệp thành công",
-      data: companies,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
-// ====================
-// Get Internship By ID
+// Lấy thông tin hồ sơ thực tập theo ID
 // ====================
 const getInternshipById = async (req, res, next) => {
   try {
@@ -199,7 +182,7 @@ const getInternshipById = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer: Get Supervised Internships
+// Giảng viên: Lấy danh sách hồ sơ thực tập đang giám sát
 // ====================
 const getSupervisedInternships = async (req, res, next) => {
   try {
@@ -229,7 +212,7 @@ const getSupervisedInternships = async (req, res, next) => {
 };
 
 // ====================
-// Get Supervision Document Data (Document A)
+// Lấy dữ liệu giấy xác nhận hướng dẫn thực tập (Document A)
 // ====================
 const getSupervisionDocument = async (req, res, next) => {
   try {
@@ -255,7 +238,7 @@ const getSupervisionDocument = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Accepts Internship Supervision
+// Giảng viên tiếp nhận giám sát thực tập
 // ====================
 const supervisorAcceptInternship = async (req, res, next) => {
   try {
@@ -275,7 +258,7 @@ const supervisorAcceptInternship = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Rejects Internship Supervision
+// Giảng viên từ chối giám sát thực tập
 // ====================
 const supervisorRejectInternship = async (req, res, next) => {
   try {
@@ -297,7 +280,7 @@ const supervisorRejectInternship = async (req, res, next) => {
 };
 
 // ====================
-// Export Internships to Excel
+// Xuất danh sách hồ sơ thực tập ra Excel
 // ====================
 const exportInternships = async (req, res, next) => {
   try {
@@ -305,7 +288,7 @@ const exportInternships = async (req, res, next) => {
 
     let targetLecturerId = lecturerId;
 
-    // Security & Scope: If caller is a LECTURER, strictly restrict to their own supervised students
+    // Giới hạn phạm vi: Giảng viên chỉ được xuất dữ liệu sinh viên do mình giám sát
     if (req.user.role === "LECTURER") {
       const lecturer = await Lecturer.findOne({ userId: req.user.userId });
       if (!lecturer) {
@@ -353,7 +336,7 @@ const exportInternships = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer / TBM Completes Internship Evaluation
+// Giảng viên / TBM: Hoàn thành đánh giá thực tập
 // ====================
 const completeInternship = async (req, res, next) => {
   try {
@@ -373,10 +356,7 @@ const completeInternship = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer / TBM Updates Report Cycle
-// ====================
-// ====================
-// Lecturer / TBM Updates Report Cycle for Entire Academic Term
+// Giảng viên / TBM: Cập nhật chu kỳ nộp nhật ký cho toàn bộ học kỳ
 // ====================
 const updateTermReportCycle = async (req, res, next) => {
   try {
@@ -417,7 +397,7 @@ const updateReportCycle = async (req, res, next) => {
 };
 
 // ====================
-// Student Uploads Report File (Prompt 2 - Requirement 1)
+// Sinh viên tải lên tệp báo cáo thực tập tổng kết
 // ====================
 const uploadReportFile = async (req, res, next) => {
   try {
@@ -439,7 +419,7 @@ const uploadReportFile = async (req, res, next) => {
 };
 
 // ====================
-// Student & Lecturer Deletes / Removes Report File
+// Sinh viên & Giảng viên xóa / gỡ tệp báo cáo thực tập
 // ====================
 const deleteReportFile = async (req, res, next) => {
   try {
@@ -463,7 +443,7 @@ const deleteReportFile = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Updates PASS PRETEST Status (Prompt 2 - Requirement 3)
+// Giảng viên cập nhật trạng thái đạt bài kiểm tra đầu vào (Pretest)
 // ====================
 const updatePretestStatus = async (req, res, next) => {
   try {
@@ -487,7 +467,7 @@ const updatePretestStatus = async (req, res, next) => {
 };
 
 // ====================
-// Get Report File (Prompt 2 - Requirement 1)
+// Lấy thông tin tệp báo cáo thực tập
 // ====================
 const getReportFile = async (req, res, next) => {
   try {
@@ -519,7 +499,6 @@ export default {
   getMyInternship,
   getSupervisedInternships,
   getSupervisionDocument,
-  getActiveCompanies,
   getInternshipById,
   exportInternships,
   updateReportCycle,

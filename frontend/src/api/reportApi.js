@@ -25,10 +25,6 @@ export const reportApi = {
     return axiosClient.put(`/internship-reports/${id}`, data);
   },
 
-  // Student 2 confirms or rejects report
-  confirmStudent2: (id, data) =>
-    axiosClient.patch(`/internship-reports/${id}/confirm-student2`, data),
-
   // Student gets all their own reports
   getMyReports: () => axiosClient.get('/internship-reports/my'),
 

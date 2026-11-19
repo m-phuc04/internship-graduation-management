@@ -119,9 +119,11 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
                       <div className="font-bold text-slate-900">
                         {displayName}
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        Đang hướng dẫn: <strong className="text-slate-700">{lec.activeStudentsCount ?? 0}</strong> sinh viên
-                      </div>
+                      {lec.email && (
+                        <div className="text-[11px] text-slate-500 mt-0.5">
+                          {lec.email}
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right shrink-0">

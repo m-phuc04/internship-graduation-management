@@ -2,21 +2,19 @@ import Conversation from "../models/Conversation.js";
 import Message from "../models/Message.js";
 import User from "../models/User.js";
 import Lecturer from "../models/Lecturer.js";
-import Student from "../models/Student.js";
-import Company from "../models/Company.js";
 
 /**
- * Format conversation and attach helper information
+ * Định dạng cuộc trò chuyện và bổ sung thông tin hiển thị
  */
 const formatConversationForUser = async (conversation, currentUserId) => {
   const convObj = conversation.toObject ? conversation.toObject() : conversation;
   
-  // Find other participant(s)
+  // Tìm thành viên đối thoại khác người dùng hiện tại
   const otherParticipants = (convObj.participants || []).filter(
     (p) => String(p.user?._id || p.user) !== String(currentUserId),
   );
 
-  // If 1-on-1 direct conversation, get detailed profile of the other user
+  // Nếu là cuộc trò chuyện 1-1, lấy thông tin chi tiết của đối phương
   const otherUser = otherParticipants[0]?.user || null;
   let academicTitle = null;
 
@@ -25,7 +23,7 @@ const formatConversationForUser = async (conversation, currentUserId) => {
     if (lec) academicTitle = lec.academicTitle;
   }
 
-  // Get current user unread count
+  // Lấy số lượng tin nhắn chưa đọc của người dùng hiện tại
   const myParticipant = (convObj.participants || []).find(
     (p) => String(p.user?._id || p.user) === String(currentUserId),
   );
@@ -46,7 +44,7 @@ const formatConversationForUser = async (conversation, currentUserId) => {
 };
 
 /**
- * Get or create a direct conversation between two users
+ * Lấy hoặc tạo mới cuộc trò chuyện trực tiếp 1-1 giữa hai người dùng
  */
 const getOrCreateDirectConversation = async (userId1, userId2) => {
   if (!userId1 || !userId2) {
@@ -57,13 +55,13 @@ const getOrCreateDirectConversation = async (userId1, userId2) => {
     throw new Error("Không thể tạo cuộc trò chuyện với chính mình");
   }
 
-  // Check if target user exists
+  // Kiểm tra tài khoản người nhận tồn tại
   const targetUser = await User.findById(userId2).select("_id fullName email avatar role isActive");
   if (!targetUser) {
     throw new Error("Người nhận không tồn tại");
   }
 
-  // Find existing direct conversation
+  // Tìm cuộc trò chuyện trực tiếp đã có giữa 2 người
   let conversation = await Conversation.findOne({
     type: "DIRECT",
     "participants.user": { $all: [userId1, userId2] },
@@ -71,7 +69,7 @@ const getOrCreateDirectConversation = async (userId1, userId2) => {
   }).populate("participants.user", "_id fullName email avatar role isActive");
 
   if (!conversation) {
-    // Create new direct conversation
+    // Tạo mới cuộc trò chuyện 1-1
     conversation = await Conversation.create({
       type: "DIRECT",
       participants: [
@@ -95,7 +93,7 @@ const getOrCreateDirectConversation = async (userId1, userId2) => {
 };
 
 /**
- * Get all conversations for a user
+ * Lấy danh sách các cuộc trò chuyện của một người dùng
  */
 const getUserConversations = async (userId) => {
   const conversations = await Conversation.find({
@@ -114,7 +112,7 @@ const getUserConversations = async (userId) => {
 };
 
 /**
- * Get messages in a conversation
+ * Lấy danh sách tin nhắn trong một cuộc trò chuyện
  */
 const getConversationMessages = async (conversationId, userId, page = 1, limit = 50) => {
   const conversation = await Conversation.findOne({
@@ -149,7 +147,7 @@ const getConversationMessages = async (conversationId, userId, page = 1, limit =
 };
 
 /**
- * Send a message
+ * Gửi tin nhắn mới
  */
 const sendMessage = async (conversationId, senderId, text = "", attachments = [], socketEmitter = null) => {
   if (!text.trim() && (!attachments || attachments.length === 0)) {
@@ -165,7 +163,7 @@ const sendMessage = async (conversationId, senderId, text = "", attachments = []
     throw new Error("Cuộc trò chuyện không tồn tại hoặc bạn không phải thành viên");
   }
 
-  // Create message
+  // Tạo tin nhắn mới
   const newMessage = await Message.create({
     conversationId,
     sender: senderId,
@@ -179,7 +177,7 @@ const sendMessage = async (conversationId, senderId, text = "", attachments = []
     "_id fullName avatar role email",
   );
 
-  // Update conversation lastMessage & unread count
+  // Cập nhật thông tin tin nhắn cuối cùng và số lượng chưa đọc trong cuộc trò chuyện
   conversation.lastMessage = {
     text: text.trim() || (attachments.length > 0 ? "[Đính kèm tệp]" : ""),
     sender: senderId,
@@ -196,7 +194,7 @@ const sendMessage = async (conversationId, senderId, text = "", attachments = []
 
   await conversation.save();
 
-  // Socket notification if emitter is provided
+  // Phát sự kiện Socket nếu có hàm phát
   if (socketEmitter && typeof socketEmitter === "function") {
     socketEmitter(conversation, populatedMessage);
   }
@@ -205,7 +203,7 @@ const sendMessage = async (conversationId, senderId, text = "", attachments = []
 };
 
 /**
- * Mark messages in a conversation as read by a user
+ * Đánh dấu đã đọc toàn bộ tin nhắn trong cuộc trò chuyện
  */
 const markAsRead = async (conversationId, userId, socketEmitter = null) => {
   const conversation = await Conversation.findOne({
@@ -215,7 +213,7 @@ const markAsRead = async (conversationId, userId, socketEmitter = null) => {
 
   if (!conversation) return;
 
-  // Reset unread count for user
+  // Đặt lại số lượng chưa đọc cho người dùng
   let changed = false;
   conversation.participants.forEach((p) => {
     if (String(p.user) === String(userId)) {
@@ -231,7 +229,7 @@ const markAsRead = async (conversationId, userId, socketEmitter = null) => {
     await conversation.save();
   }
 
-  // Update messages
+  // Cập nhật trạng thái tin nhắn
   await Message.updateMany(
     {
       conversationId,

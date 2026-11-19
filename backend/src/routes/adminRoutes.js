@@ -5,19 +5,19 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// Strict RBAC: All admin routes require ADMIN role
+// Kiểm tra đăng nhập và quyền ADMIN
 router.use(authMiddleware, authorizeRoles("ADMIN"));
 
-// Permissions Management
+// Quản lý phân quyền giảng viên
 router.get("/permissions", adminController.getPermissionsList);
 router.patch("/permissions/:lecturerId", adminController.updateLecturerPermissions);
 
-// User Management
+// Quản lý người dùng
 router.get("/users", adminController.getAllUsers);
 router.patch("/users/:userId/status", adminController.toggleUserStatus);
 router.post("/users/:userId/reset-password", adminController.resetPassword);
 
-// System Activity Logs
+// Nhật ký hoạt động hệ thống
 router.get("/logs", adminController.getSystemLogs);
 
 export default router;

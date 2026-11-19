@@ -4,20 +4,12 @@ import { useChat } from '../../context/ChatContext';
 import { useAuth } from '../../context/AuthContext';
 import {
   X,
-  Minus,
   Send,
-  User,
   MessageSquare,
   MessageCircle,
   ArrowLeft,
   Search,
-  Check,
-  Clock,
   Inbox,
-  ShieldCheck,
-  BookOpen,
-  GraduationCap,
-  Building2,
 } from 'lucide-react';
 
 const FloatingChatBox = () => {

@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
 import Evaluation from "../models/Evaluation.js";
-import Notification from "../models/Notification.js";
 import Internship from "../models/Internship.js";
 import Company from "../models/Company.js";
 import Lecturer from "../models/Lecturer.js";
@@ -14,7 +13,7 @@ import notificationService from "./notificationService.js";
 import { checkInternshipDiaryCompletion } from "../utils/internshipDateUtils.js";
 
 // ====================
-// Helper: Resolve Academic Term for Internship
+// Hàm bổ trợ: Xác định học kỳ cho hồ sơ thực tập
 // ====================
 export const resolveAcademicTermForInternship = async (internship, explicitTermId = null) => {
   let term = null;
@@ -46,10 +45,7 @@ export const resolveAcademicTermForInternship = async (internship, explicitTermI
 };
 
 // ====================
-// Helper: Validate TTDN Evaluation Window
-// ====================
-// ====================
-// Helper: Validate TTDN Grading Window for Giảng viên Giám sát
+// Hàm bổ trợ: Kiểm tra khoảng thời gian chấm điểm TTDN của Giảng viên Giám sát
 // ====================
 export const validateInternshipGradingWindow = (term, checkDate = new Date()) => {
   if (!term) {
@@ -173,7 +169,7 @@ export const validateInternshipEvaluationWindow = (term, checkDate = new Date())
 };
 
 // ====================
-// Helper: Compute TTDN Evaluation Result (PASS / FAIL / IN_PROGRESS / NOT_OPEN)
+// Hàm bổ trợ: Tính toán kết quả đánh giá TTDN (PASS / FAIL / IN_PROGRESS / NOT_OPEN)
 // ====================
 export const computeInternshipEvaluationResult = (internship, evaluation, term, checkDate = new Date()) => {
   const now = checkDate instanceof Date ? checkDate : new Date(checkDate);
@@ -251,7 +247,7 @@ export const computeInternshipEvaluationResult = (internship, evaluation, term, 
 };
 
 // ====================
-// Get Evaluation By ID with RBAC
+// Lấy thông tin đánh giá theo ID kèm kiểm tra phân quyền
 // ====================
 const getEvaluationById = async (evaluationId, requestingUser) => {
   const evaluation = await Evaluation.findById(evaluationId);
@@ -301,7 +297,7 @@ const getEvaluationById = async (evaluationId, requestingUser) => {
 };
 
 // ====================
-// Lecturer Gets Evaluations of Supervised Students
+// Giảng viên lấy danh sách đánh giá của sinh viên đang giám sát
 // ====================
 const getEvaluationsForLecturer = async (
   userId,
@@ -341,7 +337,7 @@ const getEvaluationsForLecturer = async (
 };
 
 // ====================
-// TBM Gets All Evaluations (AcademicTerm-aware)
+// TBM lấy danh sách đánh giá toàn khoa theo học kỳ
 // ====================
 const getAllEvaluationsForTbm = async ({
   page = 1,
@@ -481,12 +477,15 @@ const getAllEvaluationsForTbm = async ({
 // ==========================================
 // TBM: Delete Evaluation Result
 // ==========================================
+// ==========================================
+// TBM: Xóa kết quả đánh giá thực tập
+// ==========================================
 const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
   if (!targetIdOrEvalId) {
     throw new AppError("ID kết quả đánh giá hoặc hồ sơ thực tập là bắt buộc", 400);
   }
 
-  // Find evaluation either by its _id or by targetId (internshipId)
+  // Tìm phiếu đánh giá theo _id hoặc targetId (internshipId)
   let evaluation = null;
   if (mongoose.Types.ObjectId.isValid(targetIdOrEvalId)) {
     evaluation = await Evaluation.findOne({
@@ -503,7 +502,7 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
 
   const internshipId = evaluation.targetId;
 
-  // Check if internship is already completed/locked or term is CLOSED
+  // Kiểm tra nếu học kỳ đã kết thúc (CLOSED)
   const internship = await Internship.findById(internshipId);
   if (internship) {
     const term = await resolveAcademicTermForInternship(internship);
@@ -519,10 +518,10 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
     );
   }
 
-  // Delete the specific evaluation
+  // Xóa phiếu đánh giá
   await Evaluation.findByIdAndDelete(evaluation._id);
 
-  // If internship had evaluation ref pointing to this evaluation, clear it
+  // Gỡ liên kết evaluation ở hồ sơ thực tập nếu đang trỏ tới phiếu này
   if (internship) {
     if (String(internship.evaluation) === String(evaluation._id)) {
       internship.evaluation = null;
@@ -538,7 +537,7 @@ const tbmDeleteEvaluation = async (targetIdOrEvalId) => {
 };
 
 // ==========================================
-// Lecturer (Giảng viên Giám sát): Grade Internship
+// Giảng viên Giám sát (GVGS): Đánh giá & Chấm điểm Thực tập
 // ==========================================
 const gradeInternshipByLecturer = async ({
   internshipId,
@@ -742,6 +741,8 @@ const gradeInternshipByLecturer = async ({
 // ==========================================
 // TBM / Lecturer: Publish Single Internship Score
 // ==========================================
+// TBM / Giảng viên: Công bố điểm một hồ sơ thực tập
+// ==========================================
 const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser }) => {
   if (!internshipId) {
     throw new AppError("Mã hồ sơ thực tập là bắt buộc", 400);
@@ -834,7 +835,7 @@ const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser 
 };
 
 // ==========================================
-// TBM: Publish Bulk Internship Scores
+// TBM: Công bố điểm hàng loạt hồ sơ thực tập
 // ==========================================
 const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
   if (!Array.isArray(internshipIds) || internshipIds.length === 0) {
@@ -930,7 +931,7 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
 };
 
 // ==========================================
-// TBM: Hide Published Internship Score
+// TBM: Ẩn điểm đã công bố của một hồ sơ thực tập
 // ==========================================
 const hideInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
   const internship = await Internship.findById(id).populate("studentId");
@@ -994,7 +995,7 @@ const hideInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
 };
 
 // ==========================================
-// TBM: Hide Bulk Internship Scores
+// TBM: Ẩn điểm hàng loạt hồ sơ thực tập
 // ==========================================
 const hideInternshipScoresBulk = async ({ internshipIds, tbmUserId, reason = "" }) => {
   if (!Array.isArray(internshipIds) || internshipIds.length === 0) {
@@ -1073,7 +1074,7 @@ const hideInternshipScoresBulk = async ({ internshipIds, tbmUserId, reason = "" 
 };
 
 // ==========================================
-// TBM: Republish Single Internship Score
+// TBM: Công bố lại điểm đã bị ẩn của một hồ sơ thực tập
 // ==========================================
 const republishInternshipScore = async ({ id, tbmUserId, reason = "" }) => {
   const internship = await Internship.findById(id).populate("studentId");

@@ -5,11 +5,9 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
-// ==========================================
-// 1. Lecturer Endpoints
-// ==========================================
+// 1. Chức năng dành cho Giảng viên (GVGS)
 
-// Lecturer (GVGS): Grade Internship & Edit Score
+// GVGS chấm điểm và chỉnh sửa điểm thực tập
 router.post(
   "/internship/grade",
   authMiddleware,
@@ -24,7 +22,7 @@ router.put(
   evaluationController.gradeInternship,
 );
 
-// Lecturer: View evaluations of supervised students
+// GVGS xem danh sách đánh giá của sinh viên phụ trách
 router.get(
   "/lecturer/supervised",
   authMiddleware,
@@ -32,11 +30,9 @@ router.get(
   evaluationController.getEvaluationsForLecturer,
 );
 
-// ==========================================
-// 2. TBM Endpoints
-// ==========================================
+// 2. Chức năng dành cho TBM và Quản trị
 
-// TBM: View all evaluations across companies
+// TBM xem toàn bộ đánh giá thực tập
 router.get(
   "/tbm/all",
   authMiddleware,
@@ -44,8 +40,7 @@ router.get(
   evaluationController.getAllEvaluationsForTbm,
 );
 
-
-// TBM / Lecturer: Publish Single Score
+// Công bố điểm đơn lẻ
 router.post(
   "/tbm/publish/:id",
   authMiddleware,
@@ -60,7 +55,7 @@ router.post(
   evaluationController.publishScore,
 );
 
-// TBM: Publish Bulk Scores
+// Công bố hàng loạt điểm
 router.post(
   "/tbm/publish-bulk",
   authMiddleware,
@@ -68,7 +63,7 @@ router.post(
   evaluationController.publishScoresBulk,
 );
 
-// TBM: Hide Published Score
+// Ẩn điểm đơn lẻ
 router.post(
   "/tbm/hide/:id",
   authMiddleware,
@@ -76,7 +71,7 @@ router.post(
   evaluationController.hideScore,
 );
 
-// TBM: Hide Bulk Scores
+// Ẩn hàng loạt điểm
 router.post(
   "/tbm/hide-bulk",
   authMiddleware,
@@ -84,7 +79,7 @@ router.post(
   evaluationController.hideScoresBulk,
 );
 
-// TBM: Republish Score
+// Công bố lại điểm
 router.post(
   "/tbm/republish/:id",
   authMiddleware,
@@ -92,7 +87,7 @@ router.post(
   evaluationController.republishScore,
 );
 
-// TBM: Delete evaluation result
+// Xóa kết quả đánh giá (chỉ TBM / ADMIN)
 router.delete(
   "/tbm/:id",
   authMiddleware,
@@ -100,11 +95,9 @@ router.delete(
   evaluationController.tbmDeleteEvaluation,
 );
 
-// ==========================================
-// 3. Shared Endpoints
-// ==========================================
+// 3. Chức năng dùng chung
 
-// Get evaluation by ID (Secured with role & ownership check)
+// Xem chi tiết đánh giá theo ID
 router.get(
   "/:id",
   authMiddleware,

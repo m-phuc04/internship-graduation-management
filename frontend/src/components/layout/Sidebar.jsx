@@ -3,20 +3,16 @@ import { NavLink, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   GraduationCap,
-  FileText,
   Users,
   BookOpen,
   Briefcase,
   Award,
-  Shield,
   LayoutDashboard,
   KeyRound,
-  ShieldCheck,
   ArrowLeft,
   Calendar,
   X,
   Newspaper,
-  Menu,
   Tag,
   History,
 } from 'lucide-react';

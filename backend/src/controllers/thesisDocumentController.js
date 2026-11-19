@@ -1,5 +1,4 @@
 import thesisDocumentService from "../services/thesisDocumentService.js";
-import AppError from "../utils/AppError.js";
 
 const getUserId = (req) => req.user?.userId || req.user?._id || req.user?.id;
 

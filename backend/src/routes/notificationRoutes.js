@@ -4,28 +4,28 @@ import authMiddleware from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-// All notification endpoints require authentication
+// Tất cả các tuyến đường thông báo đều yêu cầu đăng nhập
 router.use(authMiddleware);
 
-// Get my notifications (paginated)
+// Lấy danh sách thông báo của người dùng hiện tại (phân trang)
 router.get("/", notificationController.getMyNotifications);
 
-// Create a new notification
+// Tạo thông báo mới
 router.post("/", notificationController.createNotification);
 
-// Get unread count
+// Lấy số lượng thông báo chưa đọc
 router.get("/unread-count", notificationController.getUnreadCount);
 
-// Mark all as read
+// Đánh dấu tất cả thông báo là đã đọc
 router.patch("/read-all", notificationController.markAllAsRead);
 
-// Mark single notification as read
+// Đánh dấu một thông báo là đã đọc
 router.patch("/:id/read", notificationController.markAsRead);
 
-// Notify lecturers when assigned to council
+// Gửi thông báo cho giảng viên khi được phân công vào hội đồng
 router.post("/notify-council", notificationController.notifyCouncilAssignment);
 
-// Email notification settings (TTDN)
+// Cấu hình thông báo qua email (TTDN)
 router.get("/email-settings", notificationController.getEmailSettings);
 router.put("/email-settings", notificationController.updateEmailSettings);
 

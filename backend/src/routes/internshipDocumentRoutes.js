@@ -101,14 +101,14 @@ router.delete(
 // 3. Phía Trưởng Bộ Môn (TBM / Quản trị hệ thống)
 // ==========================================
 
-// GET all department documents: accessible by all authenticated users (STUDENT, TBM, LECTURER, ADMIN)
+// Lấy tất cả tài liệu chung của khoa: người dùng đã đăng nhập đều có thể truy cập
 router.get(
   "/",
   authMiddleware,
   internshipDocumentController.getDocuments,
 );
 
-// POST create department document: only TBM and ADMIN
+// Tạo mới tài liệu chung của khoa: chỉ TBM và ADMIN
 router.post(
   "/",
   authMiddleware,
@@ -117,7 +117,7 @@ router.post(
   internshipDocumentController.createDocument,
 );
 
-// DELETE department document: only TBM and ADMIN
+// Xóa tài liệu chung của khoa: chỉ TBM và ADMIN
 router.delete(
   "/:id",
   authMiddleware,

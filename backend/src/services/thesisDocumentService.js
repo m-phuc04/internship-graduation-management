@@ -6,7 +6,6 @@ import Thesis from "../models/Thesis.js";
 import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
 import User from "../models/User.js";
-import AcademicTerm from "../models/AcademicTerm.js";
 import ThesisTopic from "../models/ThesisTopic.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -14,7 +13,7 @@ import AppError from "../utils/AppError.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper to remove physical file
+// Hàm bổ trợ xóa tệp vật lý an toàn
 const unlinkFileSafe = (fileUrl) => {
   if (!fileUrl) return;
   try {
@@ -273,8 +272,7 @@ export const getLecturerSubmissions = async (
   if (thesisId && thesisId !== "ALL") {
     query.thesisId = thesisId;
 
-    // If specific thesisId is requested:
-    // If user is not Admin/TBM, verify they have permission to view this thesis
+    // Nếu người dùng không phải Admin/TBM, kiểm tra quyền xem đề tài này
     if (user?.role !== "ADMIN" && user?.role !== "TBM") {
       if (!lecturer) return [];
       const thesis = await Thesis.findById(thesisId);
@@ -360,7 +358,7 @@ export const getStudentGuides = async (
     };
   }
 
-  // Find student's thesis
+  // Tìm đề tài KLTN của sinh viên
   const thesisQuery = {
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
     status: { $nin: ["REJECTED", "CANCELLED"] },
@@ -378,7 +376,7 @@ export const getStudentGuides = async (
 
   let thesis = await Thesis.findOne(thesisQuery).populate(populateSupervisor);
   if (!thesis && academicTermId) {
-    // Fallback without term constraint
+    // Dự phòng tìm kiếm không ràng buộc học kỳ
     thesis = await Thesis.findOne({
       $or: [{ studentId: student._id }, { secondStudentId: student._id }],
       status: { $nin: ["REJECTED", "CANCELLED"] },
@@ -530,7 +528,7 @@ export const createStudentSubmission = async ({
     if (thesis.supervisorId) {
       const supervisor = await Lecturer.findById(thesis.supervisorId).populate("userId", "fullName");
       if (supervisor?.userId?._id) {
-        // Resolve [Tên Nhóm]: Check if groupOrder exists in topic's registeredGroups
+        // Xác định [Tên Nhóm]: Kiểm tra nếu groupOrder tồn tại trong registeredGroups của đề tài
         let groupName = "";
         if (thesis.topicId) {
           const topic = await ThesisTopic.findById(thesis.topicId).lean();
@@ -545,7 +543,7 @@ export const createStudentSubmission = async ({
           }
         }
 
-        // If no groupOrder, use student's full name
+        // Nếu không có groupOrder, dùng họ tên sinh viên
         if (!groupName) {
           groupName = thesis.studentId?.userId?.fullName || student.userId?.fullName || "Sinh viên";
         }

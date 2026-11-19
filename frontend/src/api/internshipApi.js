@@ -76,9 +76,6 @@ export const internshipApi = {
   // Student gets own internship profile & active status
   getMyInternship: (params) => axiosClient.get('/internships/my', { params }),
 
-  // Get active companies for registration selection
-  getActiveCompanies: () => axiosClient.get('/internships/active-companies'),
-
   // Student registers a new internship
   register: (data) => axiosClient.post('/internships', data),
 

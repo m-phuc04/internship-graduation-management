@@ -270,11 +270,11 @@ const autoAssignReviewersByField = async (req, res, next) => {
 };
 
 // ==========================================
-// PHASE 11: LECTURER / REVIEWER CONTROLLERS
+// Bộ điều khiển Giảng viên / Cán bộ phản biện
 // ==========================================
 
 // ====================
-// Lecturer: Get All Assigned Theses (GVHD / PB1 / PB2)
+// Giảng viên: Lấy tất cả đề tài được phân công (GVHD / PB1 / PB2)
 // ====================
 const getAssignedThesesForLecturer = async (req, res, next) => {
   try {
@@ -300,7 +300,7 @@ const getAssignedThesesForLecturer = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer: Grade Thesis by Role
+// Giảng viên: Chấm điểm đề tài theo vai trò
 // ====================
 const gradeThesisByLecturer = async (req, res, next) => {
   try {
@@ -330,7 +330,7 @@ const gradeThesisByLecturer = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer / TBM / Admin: Mark Student Fail Independently
+// Giảng viên / TBM / Admin: Đánh dấu sinh viên không đạt độc lập
 // ====================
 const markStudentFail = async (req, res, next) => {
   try {
@@ -355,7 +355,7 @@ const markStudentFail = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer / TBM / Admin: Unmark Student Fail (Bỏ đánh rớt)
+// Giảng viên / TBM / Admin: Bỏ đánh dấu không đạt cho sinh viên
 // ====================
 const unmarkStudentFail = async (req, res, next) => {
   try {
@@ -377,7 +377,7 @@ const unmarkStudentFail = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer: Evaluate Criteria by Supervisor
+// Giảng viên hướng dẫn: Đánh giá tiêu chí điều kiện
 // ====================
 const evaluateThesisCriteriaBySupervisor = async (req, res, next) => {
   try {
@@ -401,7 +401,7 @@ const evaluateThesisCriteriaBySupervisor = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer: Toggle Thesis Score Lock
+// Giảng viên: Khóa / Mở khóa điểm một đề tài
 // ====================
 const toggleThesisScoreLock = async (req, res, next) => {
   try {
@@ -423,7 +423,7 @@ const toggleThesisScoreLock = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer: Toggle All Theses Score Lock
+// Giảng viên: Khóa / Mở khóa điểm tất cả đề tài được phân công
 // ====================
 const toggleAllThesisScoresLock = async (req, res, next) => {
   try {
@@ -446,11 +446,11 @@ const toggleAllThesisScoresLock = async (req, res, next) => {
 };
 
 // ==========================================
-// PHASE 12: THESIS EVALUATION CONTROLLERS
+// Bộ điều khiển Đánh giá Khóa luận tốt nghiệp
 // ==========================================
 
 // ====================
-// Get Theses For Evaluation (Only reviewer1Id != null AND reviewer2Id != null)
+// Lấy danh sách đề tài để đánh giá
 // ====================
 const getThesesForEvaluation = async (req, res, next) => {
   try {
@@ -474,7 +474,7 @@ const getThesesForEvaluation = async (req, res, next) => {
 };
 
 // ====================
-// TBM Completes Thesis Evaluation (COMPLETED)
+// TBM hoàn tất đánh giá khóa luận (COMPLETED)
 // ====================
 const completeThesisEvaluation = async (req, res, next) => {
   try {
@@ -494,7 +494,7 @@ const completeThesisEvaluation = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Accepts Supervision
+// Giảng viên tiếp nhận hướng dẫn đề tài
 // ====================
 const supervisorAcceptThesis = async (req, res, next) => {
   try {
@@ -514,7 +514,7 @@ const supervisorAcceptThesis = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Rejects Supervision
+// Giảng viên từ chối hướng dẫn đề tài
 // ====================
 const supervisorRejectThesis = async (req, res, next) => {
   try {
@@ -535,7 +535,7 @@ const supervisorRejectThesis = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer / Supervisor Cancels Thesis
+// Giảng viên / Người hướng dẫn hủy đề tài
 // ====================
 const supervisorCancelThesis = async (req, res, next) => {
   try {
@@ -556,7 +556,7 @@ const supervisorCancelThesis = async (req, res, next) => {
 };
 
 // ====================
-// Export Theses to Excel
+// Xuất danh sách đề tài ra Excel
 // ====================
 const exportTheses = async (req, res, next) => {
   try {
@@ -870,7 +870,7 @@ const registerTopicByStudent = async (req, res, next) => {
 };
 
 // ====================
-// Thesis Evaluation Criteria Controllers
+// Bộ điều khiển Tiêu chí đánh giá Khóa luận tốt nghiệp
 // ====================
 const getThesisEvaluationCriteria = async (req, res, next) => {
   try {
@@ -938,7 +938,7 @@ const deleteThesisEvaluationCriteria = async (req, res, next) => {
 };
 
 // ====================
-// Thesis Grading Periods Controllers
+// Bộ điều khiển Đợt chấm điểm Khóa luận tốt nghiệp
 // ====================
 const getThesisGradingPeriods = async (req, res, next) => {
   try {
@@ -1022,7 +1022,7 @@ const processExpiredGradingPeriods = async (req, res, next) => {
 };
 
 // ====================
-// Publish Scores (TBM)
+// Công bố điểm (TBM)
 // ====================
 const publishScores = async (req, res, next) => {
   try {
@@ -1043,7 +1043,7 @@ const publishScores = async (req, res, next) => {
 };
 
 // ====================
-// Student 2: Respond to Group Invitation (ACCEPT / REJECT)
+// Sinh viên 2: Trả lời lời mời vào nhóm (ACCEPT / REJECT)
 // ====================
 const respondStudent2Invitation = async (req, res, next) => {
   try {
@@ -1065,7 +1065,7 @@ const respondStudent2Invitation = async (req, res, next) => {
 };
 
 // ====================
-// Student 1: Send Request to Supervisor (GVHD)
+// Sinh viên 1: Gửi yêu cầu đăng ký đề tài tới Giảng viên hướng dẫn
 // ====================
 const sendSupervisorRequest = async (req, res, next) => {
   try {
@@ -1085,7 +1085,7 @@ const sendSupervisorRequest = async (req, res, next) => {
 };
 
 // ====================
-// Student 1: Invite Student 2
+// Sinh viên 1: Mời sinh viên 2 vào nhóm
 // ====================
 const inviteStudent2 = async (req, res, next) => {
   try {
@@ -1107,9 +1107,7 @@ const inviteStudent2 = async (req, res, next) => {
 };
 
 // ====================
-// Student 1: Cancel Student 2 Invite
-// ====================
-// Student 1: Cancel Student 2 Invite
+// Sinh viên 1: Hủy lời mời gửi sinh viên 2
 // ====================
 const cancelStudent2Invite = async (req, res, next) => {
   try {
@@ -1129,7 +1127,7 @@ const cancelStudent2Invite = async (req, res, next) => {
 };
 
 // ====================
-// Student 2: Cancel Group Participation (before supervisor approval)
+// Sinh viên 2: Rút khỏi nhóm đề tài (trước khi GVHD phê duyệt)
 // ====================
 const cancelParticipationByStudent2 = async (req, res, next) => {
   try {
@@ -1149,7 +1147,7 @@ const cancelParticipationByStudent2 = async (req, res, next) => {
 };
 
 // ====================
-// Student 1: Cancel Group Registration (before supervisor approval)
+// Sinh viên 1: Hủy đăng ký nhóm đề tài (trước khi GVHD phê duyệt)
 // ====================
 const cancelGroupRegistrationByStudent1 = async (req, res, next) => {
   try {
@@ -1169,7 +1167,7 @@ const cancelGroupRegistrationByStudent1 = async (req, res, next) => {
 };
 
 // ====================
-// Student: Cancel Expired Group Registration (60-minute timeout)
+// Sinh viên: Hủy đăng ký nhóm đề tài đã hết hạn (quá hạn 60 phút)
 // ====================
 const cancelExpiredThesis = async (req, res, next) => {
   try {
@@ -1189,7 +1187,7 @@ const cancelExpiredThesis = async (req, res, next) => {
 };
 
 // ====================
-// Student 1: Remove Student 2 from Group (before supervisor approval)
+// Sinh viên 1: Xóa sinh viên 2 khỏi nhóm (trước khi GVHD phê duyệt)
 // ====================
 const removeStudent2ByStudent1 = async (req, res, next) => {
   try {

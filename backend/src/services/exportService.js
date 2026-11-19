@@ -7,9 +7,8 @@ import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import Company from "../models/Company.js";
 import User from "../models/User.js";
-import AppError from "../utils/AppError.js";
 
-// Helper: Format Date to DD/MM/YYYY
+// Hàm bổ trợ: Định dạng ngày tháng DD/MM/YYYY
 const formatDate = (date) => {
   if (!date) return "-";
   try {
@@ -24,13 +23,13 @@ const formatDate = (date) => {
   }
 };
 
-// Helper: Format Score to 2 decimal places
+// Hàm bổ trợ: Định dạng điểm số làm tròn 2 chữ số thập phân
 const formatScore = (score) => {
   if (score === null || score === undefined || isNaN(score)) return "-";
   return Number(score).toFixed(2);
 };
 
-// Helper: Map Internship Status
+// Hàm bổ trợ: Chuyển đổi trạng thái thực tập sang tiếng Việt
 const mapInternshipStatus = (status) => {
   switch (status) {
     case "PENDING":
@@ -52,7 +51,7 @@ const mapInternshipStatus = (status) => {
   }
 };
 
-// Helper: Map Thesis Status
+// Hàm bổ trợ: Chuyển đổi trạng thái đề tài KLTN sang tiếng Việt
 const mapThesisStatus = (status) => {
   switch (status) {
     case "PENDING_SUPERVISOR_APPROVAL":
@@ -98,7 +97,7 @@ const exportInternships = async ({
     query.academicTermId = academicTermId;
     termInfo = await AcademicTerm.findById(academicTermId).lean();
   } else {
-    // If not specified, look for active term
+    // Nếu không chỉ định, lấy học kỳ đang hoạt động
     const active = await AcademicTerm.findOne({ status: "ACTIVE" }).lean();
     if (active) {
       query.academicTermId = active._id;
@@ -106,17 +105,17 @@ const exportInternships = async ({
     }
   }
 
-  // 2. Filter by Status
+  // 2. Lọc theo trạng thái
   if (status && status !== "ALL") {
     query.status = status;
   }
 
-  // 3. Filter by Company
+  // 3. Lọc theo doanh nghiệp
   if (companyId && companyId !== "ALL") {
     query.companyId = companyId;
   }
 
-  // 4. Filter by Lecturer
+  // 4. Lọc theo giảng viên
   let lecturerInfo = null;
   if (lecturerId && lecturerId !== "ALL") {
     query.lecturerId = lecturerId;
@@ -154,7 +153,7 @@ const exportInternships = async ({
     }
   }
 
-  // Fetch all matching internships (without pagination)
+  // Lấy toàn bộ hồ sơ thực tập thỏa mãn điều kiện (không phân trang)
   const internships = await Internship.find(query)
     .sort({ createdAt: -1 })
     .populate({
@@ -181,7 +180,7 @@ const exportInternships = async ({
     };
   }
 
-  // Fetch evaluations for final scores
+  // Lấy bảng điểm đánh giá thực tập
   const internshipIds = internships.map((i) => i._id);
   const evaluations = await Evaluation.find({
     evaluationType: "INTERNSHIP",
@@ -193,7 +192,7 @@ const exportInternships = async ({
     evalMap.set(ev.targetId.toString(), ev);
   });
 
-  // Create Excel Workbook
+  // Khởi tạo file Excel
   const workbook = new ExcelJS.Workbook();
   workbook.creator = "Hệ thống Quản lý Thực tập & Khóa luận Tốt nghiệp";
   workbook.created = new Date();
@@ -204,7 +203,7 @@ const exportInternships = async ({
 
   const termName = termInfo ? `${termInfo.name} - Năm học ${termInfo.academicYear}` : "Tất cả học kỳ";
 
-  // Table Column Headers (Row 5)
+  // Tiêu đề các cột trong bảng (Dòng 5)
   const columns = [
     { header: "STT", key: "stt", width: 8 },
     { header: "MSSV", key: "studentCode", width: 14 },
@@ -224,7 +223,7 @@ const exportInternships = async ({
 
   const lastColLetter = String.fromCharCode(65 + columns.length - 1);
 
-  // 1. Header Information
+  // 1. Thông tin phần đầu trang
   worksheet.mergeCells(`A1:${lastColLetter}1`);
   const titleCell1 = worksheet.getCell("A1");
   titleCell1.value = "TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM - KHOA CÔNG NGHỆ THÔNG TIN";
@@ -250,14 +249,14 @@ const exportInternships = async ({
   titleCell3.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF64748B" } };
   titleCell3.alignment = { horizontal: "center", vertical: "middle" };
 
-  // Row 4 is empty spacer
+  // Dòng 4 là khoảng trắng
   worksheet.addRow([]);
 
-  // 2. Table Column Headers (Row 5)
+  // 2. Tiêu đề các cột dữ liệu (Dòng 5)
   worksheet.getRow(5).values = columns.map((c) => c.header);
   worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
 
-  // Style Header Row (Row 5)
+  // Định dạng dòng tiêu đề (Dòng 5)
   const headerRow = worksheet.getRow(5);
   headerRow.height = 28;
   headerRow.eachCell((cell) => {
@@ -265,7 +264,7 @@ const exportInternships = async ({
     cell.fill = {
       type: "pattern",
       pattern: "solid",
-      fgColor: { argb: "FF1E3A8A" }, // Dark Navy Blue
+      fgColor: { argb: "FF1E3A8A" }, // Màu xanh hải quân
     };
     cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
     cell.border = {

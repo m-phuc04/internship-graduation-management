@@ -5,13 +5,14 @@ import authorizeRoles from "../middlewares/roleMiddleware.js";
 
 const router = express.Router();
 
+// Kiểm tra đăng nhập
 router.use(authMiddleware);
 
-// Lecturer, TBM, Admin can view councils
+// Xem danh sách và chi tiết hội đồng
 router.get("/", councilController.getCouncils);
 router.get("/:id", councilController.getCouncilById);
 
-// TBM / Admin only for council management
+// Quản lý hội đồng khóa luận (TBM / ADMIN)
 router.post(
   "/",
   authorizeRoles("TBM", "ADMIN", "DEAN", "LECTURER"),

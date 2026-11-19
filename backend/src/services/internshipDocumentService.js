@@ -5,7 +5,6 @@ import InternshipDocument from "../models/InternshipDocument.js";
 import Internship from "../models/Internship.js";
 import Lecturer from "../models/Lecturer.js";
 import Student from "../models/Student.js";
-import Company from "../models/Company.js";
 import User from "../models/User.js";
 import InternshipReport from "../models/InternshipReport.js";
 import notificationService from "./notificationService.js";
@@ -14,7 +13,7 @@ import AppError from "../utils/AppError.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Helper to remove physical file
+// Hàm bổ trợ xóa tệp vật lý an toàn
 const unlinkFileSafe = (fileUrl) => {
   if (!fileUrl) return;
   try {
@@ -147,13 +146,7 @@ export const getLecturerSupervisedInternships = async (userId, academicTermId = 
   return internships.map((i) => {
     const s1Name = i.studentId?.userId?.fullName || "Sinh viên";
     const s1Code = i.studentId?.studentCode || "";
-    const s2Name = i.secondStudentId?.userId?.fullName;
-    const s2Code = i.secondStudentId?.studentCode;
-
-    let studentLabel = s1Code ? `${s1Name} (${s1Code})` : s1Name;
-    if (s2Name) {
-      studentLabel += ` & ${s2Code ? `${s2Name} (${s2Code})` : s2Name}`;
-    }
+    const studentLabel = s1Code ? `${s1Name} (${s1Code})` : s1Name;
 
     return {
       _id: i._id,
@@ -204,7 +197,7 @@ export const getLecturerGuides = async (
       });
     }
   } else {
-    // Admin or TBM
+    // Quản trị viên (Admin) hoặc Trưởng bộ môn (TBM)
     queryConditions.push({
       $or: [
         { scope: "ALL" },
@@ -1107,8 +1100,10 @@ export const createStudentSubmission = async ({
           fileUrl,
           mimeType: file.mimetype,
           size: file.size,
+          category: "Báo cáo thực tập",
           uploadedAt: new Date(),
         };
+        finalReport.fileCategory = "Báo cáo thực tập";
         finalReport.status = "SUBMITTED";
         finalReport.submittedAt = new Date();
         await finalReport.save();
@@ -1125,8 +1120,10 @@ export const createStudentSubmission = async ({
             fileUrl,
             mimeType: file.mimetype,
             size: file.size,
+            category: "Báo cáo thực tập",
             uploadedAt: new Date(),
           },
+          fileCategory: "Báo cáo thực tập",
           status: "SUBMITTED",
           submittedAt: new Date(),
         });

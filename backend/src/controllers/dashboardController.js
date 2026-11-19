@@ -1,6 +1,6 @@
 import dashboardService from "../services/dashboardService.js";
 
-// Student Dashboard
+// Bảng điều khiển Sinh viên
 const getStudentDashboard = async (req, res, next) => {
   try {
     const { academicTermId } = req.query;
@@ -19,7 +19,7 @@ const getStudentDashboard = async (req, res, next) => {
   }
 };
 
-// TBM Dashboard
+// Bảng điều khiển Trưởng Bộ Môn (TBM)
 const getTbmDashboard = async (req, res, next) => {
   try {
     const { academicTermId } = req.query;
@@ -35,7 +35,7 @@ const getTbmDashboard = async (req, res, next) => {
   }
 };
 
-// Lecturer Dashboard
+// Bảng điều khiển Giảng viên
 const getLecturerDashboard = async (req, res, next) => {
   try {
     const { academicTermId } = req.query;
