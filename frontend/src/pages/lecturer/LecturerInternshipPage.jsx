@@ -511,7 +511,7 @@ const LecturerInternshipPage = () => {
                   <th className="py-3.5 px-4 text-center">Báo cáo</th>
                   <th className="py-3.5 px-4">Điểm</th>
                   <th className="py-3.5 px-4">Trạng thái</th>
-                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4 pr-6 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
@@ -748,11 +748,10 @@ const LecturerInternshipPage = () => {
                             setSelectedInternship(item);
                             setDetailModalOpen(true);
                           }}
-                          className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+                          className="p-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
                           title="Xem chi tiết hồ sơ"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          <span>Chi tiết</span>
                         </button>
                       </div>
                     </td>
@@ -953,10 +952,10 @@ const LecturerInternshipPage = () => {
                           setSelectedInternship(item);
                           setDetailModalOpen(true);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition"
+                        className="p-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+                        title="Xem chi tiết hồ sơ"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Chi tiết</span>
                       </button>
                     </div>
                   </div>

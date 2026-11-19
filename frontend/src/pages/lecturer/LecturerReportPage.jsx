@@ -17,6 +17,7 @@ import {
   Eye,
   Filter,
   Paperclip,
+  Award,
 } from 'lucide-react';
 
 const STATUS_OPTIONS = [
@@ -220,25 +221,22 @@ const LecturerReportPage = () => {
           />
         ) : (<>
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full min-w-[720px] text-left border-collapse">
+            <table className="w-full min-w-[800px] text-left border-collapse">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/75 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   <th className="py-3.5 px-4 pl-6 min-w-[200px]">Sinh viên</th>
                   <th className="py-3.5 px-4 whitespace-nowrap w-28">Loại / Tuần</th>
                   <th className="py-3.5 px-4 min-w-[220px]">Tiêu đề nhật ký</th>
-                  <th className="py-3.5 px-4 whitespace-nowrap w-44">Thời gian nộp</th>
-                  <th className="py-3.5 px-4 pr-6 whitespace-nowrap w-36">Trạng thái</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap w-40">Thời gian nộp</th>
+                  <th className="py-3.5 px-4 whitespace-nowrap w-36">Trạng thái</th>
+                  <th className="py-3.5 px-4 pr-6 text-right whitespace-nowrap w-28"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-sm">
                 {reports.map((report) => (
                   <tr
                     key={report._id}
-                    className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
-                    onClick={() => {
-                      setSelectedReport(report);
-                      setReviewModalOpen(true);
-                    }}
+                    className="hover:bg-slate-50/80 transition-colors group"
                   >
                     {/* Student Info */}
                     <td className="py-3.5 px-4 pl-6">
@@ -295,15 +293,30 @@ const LecturerReportPage = () => {
                       )}
                     </td>
 
-
-                    {/* Status */}
-                    <td className="py-3.5 px-4 pr-6 whitespace-nowrap">
+                    {/* Status (Read-Only Badge) */}
+                    <td className="py-3.5 px-4 whitespace-nowrap">
                       <StatusBadge
                         status={report.status}
                         label={REPORT_STATUS_CONFIG[report.status]?.label || report.status}
                         variant={REPORT_STATUS_CONFIG[report.status]?.variant}
                         size="sm"
                       />
+                    </td>
+
+                    {/* Actions: Dedicated "Đánh giá" Button */}
+                    <td className="py-3.5 px-4 pr-6 text-right whitespace-nowrap">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedReport(report);
+                          setReviewModalOpen(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                        title="Đánh giá & Xem xét Nhật ký Thực tập"
+                      >
+                        <Award className="w-3.5 h-3.5" />
+                        <span>Đánh giá</span>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -315,13 +328,9 @@ const LecturerReportPage = () => {
             {reports.map((report) => (
               <div
                 key={report._id}
-                className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition cursor-pointer"
-                onClick={() => {
-                  setSelectedReport(report);
-                  setReviewModalOpen(true);
-                }}
+                className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition"
               >
-                {/* Header: Student Name + Status Badge */}
+                {/* Header: Student Name + Status Badge (Read-Only) */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="font-bold text-slate-900 text-xs">
@@ -359,10 +368,10 @@ const LecturerReportPage = () => {
                   </h4>
                 </div>
 
-                {/* File Attachment & Submission Date */}
+                {/* File Attachment, Submission Date & Dedicated Action Button */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px]">
                   {report.file?.originalName ? (
-                    <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-1 rounded-lg truncate max-w-[200px]">
+                    <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-1 rounded-lg truncate max-w-[180px]">
                       <Paperclip className="w-3 h-3 shrink-0" />
                       <span className="truncate">{report.file.originalName}</span>
                     </span>
@@ -370,8 +379,22 @@ const LecturerReportPage = () => {
                     <span className="text-slate-400 italic text-[10.5px]">Không đính kèm file</span>
                   )}
 
-                  <div className="text-right text-slate-500 font-mono text-[10.5px]">
-                    {formatDate(report.submittedAt || report.createdAt)}
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-right text-slate-500 font-mono text-[10.5px]">
+                      {formatDate(report.submittedAt || report.createdAt)}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedReport(report);
+                        setReviewModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#123891] hover:bg-[#102d7d] text-white text-[11px] font-bold shadow-2xs transition-all active:scale-95 cursor-pointer"
+                      title="Đánh giá & Xem xét Nhật ký Thực tập"
+                    >
+                      <Award className="w-3 h-3" />
+                      <span>Đánh giá</span>
+                    </button>
                   </div>
                 </div>
               </div>

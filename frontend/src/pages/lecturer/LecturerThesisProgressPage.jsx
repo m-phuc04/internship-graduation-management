@@ -618,11 +618,10 @@ const LecturerThesisProgressPage = () => {
                           <button
                             type="button"
                             onClick={() => handleOpenDetail(item)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-[11px]"
+                            className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-[11px] cursor-pointer"
                             title="Xem chi tiết"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Chi tiết</span>
                           </button>
 
                           {!isPastTerm && (
@@ -726,10 +725,10 @@ const LecturerThesisProgressPage = () => {
                       <button
                         type="button"
                         onClick={() => handleOpenDetail(item)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-xs"
+                        className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition text-xs cursor-pointer"
+                        title="Xem chi tiết"
                       >
                         <Eye className="w-3.5 h-3.5" />
-                        <span>Chi tiết</span>
                       </button>
 
                       {!isPastTerm && (

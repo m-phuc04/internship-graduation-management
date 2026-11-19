@@ -79,7 +79,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
     >
       <div className="space-y-4 text-xs">
         {/* Student & Report Header */}
-        <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#123891] flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#123891]">
           <div>
             <div className="font-bold text-sm">
               {report.studentId?.userId?.fullName} ({report.studentId?.studentCode})
@@ -88,19 +88,6 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
               {getTypeLabel()} • Tiêu đề: <strong>{report.title}</strong>
             </div>
           </div>
-          <span className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-blue-100 text-[#102d7d]">
-            {report.status === 'SUBMITTED'
-              ? 'Đã nộp'
-              : report.status === 'APPROVED'
-              ? 'Đã xử lý'
-              : report.status === 'REJECTED' || report.status === 'NEEDS_REVISION'
-              ? 'Yêu cầu chỉnh sửa'
-              : report.status === 'DRAFT'
-              ? 'Chưa nộp (Bản nháp)'
-              : report.status === 'WAITING_STUDENT_2'
-              ? 'Chờ SV2 xác nhận'
-              : report.status}
-          </span>
         </div>
 
         {/* Uploaded File Section (Prominent) */}
@@ -196,9 +183,9 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
               onChange={(e) => setStatus(e.target.value)}
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             >
-              <option value="APPROVED">Duyệt & Đạt yêu cầu (APPROVED)</option>
-              <option value="REVIEWING">Đang xem xét (REVIEWING)</option>
-              <option value="REJECTED">Yêu cầu chỉnh sửa lại (REJECTED)</option>
+              <option value="APPROVED">Đạt yêu cầu</option>
+              <option value="REVIEWING">Đang xem xét</option>
+              <option value="REJECTED">Yêu cầu chỉnh sửa lại</option>
             </select>
           </div>
 
