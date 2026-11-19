@@ -3326,19 +3326,19 @@ const LecturerThesesPage = () => {
                                   </span>
                                 </td>
                                 <td className="py-3.5 px-4 whitespace-nowrap">
-                                  <div className="flex flex-col gap-1.5 min-w-[170px]">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                        SV1
-                                      </span>
-                                      <UserNameClickable
-                                        user={item.studentId}
-                                        name={item.studentId?.userId?.fullName}
-                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                        avatarSize="w-6 h-6"
-                                      />
-                                    </div>
-                                    {item.studentCount === 2 && item.secondStudentId && (
+                                  {item.studentCount === 2 && item.secondStudentId ? (
+                                    <div className="flex flex-col gap-1.5 min-w-[170px]">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                          SV1
+                                        </span>
+                                        <UserNameClickable
+                                          user={item.studentId}
+                                          name={item.studentId?.userId?.fullName}
+                                          subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                          showAvatar={false}
+                                        />
+                                      </div>
                                       <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
                                         <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                           SV2
@@ -3347,11 +3347,18 @@ const LecturerThesesPage = () => {
                                           user={item.secondStudentId}
                                           name={item.secondStudentId?.userId?.fullName}
                                           subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                          avatarSize="w-6 h-6"
+                                          showAvatar={false}
                                         />
                                       </div>
-                                    )}
-                                  </div>
+                                    </div>
+                                  ) : (
+                                    <UserNameClickable
+                                      user={item.studentId}
+                                      name={item.studentId?.userId?.fullName}
+                                      subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                      showAvatar={false}
+                                    />
+                                  )}
                                 </td>
                                 <td className="py-3.5 px-4 whitespace-nowrap">
                                   <div className="font-semibold text-slate-800">
@@ -3578,19 +3585,19 @@ const LecturerThesesPage = () => {
                                   </span>
                                 </td>
                                 <td className="py-3 px-3 whitespace-nowrap">
-                                  <div className="flex flex-col gap-1.5 min-w-[140px]">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                        SV1
-                                      </span>
-                                      <UserNameClickable
-                                        user={item.studentId}
-                                        name={item.studentId?.userId?.fullName}
-                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                        avatarSize="w-6 h-6"
-                                      />
-                                    </div>
-                                    {item.studentCount === 2 && item.secondStudentId && (
+                                  {item.studentCount === 2 && item.secondStudentId ? (
+                                    <div className="flex flex-col gap-1.5 min-w-[140px]">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                          SV1
+                                        </span>
+                                        <UserNameClickable
+                                          user={item.studentId}
+                                          name={item.studentId?.userId?.fullName}
+                                          subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                          showAvatar={false}
+                                        />
+                                      </div>
                                       <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
                                         <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                           SV2
@@ -3599,11 +3606,18 @@ const LecturerThesesPage = () => {
                                           user={item.secondStudentId}
                                           name={item.secondStudentId?.userId?.fullName}
                                           subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                          avatarSize="w-6 h-6"
+                                          showAvatar={false}
                                         />
                                       </div>
-                                    )}
-                                  </div>
+                                    </div>
+                                  ) : (
+                                    <UserNameClickable
+                                      user={item.studentId}
+                                      name={item.studentId?.userId?.fullName}
+                                      subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                      showAvatar={false}
+                                    />
+                                  )}
                                 </td>
                                 <td className="py-3 px-3 whitespace-nowrap">
                                   <div className="font-semibold text-slate-800">
@@ -3698,29 +3712,38 @@ const LecturerThesesPage = () => {
                               </div>
 
                               <div className="space-y-1.5 pl-8.5 text-xs">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                    SV1
-                                  </span>
+                                {item.studentCount === 2 && item.secondStudentId ? (
+                                  <>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV1
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.studentId}
+                                        name={item.studentId?.userId?.fullName}
+                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                        showAvatar={false}
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV2
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.secondStudentId}
+                                        name={item.secondStudentId?.userId?.fullName}
+                                        subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                        showAvatar={false}
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
                                   <UserNameClickable
                                     user={item.studentId}
                                     name={item.studentId?.userId?.fullName}
                                     subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                    avatarSize="w-5 h-5"
+                                    showAvatar={false}
                                   />
-                                </div>
-                                {item.studentCount === 2 && item.secondStudentId && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                      SV2
-                                    </span>
-                                    <UserNameClickable
-                                      user={item.secondStudentId}
-                                      name={item.secondStudentId?.userId?.fullName}
-                                      subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                      avatarSize="w-5 h-5"
-                                    />
-                                  </div>
                                 )}
                               </div>
 
@@ -3873,19 +3896,19 @@ const LecturerThesesPage = () => {
                                   </span>
                                 </td>
                                 <td className="py-3 px-3 whitespace-nowrap">
-                                  <div className="flex flex-col gap-1.5 min-w-[140px]">
-                                    <div className="flex items-center gap-1.5">
-                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                        SV1
-                                      </span>
-                                      <UserNameClickable
-                                        user={item.studentId}
-                                        name={item.studentId?.userId?.fullName}
-                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                        avatarSize="w-6 h-6"
-                                      />
-                                    </div>
-                                    {item.studentCount === 2 && item.secondStudentId && (
+                                  {item.studentCount === 2 && item.secondStudentId ? (
+                                    <div className="flex flex-col gap-1.5 min-w-[140px]">
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                          SV1
+                                        </span>
+                                        <UserNameClickable
+                                          user={item.studentId}
+                                          name={item.studentId?.userId?.fullName}
+                                          subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                          showAvatar={false}
+                                        />
+                                      </div>
                                       <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
                                         <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                           SV2
@@ -3894,11 +3917,18 @@ const LecturerThesesPage = () => {
                                           user={item.secondStudentId}
                                           name={item.secondStudentId?.userId?.fullName}
                                           subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                          avatarSize="w-6 h-6"
+                                          showAvatar={false}
                                         />
                                       </div>
-                                    )}
-                                  </div>
+                                    </div>
+                                  ) : (
+                                    <UserNameClickable
+                                      user={item.studentId}
+                                      name={item.studentId?.userId?.fullName}
+                                      subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                      showAvatar={false}
+                                    />
+                                  )}
                                 </td>
                                 <td className="py-3 px-3 whitespace-nowrap">
                                   <div className="font-semibold text-slate-800">
@@ -3993,29 +4023,38 @@ const LecturerThesesPage = () => {
                               </div>
 
                               <div className="space-y-1.5 pl-8.5 text-xs">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                    SV1
-                                  </span>
+                                {item.studentCount === 2 && item.secondStudentId ? (
+                                  <>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV1
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.studentId}
+                                        name={item.studentId?.userId?.fullName}
+                                        subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                        showAvatar={false}
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                        SV2
+                                      </span>
+                                      <UserNameClickable
+                                        user={item.secondStudentId}
+                                        name={item.secondStudentId?.userId?.fullName}
+                                        subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
+                                        showAvatar={false}
+                                      />
+                                    </div>
+                                  </>
+                                ) : (
                                   <UserNameClickable
                                     user={item.studentId}
                                     name={item.studentId?.userId?.fullName}
                                     subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                    avatarSize="w-5 h-5"
+                                    showAvatar={false}
                                   />
-                                </div>
-                                {item.studentCount === 2 && item.secondStudentId && (
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                      SV2
-                                    </span>
-                                    <UserNameClickable
-                                      user={item.secondStudentId}
-                                      name={item.secondStudentId?.userId?.fullName}
-                                      subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                      avatarSize="w-5 h-5"
-                                    />
-                                  </div>
                                 )}
                               </div>
 
@@ -4164,19 +4203,19 @@ const LecturerThesesPage = () => {
 
                         {/* 3. Sinh viên */}
                         <td className="py-3 px-3 whitespace-nowrap">
-                          <div className="flex flex-col gap-1.5 min-w-[140px]">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
-                                SV1
-                              </span>
-                              <UserNameClickable
-                                user={item.studentId}
-                                name={item.studentId?.userId?.fullName}
-                                subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
-                                avatarSize="w-6 h-6"
-                              />
-                            </div>
-                            {item.studentCount === 2 && item.secondStudentId && (
+                          {item.studentCount === 2 && item.secondStudentId ? (
+                            <div className="flex flex-col gap-1.5 min-w-[140px]">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
+                                  SV1
+                                </span>
+                                <UserNameClickable
+                                  user={item.studentId}
+                                  name={item.studentId?.userId?.fullName}
+                                  subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                                  showAvatar={false}
+                                />
+                              </div>
                               <div className="flex items-center gap-1.5 pt-1 border-t border-slate-100">
                                 <span className="text-[9px] font-bold text-[#102d7d] bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shrink-0">
                                   SV2
@@ -4185,11 +4224,18 @@ const LecturerThesesPage = () => {
                                   user={item.secondStudentId}
                                   name={item.secondStudentId?.userId?.fullName}
                                   subtitle={item.secondStudentId?.studentCode ? `MSSV: ${item.secondStudentId.studentCode}` : ''}
-                                  avatarSize="w-6 h-6"
+                                  showAvatar={false}
                                 />
                               </div>
-                            )}
-                          </div>
+                            </div>
+                          ) : (
+                            <UserNameClickable
+                              user={item.studentId}
+                              name={item.studentId?.userId?.fullName}
+                              subtitle={item.studentId?.studentCode ? `MSSV: ${item.studentId.studentCode}` : ''}
+                              showAvatar={false}
+                            />
+                          )}
                         </td>
 
                         {/* 4. GV Hướng Dẫn */}
@@ -4414,7 +4460,7 @@ const LecturerThesesPage = () => {
                     <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
                       <div className="flex items-center justify-between">
                         <span className="font-bold text-slate-800 truncate">
-                          SV1: {item.studentId?.userId?.fullName || '—'}
+                          {item.studentCount === 2 && item.secondStudentId ? 'SV1: ' : ''}{item.studentId?.userId?.fullName || '—'}
                         </span>
                         <span className="font-mono text-[11px] text-[#102d7d] font-bold">
                           {item.studentId?.studentCode}
