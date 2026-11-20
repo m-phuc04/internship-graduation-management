@@ -887,6 +887,11 @@ const reviewReport = async (
     for (const sId of studentsToNotify) {
       const s = await Student.findById(sId).populate("userId");
       if (s?.userId?._id) {
+        const notifLink =
+          status === "REJECTED"
+            ? "/student/internship/documents?tab=submissions"
+            : "/student/reports";
+
         await notificationService.createNotification({
           recipientId: s.userId._id,
           type: "INTERNSHIP_REPORT",
@@ -898,7 +903,7 @@ const reviewReport = async (
             : `Nhật ký "${report.title}" đang được Giảng viên xem xét.`,
           referenceId: report._id,
           referenceModel: "InternshipReport",
-          link: "/student/reports",
+          link: notifLink,
         });
       }
     }

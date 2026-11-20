@@ -3432,11 +3432,10 @@ const LecturerThesesPage = () => {
                                     <button
                                       type="button"
                                       onClick={() => handleOpenDetail(item)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
                                       title="Xem chi tiết đề tài"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
-                                      <span>Chi tiết</span>
                                     </button>
                                     {item.status !== 'REJECTED' && (() => {
                                       const gradeStatus = getGradingStatusForThesis(item, 'COUNCIL');
@@ -3732,7 +3731,7 @@ const LecturerThesesPage = () => {
                             <th className="py-3 px-3 min-w-[120px]">GVPB 2</th>
                             <th className="py-3 px-2 text-center whitespace-nowrap min-w-[90px]">Điểm GVPB 2</th>
                             <th className="py-3 px-2 text-center whitespace-nowrap min-w-[95px]">Điểm phản biện kín</th>
-                            <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]">Thao tác</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]"></th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -3823,11 +3822,10 @@ const LecturerThesesPage = () => {
                                     <button
                                       type="button"
                                       onClick={() => handleOpenDetail(item)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
                                       title="Xem chi tiết đề tài"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
-                                      <span>Chi tiết</span>
                                     </button>
                                     {item.status !== 'REJECTED' && (() => {
                                       const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER1');
@@ -3950,10 +3948,10 @@ const LecturerThesesPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenDetail(item)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  title="Xem chi tiết đề tài"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
-                                  <span>Chi tiết</span>
                                 </button>
                                 {item.status !== 'REJECTED' && (
                                   <button
@@ -4043,7 +4041,7 @@ const LecturerThesesPage = () => {
                             <th className="py-3 px-3 min-w-[120px] bg-blue-50/70 text-[#102d7d]">GVPB 2 (Bạn)</th>
                             <th className="py-3 px-2 text-center whitespace-nowrap min-w-[90px] bg-blue-50/70 text-[#102d7d]">Điểm GVPB 2</th>
                             <th className="py-3 px-2 text-center whitespace-nowrap min-w-[95px]">Điểm phản biện kín</th>
-                            <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]">Thao tác</th>
+                            <th className="py-3 px-3 text-right whitespace-nowrap min-w-[100px]"></th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -4134,11 +4132,10 @@ const LecturerThesesPage = () => {
                                     <button
                                       type="button"
                                       onClick={() => handleOpenDetail(item)}
-                                      className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                      className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
                                       title="Xem chi tiết đề tài"
                                     >
                                       <Eye className="w-3.5 h-3.5" />
-                                      <span>Chi tiết</span>
                                     </button>
                                     {item.status !== 'REJECTED' && (() => {
                                       const gradeStatus = getGradingStatusForThesis(item, 'REVIEWER2');
@@ -4261,10 +4258,10 @@ const LecturerThesesPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => handleOpenDetail(item)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl text-xs transition cursor-pointer"
+                                  title="Xem chi tiết đề tài"
                                 >
                                   <Eye className="w-3.5 h-3.5" />
-                                  <span>Chi tiết</span>
                                 </button>
                                 {item.status !== 'REJECTED' && (
                                   <button

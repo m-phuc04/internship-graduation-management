@@ -669,16 +669,6 @@ const LecturerInternshipDocumentsPage = () => {
                   </select>
                 </div>
               </div>
-
-              <div className="flex items-center gap-2 self-end md:self-center">
-                <button
-                  onClick={loadData}
-                  className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                  title="Tải lại danh sách"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
-              </div>
             </div>
 
             {/* Guides Table */}
@@ -703,7 +693,7 @@ const LecturerInternshipDocumentsPage = () => {
                         <th className="py-3.5 px-4">Phân loại</th>
                         <th className="py-3.5 px-4">Mô tả / Hướng dẫn</th>
                         <th className="py-3.5 px-4">Phạm vi áp dụng</th>
-                        <th className="py-3.5 px-4 pr-6 text-right w-36">Thao tác</th>
+                        <th className="py-3.5 px-4 pr-6 text-right w-36"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-sm">
@@ -1006,14 +996,6 @@ const LecturerInternshipDocumentsPage = () => {
                     Tình trạng nộp ({studentsStatus.length})
                   </button>
                 </div>
-
-                <button
-                  onClick={loadData}
-                  className="p-2 text-slate-500 hover:text-[#102d7d] hover:bg-blue-50 rounded-xl transition cursor-pointer"
-                  title="Tải lại danh sách"
-                >
-                  <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                </button>
               </div>
             </div>
 
@@ -1040,7 +1022,7 @@ const LecturerInternshipDocumentsPage = () => {
                           <th className="py-3.5 px-4">Tài liệu đã nộp</th>
                           <th className="py-3.5 px-4">Phân loại</th>
                           <th className="py-3.5 px-4">Ghi chú</th>
-                          <th className="py-3.5 px-4 pr-6 text-right w-28">Thao tác</th>
+                          <th className="py-3.5 px-4 pr-6 text-right w-28"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 text-sm">

@@ -352,7 +352,13 @@ const NotificationDropdown = () => {
     }
 
     if (role === 'STUDENT' && targetLink) {
-      if (targetLink.startsWith('/lecturer/reports') || targetLink.startsWith('/tbm/reports')) {
+      const isInternshipReportReject =
+        (item.type === 'INTERNSHIP_REPORT' || item.referenceModel === 'InternshipReport') &&
+        (titleLower.includes('chỉnh sửa') || messageLower.includes('từ chối') || titleLower.includes('nhật ký thực tập cần chỉnh sửa'));
+
+      if (isInternshipReportReject) {
+        targetLink = '/student/internship/documents?tab=submissions';
+      } else if (targetLink.startsWith('/lecturer/reports') || targetLink.startsWith('/tbm/reports')) {
         targetLink = '/student/reports';
       } else if (
         targetLink.startsWith('/lecturer/internships') ||
@@ -372,7 +378,7 @@ const NotificationDropdown = () => {
         (item.type === 'INTERNSHIP' &&
           (titleLower.includes('tài liệu') || messageLower.includes('tài liệu')))
       ) {
-        targetLink = '/student/internship/documents';
+        targetLink = targetLink.startsWith('/student/internship/documents') ? targetLink : '/student/internship/documents';
       } else if (
         targetLink.startsWith('/student/thesis/documents') ||
         targetLink.includes('/thesis/documents') ||
@@ -432,7 +438,13 @@ const NotificationDropdown = () => {
         else if (role === 'TBM') targetLink = '/tbm/internships';
       } else if (item.type === 'INTERNSHIP_REPORT') {
         if (role === 'LECTURER') targetLink = '/lecturer/reports';
-        else if (role === 'STUDENT') targetLink = '/student/reports';
+        else if (role === 'STUDENT') {
+          const isInternshipReportReject =
+            titleLower.includes('chỉnh sửa') || messageLower.includes('từ chối') || titleLower.includes('nhật ký thực tập cần chỉnh sửa');
+          targetLink = isInternshipReportReject
+            ? '/student/internship/documents?tab=submissions'
+            : '/student/reports';
+        }
         else if (role === 'TBM') targetLink = '/tbm/internships';
       } else if (item.type === 'EVALUATION') {
         if (role === 'LECTURER') targetLink = '/lecturer/internships';
@@ -441,11 +453,17 @@ const NotificationDropdown = () => {
     }
 
     if (targetLink) {
+      const isSubmissions =
+        targetLink.includes('tab=submissions') ||
+        ((item.type === 'INTERNSHIP_REPORT' || item.referenceModel === 'InternshipReport') &&
+          (titleLower.includes('chỉnh sửa') || messageLower.includes('từ chối')));
+
       navigate(targetLink, {
         state: {
           notificationId: item._id,
           referenceId: item.referenceId,
           referenceModel: item.referenceModel,
+          activeTab: isSubmissions ? 'SUBMISSIONS' : undefined,
           refreshedAt: Date.now(),
         },
       });

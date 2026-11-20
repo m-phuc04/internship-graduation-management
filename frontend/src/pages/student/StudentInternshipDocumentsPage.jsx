@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams, useLocation } from 'react-router-dom';
 import internshipDocumentApi from '../../api/internshipDocumentApi';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { useToast } from '../../context/ToastContext';
@@ -121,8 +121,20 @@ const renderSubmissionStatus = (status) => {
 const StudentInternshipDocumentsPage = () => {
   const { currentTerm } = useAcademicTerm();
   const { showToast } = useToast();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
 
   const [activeTab, setActiveTab] = useState('GUIDES'); // 'GUIDES' | 'SUBMISSIONS'
+
+  // Sync tab from URL Query Params or Navigation State
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') || location.state?.activeTab;
+    if (tabParam && tabParam.toLowerCase() === 'submissions') {
+      setActiveTab('SUBMISSIONS');
+    } else if (tabParam && tabParam.toLowerCase() === 'guides') {
+      setActiveTab('GUIDES');
+    }
+  }, [searchParams, location.state]);
 
   // Data states
   const [guidesData, setGuidesData] = useState({

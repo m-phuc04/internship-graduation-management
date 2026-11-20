@@ -17,7 +17,6 @@ import {
   Building2,
   Users,
   Search,
-  Filter,
   AlertCircle,
   FileSpreadsheet,
 } from 'lucide-react';
@@ -158,13 +157,11 @@ const LecturerInternshipDossiersPage = () => {
           />
         </div>
 
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          <span className="text-xs font-semibold text-slate-600">Trạng thái hồ sơ:</span>
+        <div className="w-full md:w-auto">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#123891]/20 cursor-pointer"
+            className="w-full md:w-auto px-3 py-2 text-xs font-semibold text-slate-700 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#123891]/20 cursor-pointer shadow-2xs"
           >
             <option value="ALL">Tất cả ({totalStudents})</option>
             <option value="SUBMITTED">Đã nộp báo cáo ({submittedCount})</option>
@@ -199,9 +196,10 @@ const LecturerInternshipDossiersPage = () => {
                   <th className="py-3.5 px-4 pl-6">Sinh viên</th>
                   <th className="py-3.5 px-4">Doanh nghiệp & Vị trí</th>
                   <th className="py-3.5 px-4 text-center">Thời lượng</th>
-                  <th className="py-3.5 px-4">File Báo Cáo Thực Tập</th>
+                  <th className="py-3.5 px-4">Báo Cáo Thực Tập</th>
                   <th className="py-3.5 px-4">Thời Gian Nộp</th>
-                  <th className="py-3.5 px-4 pr-6 text-right">Thao tác</th>
+                  <th className="py-3.5 px-4">Trạng Thái</th>
+                  <th className="py-3.5 px-4 pr-6 text-right"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
@@ -251,25 +249,27 @@ const LecturerInternshipDossiersPage = () => {
                         </span>
                       </td>
 
-                      {/* Report File Status */}
+                      {/* Report File */}
                       <td className="py-3.5 px-4">
                         {hasFile ? (
-                          <div className="space-y-1">
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Đã nộp báo cáo</span>
-                            </span>
-                            <div className="text-[11px] text-slate-600 font-mono truncate max-w-xs flex items-center gap-1.5" title={file.originalName}>
+                          <div className="flex items-center gap-2 max-w-xs">
+                            <div className="text-[11px] text-slate-600 font-mono truncate flex items-center gap-1.5 min-w-0" title={file.originalName || file.fileName}>
                               <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
                               <span className="truncate">{file.originalName || file.fileName}</span>
-                              <span className="text-slate-400 font-normal">({formatFileSize(file.fileSize)})</span>
+                              <span className="text-slate-400 font-normal shrink-0">({formatFileSize(file.fileSize)})</span>
                             </div>
+                            <a
+                              href={file.fileUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1.5 text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 cursor-pointer shrink-0 inline-flex items-center justify-center"
+                              title="Mở hoặc tải file báo cáo để kiểm tra"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                            </a>
                           </div>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                            <Clock className="w-3.5 h-3.5 text-amber-500" />
-                            <span>Chưa nộp file báo cáo</span>
-                          </span>
+                          <span className="text-slate-400">—</span>
                         )}
                       </td>
 
@@ -282,33 +282,34 @@ const LecturerInternshipDossiersPage = () => {
                         )}
                       </td>
 
+                      {/* Trạng thái */}
+                      <td className="py-3.5 px-4">
+                        {hasFile ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Đã nộp báo cáo</span>
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                            <Clock className="w-3.5 h-3.5 text-amber-500" />
+                            <span>Chưa nộp báo cáo</span>
+                          </span>
+                        )}
+                      </td>
+
                       {/* Actions */}
                       <td className="py-3.5 px-4 pr-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {hasFile && (
-                            <a
-                              href={file.fileUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition cursor-pointer border border-emerald-200"
-                              title="Mở hoặc tải file báo cáo để kiểm tra"
-                            >
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              <span>Mở file</span>
-                            </a>
-                          )}
-
                           <button
                             type="button"
                             onClick={() => {
                               setSelectedInternship(item);
                               setDetailModalOpen(true);
                             }}
-                            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+                            className="p-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
                             title="Xem chi tiết hồ sơ thực tập"
                           >
                             <Eye className="w-3.5 h-3.5" />
-                            <span>Chi tiết</span>
                           </button>
                         </div>
                       </td>
@@ -358,51 +359,51 @@ const LecturerInternshipDossiersPage = () => {
                   {/* Report File status */}
                   <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-bold text-slate-400">File Báo Cáo</span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400">Trạng thái</span>
                       {hasFile ? (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>Đã nộp</span>
+                          <span>Đã nộp báo cáo</span>
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10.5px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                           <Clock className="w-3 h-3 text-amber-500" />
-                          <span>Chưa nộp</span>
+                          <span>Chưa nộp báo cáo</span>
                         </span>
                       )}
                     </div>
                     {hasFile && file && (
-                      <div className="text-[11px] text-slate-600 font-mono truncate flex items-center gap-1.5">
-                        <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
-                        <span className="truncate">{file.originalName || file.fileName}</span>
-                        <span className="text-slate-400 font-normal">({formatFileSize(file.fileSize)})</span>
+                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-slate-100">
+                        <div className="text-[11px] text-slate-600 font-mono truncate flex items-center gap-1.5 min-w-0">
+                          <FileText className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                          <span className="truncate">{file.originalName || file.fileName}</span>
+                          <span className="text-slate-400 font-normal shrink-0">({formatFileSize(file.fileSize)})</span>
+                        </div>
+                        <a
+                          href={file.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1.5 text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition border border-emerald-200 cursor-pointer shrink-0 inline-flex items-center justify-center"
+                          title="Mở hoặc tải file báo cáo để kiểm tra"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
                       </div>
                     )}
                   </div>
 
                   {/* Action buttons */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                    {hasFile && (
-                      <a
-                        href={file.fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition border border-emerald-200 cursor-pointer"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Mở file</span>
-                      </a>
-                    )}
                     <button
                       type="button"
                       onClick={() => {
                         setSelectedInternship(item);
                         setDetailModalOpen(true);
                       }}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+                      className="p-2 text-xs font-semibold text-[#102d7d] bg-blue-50 hover:bg-blue-100 rounded-xl transition cursor-pointer"
+                      title="Xem chi tiết hồ sơ thực tập"
                     >
                       <Eye className="w-3.5 h-3.5" />
-                      <span>Chi tiết</span>
                     </button>
                   </div>
                 </div>

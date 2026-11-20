@@ -111,8 +111,16 @@ const StudentDashboard = () => {
     }
 
     let targetLink = noti.link;
+    const titleLower = noti.title?.toLowerCase() || '';
+    const messageLower = noti.message?.toLowerCase() || '';
 
-    if (targetLink) {
+    const isInternshipReportReject =
+      (noti.type === 'INTERNSHIP_REPORT' || noti.referenceModel === 'InternshipReport') &&
+      (titleLower.includes('chỉnh sửa') || messageLower.includes('từ chối') || titleLower.includes('nhật ký thực tập cần chỉnh sửa'));
+
+    if (isInternshipReportReject) {
+      targetLink = '/student/internship/documents?tab=submissions';
+    } else if (targetLink) {
       if (targetLink.startsWith('/lecturer/reports') || targetLink.startsWith('/tbm/reports')) {
         targetLink = '/student/reports';
       } else if (
@@ -127,6 +135,22 @@ const StudentDashboard = () => {
       ) {
         targetLink = '/student/thesis/progress';
       } else if (
+        targetLink.startsWith('/student/internship/documents') ||
+        targetLink.includes('/internship/documents') ||
+        targetLink.includes('internship-documents') ||
+        (noti.type === 'INTERNSHIP' &&
+          (titleLower.includes('tài liệu') || messageLower.includes('tài liệu')))
+      ) {
+        targetLink = targetLink.startsWith('/student/internship/documents') ? targetLink : '/student/internship/documents';
+      } else if (
+        targetLink.startsWith('/student/thesis/documents') ||
+        targetLink.includes('/thesis/documents') ||
+        targetLink.includes('theses/documents') ||
+        (noti.type === 'THESIS' &&
+          (titleLower.includes('tài liệu') || messageLower.includes('tài liệu')))
+      ) {
+        targetLink = '/student/thesis/documents';
+      } else if (
         targetLink.startsWith('/lecturer/theses') ||
         targetLink.startsWith('/tbm/theses') ||
         targetLink.startsWith('/tbm/thesis-evaluations')
@@ -138,46 +162,46 @@ const StudentDashboard = () => {
     if (!targetLink) {
       const type = noti.type;
       const refModel = noti.referenceModel;
-      const title = noti.title?.toLowerCase() || '';
-      const message = noti.message?.toLowerCase() || '';
 
       if (
         type === 'EVALUATION' ||
         refModel === 'Evaluation' ||
-        title.includes('đánh giá') ||
-        message.includes('đánh giá thực tập') ||
-        message.includes('phiếu đánh giá')
+        titleLower.includes('đánh giá') ||
+        messageLower.includes('đánh giá thực tập') ||
+        messageLower.includes('phiếu đánh giá')
       ) {
         targetLink = '/student/internship';
       } else if (
         type === 'INTERNSHIP_REPORT' ||
         refModel === 'InternshipReport' ||
-        title.includes('báo cáo thực tập') ||
-        message.includes('báo cáo thực tập')
+        titleLower.includes('báo cáo thực tập') ||
+        messageLower.includes('báo cáo thực tập')
       ) {
-        targetLink = '/student/reports';
+        targetLink = isInternshipReportReject
+          ? '/student/internship/documents?tab=submissions'
+          : '/student/reports';
       } else if (
         type === 'INTERNSHIP' ||
         refModel === 'Internship' ||
-        title.includes('thực tập') ||
-        message.includes('thực tập')
+        titleLower.includes('thực tập') ||
+        messageLower.includes('thực tập')
       ) {
         targetLink = '/student/internship';
       } else if (
         type === 'THESIS_PROGRESS' ||
         refModel === 'ThesisProgress' ||
-        title.includes('tiến độ') ||
-        title.includes('báo cáo tiến độ') ||
-        message.includes('tiến độ')
+        titleLower.includes('tiến độ') ||
+        titleLower.includes('báo cáo tiến độ') ||
+        messageLower.includes('tiến độ')
       ) {
         targetLink = '/student/thesis/progress';
       } else if (
         type === 'THESIS' ||
         refModel === 'Thesis' ||
-        title.includes('khóa luận') ||
-        message.includes('khóa luận') ||
-        title.includes('đề tài') ||
-        message.includes('đề tài')
+        titleLower.includes('khóa luận') ||
+        messageLower.includes('khóa luận') ||
+        titleLower.includes('đề tài') ||
+        messageLower.includes('đề tài')
       ) {
         targetLink = '/student/thesis';
       } else {
@@ -186,11 +210,15 @@ const StudentDashboard = () => {
     }
 
     if (targetLink) {
+      const isSubmissions =
+        targetLink.includes('tab=submissions') || isInternshipReportReject;
+
       navigate(targetLink, {
         state: {
           notificationId: noti._id,
           referenceId: noti.referenceId,
           referenceModel: noti.referenceModel,
+          activeTab: isSubmissions ? 'SUBMISSIONS' : undefined,
           refreshedAt: Date.now(),
         },
       });
