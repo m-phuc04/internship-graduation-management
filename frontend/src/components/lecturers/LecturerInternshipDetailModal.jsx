@@ -51,7 +51,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
         maxWidth="max-w-3xl"
       >
       <div className="space-y-6 text-xs">
-        {/* Student Summary Card */}
+        {/* Thẻ tóm tắt thông tin sinh viên */}
         <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-blue-100 border border-blue-200 text-[#102d7d] font-bold text-lg flex items-center justify-center shadow-2xs">
@@ -80,9 +80,9 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           </div>
         </div>
 
-        {/* 2-Column Info Grid */}
+        {/* Lưới thông tin 2 cột */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Section 1: Student Information */}
+          {/* Phần 1: Thông tin sinh viên */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <GraduationCap className="w-4 h-4 text-[#123891]" />
@@ -116,7 +116,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
             </div>
           </div>
 
-          {/* Section 2: Company Information */}
+          {/* Phần 2: Thông tin doanh nghiệp */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <Building2 className="w-4 h-4 text-[#123891]" />
@@ -142,7 +142,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
             </div>
           </div>
 
-          {/* Section 3: Internship Position & Time */}
+          {/* Phần 3: Vị trí và thời gian thực tập */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <Calendar className="w-4 h-4 text-[#123891]" />
@@ -207,7 +207,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
             </div>
           </div>
 
-          {/* Section 4: Company Mentor (Contact Person) */}
+          {/* Phần 4: Cán bộ hướng dẫn doanh nghiệp (Người liên hệ) */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <UserCheck className="w-4 h-4 text-[#123891]" />
@@ -241,7 +241,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           </div>
         </div>
 
-        {/* Read-Only Notice */}
+        {/* Thông báo chỉ đọc */}
         <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5 text-slate-500 text-[11px]">
           <Info className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
           <span>
@@ -249,7 +249,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
           </span>
         </div>
 
-        {/* Footer */}
+        {/* Chân trang */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"
@@ -272,7 +272,7 @@ const LecturerInternshipDetailModal = ({ isOpen, onClose, internship }) => {
       </div>
     </Modal>
 
-    {/* Student Weekly Diary Detail Modal */}
+    {/* Modal chi tiết nhật ký tuần của sinh viên */}
     <StudentInternshipDiaryModal
       isOpen={diaryModalOpen}
       onClose={() => setDiaryModalOpen(false)}

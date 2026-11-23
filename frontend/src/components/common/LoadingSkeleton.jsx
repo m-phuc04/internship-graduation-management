@@ -3,9 +3,9 @@ import React from 'react';
 export const LoadingSkeleton = ({ rows = 5, cols = 6 }) => {
   return (
     <div className="w-full animate-pulse space-y-3 py-2">
-      {/* Header row */}
+      {/* Dòng tiêu đề */}
       <div className="h-10 bg-slate-100/80 rounded-xl w-full" />
-      {/* Data rows */}
+      {/* Các dòng dữ liệu */}
       {Array.from({ length: rows }).map((_, rIdx) => (
         <div key={rIdx} className="flex items-center gap-4 py-3 border-b border-slate-100">
           {Array.from({ length: cols }).map((_, cIdx) => (

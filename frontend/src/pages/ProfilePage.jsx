@@ -42,15 +42,15 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Profile data from backend
+  // Dữ liệu hồ sơ từ backend
   const [profileData, setProfileData] = useState(null);
 
-  // Editable Form states
+  // Chỉnh sửaable Form states
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [maxSupervisedStudents, setMaxSupervisedStudents] = useState(5);
 
-  // Change Password Modal States
+  // Trạng thái modal đổi mật khẩu
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -61,7 +61,7 @@ const ProfilePage = () => {
   const [pwLoading, setPwLoading] = useState(false);
   const [pwError, setPwError] = useState('');
 
-  // Field Request States (for Lecturer / TBM)
+  // Trạng thái yêu cầu đổi hướng nghiên cứu (Giảng viên / TBM)
   const [fieldRequestInfo, setFieldRequestInfo] = useState(null);
   const [isFieldModalOpen, setIsFieldModalOpen] = useState(false);
   const [allSystemFields, setAllSystemFields] = useState([]);
@@ -71,7 +71,7 @@ const ProfilePage = () => {
   const [loadingFields, setLoadingFields] = useState(false);
   const [submittingFieldRequest, setSubmittingFieldRequest] = useState(false);
 
-  // Fetch full profile
+  // Tải toàn bộ thông tin hồ sơ
   const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
@@ -110,7 +110,7 @@ const ProfilePage = () => {
     fetchProfile();
   }, [fetchProfile]);
 
-  // Handlers for Research Field Change Modal
+  // Các hàm xử lý modal thay đổi hướng nghiên cứu
   const handleOpenFieldModal = async () => {
     setIsFieldModalOpen(true);
     setLoadingFields(true);
@@ -199,7 +199,7 @@ const ProfilePage = () => {
     }
   };
 
-  // Cancel edit
+  // Hủy bỏ chỉnh sửa
   const handleCancelEdit = () => {
     if (profileData?.user) {
       setEmail(profileData.user.email || '');
@@ -213,11 +213,11 @@ const ProfilePage = () => {
     setIsEditing(false);
   };
 
-  // Submit Profile Changes
+  // Lưu cập nhật thông tin hồ sơ
   const handleSaveProfile = async (e) => {
     e.preventDefault();
 
-    // Client-side Validation (only if filled)
+    // Kiểm tra tính hợp lệ của dữ liệu phía client (only if filled)
     if (email && email.trim()) {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email.trim())) {
@@ -261,7 +261,7 @@ const ProfilePage = () => {
     }
   };
 
-  // Submit Change Password
+  // Xác nhận đổi mật khẩu
   const handleChangePassword = async (e) => {
     e.preventDefault();
     setPwError('');
@@ -322,7 +322,7 @@ const ProfilePage = () => {
         ? lecturer.specialization.split(',').map((s) => s.trim()).filter(Boolean)
         : []));
 
-  // Compute Account Code
+  // Tính toán mã tài khoản
   const getAccountCode = () => {
     if (user?.role === 'ADMIN') return user.code || 'ADMIN001';
     if (student?.studentCode) return student.studentCode;
@@ -348,7 +348,7 @@ const ProfilePage = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 pb-12">
-      {/* Top Banner Card */}
+      {/* Thẻ banner trên cùng */}
       <div className="p-4 sm:p-7 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
           <div className="w-14 h-14 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-black text-xl sm:text-3xl flex items-center justify-center shadow-md shadow-blue-100 shrink-0">
@@ -407,7 +407,7 @@ const ProfilePage = () => {
               </div>
             )}
 
-            {/* Pending request notice */}
+            {/* Thông báo yêu cầu đang chờ xử lý */}
             {isLecturerOrTbm && fieldRequestInfo?.hasPending && (
               <div className="pt-1">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
@@ -420,7 +420,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Action Buttons: Positioned OUTSIDE and completely separated below the main profile card, aligned to the right */}
+      {/* Các nút thao tác: Đặt bên ngoài phía dưới thẻ hồ sơ, căn phải */}
       <div className="flex flex-wrap sm:flex-nowrap items-center justify-end gap-2.5 -mt-2">
         {!isEditing ? (
           <>
@@ -467,7 +467,7 @@ const ProfilePage = () => {
         )}
       </div>
 
-      {/* Main Profile Content Form */}
+      {/* Biểu mẫu nội dung hồ sơ chính */}
       <form onSubmit={handleSaveProfile} className="space-y-6">
         {/* Section 1: Thông tin liên hệ cá nhân (Editable) */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
@@ -484,7 +484,7 @@ const ProfilePage = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Email Field */}
+            {/* Trường Email */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Địa chỉ Email</span>
@@ -509,7 +509,7 @@ const ProfilePage = () => {
               )}
             </div>
 
-            {/* Phone Field */}
+            {/* Trường Số điện thoại */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Số điện thoại</span>
@@ -548,7 +548,7 @@ const ProfilePage = () => {
             </span>
           </div>
 
-          {/* Admin Specific Fields */}
+          {/* Các trường dành riêng cho Quản trị viên (Admin) */}
           {user?.role === 'ADMIN' && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
@@ -577,7 +577,7 @@ const ProfilePage = () => {
             </div>
           )}
 
-          {/* Student Specific Fields */}
+          {/* Các trường dành riêng cho Sinh viên */}
           {user?.role === 'STUDENT' && student && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <div>
@@ -634,7 +634,7 @@ const ProfilePage = () => {
             </div>
           )}
 
-          {/* Lecturer / TBM Specific Fields */}
+          {/* Các trường dành riêng cho Giảng viên / TBM */}
           {(user?.role === 'LECTURER' || user?.role === 'TBM') && lecturer && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               
@@ -659,7 +659,7 @@ const ProfilePage = () => {
         </div>
       </form>
 
-      {/* Change Password Modal */}
+      {/* Modal đổi mật khẩu */}
       <Modal
         isOpen={changePasswordOpen}
         onClose={() => {
@@ -677,7 +677,7 @@ const ProfilePage = () => {
             </div>
           )}
 
-          {/* Current Password */}
+          {/* Mật khẩu hiện tại */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Mật khẩu hiện tại <span className="text-rose-500">*</span>
@@ -700,7 +700,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* New Password */}
+          {/* Mật khẩu mới */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Mật khẩu mới <span className="text-rose-500">*</span>
@@ -723,7 +723,7 @@ const ProfilePage = () => {
             </div>
           </div>
 
-          {/* Confirm New Password */}
+          {/* Xác nhận mật khẩu mới */}
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
               Xác nhận mật khẩu mới <span className="text-rose-500">*</span>
@@ -770,7 +770,7 @@ const ProfilePage = () => {
       {isFieldModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-3 sm:p-4">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-7 shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3.5 sm:pb-4 shrink-0">
               <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                 <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
@@ -790,9 +790,9 @@ const ProfilePage = () => {
               </button>
             </div>
 
-            {/* Body */}
+            {/* Thân modal / nội dung */}
             <div className="space-y-4 overflow-y-auto pr-1 flex-1 overscroll-contain">
-              {/* Existing System Fields */}
+              {/* Các hướng nghiên cứu hiện có trong hệ thống */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   Danh sách lĩnh vực hiện có ({allSystemFields.length})
@@ -827,7 +827,7 @@ const ProfilePage = () => {
                 )}
               </div>
 
-              {/* Propose New Tag */}
+              {/* Đề xuất hướng nghiên cứu mới */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   Đề xuất lĩnh vực mới
@@ -856,7 +856,7 @@ const ProfilePage = () => {
                   </button>
                 </div>
 
-                {/* List of proposed new tags */}
+                {/* Danh sách các hướng nghiên cứu mới đề xuất */}
                 {proposedTags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2.5">
                     {proposedTags.map((tag, idx) => (
@@ -880,13 +880,13 @@ const ProfilePage = () => {
                 )}
               </div>
 
-              {/* Selected Summary */}
+              {/* Tóm tắt các mục đã chọn */}
               <div className="text-xs text-slate-500">
                 Đã chọn: <strong className="text-slate-800">{selectedFields.length}</strong> lĩnh vực
               </div>
             </div>
 
-            {/* Footer */}
+            {/* Chân trang */}
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 border-t border-slate-100 pt-3.5 sm:pt-4 shrink-0">
               <button
                 type="button"

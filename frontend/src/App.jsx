@@ -6,7 +6,7 @@ import { AcademicTermProvider } from './context/AcademicTermContext';
 import { UserProfileProvider } from './context/UserProfileContext';
 import ErrorBoundary from './components/common/ErrorBoundary';
 
-// Layouts & Pages
+// Bố cục và các trang giao diện
 import TbmLayout from './components/layout/TbmLayout';
 import StudentLayout from './components/layout/StudentLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
@@ -50,7 +50,7 @@ import PublicProfilePage from './pages/PublicProfilePage';
 import HomePage from './pages/HomePage';
 
 
-// Dynamic Profile Redirect Component
+// Component điều hướng hồ sơ cá nhân linh hoạt
 const RoleBasedProfileRedirect = () => {
   const { user } = useAuth();
   if (!user) return <Navigate to="/login" replace />;
@@ -67,7 +67,7 @@ const RoleBasedProfileRedirect = () => {
   }
 };
 
-// Protected Route Guard
+// Bộ bảo vệ tuyến đường yêu cầu xác thực
 const ProtectedRoute = ({ children, allowedRoles = [] }) => {
   const { user, isAuthenticated, loading } = useAuth();
 
@@ -105,12 +105,12 @@ function App() {
             <UserProfileProvider>
               <ErrorBoundary>
                 <Routes>
-                {/* Public Routes */}
+                {/* Các tuyến đường công khai (Public) */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-                {/* Public / Other User Profile Routes */}
+                {/* Tuyến đường hồ sơ người dùng công khai */}
                 <Route
                   path="/profile/user/:id"
                   element={
@@ -128,7 +128,7 @@ function App() {
                   }
                 />
 
-                {/* Global /profile redirect */}
+                {/* Điều hướng toàn cục /profile */}
                 <Route
                   path="/profile"
                   element={
@@ -138,7 +138,7 @@ function App() {
                   }
                 />
 
-              {/* TBM Management Routes (Protected with TBM role) */}
+              {/* Các tuyến đường quản lý của TBM (Bảo vệ bởi vai trò TBM) */}
               <Route
                 path="/tbm"
                 element={
@@ -161,7 +161,7 @@ function App() {
                 <Route path="profile" element={<ProfilePage />} />
               </Route>
 
-            {/* Student Internship & Reports Routes (Protected with STUDENT role) */}
+            {/* Các tuyến đường thực tập và báo cáo của sinh viên (Bảo vệ bởi vai trò STUDENT) */}
             <Route
               path="/student"
               element={
@@ -183,7 +183,7 @@ function App() {
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 
-            {/* Lecturer Supervision & Reports Routes (Protected with LECTURER, TBM roles) */}
+            {/* Các tuyến đường hướng dẫn và báo cáo của giảng viên (Bảo vệ bởi vai trò LECTURER, TBM) */}
             <Route
               path="/lecturer"
               element={
@@ -207,7 +207,7 @@ function App() {
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 
-            {/* Admin Management Routes (Protected with ADMIN role) */}
+            {/* Các tuyến đường quản trị hệ thống (Bảo vệ bởi vai trò ADMIN) */}
             <Route
               path="/admin"
               element={
@@ -228,7 +228,7 @@ function App() {
               <Route path="profile" element={<ProfilePage />} />
             </Route>
 
-            {/* 404 Fallback */}
+            {/* Trang 404 mặc định khi không tìm thấy */}
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
           </ErrorBoundary>

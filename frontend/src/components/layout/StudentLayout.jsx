@@ -27,7 +27,7 @@ const StudentLayout = () => {
     await logout();
   };
 
-  // Map location to breadcrumb title
+  // Ánh xạ đường dẫn sang tiêu đề breadcrumb
   const getPageTitle = () => {
     if (location.pathname.includes('/student/dashboard')) return 'Tổng quan Sinh viên';
     if (location.pathname.includes('/student/internship/register')) return 'Đăng ký Thực tập Doanh nghiệp';
@@ -52,7 +52,7 @@ const StudentLayout = () => {
     });
   };
 
-  // Close mobile drawer on Escape key or when resizing to desktop >= 1300px
+  // Đóng thanh điều hướng di động khi nhấn phím Escape hoặc màn hình >= 1300px
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -76,7 +76,7 @@ const StudentLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex overflow-x-clip">
-      {/* Desktop Sidebar (Fixed Left >= 1300px) */}
+      {/* Thanh điều hướng cố định bên trái Desktop (>= 1300px) */}
       <div
         className={`student-desktop-sidebar flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
           isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
@@ -87,7 +87,7 @@ const StudentLayout = () => {
         />
       </div>
 
-      {/* Mobile & Tablet Drawer (< 1300px) */}
+      {/* Ngăn kéo điều hướng Mobile & Tablet (< 1300px) */}
       {mobileDrawerOpen && (
         <div className="student-drawer-container fixed inset-0 z-50 flex">
           <div
@@ -103,15 +103,15 @@ const StudentLayout = () => {
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Khu vực nội dung chính */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-clip">
-        {/* Top Header */}
+        {/* Thanh tiêu đề trên cùng */}
         <header className="student-sticky-header bg-white/95 border-b border-slate-200/80 sticky top-0 z-40 shadow-xs backdrop-blur-md">
           <div className="px-3 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
-              {/* Left: Mobile & Desktop Toggle & Page Title */}
+              {/* Bên trái: Nút mở menu và tiêu đề trang */}
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                {/* Mobile Toggle */}
+                {/* Nút mở menu Mobile */}
                 <button
                   type="button"
                   onClick={() => setMobileDrawerOpen(true)}
@@ -122,7 +122,7 @@ const StudentLayout = () => {
                   <Menu className="w-5 h-5" />
                 </button>
 
-                {/* Desktop Toggle */}
+                {/* Nút mở menu Desktop */}
                 <button
                   type="button"
                   onClick={toggleSidebar}
@@ -133,7 +133,7 @@ const StudentLayout = () => {
                   <Menu className="w-5 h-5" />
                 </button>
 
-                {/* Brand Title for Mobile / Tablet */}
+                {/* Tiêu đề thương hiệu cho Mobile / Tablet */}
                 <Link to="/" className="flex items-center gap-2 student-hamburger-btn cursor-pointer group min-w-0 shrink">
                   <div className="p-1 bg-white rounded-lg border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
                     <img
@@ -149,7 +149,7 @@ const StudentLayout = () => {
                   </div>
                 </Link>
 
-                {/* Page Breadcrumb Title (Desktop) */}
+                {/* Tiêu đề breadcrumb trang (Desktop) */}
                 <div className="student-desktop-toggle min-w-0 flex-col">
                   <h1 className="text-base font-bold text-slate-900 leading-tight truncate">
                     {getPageTitle()}
@@ -160,11 +160,11 @@ const StudentLayout = () => {
                 </div>
               </div>
 
-              {/* Right: Quick Notifications & User Profile */}
+              {/* Bên phải: Thông báo nhanh & hồ sơ người dùng */}
               <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
                 <NotificationDropdown />
 
-                {/* User Dropdown */}
+                {/* Menu người dùng */}
                 <div className="relative">
                   <button
                     type="button"
@@ -244,14 +244,14 @@ const StudentLayout = () => {
           </div>
         </header>
 
-        {/* Main Content Router View */}
+        {/* Khu vực hiển thị nội dung tuyến đường chính */}
         <main className="flex-1 p-3.5 sm:p-6 lg:p-8 w-full max-w-full min-w-0">
           <Outlet />
         </main>
         <Footer />
       </div>
 
-      {/* Email Notification Settings Modal (TTDN & KLTN & News) */}
+      {/* Modal cài đặt thông báo email (TTDN, KLTN & Tin tức) */}
       {emailModalOpen && (
         <EmailNotificationModal
           isOpen={emailModalOpen}

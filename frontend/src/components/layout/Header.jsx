@@ -13,7 +13,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [emailModalOpen, setEmailModalOpen] = useState(false);
 
-  // Map path to title
+  // Ánh xạ đường dẫn sang tiêu đề trang
   const getPageTitle = () => {
     if (location.pathname.includes('/academic-terms')) return 'Học kỳ & Năm học';
     if (location.pathname.includes('/admin/permissions')) return 'Phân quyền Giảng viên & Bộ môn';
@@ -40,9 +40,9 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
 
   return (
     <header className="admin-sticky-header h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-3 sm:px-5 lg:px-8 flex items-center justify-between sticky top-0 z-40 shadow-xs gap-2 sm:gap-4 w-full">
-      {/* Left: Hamburger & Title */}
+      {/* Bên trái: Nút menu và tiêu đề */}
       <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-        {/* Mobile & Tablet Hamburger Toggle (< 1300px: Mobile, iPad, Nest Hub Max) */}
+        {/* Nút mở menu Mobile & Tablet (< 1300px) */}
         <button
           type="button"
           onClick={onOpenMobile}
@@ -53,7 +53,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
           <Menu className="w-5 h-5" />
         </button>
 
-        {/* Desktop Hamburger Toggle (>= 1300px) */}
+        {/* Nút thu gọn menu Desktop (>= 1300px) */}
         {onToggleCollapse && (
           <button
             type="button"
@@ -76,9 +76,9 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
         </div>
       </div>
 
-      {/* Right Controls */}
+      {/* Các bộ điều khiển bên phải */}
       <div className="flex items-center gap-2.5 sm:gap-3">
-        {/* Global Academic Term Selector */}
+        {/* Bộ chọn học kỳ toàn cục */}
         <AcademicTermSelector />
 
         {/* Quick Return to Lecturer Portal (Chỉ hiển thị cho TBM) */}
@@ -94,10 +94,10 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
           </button>
         )}
 
-        {/* Notification Bell */}
+        {/* Chuông thông báo */}
         <NotificationDropdown />
 
-        {/* User Dropdown */}
+        {/* Menu người dùng */}
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -184,7 +184,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
         </div>
       </div>
 
-      {/* Email Notification Settings Modal (TTDN) */}
+      {/* Modal cài đặt thông báo email (TTDN) */}
       {emailModalOpen && (
         <EmailNotificationModal
           isOpen={emailModalOpen}

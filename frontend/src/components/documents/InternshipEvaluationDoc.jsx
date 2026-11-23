@@ -127,7 +127,7 @@ const InternshipEvaluationDoc = ({ internship, evaluation }) => {
         </div>
       </div>
 
-      {/* Document Title */}
+      {/* Tiêu đề tài liệu */}
       <div className="text-center my-6">
         <h1 className="text-lg sm:text-xl font-extrabold uppercase tracking-wide">
           Phiếu Đánh Giá Kết Quả Thực Tập Doanh Nghiệp

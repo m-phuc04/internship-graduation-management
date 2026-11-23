@@ -169,13 +169,13 @@ const createTerm = async (data, userId) => {
 
   const cleanCode = code.trim().toUpperCase();
 
-  // Check code uniqueness
+  // Kiểm tra tính duy nhất của mã
   const existingCode = await AcademicTerm.findOne({ code: cleanCode });
   if (existingCode) {
     throw new AppError(`Mã học kỳ "${cleanCode}" đã tồn tại. Vui lòng sử dụng mã khác.`, 409, "ACADEMIC_TERM_CODE_EXISTS");
   }
 
-  // Check name + academicYear uniqueness
+  // Kiểm tra tính duy nhất của tên và năm học
   const existingTermNameYear = await AcademicTerm.findOne({
     name: name.trim(),
     academicYear: academicYear.trim(),
@@ -184,7 +184,7 @@ const createTerm = async (data, userId) => {
     throw new AppError(`Học kỳ "${name.trim()}" trong năm học "${academicYear.trim()}" đã tồn tại. Vui lòng kiểm tra lại.`, 409, "ACADEMIC_TERM_EXISTS");
   }
 
-  // Validate TTDN milestone dates if provided
+  // Kiểm tra tính hợp lệ của các mốc thời gian TTDN nếu có
   if (internship.registrationStart && internship.registrationEnd) {
     if (new Date(internship.registrationEnd) < new Date(internship.registrationStart)) {
       throw new AppError("Hạn chót đăng ký TTDN phải sau ngày bắt đầu đăng ký", 400, "INVALID_DATE_RANGE");
@@ -201,7 +201,7 @@ const createTerm = async (data, userId) => {
     }
   }
 
-  // Validate KLTN milestone dates if provided
+  // Kiểm tra tính hợp lệ của các mốc thời gian KLTN nếu có
   if (thesis.registrationStart && thesis.registrationEnd) {
     if (new Date(thesis.registrationEnd) < new Date(thesis.registrationStart)) {
       throw new AppError("Hạn chót đăng ký KLTN phải sau ngày bắt đầu đăng ký", 400, "INVALID_DATE_RANGE");
@@ -218,7 +218,7 @@ const createTerm = async (data, userId) => {
     }
   }
 
-  // If status is ACTIVE, close existing active term first (single active rule)
+  // Nếu trạng thái là ACTIVE, đóng học kỳ đang hoạt động trước (quy tắc duy nhất một học kỳ kích hoạt)
   if (status === "ACTIVE") {
     await AcademicTerm.updateMany({ status: "ACTIVE" }, { status: "CLOSED" });
   }
@@ -487,7 +487,7 @@ const toggleThesisRegistrationLock = async (id, { isLocked, newDeadline = null, 
 // ====================
 const ensureDefaultActiveTerm = async () => {
   try {
-    // Ensure HK1-2026-2027 exists
+    // Đảm bảo học kỳ HK1-2026-2027 đã tồn tại
     let hk1 = await AcademicTerm.findOne({ code: "HK1-2026-2027" });
     if (!hk1) {
       hk1 = await AcademicTerm.create({
@@ -516,7 +516,7 @@ const ensureDefaultActiveTerm = async () => {
       console.log("Created default AcademicTerm: HK1-2026-2027 (ACTIVE)");
     }
 
-    // Ensure HK2-2026-2027 exists
+    // Đảm bảo học kỳ HK2-2026-2027 đã tồn tại
     let hk2 = await AcademicTerm.findOne({ code: "HK2-2026-2027" });
     if (!hk2) {
       hk2 = await AcademicTerm.create({
@@ -558,7 +558,7 @@ const ensureDefaultActiveTerm = async () => {
       }
     }
 
-    // Safe migration: Link any orphaned or unassigned internships & theses to active term
+    // Di chuyển an toàn: Liên kết các hồ sơ chưa gán học kỳ vào học kỳ kích hoạt
     if (activeTerm?._id) {
       const [iRes, tRes] = await Promise.all([
         Internship.updateMany(

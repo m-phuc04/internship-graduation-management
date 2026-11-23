@@ -27,7 +27,7 @@ const RegisterInternshipPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Registration Timeline & Lock calculation
+  // Tính toán thời hạn và trạng thái khóa cổng đăng ký
   const isRegistrationLocked = Boolean(currentTerm?.internship?.isRegistrationLocked);
   const regStart = currentTerm?.internship?.registrationStart ? new Date(currentTerm.internship.registrationStart) : null;
   const regEnd = currentTerm?.internship?.registrationEnd ? new Date(currentTerm.internship.registrationEnd) : null;
@@ -69,9 +69,9 @@ const RegisterInternshipPage = () => {
 
   const lockInfo = getLockReason();
 
-  // Form inputs
+  // Dữ liệu các ô nhập trong form
   const [formData, setFormData] = useState({
-    // New company inputs
+    // Thông tin doanh nghiệp mới
     newCompanyName: '',
     newCompanyCode: '',
     newCompanyAddress: '',
@@ -81,14 +81,14 @@ const RegisterInternshipPage = () => {
     newCompanyContactPerson: '',
     newCompanyContactEmail: '',
 
-    // Internship specifics
+    // Thông tin chi tiết thực tập
     position: '',
     durationInWeeks: 10,
     startDate: '',
     endDate: '',
     registrationNote: '',
 
-    // Mentor / Evaluator specifics
+    // Thông tin cán bộ hướng dẫn doanh nghiệp / Người đánh giá
     mentorName: '',
     mentorPosition: '',
     mentorEmail: '',
@@ -100,7 +100,7 @@ const RegisterInternshipPage = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // Load student profile on mount
+  // Tải thông tin hồ sơ sinh viên khi tải trang
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -219,7 +219,7 @@ const RegisterInternshipPage = () => {
       }
     }
 
-    // Mandatory Evaluator / Mentor validations
+    // Kiểm tra bắt buộc thông tin cán bộ hướng dẫn doanh nghiệp
     if (!formData.mentorName.trim()) {
       errs.mentorName = 'Vui lòng nhập họ và tên người đánh giá.';
     }
@@ -326,7 +326,7 @@ const RegisterInternshipPage = () => {
     profileData?.canRegisterNew ?? (!hasActiveInternship && !isCompleted)
   );
 
-  // If already finished internship (completed/graded/published) -> Block registration with Completed card
+  // Nếu đã hoàn thành thực tập -> Khóa đăng ký và hiển thị thẻ hoàn thành
   if (isCompleted) {
     return (
       <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-2xs text-center max-w-xl mx-auto space-y-4">
@@ -352,7 +352,7 @@ const RegisterInternshipPage = () => {
     );
   }
 
-  // If already has active ongoing internship -> Block registration with Ongoing card
+  // Nếu đang có hồ sơ thực tập hoạt động -> Khóa đăng ký và hiển thị thẻ đang hoạt động
   if (hasActiveInternship || !canRegisterNew) {
     return (
       <div className="p-8 bg-white rounded-3xl border border-slate-200/80 shadow-2xs text-center max-w-xl mx-auto space-y-4">
@@ -380,7 +380,7 @@ const RegisterInternshipPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-4xl mx-auto">
-      {/* Header Banner */}
+      {/* Banner tiêu đề */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-2 text-[#123891] font-semibold text-xs tracking-wider uppercase">
           <Briefcase className="w-4 h-4" /> Quy trình Đăng ký TTDN
@@ -393,7 +393,7 @@ const RegisterInternshipPage = () => {
         </p>
       </div>
 
-      {/* Registration Lock / Timeline Alert Banner */}
+      {/* Banner cảnh báo khóa đăng ký / tiến trình thời gian */}
       {lockInfo && (
         <div
           className={`p-4 sm:p-5 rounded-2xl border flex items-start gap-3.5 shadow-2xs ${
@@ -421,7 +421,7 @@ const RegisterInternshipPage = () => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-        {/* SECTION 1: Student Info */}
+        {/* PHẦN 1: Thông tin sinh viên */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
             <Lock className="w-4 h-4 text-slate-400" />
@@ -475,7 +475,7 @@ const RegisterInternshipPage = () => {
           </div>
         </div>
 
-        {/* SECTION 2: Company Info Entry (Default & Only View) */}
+        {/* PHẦN 2: Nhập thông tin doanh nghiệp */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
             <Building2 className="w-5 h-5 text-[#123891]" />
@@ -581,7 +581,7 @@ const RegisterInternshipPage = () => {
           </div>
         </div>
 
-        {/* SECTION 3: Internship Position & Dates */}
+        {/* PHẦN 3: Vị trí và thời gian thực tập */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
           <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
             <Calendar className="w-5 h-5 text-[#123891]" />
@@ -590,7 +590,7 @@ const RegisterInternshipPage = () => {
             </h3>
           </div>
 
-          {/* Duration selection */}
+          {/* Lựa chọn thời lượng thực tập */}
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-slate-700">
               Quy chuẩn thời lượng thực tập <span className="text-rose-500">*</span>
@@ -705,7 +705,7 @@ const RegisterInternshipPage = () => {
             </div>
           </div>
 
-          {/* Real-time Duration Indicator */}
+          {/* Chỉ báo thời lượng thực tế */}
           {formData.startDate && formData.endDate && (() => {
             const calculated = calculateWeeksFromDates(formData.startDate, formData.endDate);
             const isValid = calculated === 10 || calculated === 12;
@@ -827,7 +827,7 @@ const RegisterInternshipPage = () => {
             </div>
           </div>
 
-          {/* Registration Note */}
+          {/* Ghi chú đăng ký */}
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Ghi chú
@@ -843,7 +843,7 @@ const RegisterInternshipPage = () => {
           </div>
         </div>
 
-        {/* Submit Actions */}
+        {/* Các thao tác gửi biểu mẫu */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3">
           <Link
             to="/student/internship"

@@ -50,7 +50,7 @@ export const AuthProvider = ({ children }) => {
   const idleTimerRef = useRef(null);
   const lastRecordedTimeRef = useRef(0);
 
-  // Sync state on initial mount and check if session expired while closed
+  // Đồng bộ trạng thái khi khởi tạo và kiểm tra phiên đăng nhập đã hết hạn chưa
   useEffect(() => {
     const savedToken = localStorage.getItem('accessToken');
     const savedUser = localStorage.getItem('user');
@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }) => {
         await authApi.logout(user._id);
       }
     } catch {
-      // Ignore errors on logout
+      // Bỏ qua lỗi không nghiêm trọng on logout
     } finally {
       setUser(null);
       setToken(null);
@@ -156,7 +156,7 @@ export const AuthProvider = ({ children }) => {
         await authApi.logout(currentUserId);
       }
     } catch {
-      // Ignore errors
+      // Bỏ qua lỗi không nghiêm trọng
     } finally {
       setUser(null);
       setToken(null);
@@ -178,7 +178,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Idle timeout management and user activity listener
+  // Quản lý thời gian chờ không hoạt động và lắng nghe thao tác người dùng
   useEffect(() => {
     if (!user || !token) {
       if (idleTimerRef.current) {
@@ -209,7 +209,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Schedule initial idle check based on remaining time
+    // Lên lịch kiểm tra thời gian chờ dựa trên thời gian còn lại
     const initialElapsed = Date.now() - lastActivity;
     if (initialElapsed >= IDLE_TIMEOUT_MS) {
       handleIdleLogout();
@@ -226,7 +226,7 @@ export const AuthProvider = ({ children }) => {
       idleTimerRef.current = setTimeout(checkIdleStatus, IDLE_TIMEOUT_MS);
     };
 
-    // Sync across tabs via localStorage storage event
+    // Đồng bộ giữa các tab qua sự kiện storage của localStorage
     const handleStorageChange = (e) => {
       if (e.key === LAST_ACTIVITY_KEY && e.newValue) {
         const otherTabLastActivity = Number(e.newValue);
@@ -251,7 +251,7 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Check on tab visibility or focus change
+    // Kiểm tra khi hiển thị hoặc chuyển đổi tab
     const handleVisibilityOrFocus = () => {
       if (document.visibilityState === 'visible') {
         const currentLast = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || Date.now());

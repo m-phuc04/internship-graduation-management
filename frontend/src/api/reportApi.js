@@ -1,7 +1,7 @@
 import axiosClient from './axiosClient';
 
 export const reportApi = {
-  // Student submits or saves draft report (Supports FormData or JSON)
+  // Sinh viên nộp hoặc lưu bản nháp báo cáo (Hỗ trợ FormData hoặc JSON)
   create: (data) => {
     if (data instanceof FormData) {
       return axiosClient.post('/internship-reports', data, {
@@ -13,7 +13,7 @@ export const reportApi = {
     return axiosClient.post('/internship-reports', data);
   },
 
-  // Student updates report (Supports FormData or JSON)
+  // Sinh viên cập nhật báo cáo (Hỗ trợ FormData hoặc JSON)
   update: (id, data) => {
     if (data instanceof FormData) {
       return axiosClient.put(`/internship-reports/${id}`, data, {
@@ -25,25 +25,25 @@ export const reportApi = {
     return axiosClient.put(`/internship-reports/${id}`, data);
   },
 
-  // Student gets all their own reports
+  // Sinh viên lấy toàn bộ báo cáo của mình
   getMyReports: () => axiosClient.get('/internship-reports/my'),
 
-  // Lecturer gets reports for supervised students
+  // Giảng viên lấy danh sách báo cáo của các sinh viên giám sát
   getForLecturer: (params) =>
     axiosClient.get('/internship-reports/lecturer/supervised', { params }),
 
-  // TBM gets all reports
+  // TBM lấy danh sách toàn bộ báo cáo thực tập
   getForTbm: (params) =>
     axiosClient.get('/internship-reports/tbm/all', { params }),
 
-  // Get report by ID
+  // Lấy thông tin báo cáo theo ID
   getById: (id) => axiosClient.get(`/internship-reports/${id}`),
 
-  // Lecturer, TBM, Admin, Student: Get all weekly reports for a specific internship
+  // Lấy toàn bộ báo cáo định kỳ của một hồ sơ thực tập cụ thể
   getByInternshipId: (internshipId) =>
     axiosClient.get(`/internship-reports/internship/${internshipId}`),
 
-  // Lecturer / TBM reviews report
+  // Giảng viên / TBM đánh giá, nhận xét báo cáo
   review: (id, data) =>
     axiosClient.patch(`/internship-reports/${id}/review`, data),
 };

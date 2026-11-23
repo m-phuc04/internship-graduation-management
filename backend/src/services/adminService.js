@@ -9,14 +9,14 @@ import AppError from "../utils/AppError.js";
 const VALID_PERMISSIONS = ["GVHD", "GVPB_KIN", "GVPB_HOIDONG"];
 
 /**
- * Get list of all lecturers with their permission assignments and roles
+ * Lấy danh sách tất cả giảng viên cùng phân quyền và vai trò
  */
 const getPermissionsList = async () => {
   const lecturers = await Lecturer.find()
     .populate("userId", "fullName email phone role isActive code createdAt")
     .sort({ lecturerCode: 1 });
 
-  // Exclude any ADMIN users (ADMIN has top-level system privileges and is not a lecturer)
+  // Loại trừ tài khoản ADMIN (ADMIN có toàn quyền hệ thống, không phải là giảng viên)
   const validLecturers = lecturers.filter(
     (l) => l.userId && l.userId.role !== "ADMIN" && l.lecturerCode !== "99999999"
   );
@@ -52,7 +52,7 @@ const getPermissionsList = async () => {
 };
 
 /**
- * Update permissions (in Permission collection) and optionally role (LECTURER <-> TBM) for a lecturer
+ * Cập nhật phân quyền (trong collection Permission) và tùy chọn vai trò (LECTURER <-> TBM) cho giảng viên
  */
 const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
   const lecturer = await Lecturer.findById(lecturerId).populate("userId");
@@ -62,7 +62,7 @@ const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
 
   const userId = lecturer.userId._id;
 
-  // Validate & Update Permissions in Permission collection
+  // Kiểm tra và cập nhật quyền trong collection Permission
   if (permissions !== undefined) {
     if (!Array.isArray(permissions)) {
       throw new AppError("Danh sách quyền (permissions) phải là một mảng", 400);
@@ -72,7 +72,7 @@ const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
       throw new AppError(`Quyền không hợp lệ: ${invalidPerm}`, 400);
     }
 
-    // Process each valid permission
+    // Xử lý từng quyền hợp lệ
     for (const p of VALID_PERMISSIONS) {
       const isGranted = permissions.includes(p);
       await Permission.findOneAndUpdate(
@@ -83,7 +83,7 @@ const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
     }
   }
 
-  // Role Assignment (TBM <-> LECTURER)
+  // Gán vai trò (TBM <-> LECTURER)
   if (role !== undefined && lecturer.userId) {
     if (role !== "LECTURER" && role !== "TBM") {
       throw new AppError("Role chỉ có thể là LECTURER hoặc TBM", 400);
@@ -117,7 +117,7 @@ const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
 };
 
 /**
- * Get all users for admin overview
+ * Lấy danh sách tất cả người dùng cho trang quản trị tổng quan
  */
 const getAllUsers = async ({ role = "", search = "", page = 1, limit = 20 }) => {
   const query = {};
@@ -147,7 +147,7 @@ const getAllUsers = async ({ role = "", search = "", page = 1, limit = 20 }) => 
 };
 
 /**
- * Toggle user active status
+ * Bật/tắt trạng thái hoạt động của người dùng
  */
 const toggleUserStatus = async (userId) => {
   const user = await User.findById(userId);
@@ -164,7 +164,7 @@ const toggleUserStatus = async (userId) => {
   user.isActive = !user.isActive;
   await user.save();
 
-  // If lecturer/student, sync status
+  // Đồng bộ trạng thái nếu là giảng viên hoặc sinh viên
   if (user.role === "LECTURER" || user.role === "TBM") {
     await Lecturer.updateOne({ userId: user._id }, { isActive: user.isActive });
   } else if (user.role === "STUDENT") {
@@ -175,7 +175,7 @@ const toggleUserStatus = async (userId) => {
 };
 
 /**
- * Reset password for a user
+ * Đặt lại mật khẩu cho người dùng
  */
 const resetPassword = async (userId, newPassword = "1111") => {
   const user = await User.findById(userId);
@@ -190,14 +190,14 @@ const resetPassword = async (userId, newPassword = "1111") => {
 };
 
 /**
- * Seed initial sample logs if collection is empty
+ * Khởi tạo dữ liệu nhật ký mẫu ban đầu nếu collection còn trống
  */
 const seedInitialLogsIfEmpty = async () => {
   try {
     const count = await Log.countDocuments();
     if (count > 0) return;
 
-    // Fetch sample users across roles
+    // Lấy người dùng mẫu theo các vai trò
     const users = await User.find({ isActive: true }).select("_id fullName role email").lean();
     if (!users || users.length === 0) return;
 
@@ -209,7 +209,7 @@ const seedInitialLogsIfEmpty = async () => {
     const sampleLogs = [];
     const now = Date.now();
 
-    // Sample Admin actions
+    // Hành động mẫu của Quản trị viên (Admin)
     admins.forEach((admin, i) => {
       sampleLogs.push({
         userId: admin._id,
@@ -231,7 +231,7 @@ const seedInitialLogsIfEmpty = async () => {
       });
     });
 
-    // Sample TBM actions
+    // Hành động mẫu của Trưởng bộ môn (TBM)
     tbms.forEach((tbm, i) => {
       sampleLogs.push({
         userId: tbm._id,
@@ -253,7 +253,7 @@ const seedInitialLogsIfEmpty = async () => {
       });
     });
 
-    // Sample Lecturer actions
+    // Hành động mẫu của Giảng viên
     lecturers.forEach((lec, i) => {
       sampleLogs.push({
         userId: lec._id,
@@ -275,7 +275,7 @@ const seedInitialLogsIfEmpty = async () => {
       });
     });
 
-    // Sample Student actions
+    // Hành động mẫu của Sinh viên
     students.slice(0, 5).forEach((stu, i) => {
       sampleLogs.push({
         userId: stu._id,
@@ -306,7 +306,7 @@ const seedInitialLogsIfEmpty = async () => {
 };
 
 /**
- * Get system activity logs with pagination, role filter, and search
+ * Lấy nhật ký hoạt động hệ thống có phân trang, lọc theo vai trò và tìm kiếm
  */
 const getSystemLogs = async ({ page = 1, limit = 10, role = "", search = "" }) => {
   await seedInitialLogsIfEmpty();
@@ -316,14 +316,14 @@ const getSystemLogs = async ({ page = 1, limit = 10, role = "", search = "" }) =
 
   const andConditions = [];
 
-  // Filter by Role (if specified)
+  // Lọc theo vai trò (nếu có)
   if (role && role !== "ALL" && role !== "") {
     const usersInRole = await User.find({ role }).select("_id").lean();
     const userIds = usersInRole.map((u) => u._id);
     andConditions.push({ userId: { $in: userIds } });
   }
 
-  // Filter by Search (search action, description, module, or user info)
+  // Lọc theo tìm kiếm (hành động, mô tả, module hoặc thông tin người dùng)
   if (search && search.trim()) {
     const rawSearch = search.trim();
     const escapedSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");

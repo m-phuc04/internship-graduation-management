@@ -4,7 +4,7 @@ import AppError from "../utils/AppError.js";
 import emailService from "./emailService.js";
 
 // ====================
-// 1. Create a Single Notification
+// 1. Tạo một thông báo đơn lẻ
 // ====================
 const createNotification = async ({
   recipientId,
@@ -25,7 +25,7 @@ const createNotification = async ({
   }
 
   try {
-    // Resolve Lecturer ID or Student ID to User ID if needed
+    // Chuyển đổi ID Giảng viên hoặc Sinh viên sang User ID nếu cần
     const isUser = await User.exists({ _id: targetRecipientId });
     if (!isUser) {
       const Lecturer = (await import("../models/Lecturer.js")).default;
@@ -41,7 +41,7 @@ const createNotification = async ({
       }
     }
 
-    // Avoid duplicate unread notification for the same reference and same title
+    // Tránh tạo thông báo chưa đọc trùng lặp cho cùng một đối tượng tham chiếu và tiêu đề
     if (referenceId && referenceModel && targetRecipientId) {
       const existing = await Notification.findOne({
         recipientId: targetRecipientId,
@@ -149,7 +149,7 @@ const createNotification = async ({
 };
 
 // ====================
-// 2. Broadcast Notification to All Users with a Specific Role (e.g., TBM & ADMIN)
+// 2. Gửi thông báo đến tất cả người dùng có vai trò cụ thể (ví dụ: TBM & ADMIN)
 // ====================
 const createNotificationForRole = async (
   role,
@@ -232,7 +232,7 @@ const buildUserNotificationQuery = async (userId, unreadOnly = false) => {
 };
 
 // ====================
-// 3. Get User's Notifications
+// 3. Lấy danh sách thông báo của người dùng
 // ====================
 const getMyNotifications = async (
   userId,
@@ -267,7 +267,7 @@ const getMyNotifications = async (
 };
 
 // ====================
-// 4. Mark Single Notification as Read
+// 4. Đánh dấu một thông báo đã đọc
 // ====================
 const markAsRead = async (notificationId, userId) => {
   const notification = await Notification.findOne({
@@ -287,7 +287,7 @@ const markAsRead = async (notificationId, userId) => {
 };
 
 // ====================
-// 5. Mark All Notifications as Read for User
+// 5. Đánh dấu tất cả thông báo đã đọc
 // ====================
 const markAllAsRead = async (userId) => {
   const unreadQuery = await buildUserNotificationQuery(userId, true);
@@ -302,7 +302,7 @@ const markAllAsRead = async (userId) => {
 };
 
 // ====================
-// 6. Get Unread Count
+// 6. Lấy số lượng thông báo chưa đọc
 // ====================
 const getUnreadCount = async (userId) => {
   const unreadQuery = await buildUserNotificationQuery(userId, true);

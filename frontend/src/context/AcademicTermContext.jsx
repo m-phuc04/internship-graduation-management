@@ -13,7 +13,7 @@ export const AcademicTermProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Fetch all terms from backend
+  // Lấy danh sách học kỳ từ máy chủ
   const refreshTerms = useCallback(async () => {
     try {
       setLoading(true);
@@ -37,7 +37,7 @@ export const AcademicTermProvider = ({ children }) => {
         }
       }
     } catch (err) {
-      // If error (e.g. not logged in yet), try fetching active term as fallback
+      // Dự phòng: Lấy học kỳ đang kích hoạt nếu chưa đăng nhập hoặc gặp lỗi
       try {
         const activeRes = await academicTermApi.getActiveTerm();
         if (activeRes?.success && activeRes.data) {
@@ -58,7 +58,7 @@ export const AcademicTermProvider = ({ children }) => {
     refreshTerms();
   }, [refreshTerms, token]);
 
-  // Set current selected term
+  // Thiết lập học kỳ được chọn hiện tại
   const setCurrentTerm = useCallback((termOrId) => {
     const id = typeof termOrId === 'object' && termOrId !== null ? termOrId._id : termOrId;
     if (id) {
@@ -67,7 +67,7 @@ export const AcademicTermProvider = ({ children }) => {
     }
   }, []);
 
-  // Compute currentTerm object
+  // Tính toán đối tượng currentTerm
   const currentTerm = useMemo(() => {
     if (!terms.length) return activeTerm || null;
     if (selectedTermId) {

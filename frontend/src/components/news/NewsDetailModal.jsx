@@ -49,7 +49,7 @@ const NewsDetailModal = ({ news, isOpen, onClose }) => {
       />
 
       <div className="relative w-full max-w-3xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-10 my-8 animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
-        {/* Header Bar */}
+        {/* Thanh tiêu đề */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
             <IUHLogo className="h-6 w-auto object-contain" />
@@ -68,9 +68,9 @@ const NewsDetailModal = ({ news, isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* Modal Scrollable Body */}
+        {/* Thân modal có thanh cuộn */}
         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar space-y-6">
-          {/* Category & Meta */}
+          {/* Danh mục và siêu dữ liệu */}
           <div className="flex flex-wrap items-center gap-3">
             <span
               className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border ${badge.className}`}
@@ -97,25 +97,25 @@ const NewsDetailModal = ({ news, isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Title */}
+          {/* Tiêu đề */}
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 leading-snug tracking-tight">
             {news.title}
           </h2>
 
-          {/* Summary Quote */}
+          {/* Đoạn trích tóm tắt */}
           {news.summary && (
             <div className="p-4 rounded-2xl bg-blue-50/70 border-l-4 border-[#123891] text-slate-700 text-xs sm:text-sm font-medium leading-relaxed">
               {news.summary}
             </div>
           )}
 
-          {/* Full Content */}
+          {/* Nội dung đầy đủ */}
           <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line space-y-4 font-normal">
             {news.content}
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Chân trang */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 shrink-0">
           <div className="text-xs text-slate-400">
             © Khoa Công nghệ Thông tin - Trường ĐH Công nghiệp TP.HCM

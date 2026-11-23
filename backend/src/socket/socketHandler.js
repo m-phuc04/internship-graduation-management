@@ -14,7 +14,7 @@ export const initSocketServer = (httpServer) => {
     pingTimeout: 60000,
   });
 
-  // Socket Authentication Middleware
+  // Middleware xác thực kết nối Socket.IO
   io.use((socket, next) => {
     try {
       const token =
@@ -36,7 +36,7 @@ export const initSocketServer = (httpServer) => {
     }
   });
 
-  // Connection Handler
+  // Xử lý sự kiện kết nối Socket.IO
   io.on("connection", (socket) => {
     const userId = socket.user?.userId;
     if (userId) {
@@ -44,7 +44,7 @@ export const initSocketServer = (httpServer) => {
     }
 
     socket.on("disconnect", () => {
-      // Clean up if needed
+      // Dọn dẹp tài nguyên khi ngắt kết nối nếu cần
     });
   });
 

@@ -63,7 +63,7 @@ const AdminSidebar = ({ onCloseMobile, onToggleCollapse }) => {
 
   return (
     <aside className="w-64 max-w-[85vw] bg-[#123891] text-slate-200 flex flex-col shrink-0 h-full select-none">
-      {/* Brand Header */}
+      {/* Tiêu đề thương hiệu hệ thống */}
       <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73]">
         <Link
           to="/admin/permissions"
@@ -96,7 +96,7 @@ const AdminSidebar = ({ onCloseMobile, onToggleCollapse }) => {
         )}
       </div>
 
-      {/* Navigation List */}
+      {/* Danh sách điều hướng */}
       <div className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {/* 1. QUẢN TRỊ HỆ THỐNG */}
         <div className="space-y-1">

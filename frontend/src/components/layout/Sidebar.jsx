@@ -121,7 +121,7 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
 
   return (
     <aside className="w-full h-full bg-[#123891] text-slate-200 flex flex-col shrink-0 min-h-0 select-none">
-      {/* Brand Header */}
+      {/* Tiêu đề thương hiệu hệ thống */}
       <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73] shrink-0">
         <Link
           to={isAdmin ? '/admin/permissions' : '/tbm/dashboard'}
@@ -168,7 +168,7 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
         </div>
       )}
 
-      {/* Navigation List */}
+      {/* Danh sách điều hướng */}
       <div className="flex-1 min-h-0 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {/* ================= PHẦN DÀNH CHO TBM ================= */}
         {!isAdmin && (

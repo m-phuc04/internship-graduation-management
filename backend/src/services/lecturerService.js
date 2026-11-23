@@ -7,7 +7,7 @@ import Thesis from "../models/Thesis.js";
 import AppError from "../utils/AppError.js";
 
 // ====================
-// Get All Lecturers with Search, Filter & Pagination
+// Lấy danh sách giảng viên kèm tìm kiếm, lọc và phân trang
 // ====================
 const getAllLecturers = async ({
   page = 1,
@@ -33,7 +33,7 @@ const getAllLecturers = async ({
 
   if (search && search.trim() !== "") {
     const rawSearch = search.trim();
-    // Escape regex special characters
+    // Thoát các ký tự đặc biệt trong biểu thức chính quy
     const escapedSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const searchRegex = new RegExp(escapedSearch, "i");
 
@@ -85,12 +85,12 @@ const getAllLecturers = async ({
     lecturerQuery.$or = lecturerOrConditions;
   }
 
-  // 1. Count total matching documents FIRST across the entire dataset
+  // 1. Đếm tổng số bản ghi khớp trước trên toàn bộ dữ liệu
   const total = await Lecturer.countDocuments(lecturerQuery);
   const totalPages = Math.ceil(total / limitNum) || 1;
 
-  // 2. Adjust effective page: If requested page exceeds totalPages (e.g. searching while user was on page 2),
-  // automatically reset to page 1 so the matching results are immediately returned!
+  // 2. Điều chỉnh trang hợp lệ: Nếu trang yêu cầu vượt quá tổng số trang,
+  // tự động chuyển về trang 1 để hiển thị ngay kết quả phù hợp!
   const effectivePage = pageNum > totalPages ? 1 : pageNum;
   const skip = (effectivePage - 1) * limitNum;
 
@@ -107,7 +107,7 @@ const getAllLecturers = async ({
     Permission.find({ isActive: true }).select("userId permission").lean(),
   ]);
 
-  // Ensure ADMIN is excluded
+  // Đảm bảo không bao gồm tài khoản ADMIN
   const lecturers = allLecturers.filter(
     (l) => l.userId && l.userId.role !== "ADMIN" && l.lecturerCode !== "99999999"
   );
@@ -119,7 +119,7 @@ const getAllLecturers = async ({
     permMap[uId].push(p.permission);
   });
 
-  // Compute active student count for each lecturer
+  // Tính số lượng sinh viên đang được giám sát bởi mỗi giảng viên
   const lecturersWithCounts = await Promise.all(
     lecturers.map(async (lec) => {
       const [internshipCount, activeTheses] = await Promise.all([
@@ -186,7 +186,7 @@ const getAllLecturers = async ({
 };
 
 // ====================
-// Get Lecturer By ID
+// Lấy thông tin giảng viên theo ID
 // ====================
 const getLecturerById = async (id) => {
   const lecturer = await Lecturer.findById(id).populate({
@@ -198,7 +198,7 @@ const getLecturerById = async (id) => {
     throw new AppError("Không tìm thấy giảng viên", 404);
   }
 
-  // Fetch active theses details
+  // Lấy thông tin các đề tài khóa luận đang hoạt động
   const activeTheses = await Thesis.find({
     supervisorId: lecturer._id,
     status: {
@@ -235,7 +235,7 @@ const getLecturerById = async (id) => {
 };
 
 // ====================
-// Create Lecturer
+// Thêm mới giảng viên
 // ====================
 const createLecturer = async (lecturerData) => {
   const {
@@ -267,22 +267,22 @@ const createLecturer = async (lecturerData) => {
   const normalizedCode = lecturerCode.trim();
   const normalizedEmail = email.trim().toLowerCase();
 
-  // Check email uniqueness
+  // Kiểm tra tính duy nhất của email
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) {
     throw new AppError("Email này đã được sử dụng bởi tài khoản khác", 409);
   }
 
-  // Check lecturerCode uniqueness
+  // Kiểm tra tính duy nhất của mã giảng viên
   const existingLecturer = await Lecturer.findOne({ lecturerCode: normalizedCode });
   if (existingLecturer) {
     throw new AppError("Mã giảng viên này đã tồn tại", 409);
   }
 
-  // Hash password
+  // Băm mật khẩu (Hash password)
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  // Create User
+  // Tạo tài khoản người dùng User
   const user = await User.create({
     fullName: fullName.trim(),
     email: normalizedEmail,
@@ -292,7 +292,7 @@ const createLecturer = async (lecturerData) => {
     isActive: true,
   });
 
-  // Create Lecturer profile
+  // Thêm mới giảng viên profile
   try {
     const finalMax = maxSupervisedStudents !== undefined
       ? Math.max(1, Number(maxSupervisedStudents) || 5)
@@ -331,7 +331,7 @@ const createLecturer = async (lecturerData) => {
 };
 
 // ====================
-// Update Lecturer & User
+// Cập nhật thông tin Giảng viên & Tài khoản User
 // ====================
 const updateLecturer = async (id, updateData, requestingUser = null) => {
   const lecturer = await Lecturer.findById(id);
@@ -358,7 +358,7 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
     isActive,
   } = updateData;
 
-  // Check email uniqueness if changed
+  // Kiểm tra tính duy nhất của email if changed
   if (email && email.trim().toLowerCase() !== user.email) {
     const existingUser = await User.findOne({
       email: email.trim().toLowerCase(),
@@ -370,7 +370,7 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
     user.email = email.trim().toLowerCase();
   }
 
-  // Check lecturerCode uniqueness if changed
+  // Kiểm tra tính duy nhất của mã giảng viên if changed
   if (lecturerCode && lecturerCode.trim() !== lecturer.lecturerCode) {
     const existingLecturer = await Lecturer.findOne({
       lecturerCode: lecturerCode.trim(),
@@ -382,7 +382,7 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
     lecturer.lecturerCode = lecturerCode.trim();
   }
 
-  // Handle maxSupervisedStudents update with validation against currently supervised count
+  // Xử lý cập nhật số sinh viên tối đa kèm kiểm tra với số lượng đang hướng dẫn
   const newMax = maxSupervisedStudents !== undefined ? maxSupervisedStudents : maxStudents;
   if (newMax !== undefined) {
     const numLimit = Number(newMax);
@@ -390,7 +390,7 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
       throw new AppError("Số lượng sinh viên hướng dẫn tối đa phải lớn hơn 0", 400);
     }
 
-    // Calculate current supervised students across active theses
+    // Tính số sinh viên hiện đang hướng dẫn trên các đề tài hoạt động
     const activeTheses = await Thesis.find({
       supervisorId: lecturer._id,
       status: {
@@ -420,13 +420,13 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
     lecturer.maxStudents = numLimit;
   }
 
-  // Update User fields
+  // Cập nhật các trường thông tin User
   if (fullName !== undefined) user.fullName = fullName.trim();
   if (phone !== undefined) user.phone = phone ? phone.trim() : null;
   if (isActive !== undefined) user.isActive = Boolean(isActive);
   await user.save();
 
-  // Update Lecturer fields
+  // Cập nhật các trường thông tin Giảng viên
   if (fields !== undefined) {
     let parsedFields = [];
     if (Array.isArray(fields)) {
@@ -453,7 +453,7 @@ const updateLecturer = async (id, updateData, requestingUser = null) => {
 };
 
 // ====================
-// Update Max Supervised Students Dedicated Function
+// Hàm chuyên dụng cập nhật số lượng sinh viên hướng dẫn tối đa
 // ====================
 const updateMaxSupervisedStudents = async (lecturerId, newLimit, requestingUser) => {
   const numLimit = Number(newLimit);
@@ -466,7 +466,7 @@ const updateMaxSupervisedStudents = async (lecturerId, newLimit, requestingUser)
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }
 
-  // Authorization check
+  // Kiểm tra quyền thực hiện
   if (requestingUser.role === "LECTURER") {
     if (lecturer.userId._id.toString() !== requestingUser.userId.toString()) {
       throw new AppError("Bạn chỉ có thể chỉnh sửa số lượng sinh viên của chính mình", 403);
@@ -475,7 +475,7 @@ const updateMaxSupervisedStudents = async (lecturerId, newLimit, requestingUser)
     throw new AppError("Bạn không có quyền thực hiện thao tác này", 403);
   }
 
-  // Calculate current supervised students across active theses
+  // Tính số sinh viên hiện đang hướng dẫn trên các đề tài hoạt động
   const activeTheses = await Thesis.find({
     supervisorId: lecturer._id,
     status: {
@@ -515,7 +515,7 @@ const updateMaxSupervisedStudents = async (lecturerId, newLimit, requestingUser)
 };
 
 // ====================
-// Toggle Lecturer Active / Inactive (Soft Deactivation / Reactivation)
+// Bật/tắt trạng thái hoạt động của giảng viên (Khóa / Mở khóa tài khoản)
 // ====================
 const toggleLecturerActive = async (id, isActive) => {
   const lecturer = await Lecturer.findById(id);
@@ -543,7 +543,7 @@ const toggleLecturerActive = async (id, isActive) => {
 };
 
 // ====================
-// Delete Lecturer -> Soft Deactivation (Preserve all historical records)
+// Xóa giảng viên -> Khóa tài khoản mềm (Bảo toàn lịch sử dữ liệu)
 // ====================
 const deleteLecturer = async (id) => {
   const lecturer = await Lecturer.findById(id);

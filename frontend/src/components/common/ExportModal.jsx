@@ -50,12 +50,12 @@ const ExportModal = ({
 
       const response = await onExport(exportParams);
 
-      // Trigger browser download from blob response
+      // Kích hoạt trình duyệt tải xuống tệp từ phản hồi dạng blob
       const blob = new Blob([response.data || response], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       });
 
-      // Extract filename from header or build default
+      // Lấy tên tệp từ header phản hồi hoặc tạo tên mặc định
       const defaultFilename =
         type === 'INTERNSHIP'
           ? `DanhSach_TTDN_${terms.find((t) => t._id === selectedTermId)?.code || 'Export'}.xlsx`
@@ -83,7 +83,7 @@ const ExportModal = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div className="bg-white rounded-3xl max-w-lg w-full shadow-2xl border border-slate-100 overflow-hidden animate-scale-up">
-        {/* Header */}
+        {/* Tiêu đề */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
@@ -105,9 +105,9 @@ const ExportModal = ({
           </button>
         </div>
 
-        {/* Content & Filters */}
+        {/* Nội dung và bộ lọc */}
         <div className="p-6 space-y-4 text-xs">
-          {/* Term Selector */}
+          {/* Bộ chọn học kỳ */}
           <div>
             <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <GraduationCap className="w-3.5 h-3.5 text-[#1B4DA1]" />
@@ -126,7 +126,7 @@ const ExportModal = ({
             </select>
           </div>
 
-          {/* Status Filter */}
+          {/* Bộ lọc theo trạng thái */}
           <div>
             <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
               <Filter className="w-3.5 h-3.5 text-[#1B4DA1]" />
@@ -160,7 +160,7 @@ const ExportModal = ({
             </select>
           </div>
 
-          {/* Type-Specific Filter (Company for TTDN / Lecturer for KLTN) */}
+          {/* Bộ lọc theo loại (Doanh nghiệp cho TTDN / Giảng viên cho KLTN) */}
           {type === 'INTERNSHIP' && companies.length > 0 && (
             <div>
               <label className="block font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
@@ -203,13 +203,13 @@ const ExportModal = ({
             </div>
           )}
 
-          {/* Note */}
+          {/* Ghi chú */}
           <div className="p-3.5 rounded-2xl bg-blue-50/70 border border-blue-100 text-[11px] text-blue-800 leading-relaxed">
             💡 File Excel sẽ xuất toàn bộ sinh viên thỏa điều kiện lọc của học kỳ được chọn, không bị giới hạn bởi phân trang.
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Các nút thao tác chân trang */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
           <button
             type="button"

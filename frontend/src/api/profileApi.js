@@ -1,22 +1,22 @@
 import axiosClient from './axiosClient';
 
 const profileApi = {
-  // Get logged-in user profile details
+  // Lấy thông tin chi tiết hồ sơ người dùng đang đăng nhập
   getProfile: () => {
     return axiosClient.get('/profile');
   },
 
-  // Update profile (email, phone, etc.)
+  // Cập nhật hồ sơ cá nhân (email, số điện thoại,...)
   updateProfile: (data) => {
     return axiosClient.patch('/profile', data);
   },
 
-  // Get public profile of another user
+  // Xem hồ sơ công khai của người dùng khác
   getPublicProfile: (id) => {
     return axiosClient.get(`/profile/public/${id}`);
   },
 
-  // Change password
+  // Đổi mật khẩu
   changePassword: (data) => {
     return axiosClient.post('/auth/change-password', data);
   },

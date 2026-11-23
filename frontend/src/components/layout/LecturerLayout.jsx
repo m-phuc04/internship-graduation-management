@@ -38,7 +38,7 @@ const LecturerLayout = () => {
         setUnreadCount(res.data.unreadCount || 0);
       }
     } catch {
-      // silent
+      // Bỏ qua thông báo lỗi
     }
   };
 
@@ -56,7 +56,7 @@ const LecturerLayout = () => {
     return localStorage.getItem('sidebar_collapsed') === 'true';
   });
 
-  // Close mobile drawer on Escape key or when resizing to desktop >= 1300px
+  // Đóng thanh điều hướng di động khi nhấn phím Escape hoặc màn hình >= 1300px
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -90,7 +90,7 @@ const LecturerLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-x-clip w-full">
-      {/* 1. Desktop Fixed Sidebar */}
+      {/* 1. Thanh điều hướng cố định Desktop */}
       <div
         className={`lecturer-desktop-sidebar flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
           isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
@@ -103,7 +103,7 @@ const LecturerLayout = () => {
         />
       </div>
 
-      {/* 2. Mobile Drawer Sidebar */}
+      {/* 2. Ngăn kéo điều hướng Mobile */}
       {mobileOpen && (
         <div className="lecturer-drawer-container fixed inset-0 z-50 flex">
           <div
@@ -120,13 +120,13 @@ const LecturerLayout = () => {
         </div>
       )}
 
-      {/* 3. Main Workspace Area */}
+      {/* 3. Khu vực làm việc chính */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen w-full overflow-x-clip">
-        {/* Top Header */}
+        {/* Thanh tiêu đề trên cùng */}
         <header className="lecturer-sticky-header sticky top-0 z-40 h-16 bg-white/95 border-b border-slate-200/80 px-3 sm:px-5 lg:px-8 flex items-center justify-between gap-2 sm:gap-4 backdrop-blur-md shadow-2xs w-full">
-          {/* Left: Mobile & Desktop Hamburger Toggle & Breadcrumb Title */}
+          {/* Bên trái: Nút menu và tiêu đề breadcrumb */}
           <div className="flex items-center gap-3">
-            {/* Mobile Hamburger Toggle */}
+            {/* Nút mở menu Mobile */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -137,7 +137,7 @@ const LecturerLayout = () => {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop Hamburger Toggle */}
+            {/* Nút thu gọn/mở menu cho Desktop */}
             <button
               type="button"
               onClick={toggleSidebar}
@@ -158,12 +158,12 @@ const LecturerLayout = () => {
             </div>
           </div>
 
-          {/* Right: Quick actions, Notifications & User Menu */}
+          {/* Bên phải: Thao tác nhanh, thông báo và menu người dùng */}
           <div className="flex items-center gap-3">
-            {/* Notification Bell Dropdown */}
+            {/* Menu chuông thông báo */}
             <NotificationDropdown />
 
-            {/* User Dropdown */}
+            {/* Menu người dùng */}
             <div className="relative">
               <button
                 type="button"
@@ -277,14 +277,14 @@ const LecturerLayout = () => {
           </div>
         </header>
 
-        {/* Content Outlet */}
+        {/* Khu vực hiển thị nội dung route */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full max-w-full">
           <Outlet />
         </main>
         <Footer />
       </div>
 
-      {/* Email Notification Settings Modal (TTDN & KLTN & News) */}
+      {/* Modal cài đặt thông báo email (TTDN, KLTN & Tin tức) */}
       {emailModalOpen && (
         <EmailNotificationModal
           isOpen={emailModalOpen}

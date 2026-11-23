@@ -113,7 +113,7 @@ const PublicProfilePage = () => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between">
       <div className="max-w-lg w-full mx-auto py-8 px-4 sm:px-6 space-y-6 flex-1">
-        {/* Top Back Navigation */}
+        {/* Nút quay lại phía trên */}
         <div>
           <button
             type="button"
@@ -138,9 +138,9 @@ const PublicProfilePage = () => {
           </div>
         ) : (
           <div className="space-y-6">
-            {/* Main Card */}
+            {/* Thẻ nội dung chính */}
             <div className="p-8 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-6">
-              {/* Header / Avatar */}
+              {/* Đầu trang / Ảnh đại diện */}
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
                   {user.avatar ? (
@@ -170,7 +170,7 @@ const PublicProfilePage = () => {
                 </div>
               </div>
 
-              {/* Contact Info Card */}
+              {/* Thẻ thông tin liên hệ */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider px-1">
                   Email Liên Lạc

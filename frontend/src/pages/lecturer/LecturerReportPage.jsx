@@ -57,13 +57,13 @@ const LecturerReportPage = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Search & Filter
+  // Tìm kiếm và lọc dữ liệu
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [fileCategory, setFileCategory] = useState('');
   const [page, setPage] = useState(1);
 
-  // Modal
+  // Modal xử lý
   const [selectedReport, setSelectedReport] = useState(null);
   const [reviewModalOpen, setReviewModalOpen] = useState(false);
 
@@ -77,7 +77,7 @@ const LecturerReportPage = () => {
           setLecturerInfo(res.lecturer);
         }
       } catch (err) {
-        // Fallback silently to auth context user
+        // Dự phòng sử dụng thông tin người dùng từ context xác thực
       }
     };
     fetchLecturerProfile();
@@ -143,7 +143,7 @@ const LecturerReportPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Banner tiêu đề */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
@@ -208,7 +208,7 @@ const LecturerReportPage = () => {
         </div>
       </div>
 
-      {/* Reports Table */}
+      {/* Bảng báo cáo thực tập */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -238,7 +238,7 @@ const LecturerReportPage = () => {
                     key={report._id}
                     className="hover:bg-slate-50/80 transition-colors group"
                   >
-                    {/* Student Info */}
+                    {/* Thông tin sinh viên */}
                     <td className="py-3.5 px-4 pl-6">
                       <div className="font-semibold text-slate-900 text-xs">
                         {report.studentId?.userId?.fullName}
@@ -253,14 +253,14 @@ const LecturerReportPage = () => {
                       )}
                     </td>
 
-                    {/* Report Type */}
+                    {/* Loại báo cáo */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
                         {getCategoryBadge(report)}
                       </span>
                     </td>
 
-                    {/* Title */}
+                    {/* Tiêu đề */}
                     <td className="py-3.5 px-4">
                       <div className="font-semibold text-slate-900 text-xs truncate max-w-sm">
                         {report.title}
@@ -283,7 +283,7 @@ const LecturerReportPage = () => {
                       </div>
                     </td>
 
-                    {/* Submitted At */}
+                    {/* Thời gian nộp */}
                     <td className="py-3.5 px-4 whitespace-nowrap text-xs text-slate-600">
                       <div>{formatDate(report.submittedAt || report.createdAt)}</div>
                       {report.student2ConfirmedAt && (
@@ -293,7 +293,7 @@ const LecturerReportPage = () => {
                       )}
                     </td>
 
-                    {/* Status (Read-Only Badge) */}
+                    {/* Trạng thái (Huy hiệu chỉ đọc) */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
                       <StatusBadge
                         status={report.status}
@@ -323,14 +323,14 @@ const LecturerReportPage = () => {
               </tbody>
             </table>
           </div>
-          {/* Mobile Card List (< 768px) */}
+          {/* Danh sách thẻ Mobile (< 768px) */}
           <div className="md:hidden divide-y divide-slate-100">
             {reports.map((report) => (
               <div
                 key={report._id}
                 className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition"
               >
-                {/* Header: Student Name + Status Badge (Read-Only) */}
+                {/* Tiêu đề: Tên sinh viên + Huy hiệu trạng thái */}
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <div className="font-bold text-slate-900 text-xs">
@@ -353,7 +353,7 @@ const LecturerReportPage = () => {
                   />
                 </div>
 
-                {/* Week / Type Badge & Title */}
+                {/* Huy hiệu Tuần / Loại & Tiêu đề */}
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] border border-blue-200/60 font-mono">
@@ -368,7 +368,7 @@ const LecturerReportPage = () => {
                   </h4>
                 </div>
 
-                {/* File Attachment, Submission Date & Dedicated Action Button */}
+                {/* File đính kèm, ngày nộp & nút thao tác chuyên dụng */}
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-100 text-[11px]">
                   {report.file?.originalName ? (
                     <span className="inline-flex items-center gap-1 text-[10px] text-[#102d7d] font-semibold bg-blue-50 px-2 py-1 rounded-lg truncate max-w-[180px]">
@@ -402,7 +402,7 @@ const LecturerReportPage = () => {
           </div>
         </>)}
 
-        {/* Pagination */}
+        {/* Phân trang */}
         {pagination && pagination.total > 10 && (
           <div className="border-t border-slate-100 bg-slate-50/50 px-4">
             <Pagination
@@ -414,7 +414,7 @@ const LecturerReportPage = () => {
         )}
       </div>
 
-      {/* Review Modal */}
+      {/* Modal đánh giá */}
       <LecturerReviewReportModal
         isOpen={reviewModalOpen}
         onClose={() => {

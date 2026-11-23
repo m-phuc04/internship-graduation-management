@@ -31,19 +31,19 @@ const Modal = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Backdrop */}
+      {/* Lớp phủ nền (Backdrop) */}
       <div
         className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
-      {/* Wrapper to center and avoid negative scroll overflow */}
+      {/* Lớp bọc căn giữa và tránh tràn thanh cuộn */}
       <div className="flex min-h-full items-center justify-center p-3 sm:p-6 text-center">
-        {/* Modal Container */}
+        {/* Khung chứa nội dung Modal */}
         <div
           className={`relative w-full ${maxWidth} bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden transform transition-all animate-fade-in my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col z-10 text-left`}
         >
-          {/* Header */}
+          {/* Tiêu đề */}
           <div className="flex items-center justify-between px-4 py-3.5 sm:px-6 sm:py-5 border-b border-slate-100 bg-slate-50/50 shrink-0 gap-3">
             <div className="min-w-0 flex-1">
               <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-tight break-words">
@@ -62,7 +62,7 @@ const Modal = ({
             </button>
           </div>
 
-          {/* Content */}
+          {/* Nội dung */}
           <div className="p-4 sm:p-6 overflow-y-auto flex-1 overscroll-contain">
             {children}
           </div>

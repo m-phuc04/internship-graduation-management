@@ -11,14 +11,14 @@ const DocumentViewerModal = ({ isOpen, onClose, title, children }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto print:p-0 print:bg-white print:static">
       <div className="relative w-full max-w-5xl bg-slate-100 rounded-3xl shadow-2xl overflow-hidden border border-slate-200/80 my-auto flex flex-col max-h-[92vh] print:max-h-none print:border-none print:shadow-none print:bg-white">
-        {/* Top Floating Action Bar (Hidden when printing) */}
+        {/* Thanh thao tác nổi phía trên (Ẩn khi in) */}
         <div className="bg-slate-900 text-white px-6 py-3.5 flex items-center justify-between shrink-0 print:hidden border-b border-slate-800 shadow-md">
           <div className="flex items-center gap-2.5 font-bold text-xs sm:text-sm">
             <span>{title || 'Xem trước Biểu mẫu Thực tập'}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Print Button */}
+            {/* Nút In tài liệu */}
             <button
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#123891] hover:bg-[#123891] text-white font-bold text-xs transition shadow-sm"
@@ -28,7 +28,7 @@ const DocumentViewerModal = ({ isOpen, onClose, title, children }) => {
               <span className="hidden sm:inline">In biểu mẫu</span>
             </button>
 
-            {/* Export PDF Button */}
+            {/* Nút Xuất PDF */}
             <button
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs border border-slate-700 transition"
@@ -38,7 +38,7 @@ const DocumentViewerModal = ({ isOpen, onClose, title, children }) => {
               <span className="hidden sm:inline">Xuất PDF</span>
             </button>
 
-            {/* Close Button */}
+            {/* Nút Đóng */}
             <button
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition ml-2"
@@ -49,7 +49,7 @@ const DocumentViewerModal = ({ isOpen, onClose, title, children }) => {
           </div>
         </div>
 
-        {/* Document Printable Viewport */}
+        {/* Khung nhìn tài liệu để in ấn */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-200/60 print:p-0 print:bg-white print:overflow-visible">
           {children}
         </div>

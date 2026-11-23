@@ -21,10 +21,10 @@ import IUHLogo from '../components/common/IUHLogo';
 import Footer from '../components/layout/Footer';
 
 const LoginPage = () => {
-  // Mode: 'LOGIN' | 'REGISTER'
+  // Chế độ: 'LOGIN' (Đăng nhập) | 'REGISTER' (Đăng ký)
   const [activeTab, setActiveTab] = useState('LOGIN');
 
-  // Login States
+  // Trạng thái form đăng nhập
   const [accountCode, setAccountCode] = useState('');
   const [password, setPassword] = useState('');
   const [captchaInput, setCaptchaInput] = useState('');
@@ -32,7 +32,7 @@ const LoginPage = () => {
   const [captchaLoading, setCaptchaLoading] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Register States (Student only)
+  // Đăng ký tài khoản States (Student only)
   const [regStudentCode, setRegStudentCode] = useState('');
   const [regFullName, setRegFullName] = useState('');
   const [regEmail, setRegEmail] = useState('');
@@ -45,7 +45,7 @@ const LoginPage = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // Load CAPTCHA immediately when opening LoginPage
+  // Tải mã xác thực CAPTCHA immediately when opening LoginPage
   const loadCaptcha = async () => {
     setCaptchaLoading(true);
     try {
@@ -65,7 +65,7 @@ const LoginPage = () => {
     loadCaptcha();
   }, []);
 
-  // If already authenticated, redirect to appropriate role dashboard immediately
+  // Nếu đã đăng nhập, chuyển hướng ngay về dashboard tương ứng với vai trò
   useEffect(() => {
     if (isAuthenticated && user?.role) {
       if (user.role === 'ADMIN') {
@@ -119,7 +119,7 @@ const LoginPage = () => {
     const pass = regPassword.trim();
     const confirmPass = regConfirmPassword.trim();
 
-    // Client-side Validation
+    // Kiểm tra tính hợp lệ của dữ liệu phía client
     if (!mssv) {
       showToast('Vui lòng nhập Mã số sinh viên (MSSV)', 'error');
       return;
@@ -167,7 +167,7 @@ const LoginPage = () => {
 
       if (res?.success) {
         showToast('Đăng ký tài khoản Sinh viên thành công! Vui lòng nhập mã CAPTCHA để đăng nhập.', 'success');
-        // Pre-fill login credentials and switch to Login tab
+        // Điền sẵn thông tin đăng nhập và chuyển sang tab Đăng nhập
         setAccountCode(mssv);
         setPassword(pass);
         setActiveTab('LOGIN');
@@ -182,12 +182,12 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-[#0d2a75] to-slate-900 flex flex-col justify-center py-10 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Decorative Blobs */}
+      {/* Họa tiết trang trí nền */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-[#123891]/20 rounded-full blur-3xl pointer-events-none" />
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md z-10">
-        {/* Brand Icon & Title */}
+        {/* Biểu tượng thương hiệu & Tiêu đề */}
         <Link to="/" className="flex flex-col items-center group cursor-pointer">
           <div className="p-3 bg-white rounded-2xl flex items-center justify-center shadow-xl shadow-slate-950/40 group-hover:scale-105 transition border border-white/20">
             <IUHLogo className="h-12 w-auto object-contain" />
@@ -234,7 +234,7 @@ const LoginPage = () => {
           {activeTab === 'LOGIN' ? (
             /* ================= FORM ĐĂNG NHẬP ================= */
             <form onSubmit={handleLogin} className="space-y-4">
-              {/* Account Code */}
+              {/* Tên đăng nhập / Mã tài khoản */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Mã tài khoản
@@ -252,7 +252,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Password */}
+              {/* Mật khẩu */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
                   Mật khẩu
@@ -270,7 +270,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Mandatory CAPTCHA Verification Area */}
+              {/* Khu vực xác thực CAPTCHA bắt buộc */}
               <div className="space-y-2 pt-1 border-t border-slate-100">
                 <div className="flex items-center justify-between pt-1">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -281,7 +281,7 @@ const LoginPage = () => {
                   </span>
                 </div>
 
-                {/* CAPTCHA Image & Refresh Button */}
+                {/* Ảnh CAPTCHA & Nút làm mới */}
                 <div className="flex items-center gap-2">
                   <div className="flex-1 h-12 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center p-1 relative shadow-2xs">
                     {captchaLoading ? (
@@ -313,7 +313,7 @@ const LoginPage = () => {
                   </button>
                 </div>
 
-                {/* CAPTCHA Input Field */}
+                {/* Ô nhập mã CAPTCHA */}
                 <div className="relative">
                   <ShieldCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
                   <input
@@ -329,7 +329,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Nút xác nhận gửi */}
               <div className="pt-2">
                 <button
                   type="submit"
@@ -384,7 +384,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Full Name */}
+              {/* Họ và tên */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Họ và tên <span className="text-rose-500">*</span>
@@ -402,7 +402,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Email & Class Name */}
+              {/* Email & Tên lớp */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
@@ -435,7 +435,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Password */}
+              {/* Mật khẩu */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Mật khẩu <span className="text-rose-500">*</span>
@@ -454,7 +454,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Confirm Password */}
+              {/* Xác nhận mật khẩu */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Xác nhận mật khẩu <span className="text-rose-500">*</span>
@@ -473,7 +473,7 @@ const LoginPage = () => {
                 </div>
               </div>
 
-              {/* Submit Button */}
+              {/* Nút xác nhận gửi */}
               <div className="pt-2">
                 <button
                   type="submit"
@@ -503,7 +503,7 @@ const LoginPage = () => {
             </form>
           )}
 
-          {/* Back to Home Link */}
+          {/* Liên kết quay về trang chủ */}
           <div className="mt-5 text-center border-t border-slate-100 pt-3">
             <Link
               to="/"

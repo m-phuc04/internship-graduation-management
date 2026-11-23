@@ -41,7 +41,7 @@ const RejectModal = ({ isOpen, onClose, internship, onRejected }) => {
       maxWidth="max-w-md"
     >
       <div className="space-y-4 text-xs">
-        {/* Student info */}
+        {/* Thông tin sinh viên */}
         <div className="p-4 rounded-2xl bg-rose-50/60 border border-rose-200/80 text-rose-900 space-y-1">
           <div className="font-bold text-sm">
             {internship.studentId?.userId?.fullName} ({internship.studentId?.studentCode})
@@ -51,7 +51,7 @@ const RejectModal = ({ isOpen, onClose, internship, onRejected }) => {
           </div>
         </div>
 
-        {/* Reason Textarea */}
+        {/* Khung nhập lý do */}
         <div>
           <label className="block font-semibold text-slate-700 mb-1.5">
             Lý do từ chối hồ sơ <span className="text-rose-500">*</span>
@@ -69,7 +69,7 @@ const RejectModal = ({ isOpen, onClose, internship, onRejected }) => {
           {error && <p className="text-rose-500 mt-1">{error}</p>}
         </div>
 
-        {/* Action Buttons */}
+        {/* Các nút thao tác */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"

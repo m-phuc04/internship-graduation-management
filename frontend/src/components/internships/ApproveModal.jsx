@@ -21,7 +21,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
           const res = await internshipApi.getAvailableLecturers(params);
           if (res.success) {
             setAvailableLecturers(res.data || []);
-            // Pre-select if internship already had one
+            // Chọn trước giảng viên nếu hồ sơ đã được phân công
             if (internship?.lecturerId?._id) {
               setSelectedLecturerId(internship.lecturerId._id);
             } else {
@@ -29,7 +29,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
             }
           }
         } catch {
-          // ignore
+          // Bỏ qua lỗi
         } finally {
           setLoadingLecturers(false);
         }
@@ -66,7 +66,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
       maxWidth="max-w-md"
     >
       <div className="space-y-4 text-xs">
-        {/* Info card */}
+        {/* Thẻ thông tin */}
         <div className="p-4 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 text-emerald-900 space-y-1.5">
           <div className="font-bold text-sm">
             {internship.studentId?.userId?.fullName} ({internship.studentId?.studentCode})
@@ -79,7 +79,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
           </div>
         </div>
 
-        {/* Optional Lecturer Selection */}
+        {/* Lựa chọn giảng viên (tùy chọn) */}
         <div>
           <label className="block font-semibold text-slate-700 mb-1.5">
             Chỉ định Giảng viên Giám sát (Tùy chọn)
@@ -112,7 +112,7 @@ const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
           </p>
         </div>
 
-        {/* Action Buttons */}
+        {/* Các nút thao tác */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"

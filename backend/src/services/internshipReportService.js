@@ -58,7 +58,7 @@ const createReport = async ({
     throw new AppError("Hồ sơ thực tập không thuộc về tài khoản này", 403);
   }
 
-  // Check if academic term is CLOSED
+  // Kiểm tra nếu học kỳ đã kết thúc (CLOSED)
   let termDoc = null;
   const termId = internship.academicTermId?._id || internship.academicTermId;
   if (termId) {
@@ -96,7 +96,7 @@ const createReport = async ({
     );
   }
 
-  // Type-specific validations
+  // Kiểm tra tính hợp lệ theo loại báo cáo
   let validWeek = null;
   let validMonth = null;
 
@@ -153,7 +153,7 @@ const createReport = async ({
     throw new AppError("Loại báo cáo không hợp lệ (WEEKLY, MONTHLY, FINAL)", 400);
   }
 
-  // Duplicate Check
+  // Kiểm tra trùng lặp báo cáo
   const duplicateQuery = {
     internshipId,
     reportType,
@@ -192,7 +192,7 @@ const createReport = async ({
     submittedAt: initialStatus === "SUBMITTED" ? new Date() : null,
   });
 
-  // Handle Notifications
+  // Xử lý gửi thông báo
   if (initialStatus === "SUBMITTED" && internship.lecturerId?.userId?._id) {
     await notificationService.createNotification({
       recipientId: internship.lecturerId.userId._id,
@@ -265,7 +265,7 @@ const updateReport = async ({
     throw new AppError("Bạn không thuộc hồ sơ thực tập này", 403);
   }
 
-  // Check if academic term is CLOSED
+  // Kiểm tra nếu học kỳ đã kết thúc (CLOSED)
   let termDoc = null;
   const termId = internship.academicTermId?._id || internship.academicTermId;
   if (termId) {
@@ -340,7 +340,7 @@ const updateReport = async ({
     report.student2Status = "NOT_APPLICABLE";
     report.submittedAt = new Date();
 
-    // Notify Lecturer
+    // Gửi thông báo cho giảng viên giám sát
     if (internship.lecturerId?.userId?._id) {
       await notificationService.createNotification({
         recipientId: internship.lecturerId.userId._id,
@@ -466,14 +466,14 @@ const getReportsForLecturer = async (
     throw new AppError("Không tìm thấy thông tin giảng viên", 404);
   }
 
-  // Find all internships supervised by this lecturer
+  // Tìm tất cả hồ sơ thực tập do giảng viên này giám sát
   const supervisedInternships = await Internship.find({
     lecturerId: lecturer._id,
   }).select("_id studentId secondStudentId companyId");
 
   const internshipIds = supervisedInternships.map((i) => i._id);
 
-  // GVHD can view reports belonging to assigned internships
+  // Giảng viên có thể xem các báo cáo thuộc hồ sơ thực tập được phân công
   const query = {
     internshipId: { $in: internshipIds },
   };
@@ -737,7 +737,7 @@ const getReportById = async (reportId, requestingUser) => {
     throw new AppError("Không tìm thấy nhật ký thực tập", 404);
   }
 
-  // Access check
+  // Kiểm tra quyền truy cập
   if (requestingUser && requestingUser.role === "STUDENT") {
     const student = await Student.findOne({ userId: requestingUser.userId });
     const isSV1 = report.studentId?._id?.toString() === student?._id?.toString();
@@ -757,7 +757,7 @@ const getReportById = async (reportId, requestingUser) => {
       );
     }
 
-    // GVHD cannot view report if not yet confirmed / submitted
+    // Giảng viên không thể xem báo cáo nếu chưa được xác nhận / nộp
     if (["DRAFT", "WAITING_STUDENT_2", "NEEDS_REVISION"].includes(report.status)) {
       throw new AppError(
         "Nhật ký tuần này chưa được hoàn tất quy trình xác nhận sinh viên và gửi cho Giảng viên",
@@ -787,7 +787,7 @@ const reviewReport = async (
     throw new AppError("Không tìm thấy báo cáo thực tập", 404);
   }
 
-  // Check if academic term is CLOSED
+  // Kiểm tra nếu học kỳ đã kết thúc (CLOSED)
   const internship = report.internshipId;
   if (internship) {
     let termDoc = null;
@@ -881,7 +881,7 @@ const reviewReport = async (
     console.warn("[reviewReport] Sync InternshipDocument error:", syncErr.message);
   }
 
-  // Notify Student 1 & Student 2
+  // Gửi thông báo cho sinh viên 1 & Student 2
   const notifyStudents = async () => {
     const studentsToNotify = [report.studentId, report.secondStudentId].filter(Boolean);
     for (const sId of studentsToNotify) {
@@ -954,7 +954,7 @@ const getReportsByInternshipId = async (internshipId, requestingUser) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập", 404);
   }
 
-  // Permission check
+  // Kiểm tra quyền thực hiện
   if (requestingUser) {
     if (requestingUser.role === "STUDENT") {
       const student = await Student.findOne({ userId: requestingUser.userId });

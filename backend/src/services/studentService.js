@@ -6,7 +6,7 @@ import Thesis from "../models/Thesis.js";
 import AppError from "../utils/AppError.js";
 
 // ====================
-// Get All Students with Search, Filter & Pagination
+// Lấy danh sách sinh viên kèm tìm kiếm, lọc và phân trang
 // ====================
 const getAllStudents = async ({
   page = 1,
@@ -21,7 +21,7 @@ const getAllStudents = async ({
   const limitNum = Math.max(1, parseInt(limit, 10) || 10);
   const skip = (pageNum - 1) * limitNum;
 
-  // Build filter query for Student
+  // Xây dựng câu truy vấn lọc sinh viên
   const studentQuery = {};
 
   if (className) {
@@ -40,11 +40,11 @@ const getAllStudents = async ({
     studentQuery.thesisRegistered = thesisRegistered === "true" || thesisRegistered === true;
   }
 
-  // Handle Search across MSSV, Class, or User (fullName, email)
+  // Tìm kiếm theo MSSV, Lớp hoặc Người dùng (họ tên, email)
   if (search && search.trim() !== "") {
     const searchRegex = new RegExp(search.trim(), "i");
 
-    // Find matching users first
+    // Tìm các tài khoản người dùng khớp trước
     const matchedUsers = await User.find({
       role: "STUDENT",
       $or: [{ fullName: searchRegex }, { email: searchRegex }],
@@ -74,7 +74,7 @@ const getAllStudents = async ({
 
   const totalPages = Math.ceil(total / limitNum) || 1;
 
-  // Get distinct classes for filter dropdown
+  // Lấy danh sách các lớp để hiển thị trong bộ lọc
   const availableClasses = await Student.distinct("className");
 
   return {
@@ -92,7 +92,7 @@ const getAllStudents = async ({
 };
 
 // ====================
-// Get Student By ID
+// Lấy thông tin sinh viên theo ID
 // ====================
 const getStudentById = async (id) => {
   const student = await Student.findById(id).populate({
@@ -104,7 +104,7 @@ const getStudentById = async (id) => {
     throw new AppError("Không tìm thấy sinh viên", 404);
   }
 
-  // Fetch related active internship and thesis summary if any
+  // Lấy tóm tắt hồ sơ thực tập và khóa luận đang hoạt động nếu có
   const [internship, thesis] = await Promise.all([
     Internship.findOne({ studentId: student._id })
       .populate("companyId", "name code")
@@ -123,7 +123,7 @@ const getStudentById = async (id) => {
 };
 
 // ====================
-// Create Student & User
+// Tạo sinh viên và tài khoản User
 // ====================
 const createStudent = async ({
   fullName,
@@ -143,22 +143,22 @@ const createStudent = async ({
   const normalizedEmail = email.trim().toLowerCase();
   const normalizedCode = studentCode.trim();
 
-  // Check email uniqueness
+  // Kiểm tra tính duy nhất của email
   const existingUser = await User.findOne({ email: normalizedEmail });
   if (existingUser) {
     throw new AppError("Email này đã được sử dụng trong hệ thống", 409);
   }
 
-  // Check student code uniqueness
+  // Kiểm tra tính duy nhất của mã sinh viên
   const existingStudent = await Student.findOne({ studentCode: normalizedCode });
   if (existingStudent) {
     throw new AppError("Mã sinh viên (MSSV) này đã tồn tại", 409);
   }
 
-  // Hash password
+  // Băm mật khẩu (Hash password)
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  // Create User
+  // Tạo tài khoản người dùng User
   const user = await User.create({
     fullName: fullName.trim(),
     email: normalizedEmail,
@@ -168,7 +168,7 @@ const createStudent = async ({
     isActive: true,
   });
 
-  // Create Student profile
+  // Tạo hồ sơ sinh viên
   try {
     const student = await Student.create({
       userId: user._id,
@@ -188,14 +188,14 @@ const createStudent = async ({
 
     return populatedStudent;
   } catch (error) {
-    // Rollback user if student creation fails
+    // Hoàn tác tạo User nếu tạo hồ sơ sinh viên thất bại
     await User.findByIdAndDelete(user._id);
     throw error;
   }
 };
 
 // ====================
-// Update Student & User
+// Cập nhật thông tin Sinh viên & Tài khoản User
 // ====================
 const updateStudent = async (id, updateData) => {
   const student = await Student.findById(id);
@@ -222,7 +222,7 @@ const updateStudent = async (id, updateData) => {
     isActive,
   } = updateData;
 
-  // Check email if changed
+  // Kiểm tra email nếu có thay đổi
   if (email && email.trim().toLowerCase() !== user.email) {
     const existingUser = await User.findOne({
       email: email.trim().toLowerCase(),
@@ -234,7 +234,7 @@ const updateStudent = async (id, updateData) => {
     user.email = email.trim().toLowerCase();
   }
 
-  // Check studentCode if changed
+  // Kiểm tra mã sinh viên nếu có thay đổi
   if (studentCode && studentCode.trim() !== student.studentCode) {
     const existingStudent = await Student.findOne({
       studentCode: studentCode.trim(),
@@ -246,8 +246,8 @@ const updateStudent = async (id, updateData) => {
     student.studentCode = studentCode.trim();
   }
 
-  // Update User fields
-  // Update User fields
+  // Cập nhật các trường thông tin User
+  // Cập nhật các trường thông tin User
   if (fullName !== undefined) user.fullName = fullName.trim();
   if (phone !== undefined) user.phone = phone ? phone.trim() : null;
   if (isActive !== undefined) {
@@ -256,7 +256,7 @@ const updateStudent = async (id, updateData) => {
   }
   await user.save();
 
-  // Update Student fields
+  // Cập nhật các trường thông tin Sinh viên
   if (className !== undefined) student.className = className.trim();
   if (gpa !== undefined) student.gpa = Math.min(4, Math.max(0, Number(gpa)));
   if (accumulatedCredits !== undefined) student.accumulatedCredits = Math.max(0, Number(accumulatedCredits));
@@ -273,7 +273,7 @@ const updateStudent = async (id, updateData) => {
 };
 
 // ====================
-// Soft Deactivate / Delete Student (No physical delete)
+// Khóa tài khoản sinh viên (Xóa mềm, không xóa vật lý)
 // ====================
 const deleteStudent = async (id) => {
   const student = await Student.findById(id);
@@ -294,7 +294,7 @@ const deleteStudent = async (id) => {
 };
 
 // ====================
-// Toggle Student Active State (Deactivate / Activate)
+// Bật/tắt trạng thái hoạt động của sinh viên
 // ====================
 const toggleStudentActive = async (id, isActive) => {
   const student = await Student.findById(id);
@@ -320,7 +320,7 @@ const toggleStudentActive = async (id, isActive) => {
 };
 
 // ====================
-// Reset Student Password to Default 1111 (Hashed)
+// Đặt lại mật khẩu sinh viên về mặc định 1111 (Đã băm)
 // ====================
 const resetStudentPassword = async (id) => {
   const student = await Student.findById(id);
@@ -333,7 +333,7 @@ const resetStudentPassword = async (id) => {
     throw new AppError("Không tìm thấy tài khoản liên kết của sinh viên", 404);
   }
 
-  // Hash default password 1111
+  // Băm mật khẩu mặc định 1111
   const hashedPassword = await bcrypt.hash("1111", 12);
   user.password = hashedPassword;
   await user.save();

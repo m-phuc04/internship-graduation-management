@@ -77,7 +77,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
 
   if (!isOpen) return null;
 
-  // Calculate Registration Window Status
+  // Tính toán trạng thái thời hạn đăng ký
   const getWindowStatus = () => {
     if (!formData.registrationStart && !formData.registrationEnd) {
       return {
@@ -123,7 +123,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     };
   };
 
-  // Calculate Grading Window Status
+  // Tính toán trạng thái thời hạn chấm điểm
   const getGradingStatus = () => {
     const status = getInternshipGradingWindowStatus({
       internship: {
@@ -185,7 +185,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
     }
   };
 
-  // Presets
+  // Giá trị mặc định định sẵn
   const applyPresetDays = (days) => {
     const today = new Date();
     const end = new Date();
@@ -256,7 +256,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
       <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full shadow-2xl border border-slate-100 overflow-hidden my-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col animate-scale-up">
-        {/* Header */}
+        {/* Tiêu đề */}
         <div className="px-4 py-3 sm:px-6 sm:py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#123891]/20 text-blue-400 flex items-center justify-center border border-[#123891]/30">
@@ -280,9 +280,9 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
           </button>
         </div>
 
-        {/* Body */}
+        {/* Thân modal / nội dung */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-5 overflow-y-auto flex-1 overscroll-contain">
-          {/* Status Alert */}
+          {/* Thông báo trạng thái */}
           <div className={`p-3.5 rounded-2xl border flex items-center gap-3 ${windowStatus.badge}`}>
             <StatusIcon className="w-5 h-5 shrink-0" />
             <div className="text-xs font-semibold">
@@ -293,7 +293,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
           </div>
 
-          {/* Quick Presets */}
+          {/* Cài đặt nhanh thời gian */}
           <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-2xl space-y-2">
             <div className="text-[11px] font-bold text-[#123891] flex items-center justify-between">
               <span>⚡ Thiết lập nhanh thời hạn:</span>
@@ -331,7 +331,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
           </div>
 
-          {/* 1. Registration Window */}
+          {/* 1. Thời hạn đăng ký */}
           <div className="space-y-3">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5 border-b border-slate-100 pb-1.5">
               <CalendarCheck className="w-4 h-4 text-[#123891]" />
@@ -377,7 +377,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </div>
           </div>
 
-          {/* 2. Lecturer (GVGS) Grading Window */}
+          {/* 2. Thời hạn chấm điểm của giảng viên giám sát */}
           <div className="space-y-3 pt-2">
             <div className="flex items-center justify-between border-b border-slate-100 pb-1.5">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
@@ -440,7 +440,7 @@ const InternshipTimelineModal = ({ isOpen, onClose, targetTerm }) => {
             </p>
           </div>
 
-          {/* Footer Actions */}
+          {/* Các nút thao tác chân trang */}
           <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 pt-4 border-t border-slate-100 shrink-0">
             <button
               type="button"

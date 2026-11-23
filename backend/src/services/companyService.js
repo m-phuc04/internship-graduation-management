@@ -3,7 +3,7 @@ import Internship from "../models/Internship.js";
 import AppError from "../utils/AppError.js";
 
 // ====================
-// Get All Companies with Search, Filter & Pagination
+// Lấy danh sách doanh nghiệp kèm tìm kiếm, lọc và phân trang
 // ====================
 const getAllCompanies = async ({
   page = 1,
@@ -41,7 +41,7 @@ const getAllCompanies = async ({
     Company.countDocuments(companyQuery),
   ]);
 
-  // Compute active interns count for each company
+  // Tính số lượng sinh viên đang thực tập cho từng doanh nghiệp
   const companiesWithCounts = await Promise.all(
     companies.map(async (comp) => {
       const activeInternsCount = await Internship.countDocuments({
@@ -76,7 +76,7 @@ const getAllCompanies = async ({
 };
 
 // ====================
-// Get Company By ID
+// Lấy thông tin doanh nghiệp theo ID
 // ====================
 const getCompanyById = async (id) => {
   const company = await Company.findById(id);
@@ -85,7 +85,7 @@ const getCompanyById = async (id) => {
     throw new AppError("Không tìm thấy thông tin doanh nghiệp", 404);
   }
 
-  // Fetch linked internships
+  // Lấy danh sách hồ sơ thực tập liên kết
   const internships = await Internship.find({ companyId: company._id })
     .populate({
       path: "studentId",
@@ -107,7 +107,7 @@ const getCompanyById = async (id) => {
 };
 
 // ====================
-// Create Company
+// Tạo mới doanh nghiệp
 // ====================
 const createCompany = async ({
   name,
@@ -128,7 +128,7 @@ const createCompany = async ({
   const trimmedName = name.trim();
   const trimmedCode = code ? code.trim().toUpperCase() : null;
 
-  // Check code uniqueness if provided
+  // Kiểm tra tính duy nhất của mã if provided
   if (trimmedCode) {
     const existingCompany = await Company.findOne({ code: trimmedCode });
     if (existingCompany) {
@@ -154,7 +154,7 @@ const createCompany = async ({
 };
 
 // ====================
-// Update Company
+// Cập nhật thông tin doanh nghiệp
 // ====================
 const updateCompany = async (id, updateData) => {
   const company = await Company.findById(id);
@@ -175,7 +175,7 @@ const updateCompany = async (id, updateData) => {
     status,
   } = updateData;
 
-  // Check code uniqueness if changed
+  // Kiểm tra tính duy nhất của mã if changed
   if (code && code.trim().toUpperCase() !== company.code) {
     const existingCompany = await Company.findOne({
       code: code.trim().toUpperCase(),
@@ -203,7 +203,7 @@ const updateCompany = async (id, updateData) => {
 };
 
 // ====================
-// Delete Company (Safety Check)
+// Xóa doanh nghiệp (Kiểm tra an toàn dữ liệu)
 // ====================
 const deleteCompany = async (id) => {
   const company = await Company.findById(id);

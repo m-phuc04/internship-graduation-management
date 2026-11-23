@@ -50,12 +50,12 @@ const LecturerInternshipDossiersPage = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  // Bộ lọc dữ liệu
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'SUBMITTED' | 'MISSING'
 
-  // Modal
+  // Modal xử lý
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
@@ -86,7 +86,7 @@ const LecturerInternshipDossiersPage = () => {
     fetchDossiers();
   }, [fetchDossiers]);
 
-  // Client-side filter for submission status
+  // Lọc phía client theo trạng thái nộp tài liệu
   const filteredInternships = internships.filter((item) => {
     const hasFile = Boolean(item.reportFile?.fileUrl);
     if (statusFilter === 'SUBMITTED') return hasFile;
@@ -94,7 +94,7 @@ const LecturerInternshipDossiersPage = () => {
     return true;
   });
 
-  // Calculate local dossier stats
+  // Tính toán thống kê hồ sơ thực tập
   const totalStudents = internships.length;
   const submittedCount = internships.filter((i) => i.reportFile?.fileUrl).length;
   const missingCount = totalStudents - submittedCount;
@@ -102,7 +102,7 @@ const LecturerInternshipDossiersPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner Card */}
+      {/* Thẻ banner trên cùng */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -126,7 +126,7 @@ const LecturerInternshipDossiersPage = () => {
             </div>
           </div>
 
-          {/* Quick Metrics */}
+          {/* Các chỉ số nhanh */}
           <div className="flex flex-wrap items-center gap-3">
             <div className="px-4 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-right">
               <div className="text-[10px] font-bold uppercase tracking-wider">Đã nộp báo cáo</div>
@@ -144,7 +144,7 @@ const LecturerInternshipDossiersPage = () => {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="w-full md:w-80">
           <SearchInput
@@ -170,7 +170,7 @@ const LecturerInternshipDossiersPage = () => {
         </div>
       </div>
 
-      {/* Dossiers Table */}
+      {/* Bảng hồ sơ thực tập */}
       <div className="rounded-3xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -212,7 +212,7 @@ const LecturerInternshipDossiersPage = () => {
                       key={item._id}
                       className="hover:bg-blue-50/30 transition-colors duration-150"
                     >
-                      {/* Student info */}
+                      {/* Thông tin sinh viên */}
                       <td className="py-3.5 px-4 pl-6">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 text-[#123891] font-bold text-xs flex items-center justify-center shrink-0">
@@ -231,7 +231,7 @@ const LecturerInternshipDossiersPage = () => {
                         </div>
                       </td>
 
-                      {/* Company & Position */}
+                      {/* Doanh nghiệp & Vị trí thực tập */}
                       <td className="py-3.5 px-4">
                         <div className="font-bold text-slate-800 truncate max-w-xs">
                           {item.companyId?.name || '—'}
@@ -242,14 +242,14 @@ const LecturerInternshipDossiersPage = () => {
                         </div>
                       </td>
 
-                      {/* Duration */}
+                      {/* Thời lượng */}
                       <td className="py-3.5 px-4 text-center">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-md font-bold text-[11px] bg-indigo-50 text-indigo-700 border border-indigo-200">
                           {item.durationInWeeks || 12} tuần
                         </span>
                       </td>
 
-                      {/* Report File */}
+                      {/* File báo cáo */}
                       <td className="py-3.5 px-4">
                         {hasFile ? (
                           <div className="flex items-center gap-2 max-w-xs">
@@ -273,7 +273,7 @@ const LecturerInternshipDossiersPage = () => {
                         )}
                       </td>
 
-                      {/* Upload Date */}
+                      {/* Ngày nộp */}
                       <td className="py-3.5 px-4 text-xs text-slate-500">
                         {hasFile && file?.uploadedAt ? (
                           <span>{formatDateVN(file.uploadedAt)}</span>
@@ -297,7 +297,7 @@ const LecturerInternshipDossiersPage = () => {
                         )}
                       </td>
 
-                      {/* Actions */}
+                      {/* Thao tác */}
                       <td className="py-3.5 px-4 pr-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <button
@@ -319,7 +319,7 @@ const LecturerInternshipDossiersPage = () => {
               </tbody>
             </table>
           </div>
-          {/* Mobile Card List (< 768px) */}
+          {/* Danh sách thẻ Mobile (< 768px) */}
           <div className="md:hidden divide-y divide-slate-100">
             {filteredInternships.map((item) => {
               const hasFile = Boolean(item.reportFile?.fileUrl);
@@ -327,7 +327,7 @@ const LecturerInternshipDossiersPage = () => {
 
               return (
                 <div key={item._id} className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition">
-                  {/* Top: Student avatar + name + class */}
+                  {/* Phía trên: Ảnh đại diện + Tên + Lớp sinh viên */}
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 text-[#123891] font-bold text-xs flex items-center justify-center shrink-0">
                       {item.studentId?.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
@@ -345,7 +345,7 @@ const LecturerInternshipDossiersPage = () => {
                     </span>
                   </div>
 
-                  {/* Company & Position */}
+                  {/* Doanh nghiệp & Vị trí thực tập */}
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                     <div className="font-semibold text-slate-800 truncate">
                       {item.companyId?.name || '—'}
@@ -356,7 +356,7 @@ const LecturerInternshipDossiersPage = () => {
                     </div>
                   </div>
 
-                  {/* Report File status */}
+                  {/* Trạng thái file báo cáo */}
                   <div className="p-2.5 rounded-xl border border-slate-100 bg-slate-50/50 space-y-1.5">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] uppercase font-bold text-slate-400">Trạng thái</span>
@@ -392,7 +392,7 @@ const LecturerInternshipDossiersPage = () => {
                     )}
                   </div>
 
-                  {/* Action buttons */}
+                  {/* Các nút thao tác */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                     <button
                       type="button"
@@ -412,13 +412,13 @@ const LecturerInternshipDossiersPage = () => {
           </div>
         </>)}
 
-        {/* Pagination */}
+        {/* Phân trang */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">
           <Pagination pagination={pagination} onPageChange={setPage} />
         </div>
       </div>
 
-      {/* Detail Modal */}
+      {/* Modal chi tiết */}
       <LecturerInternshipDetailModal
         isOpen={detailModalOpen}
         onClose={() => {

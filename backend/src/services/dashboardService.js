@@ -10,7 +10,7 @@ import Notification from "../models/Notification.js";
 import AppError from "../utils/AppError.js";
 
 // ====================
-// 1. Student Dashboard (AcademicTerm-aware)
+// 1. Dashboard Sinh viên (theo học kỳ)
 // ====================
 const getStudentDashboard = async (userId, academicTermId = null) => {
   const student = await Student.findOne({ userId }).populate("userId");
@@ -20,7 +20,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
 
   const termFilter = academicTermId && academicTermId !== "ALL" ? { academicTermId } : {};
 
-  // Active Internship
+  // Hồ sơ thực tập đang hoạt động
   let internship = await Internship.findOne({ studentId: student._id, ...termFilter })
     .sort({ createdAt: -1 })
     .populate("companyId")
@@ -61,7 +61,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
     }
   }
 
-  // Latest Internship Report
+  // Báo cáo thực tập gần nhất
   let latestReport = null;
   if (internship) {
     latestReport = await InternshipReport.findOne({
@@ -69,7 +69,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
     }).sort({ createdAt: -1 });
   }
 
-  // Active Thesis
+  // Khóa luận tốt nghiệp đang hoạt động
   const thesis = await Thesis.findOne({
     $or: [{ studentId: student._id }, { secondStudentId: student._id }],
     ...termFilter,
@@ -97,7 +97,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
     })
     .populate("academicTermId");
 
-  // Latest Thesis Progress
+  // Báo cáo tiến độ khóa luận gần nhất
   let latestProgress = null;
   if (thesis) {
     latestProgress = await ThesisProgress.findOne({
@@ -105,7 +105,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
     }).sort({ createdAt: -1 });
   }
 
-  // Recent Notifications
+  // Thông báo gần đây
   const notifications = await Notification.find({ recipientId: userId })
     .sort({ createdAt: -1 })
     .limit(5)
@@ -116,7 +116,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
     isRead: false,
   });
 
-  // Identify Pending Action Items
+  // Xác định các công việc đang chờ xử lý
   const pendingActions = [];
   if (!internship) {
     pendingActions.push({
@@ -195,7 +195,7 @@ const getStudentDashboard = async (userId, academicTermId = null) => {
 };
 
 // ====================
-// 2. TBM Dashboard (AcademicTerm-aware)
+// 2. Dashboard Trưởng bộ môn (theo học kỳ)
 // ====================
 const getTbmDashboard = async (academicTermId = null) => {
   const termFilter = academicTermId && academicTermId !== "ALL" ? { academicTermId } : {};
@@ -277,7 +277,7 @@ const getTbmDashboard = async (academicTermId = null) => {
 };
 
 // ====================
-// 3. Lecturer Dashboard (AcademicTerm-aware)
+// 3. Dashboard Giảng viên (theo học kỳ)
 // ====================
 const getLecturerDashboard = async (userId, academicTermId = null) => {
   const lecturer = await Lecturer.findOne({ userId }).populate("userId");
@@ -340,7 +340,7 @@ const getLecturerDashboard = async (userId, academicTermId = null) => {
       .lean(),
   ]);
 
-  // Find Pending Reports to Review
+  // Tìm các báo cáo thực tập đang chờ đánh giá
   const internshipIds = supervisedInternships.map((i) => i._id);
   const pendingInternshipReports = await InternshipReport.find({
     internshipId: { $in: internshipIds },
@@ -353,7 +353,7 @@ const getLecturerDashboard = async (userId, academicTermId = null) => {
     .sort({ createdAt: -1 })
     .lean();
 
-  // Find Pending Thesis Progress to Review
+  // Tìm các báo cáo tiến độ khóa luận đang chờ duyệt
   const thesisIds = supervisedTheses.map((t) => t._id);
   const pendingThesisProgress = await ThesisProgress.find({
     thesisId: { $in: thesisIds },

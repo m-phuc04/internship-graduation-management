@@ -78,7 +78,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
       maxWidth="max-w-2xl"
     >
       <div className="space-y-4 text-xs">
-        {/* Student & Report Header */}
+        {/* Tiêu đề sinh viên và báo cáo */}
         <div className="p-3.5 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#123891]">
           <div>
             <div className="font-bold text-sm">
@@ -90,7 +90,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
           </div>
         </div>
 
-        {/* Uploaded File Section (Prominent) */}
+        {/* Khu vực file đã tải lên (nổi bật) */}
         {report.file?.fileUrl ? (
           <div className="p-3.5 rounded-2xl bg-blue-50/40 border border-blue-200/70 space-y-2">
             <div className="flex items-center justify-between">
@@ -153,7 +153,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
           </div>
         )}
 
-        {/* Note / Content */}
+        {/* Ghi chú / Nội dung */}
         {report.content && (
           <div className="p-3 bg-slate-50 border border-slate-200/80 rounded-xl space-y-1">
             <div className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">
@@ -165,7 +165,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
           </div>
         )}
 
-        {/* Evaluation Controls */}
+        {/* Bộ điều khiển đánh giá */}
         <div className="pt-2 border-t border-slate-100 space-y-3">
           {error && (
             <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700">
@@ -173,7 +173,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
             </div>
           )}
 
-          {/* Status Option */}
+          {/* Lựa chọn trạng thái */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
               Kết quả đánh giá <span className="text-rose-500">*</span>
@@ -189,7 +189,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
             </select>
           </div>
 
-          {/* Comment */}
+          {/* Nhận xét */}
           <div>
             <label className="block font-semibold text-slate-700 mb-1">
               Nhận xét & Góp ý cho sinh viên
@@ -204,7 +204,7 @@ const LecturerReviewReportModal = ({ isOpen, onClose, report, onReviewed }) => {
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Các nút thao tác chân trang */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between pt-3 border-t border-slate-100 gap-2">
           <button
             type="button"

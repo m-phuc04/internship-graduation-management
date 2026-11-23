@@ -96,21 +96,21 @@ const LecturerInternshipDocumentsPage = () => {
   const [highlightedDocId, setHighlightedDocId] = useState(null);
   const [notificationWarning, setNotificationWarning] = useState(null);
 
-  // Internships list for selection
+  // Danh sách hồ sơ thực tập để lựa chọn
   const [internshipsList, setInternshipsList] = useState([]);
 
-  // Data states
+  // Trạng thái dữ liệu
   const [guides, setGuides] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [stats, setStats] = useState({ totalStudents: 0, submittedCount: 0, notSubmittedCount: 0 });
   const [studentsStatus, setStudentsStatus] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  // Bộ lọc dữ liệu
   const [search, setSearch] = useState('');
   const [filterInternshipId, setFilterInternshipId] = useState('');
 
-  // Add Guide Modal State
+  // Trạng thái modal thêm tài liệu hướng dẫn
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [title, setTitle] = useState('');
@@ -121,7 +121,7 @@ const LecturerInternshipDocumentsPage = () => {
   const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Edit Guide Modal State
+  // Chỉnh sửa Guide Modal State
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState(null);
   const [editFile, setEditFile] = useState(null);
@@ -133,19 +133,19 @@ const LecturerInternshipDocumentsPage = () => {
   const [savingEdit, setSavingEdit] = useState(false);
   const [editFormError, setEditFormError] = useState('');
 
-  // Delete Guide Modal State
+  // Trạng thái modal xóa tài liệu hướng dẫn
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // GVGS Remove Student Report Modal State
+  // Trạng thái modal GVGS gỡ báo cáo của sinh viên
   const [removeReportModalOpen, setRemoveReportModalOpen] = useState(false);
   const [targetSubmission, setTargetSubmission] = useState(null);
   const [removeReason, setRemoveReason] = useState('');
   const [removingReport, setRemovingReport] = useState(false);
   const [removeError, setRemoveError] = useState('');
 
-  // Fetch supervised internships for dropdown
+  // Lấy danh sách hồ sơ thực tập đang giám sát cho dropdown
   const fetchSupervisedInternships = useCallback(async () => {
     try {
       const res = await internshipDocumentApi.getLecturerInternshipsList({
@@ -155,11 +155,11 @@ const LecturerInternshipDocumentsPage = () => {
         setInternshipsList(res.data || []);
       }
     } catch {
-      // ignore
+      // Bỏ qua lỗi
     }
   }, [currentTerm?._id]);
 
-  // Fetch Guides
+  // Lấy danh sách tài liệu hướng dẫn
   const fetchGuides = useCallback(async () => {
     try {
       const res = await internshipDocumentApi.getLecturerGuides({
@@ -175,7 +175,7 @@ const LecturerInternshipDocumentsPage = () => {
     }
   }, [currentTerm?._id, search, filterInternshipId, showToast]);
 
-  // Sync state from URL Query Params / Navigation State
+  // Đồng bộ trạng thái từ tham số URL hoặc trạng thái điều hướng
   useEffect(() => {
     const tabParam = searchParams.get('tab') || location.state?.activeTab;
     if (tabParam && tabParam.toLowerCase() === 'submissions') {
@@ -198,7 +198,7 @@ const LecturerInternshipDocumentsPage = () => {
     }
   }, [searchParams, location.state]);
 
-  // Fetch Submissions
+  // Lấy danh sách tài liệu sinh viên đã nộp
   const fetchSubmissions = useCallback(async () => {
     try {
       const res = await internshipDocumentApi.getLecturerSubmissions({
@@ -237,7 +237,7 @@ const LecturerInternshipDocumentsPage = () => {
     }
   }, [currentTerm?._id, search, filterInternshipId, showToast, searchParams, location.state]);
 
-  // Scroll to highlighted submission row
+  // Cuộn màn hình đến dòng nộp tài liệu được làm nổi bật
   useEffect(() => {
     if (highlightedDocId && submissions.length > 0) {
       const el = document.getElementById(`submission-row-${highlightedDocId}`);
@@ -251,7 +251,7 @@ const LecturerInternshipDocumentsPage = () => {
     }
   }, [highlightedDocId, submissions]);
 
-  // Load all data
+  // Tải toàn bộ dữ liệu
   const loadData = useCallback(async () => {
     setLoading(true);
     await Promise.all([fetchGuides(), fetchSubmissions()]);
@@ -557,7 +557,7 @@ const LecturerInternshipDocumentsPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header Card */}
+      {/* Thẻ tiêu đề */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 sm:gap-5">
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="w-11 h-11 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -585,7 +585,7 @@ const LecturerInternshipDocumentsPage = () => {
         )}
       </div>
 
-      {/* Tabs Switcher */}
+      {/* Thanh chuyển tab */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           type="button"
@@ -638,12 +638,12 @@ const LecturerInternshipDocumentsPage = () => {
         </button>
       </div>
 
-      {/* Content Area */}
+      {/* Khu vực nội dung */}
       <div className="space-y-4">
         {/* ================= TAB 1: TÀI LIỆU HƯỚNG DẪN ================= */}
         {activeTab === 'GUIDES' && (
           <div className="space-y-4">
-            {/* Filter toolbar */}
+            {/* Thanh công cụ bộ lọc */}
             <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
                 <div className="w-full sm:w-80">
@@ -671,7 +671,7 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
             </div>
 
-            {/* Guides Table */}
+            {/* Bảng tài liệu hướng dẫn */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {loading ? (
                 <div className="p-6">
@@ -704,7 +704,7 @@ const LecturerInternshipDocumentsPage = () => {
                             {idx + 1}
                           </td>
 
-                          {/* File info */}
+                          {/* Thông tin file */}
                           <td className="py-3.5 px-4 pl-6">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
@@ -797,7 +797,7 @@ const LecturerInternshipDocumentsPage = () => {
                     </tbody>
                   </table>
                 </div>
-                {/* Mobile Card List for Guides (< 768px) */}
+                {/* Danh sách thẻ hướng dẫn cho Mobile (< 768px) */}
                 <div className="md:hidden divide-y divide-slate-100">
                   {guides.map((doc, idx) => (
                     <div key={doc._id} className="p-4 space-y-3 bg-white">
@@ -874,7 +874,7 @@ const LecturerInternshipDocumentsPage = () => {
         {/* ================= TAB 2: TÀI LIỆU SINH VIÊN NỘP ================= */}
         {activeTab === 'SUBMISSIONS' && (
           <div className="space-y-4">
-            {/* Warning banner if notification file was removed */}
+            {/* Banner cảnh báo nếu file thông báo đã bị gỡ */}
             {notificationWarning && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-2.5">
@@ -892,7 +892,7 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
             )}
 
-            {/* Stats Cards */}
+            {/* Các thẻ thống kê */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
@@ -943,7 +943,7 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
             </div>
 
-            {/* Filter and View mode toolbar */}
+            {/* Thanh công cụ lọc và chế độ xem */}
             <div className="p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-1">
                 <div className="w-full sm:w-80">
@@ -970,7 +970,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               </div>
 
-              {/* View mode toggle */}
+              {/* Chuyển đổi chế độ xem */}
               <div className="flex items-center gap-2 self-end md:self-center">
                 <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200/80 text-xs">
                   <button
@@ -999,7 +999,7 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
             </div>
 
-            {/* View Mode 1: Files List */}
+            {/* Chế độ xem 1: Danh sách file */}
             {submissionViewMode === 'FILES' && (
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
                 {loading ? (
@@ -1071,7 +1071,7 @@ const LecturerInternshipDocumentsPage = () => {
                               </div>
                             </td>
 
-                            {/* File */}
+                            {/* Tệp tin */}
                             <td className="py-3.5 px-4">
                               <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
@@ -1176,7 +1176,7 @@ const LecturerInternshipDocumentsPage = () => {
               </div>
             )}
 
-            {/* View Mode 2: Students Submission Status */}
+            {/* Chế độ xem 2: Trạng thái nộp bài của sinh viên */}
             {submissionViewMode === 'STUDENTS' && (
               <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
                 {loading ? (
@@ -1271,7 +1271,7 @@ const LecturerInternshipDocumentsPage = () => {
       {addModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
@@ -1295,7 +1295,7 @@ const LecturerInternshipDocumentsPage = () => {
               </button>
             </div>
 
-            {/* Form */}
+            {/* Biểu mẫu */}
             <form onSubmit={handleSubmitAdd} className="space-y-4 overflow-y-auto flex-1 overscroll-contain pr-0.5">
               {formError && (
                 <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs flex items-center gap-2 border border-rose-200">
@@ -1304,7 +1304,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               )}
 
-              {/* File Input */}
+              {/* Chọn tệp tin */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Chọn tệp tài liệu <span className="text-rose-500">*</span>
@@ -1338,7 +1338,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               </div>
 
-              {/* Category */}
+              {/* Danh mục */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Phân loại tài liệu
@@ -1356,7 +1356,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </select>
               </div>
 
-              {/* Scope Selection */}
+              {/* Chọn phạm vi tài liệu */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700">
                   Phạm vi áp dụng
@@ -1400,7 +1400,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               </div>
 
-              {/* Specific Internship Selector (if SPECIFIC) */}
+              {/* Bộ chọn hồ sơ thực tập cụ thể (nếu chọn RIÊNG BIỆT) */}
               {scope === 'SPECIFIC' && (
                 <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-150">
                   <label className="text-xs font-bold text-slate-700">
@@ -1424,7 +1424,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               )}
 
-              {/* Description */}
+              {/* Mô tả */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Mô tả / Hướng dẫn
@@ -1438,7 +1438,7 @@ const LecturerInternshipDocumentsPage = () => {
                 />
               </div>
 
-              {/* Actions */}
+              {/* Thao tác */}
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
@@ -1475,7 +1475,7 @@ const LecturerInternshipDocumentsPage = () => {
       {editModalOpen && editingDoc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 animate-in zoom-in-95 duration-200 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
@@ -1499,7 +1499,7 @@ const LecturerInternshipDocumentsPage = () => {
               </button>
             </div>
 
-            {/* Form */}
+            {/* Biểu mẫu */}
             <form onSubmit={handleSubmitEdit} className="space-y-4 overflow-y-auto flex-1 overscroll-contain pr-0.5">
               {editFormError && (
                 <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs flex items-center gap-2 border border-rose-200">
@@ -1508,7 +1508,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               )}
 
-              {/* Title */}
+              {/* Tiêu đề */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Tên tài liệu
@@ -1521,7 +1521,7 @@ const LecturerInternshipDocumentsPage = () => {
                 />
               </div>
 
-              {/* File currently attached + option to replace */}
+              {/* File hiện tại đính kèm và tùy chọn thay thế */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Tệp đính kèm (Để trống nếu giữ file hiện tại)
@@ -1550,7 +1550,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               </div>
 
-              {/* Category */}
+              {/* Danh mục */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Phân loại tài liệu
@@ -1568,7 +1568,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </select>
               </div>
 
-              {/* Scope Selection */}
+              {/* Chọn phạm vi tài liệu */}
               <div className="space-y-2">
                 <label className="text-xs font-bold text-slate-700">
                   Phạm vi áp dụng
@@ -1612,7 +1612,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               </div>
 
-              {/* Specific Internship Selector (if SPECIFIC) */}
+              {/* Bộ chọn hồ sơ thực tập cụ thể (nếu chọn RIÊNG BIỆT) */}
               {editScope === 'SPECIFIC' && (
                 <div className="space-y-1.5 animate-in slide-in-from-top-1 duration-150">
                   <label className="text-xs font-bold text-slate-700">
@@ -1632,7 +1632,7 @@ const LecturerInternshipDocumentsPage = () => {
                 </div>
               )}
 
-              {/* Description */}
+              {/* Mô tả */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Mô tả / Hướng dẫn
@@ -1645,7 +1645,7 @@ const LecturerInternshipDocumentsPage = () => {
                 />
               </div>
 
-              {/* Actions */}
+              {/* Thao tác */}
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
@@ -1771,7 +1771,7 @@ const LecturerInternshipDocumentsPage = () => {
                 Lý do gỡ file:
               </label>
 
-              {/* Quick select reasons */}
+              {/* Chọn nhanh lý do */}
               <div className="flex flex-wrap gap-1.5">
                 {REMOVE_REPORT_REASONS.map((r) => (
                   <button
@@ -1814,7 +1814,7 @@ const LecturerInternshipDocumentsPage = () => {
               Thao tác này sẽ gỡ file tài liệu đã nộp này của sinh viên và gửi thông báo để sinh viên có thể cập nhật lại file mới.
             </div>
 
-            {/* Actions */}
+            {/* Thao tác */}
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100">
               <button
                 type="button"

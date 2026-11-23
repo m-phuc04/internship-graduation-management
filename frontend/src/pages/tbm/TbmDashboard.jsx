@@ -61,7 +61,7 @@ const TbmDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
+      {/* Banner trên cùng */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -92,7 +92,7 @@ const TbmDashboard = () => {
         </div>
       </div>
 
-      {/* 4 Workflow Status Cards */}
+      {/* 4 thẻ trạng thái quy trình */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* TTDN Chờ Duyệt */}
         <Link
@@ -147,9 +147,9 @@ const TbmDashboard = () => {
         </Link>
       </div>
 
-      {/* 2 Activity Tables */}
+      {/* 2 bảng hoạt động */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Internships */}
+        {/* Các hồ sơ thực tập gần đây */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
@@ -178,7 +178,7 @@ const TbmDashboard = () => {
           </div>
         </div>
 
-        {/* Recent Theses */}
+        {/* Các đề tài khóa luận gần đây */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">

@@ -67,14 +67,14 @@ const AcademicTermManagement = () => {
     refreshTerms();
   }, [refreshTerms]);
 
-  // Modal States
+  // Trạng thái các Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [editingTerm, setEditingTerm] = useState(null);
   const [viewingTerm, setViewingTerm] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Form State
+  // Trạng thái Form
   const [formData, setFormData] = useState({
     name: 'Học kỳ 1',
     academicYear: '2026-2027',
@@ -85,7 +85,7 @@ const AcademicTermManagement = () => {
     description: '',
   });
 
-  // Auto-generate Code suggestion
+  // Tự động tạo gợi ý mã học kỳ
   const handleAutoCode = (name, year) => {
     let prefix = 'HK1';
     if (name.toLowerCase().includes('2')) prefix = 'HK2';
@@ -93,7 +93,7 @@ const AcademicTermManagement = () => {
     return `${prefix}-${year.trim()}`;
   };
 
-  // Open Create Modal
+  // Mở modal tạo mới
   const openCreateModal = () => {
     const defaultName = 'Học kỳ 2';
     const defaultYear = '2026-2027';
@@ -110,7 +110,7 @@ const AcademicTermManagement = () => {
     setModalOpen(true);
   };
 
-  // Open Edit Modal
+  // Mở modal chỉnh sửa
   const openEditModal = (term) => {
     setEditingTerm(term);
     setFormData({
@@ -125,7 +125,7 @@ const AcademicTermManagement = () => {
     setModalOpen(true);
   };
 
-  // Submit Create/Edit
+  // Lưu thông tin tạo mới / chỉnh sửa
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.name?.trim() || !formData.academicYear?.trim() || !formData.code?.trim() || !formData.startDate || !formData.endDate) {
@@ -162,7 +162,7 @@ const AcademicTermManagement = () => {
     }
   };
 
-  // Activate Term
+  // Kích hoạt học kỳ
   const handleActivate = async (term) => {
     if (!window.confirm(`Xác nhận kích hoạt học kỳ ${term.code} thành học kỳ hiện tại (ACTIVE)?\n\nHọc kỳ đang hoạt động trước đó sẽ tự động chuyển sang ĐÃ ĐÓNG (CLOSED).`)) {
       return;
@@ -181,7 +181,7 @@ const AcademicTermManagement = () => {
     }
   };
 
-  // Close Term
+  // Đóng học kỳ
   const handleClose = async (term) => {
     if (!window.confirm(`Xác nhận ĐÓNG học kỳ ${term.code}?\n\nSau khi đóng, các dữ liệu lịch sử sẽ chuyển sang chế độ CHỈ XEM.`)) {
       return;
@@ -199,7 +199,7 @@ const AcademicTermManagement = () => {
     }
   };
 
-  // Delete Term
+  // Xóa học kỳ
   const handleDelete = async (term) => {
     if (!window.confirm(`Xác nhận XÓA học kỳ ${term.code}?\n\nLưu ý: Chỉ học kỳ chưa có dữ liệu TTDN & KLTN mới được phép xóa.`)) {
       return;
@@ -217,7 +217,7 @@ const AcademicTermManagement = () => {
     }
   };
 
-  // Filtered terms
+  // Danh sách học kỳ đã lọc
   const filteredTerms = terms.filter((term) => {
     if (statusFilter !== 'ALL' && term.status !== statusFilter) return false;
     if (yearFilter !== 'ALL' && term.academicYear !== yearFilter) return false;
@@ -235,7 +235,7 @@ const AcademicTermManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Banner */}
+      {/* Banner tiêu đề */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -261,7 +261,7 @@ const AcademicTermManagement = () => {
         </button>
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -275,7 +275,7 @@ const AcademicTermManagement = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-end">
-          {/* Status Filter */}
+          {/* Bộ lọc theo trạng thái */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -288,7 +288,7 @@ const AcademicTermManagement = () => {
             <option value="DRAFT">⚪ Nháp cấu hình</option>
           </select>
 
-          {/* Academic Year Filter */}
+          {/* Bộ lọc năm học */}
           <select
             value={yearFilter}
             onChange={(e) => setYearFilter(e.target.value)}
@@ -304,7 +304,7 @@ const AcademicTermManagement = () => {
         </div>
       </div>
 
-      {/* Table & Mobile Cards */}
+      {/* Bảng và thẻ hiển thị cho mobile */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {filteredTerms.length === 0 ? (
           <div className="py-12 text-center text-slate-400 text-xs">
@@ -312,7 +312,7 @@ const AcademicTermManagement = () => {
           </div>
         ) : (
           <>
-            {/* Desktop & Tablet Table View (>= 768px) */}
+            {/* Bảng hiển thị cho Desktop & Tablet (>= 768px) */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
@@ -340,7 +340,7 @@ const AcademicTermManagement = () => {
                           {idx + 1}
                         </td>
 
-                        {/* Name & Code */}
+                        {/* Họ tên & Mã */}
                         <td className="py-3.5 px-4">
                           <div className="font-bold text-slate-900">{term.name}</div>
                           <div className="text-[11px] font-mono font-medium text-[#123891] mt-0.5">
@@ -348,12 +348,12 @@ const AcademicTermManagement = () => {
                           </div>
                         </td>
 
-                        {/* Year */}
+                        {/* Năm học */}
                         <td className="py-3.5 px-4 font-semibold text-slate-700">
                           {term.academicYear}
                         </td>
 
-                        {/* Dates */}
+                        {/* Thời gian */}
                         <td className="py-3.5 px-4 text-slate-600">
                           <div className="flex items-center gap-1.5 font-medium">
                             <Calendar className="w-3.5 h-3.5 text-slate-400" />
@@ -363,7 +363,7 @@ const AcademicTermManagement = () => {
                           </div>
                         </td>
 
-                        {/* Attached Counts */}
+                        {/* Số lượng đính kèm */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2">
                             <span
@@ -381,7 +381,7 @@ const AcademicTermManagement = () => {
                           </div>
                         </td>
 
-                        {/* Status */}
+                        {/* Trạng thái */}
                         <td className="py-3.5 px-4">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold border ${statusConf.badge}`}
@@ -391,10 +391,10 @@ const AcademicTermManagement = () => {
                           </span>
                         </td>
 
-                        {/* Actions */}
+                        {/* Thao tác */}
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            {/* View Detail */}
+                            {/* Xem chi tiết */}
                             <button
                               type="button"
                               onClick={() => {
@@ -407,7 +407,7 @@ const AcademicTermManagement = () => {
                               <Eye className="w-4 h-4" />
                             </button>
 
-                            {/* Edit */}
+                            {/* Chỉnh sửa */}
                             <button
                               type="button"
                               onClick={() => openEditModal(term)}
@@ -417,7 +417,7 @@ const AcademicTermManagement = () => {
                               <Edit className="w-4 h-4" />
                             </button>
 
-                            {/* Activate */}
+                            {/* Kích hoạt */}
                             {!isCurrentActive && (
                               <button
                                 type="button"
@@ -429,7 +429,7 @@ const AcademicTermManagement = () => {
                               </button>
                             )}
 
-                            {/* Close */}
+                            {/* Đóng */}
                             {term.status !== 'CLOSED' && (
                               <button
                                 type="button"
@@ -441,7 +441,7 @@ const AcademicTermManagement = () => {
                               </button>
                             )}
 
-                            {/* Delete */}
+                            {/* Xóa */}
                             <button
                               type="button"
                               onClick={() => handleDelete(term)}
@@ -459,7 +459,7 @@ const AcademicTermManagement = () => {
               </table>
             </div>
 
-            {/* Mobile Cards View (< 768px) */}
+            {/* Danh sách thẻ hiển thị cho Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
               {filteredTerms.map((term, idx) => {
                 const statusConf = STATUS_CONFIG[term.status] || STATUS_CONFIG.DRAFT;
@@ -468,7 +468,7 @@ const AcademicTermManagement = () => {
 
                 return (
                   <div key={term._id} className="p-4 space-y-3 hover:bg-slate-50/60 transition">
-                    {/* Header Row: STT + Name + Code + Status */}
+                    {/* Hàng tiêu đề: STT + Tên + Mã + Trạng thái */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -495,7 +495,7 @@ const AcademicTermManagement = () => {
                       </span>
                     </div>
 
-                    {/* Timeline & Linked stats */}
+                    {/* Tiến trình thời gian và số liệu liên kết */}
                     <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5 text-xs">
                       <div className="flex items-center gap-1.5 text-slate-600">
                         <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -518,7 +518,7 @@ const AcademicTermManagement = () => {
                       </div>
                     </div>
 
-                    {/* Actions Row */}
+                    {/* Hàng thao tác */}
                     <div className="flex items-center justify-end gap-1.5 pt-1">
                       <button
                         type="button"
@@ -584,7 +584,7 @@ const AcademicTermManagement = () => {
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh] sm:max-h-[90vh] animate-scale-up">
-            {/* Modal Header */}
+            {/* Tiêu đề Modal */}
             <div className="px-4 py-3.5 sm:px-6 sm:py-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2.5">
                 <GraduationCap className="w-5 h-5 text-blue-400" />
@@ -601,9 +601,9 @@ const AcademicTermManagement = () => {
               </button>
             </div>
 
-            {/* Modal Form */}
+            {/* Biểu mẫu Modal */}
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 sm:space-y-6 overflow-y-auto flex-1 overscroll-contain">
-              {/* Section 1: Core Information */}
+              {/* Phần 1: Thông tin cốt lõi */}
               <div>
                 <div className="text-xs font-bold uppercase tracking-wider text-[#123891] mb-3 flex items-center gap-1.5">
                   <span className="w-2 h-2 rounded-full bg-[#123891]" />
@@ -722,7 +722,7 @@ const AcademicTermManagement = () => {
                   </div>
                 </div>
 
-                {/* Quick Date Presets & Suggestion Helper */}
+                {/* Cài đặt nhanh thời gian & Gợi ý tự động */}
                 <div className="mt-3 p-3 rounded-2xl bg-blue-50/60 border border-blue-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div className="text-[11px] text-[#123891] leading-tight">
                     💡 <span className="font-semibold">Quy ước chuẩn:</span> HK1 (01/08 → 31/12), HK2 (01/01 → 31/05).
@@ -766,7 +766,7 @@ const AcademicTermManagement = () => {
                 </div>
               </div>
 
-              {/* Actions */}
+              {/* Thao tác */}
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-100 shrink-0">
                 <button
                   type="button"
@@ -815,7 +815,7 @@ const AcademicTermManagement = () => {
             </div>
 
             <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 text-xs overflow-y-auto flex-1 overscroll-contain">
-              {/* Summary Stats */}
+              {/* Thống kê tổng quan */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
                   <div className="text-[10px] uppercase font-bold text-slate-400">Năm học</div>
@@ -835,7 +835,7 @@ const AcademicTermManagement = () => {
                 </div>
               </div>
 
-              {/* TTDN Milestones */}
+              {/* Các mốc thời gian TTDN */}
               <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
                 <div className="font-bold text-blue-900 flex items-center gap-1.5">
                   <Briefcase className="w-4 h-4 text-blue-600" />
@@ -857,7 +857,7 @@ const AcademicTermManagement = () => {
                 </div>
               </div>
 
-              {/* KLTN Milestones */}
+              {/* Các mốc thời gian KLTN */}
               <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-2">
                 <div className="font-bold text-[#0d2a75] flex items-center gap-1.5">
                   <Layers className="w-4 h-4 text-[#123891]" />

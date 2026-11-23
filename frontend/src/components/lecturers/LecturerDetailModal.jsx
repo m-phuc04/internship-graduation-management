@@ -15,7 +15,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
       maxWidth="max-w-2xl"
     >
       <div className="space-y-6">
-        {/* Header Summary Banner */}
+        {/* Banner tóm tắt đầu trang */}
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200/80">
           <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             {lecturer.userId?.fullName?.charAt(0).toUpperCase() || 'L'}
@@ -40,7 +40,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
           </div>
         </div>
 
-        {/* Workload Stats Grid */}
+        {/* Lưới thống kê tải công việc hướng dẫn */}
         <div>
           <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Users className="w-4 h-4 text-[#123891]" /> Tải Hướng dẫn & Đánh giá
@@ -69,7 +69,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
           </div>
         </div>
 
-        {/* Academic Profile Details */}
+        {/* Thông tin hồ sơ học thuật */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
           
           <div className="flex justify-between py-1 border-b border-slate-200/60">
@@ -113,7 +113,7 @@ const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
           </div>
         </div>
 
-        {/* Close Action */}
+        {/* Thao tác đóng */}
         <div className="flex justify-end pt-3 border-t border-slate-100">
           <button
             onClick={onClose}

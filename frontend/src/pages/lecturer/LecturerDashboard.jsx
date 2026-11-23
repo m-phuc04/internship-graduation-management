@@ -36,7 +36,7 @@ const LecturerDashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Field change request states
+  // Trạng thái yêu cầu thay đổi hướng nghiên cứu
   const [fieldRequestInfo, setFieldRequestInfo] = useState({
     hasPending: false,
     request: null,
@@ -76,7 +76,7 @@ const LecturerDashboard = () => {
     fetchDashboard();
   }, [fetchDashboard]);
 
-  // Handle open modal
+  // Mở modal thao tác
   const handleOpenFieldModal = async () => {
     setIsFieldModalOpen(true);
     setLoadingFields(true);
@@ -86,7 +86,7 @@ const LecturerDashboard = () => {
         setAllSystemFields(res.data || []);
       }
 
-      // Initial selected fields
+      // Danh sách hướng nghiên cứu ban đầu được chọn
       if (fieldRequestInfo?.hasPending && fieldRequestInfo.request?.requestedFields) {
         setSelectedFields([...fieldRequestInfo.request.requestedFields]);
         setProposedTags([...(fieldRequestInfo.request.proposedNewTags || [])]);
@@ -104,7 +104,7 @@ const LecturerDashboard = () => {
     }
   };
 
-  // Toggle existing tag
+  // Bật / tắt chọn thẻ hiện có
   const toggleField = (fieldName) => {
     setSelectedFields((prev) =>
       prev.includes(fieldName)
@@ -113,7 +113,7 @@ const LecturerDashboard = () => {
     );
   };
 
-  // Propose a new tag
+  // Đề xuất thẻ hướng nghiên cứu mới
   const handleAddProposedTag = () => {
     const cleanTag = newTagInput.trim();
     if (!cleanTag) return;
@@ -129,13 +129,13 @@ const LecturerDashboard = () => {
     setNewTagInput('');
   };
 
-  // Remove proposed tag
+  // Xóa thẻ đề xuất
   const handleRemoveProposedTag = (tagToRemove) => {
     setProposedTags((prev) => prev.filter((t) => t !== tagToRemove));
     setSelectedFields((prev) => prev.filter((t) => t !== tagToRemove));
   };
 
-  // Submit field change request
+  // Gửi yêu cầu thay đổi hướng nghiên cứu
   const handleSubmitFieldRequest = async () => {
     if (selectedFields.length === 0) {
       showToast('Vui lòng chọn hoặc đề xuất ít nhất một lĩnh vực', 'warning');
@@ -188,7 +188,7 @@ const LecturerDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Lecturer Identity Banner */}
+      {/* 1. Banner thông tin giảng viên */}
       <div className="p-4 sm:p-6 lg:p-7 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4 relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3.5 sm:gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
@@ -255,7 +255,7 @@ const LecturerDashboard = () => {
         </div>
       </div>
 
-      {/* 2. Overview 4 Stats Cards */}
+      {/* 2. Tổng quan 4 thẻ thống kê */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* SV Hướng Dẫn TTDN */}
         <Link
@@ -346,9 +346,9 @@ const LecturerDashboard = () => {
         </Link>
       </div>
 
-      {/* 3. Main Split Lists */}
+      {/* 3. Danh sách chia 2 cột chính */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left: Pending Reports List */}
+        {/* Bên trái: Danh sách báo cáo chờ duyệt */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
@@ -387,7 +387,7 @@ const LecturerDashboard = () => {
           )}
         </div>
 
-        {/* Right: Supervised Theses List */}
+        {/* Bên phải: Danh sách đề tài khóa luận hướng dẫn */}
         <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
@@ -426,7 +426,7 @@ const LecturerDashboard = () => {
       {isFieldModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-xl w-full p-4 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[92vh] sm:max-h-[90vh] flex flex-col">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-4 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center">
@@ -446,9 +446,9 @@ const LecturerDashboard = () => {
               </button>
             </div>
 
-            {/* Body */}
+            {/* Thân modal / nội dung */}
             <div className="space-y-4 overflow-y-auto pr-1 flex-1">
-              {/* Existing System Fields */}
+              {/* Các hướng nghiên cứu hiện có trong hệ thống */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   Danh sách lĩnh vực hiện có ({allSystemFields.length})
@@ -483,7 +483,7 @@ const LecturerDashboard = () => {
                 )}
               </div>
 
-              {/* Propose New Tag */}
+              {/* Đề xuất hướng nghiên cứu mới */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
                   Đề xuất lĩnh vực mới
@@ -512,7 +512,7 @@ const LecturerDashboard = () => {
                   </button>
                 </div>
 
-                {/* List of proposed new tags */}
+                {/* Danh sách các hướng nghiên cứu mới đề xuất */}
                 {proposedTags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-2.5">
                     {proposedTags.map((tag, idx) => (
@@ -536,13 +536,13 @@ const LecturerDashboard = () => {
                 )}
               </div>
 
-              {/* Selected Summary */}
+              {/* Tóm tắt các mục đã chọn */}
               <div className="text-xs text-slate-500">
                 Đã chọn: <strong className="text-slate-800">{selectedFields.length}</strong> lĩnh vực
               </div>
             </div>
 
-            {/* Footer */}
+            {/* Chân trang */}
             <div className="flex items-center justify-end gap-2.5 border-t border-slate-100 pt-4 shrink-0">
               <button
                 type="button"

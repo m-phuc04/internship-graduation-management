@@ -1,10 +1,10 @@
 /**
- * Utility functions for internship durations, week intervals, and locking rules (TTDN).
+ * Các hàm tiện ích tính toán thời lượng thực tập, khoảng thời gian các tuần và quy tắc khóa báo cáo (TTDN).
  */
 
 /**
- * Calculate the duration in weeks based on start and end dates.
- * Returns null if dates are invalid or start >= end.
+ * Tính toán thời lượng theo số tuần dựa trên ngày bắt đầu và ngày kết thúc.
+ * Trả về null nếu ngày không hợp lệ hoặc ngày bắt đầu >= ngày kết thúc.
  */
 export const calculateInternshipWeeks = (startDate, endDate) => {
   if (!startDate || !endDate) return null;
@@ -19,9 +19,9 @@ export const calculateInternshipWeeks = (startDate, endDate) => {
 };
 
 /**
- * Determine the actual end date of a given week.
- * Week 1 ends at: startDate + 6 days (23:59:59.999)
- * Week w ends at: startDate + (w * 7 - 1) days (23:59:59.999)
+ * Xác định ngày kết thúc thực tế của một tuần nhất định.
+ * Tuần 1 kết thúc lúc: startDate + 6 ngày (23:59:59.999)
+ * Tuần w kết thúc lúc: startDate + (w * 7 - 1) ngày (23:59:59.999)
  */
 export const getWeekEndDate = (internshipStartDate, weekNumber, explicitWeekEndDate = null) => {
   if (explicitWeekEndDate) {
@@ -44,8 +44,8 @@ export const getWeekEndDate = (internshipStartDate, weekNumber, explicitWeekEndD
 };
 
 /**
- * Determine if a week has ended (is locked).
- * Compares current wall-clock time with 23:59:59.999 of weekEndDate.
+ * Kiểm tra xem một tuần thực tập đã kết thúc hay chưa (đã bị khóa).
+ * So sánh thời gian hiện tại với thời điểm 23:59:59.999 của weekEndDate.
  */
 export const isWeekEnded = (weekEndDate) => {
   if (!weekEndDate) return false;
@@ -56,7 +56,7 @@ export const isWeekEnded = (weekEndDate) => {
 };
 
 /**
- * Get effective duration in weeks for an internship (safely handles legacy records).
+ * Lấy tổng số tuần thực tế của một hồ sơ thực tập (xử lý an toàn cho các bản ghi cũ).
  */
 export const getInternshipTotalWeeks = (internship) => {
   if (!internship) return 0;
@@ -67,12 +67,12 @@ export const getInternshipTotalWeeks = (internship) => {
     const calculated = calculateInternshipWeeks(internship.startDate, internship.endDate);
     if (calculated === 10 || calculated === 12) return calculated;
   }
-  return 12; // default fallback
+  return 12; // Mặc định dự phòng 12 tuần
 };
 
 /**
- * Determine the mandatory report weeks based on total weeks and report cycle.
- * Example:
+ * Xác định danh sách các tuần bắt buộc phải nộp báo cáo dựa trên tổng số tuần và chu kỳ báo cáo.
+ * Ví dụ:
  * - totalWeeks: 10, cycle: 1 -> [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
  * - totalWeeks: 10, cycle: 2 -> [2, 4, 6, 8, 10]
  * - totalWeeks: 10, cycle: 3 -> [3, 6, 9]
@@ -93,17 +93,17 @@ export const getMandatoryReportWeeks = (totalWeeks, reportCycle = 1) => {
 };
 
 /**
- * Automatically check whether a student has completed all mandatory diary reports.
- * Non-cycle weeks are NOT required.
- * Drafts ("DRAFT") or unsubmitted weeks are NOT counted as valid reports.
- * Valid reports must have status in ["SUBMITTED", "APPROVED"].
+ * Tự động kiểm tra sinh viên đã hoàn thành tất cả các báo cáo nhật ký bắt buộc chưa.
+ * Các tuần ngoài chu kỳ không bắt buộc.
+ * Bản nháp ("DRAFT") hoặc các tuần chưa nộp không được tính là báo cáo hợp lệ.
+ * Báo cáo hợp lệ phải có trạng thái thuộc ["SUBMITTED", "APPROVED"].
  */
 export const checkInternshipDiaryCompletion = (internship, reports = []) => {
   const totalWeeks = getInternshipTotalWeeks(internship);
   const cycle = internship?.reportCycle || 1;
   const mandatoryWeeks = getMandatoryReportWeeks(totalWeeks, cycle);
 
-  // Collect weeks that have a valid submitted or approved report
+  // Tập hợp các tuần đã có báo cáo hợp lệ (đã nộp hoặc đã duyệt)
   const validReportWeeks = new Set(
     (reports || [])
       .filter((r) => r.reportType === "WEEKLY" && ["SUBMITTED", "APPROVED"].includes(r.status))

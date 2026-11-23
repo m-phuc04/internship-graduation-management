@@ -33,13 +33,13 @@ const LecturerNewsManagement = () => {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 1 });
 
-  // Modal States
+  // Trạng thái các Modal
   const [modalOpen, setModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState('CREATE'); // 'CREATE' | 'EDIT'
   const [selectedNews, setSelectedNews] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Form States
+  // Trạng thái Forms
   const [formData, setFormData] = useState({
     title: '',
     category: 'THONG_BAO',
@@ -188,7 +188,7 @@ const LecturerNewsManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Banner */}
+      {/* 1. Banner tiêu đề trang */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#0d2a75] via-[#123891] to-[#005BAA] text-white flex items-center justify-center font-bold text-xl shadow-md shadow-blue-200 shrink-0">
@@ -211,7 +211,7 @@ const LecturerNewsManagement = () => {
         </button>
       </div>
 
-      {/* 2. Search & Filter Bar */}
+      {/* 2. Thanh tìm kiếm và bộ lọc */}
       <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="relative w-full md:w-96">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -248,9 +248,9 @@ const LecturerNewsManagement = () => {
         </div>
       </div>
 
-      {/* 3. News Table List */}
+      {/* 3. Bảng danh sách tin tức */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
-        {/* Desktop & Tablet Table */}
+        {/* Bảng cho Desktop & Tablet */}
         <div className="hidden md:block overflow-x-auto custom-scrollbar">
           <table className="w-full min-w-[850px] text-left text-xs text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200/80 text-[11px] font-bold text-slate-700 uppercase tracking-wider whitespace-nowrap">
@@ -357,7 +357,7 @@ const LecturerNewsManagement = () => {
           </table>
         </div>
 
-        {/* Mobile Cards */}
+        {/* Danh sách thẻ Mobile */}
         <div className="md:hidden divide-y divide-slate-100">
           {loading ? (
             <div className="p-8 text-center text-slate-400">
@@ -454,13 +454,13 @@ const LecturerNewsManagement = () => {
         </div>
       </div>
 
-      {/* 4. Modal Create / Edit News */}
+      {/* 4. Modal Tạo mới / Chỉnh sửa tin tức */}
       {modalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="fixed inset-0" onClick={() => !submitting && setModalOpen(false)} />
 
           <div className="relative w-full max-w-2xl bg-white rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-100 overflow-hidden z-10 my-auto sm:my-8 animate-in zoom-in-95 duration-200 flex flex-col max-h-[92vh] sm:max-h-[90vh]">
-            {/* Modal Header */}
+            {/* Tiêu đề Modal */}
             <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-blue-100 text-[#102d7d] flex items-center justify-center font-bold shrink-0">
@@ -486,9 +486,9 @@ const LecturerNewsManagement = () => {
               </button>
             </div>
 
-            {/* Modal Form */}
+            {/* Biểu mẫu Modal */}
             <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto custom-scrollbar space-y-4 flex-1 overscroll-contain">
-              {/* Category & Status */}
+              {/* Danh mục & Trạng thái */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -520,7 +520,7 @@ const LecturerNewsManagement = () => {
                 </div>
               </div>
 
-              {/* Title */}
+              {/* Tiêu đề */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Tiêu đề bài viết <span className="text-rose-500">*</span>
@@ -535,7 +535,7 @@ const LecturerNewsManagement = () => {
                 />
               </div>
 
-              {/* Summary */}
+              {/* Tóm tắt */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Tóm tắt ngắn (Mô tả hiển thị trên thẻ bài viết)
@@ -549,7 +549,7 @@ const LecturerNewsManagement = () => {
                 />
               </div>
 
-              {/* Content */}
+              {/* Nội dung */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Nội dung chi tiết <span className="text-rose-500">*</span>
@@ -564,7 +564,7 @@ const LecturerNewsManagement = () => {
                 />
               </div>
 
-              {/* Action Buttons */}
+              {/* Các nút thao tác */}
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-100">
                 <button
                   type="button"

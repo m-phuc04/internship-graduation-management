@@ -29,13 +29,13 @@ const HomePage = () => {
   const { showToast } = useToast();
   const navigate = useNavigate();
 
-  // News State
+  // Trạng thái tin tức
   const [newsList, setNewsList] = useState([]);
   const [newsLoading, setNewsLoading] = useState(false);
   const [selectedNews, setSelectedNews] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
-  // Form State
+  // Trạng thái Form
   const [activeFormMode, setActiveFormMode] = useState('LOGIN'); // 'LOGIN' | 'REGISTER'
   const [accountCode, setAccountCode] = useState('');
   const [password, setPassword] = useState('');
@@ -44,7 +44,7 @@ const HomePage = () => {
   const [captchaLoading, setCaptchaLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  // Student Register State
+  // Trạng thái đăng ký tài khoản sinh viên
   const [regStudentCode, setRegStudentCode] = useState('');
   const [regFullName, setRegFullName] = useState('');
   const [regEmail, setRegEmail] = useState('');
@@ -53,7 +53,7 @@ const HomePage = () => {
   const [regConfirmPassword, setRegConfirmPassword] = useState('');
   const [regLoading, setRegLoading] = useState(false);
 
-  // Load CAPTCHA
+  // Tải mã xác thực CAPTCHA
   const loadCaptcha = async () => {
     setCaptchaLoading(true);
     try {
@@ -75,7 +75,7 @@ const HomePage = () => {
     }
   }, [isAuthenticated]);
 
-  // Load News (All public news)
+  // Tải tin tức (Tất cả tin công khai)
   useEffect(() => {
     const fetchNews = async () => {
       setNewsLoading(true);
@@ -227,7 +227,7 @@ const HomePage = () => {
     loadCaptcha();
   };
 
-  // Helper for Date badge
+  // Hàm tiện ích định dạng ngày cho huy hiệu
   const getDateBadgeInfo = (dateString) => {
     if (!dateString) return { month: '09', day: '16' };
     const d = new Date(dateString);
@@ -253,10 +253,10 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen bg-[#f4f7fb] text-slate-800 flex flex-col font-sans selection:bg-[#123891] selection:text-white">
-      {/* 1. Header Bar (White bg, blue #1B4DA1 text, gold #ECA124 hover) */}
+      {/* 1. Thanh đầu trang (Nền trắng, chữ xanh, hover vàng) */}
       <header className="bg-white text-[#1B4DA1] border-b border-slate-200 sticky top-0 z-40 shadow-xs">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-4">
-          {/* Logo & School Name */}
+          {/* Logo và tên trường */}
           <Link to="/" className="flex items-center gap-3 group">
             <div className="p-1.5 sm:p-2 bg-white rounded-xl shadow-xs border border-slate-100 flex items-center justify-center shrink-0">
               <IUHLogo className="h-8 sm:h-9 w-auto object-contain" />
@@ -271,7 +271,7 @@ const HomePage = () => {
             </div>
           </Link>
 
-          {/* Right Header: Authenticated User status */}
+          {/* Đầu trang bên phải: Trạng thái người dùng đã đăng nhập */}
           <div className="flex items-center gap-3">
             {isAuthenticated && (
               <div className="flex items-center gap-2 sm:gap-3">
@@ -304,14 +304,14 @@ const HomePage = () => {
         </div>
       </header>
 
-      {/* 2. Main Portal Container (Fluid, Full-Width with Balanced Spacing) */}
+      {/* 2. Khung cổng thông tin chính */}
       <main className="flex-1 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
           
           {/* ================= LEFT COLUMN: BẢN TIN ĐÀO TẠO & SỰ KIỆN (Col 8/12) ================= */}
           <div className="lg:col-span-8 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden flex flex-col">
             
-            {/* Header Title (Blue #123891 background, White text) */}
+            {/* Tiêu đề đầu mục (Nền xanh, chữ trắng) */}
             <div className="px-5 sm:px-6 py-4 border-b border-[#0e2c73] bg-[#123891] text-white flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-[#ECA124] text-slate-950 flex items-center justify-center shrink-0 shadow-md">
@@ -331,7 +331,7 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* News List Body */}
+            {/* Danh sách bản tin */}
             <div className="p-4 sm:p-6 divide-y divide-slate-100 min-h-[420px]">
               {newsLoading ? (
                 <div className="space-y-5 py-4">
@@ -363,7 +363,7 @@ const HomePage = () => {
                       key={item._id}
                       className="py-4.5 first:pt-1 last:pb-1 flex items-start gap-3.5 sm:gap-5 group hover:bg-blue-50/20 -mx-2 px-2 rounded-2xl transition duration-150"
                     >
-                      {/* Responsive Date Badge */}
+                      {/* Huy hiệu ngày tháng tương thích giao diện */}
                       <div className="flex flex-col items-center justify-center w-13 sm:w-15 rounded-xl sm:rounded-2xl overflow-hidden border border-blue-100 shadow-2xs shrink-0 bg-white select-none">
                         <div className="w-full bg-[#123891] text-white text-[9px] sm:text-[10px] font-bold py-1 text-center uppercase tracking-wider">
                           THG {dateInfo.month}
@@ -373,7 +373,7 @@ const HomePage = () => {
                         </div>
                       </div>
 
-                      {/* News Content */}
+                      {/* Nội dung tin tức */}
                       <div className="flex-1 space-y-1.5 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10.5px] font-bold border ${badge.bg}`}>
@@ -426,7 +426,7 @@ const HomePage = () => {
               )}
             </div>
 
-            {/* Bottom bar of news box */}
+            {/* Thanh dưới cùng của hộp tin tức */}
             <div className="bg-slate-50/80 px-5 sm:px-6 py-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#123891]" />
@@ -439,10 +439,10 @@ const HomePage = () => {
           {/* ================= RIGHT COLUMN: ĐĂNG NHẬP / ĐĂNG KÝ (Col 4/12) ================= */}
           <div className="lg:col-span-4 space-y-4">
             
-            {/* Login Card */}
+            {/* Thẻ đăng nhập */}
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 shadow-sm p-5 sm:p-6 bg-gradient-to-b from-blue-50/30 via-white to-white relative overflow-hidden">
               
-              {/* Card Header */}
+              {/* Tiêu đề thẻ */}
               <div className="text-center pb-4 border-b border-slate-100">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-[#123891] text-xs font-bold mb-1.5 border border-blue-100">
                   <GraduationCap className="w-3.5 h-3.5" />
@@ -454,7 +454,7 @@ const HomePage = () => {
                 <p className="text-[11px] text-slate-500 mt-0.5">Dành cho Sinh viên, Giảng viên & Doanh nghiệp</p>
               </div>
 
-              {/* AUTHENTICATED STATE */}
+              {/* TRẠNG THÁI ĐÃ ĐĂNG NHẬP */}
               {isAuthenticated ? (
                 <div className="mt-5 space-y-4">
                   <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 flex items-center gap-3.5">
@@ -488,7 +488,7 @@ const HomePage = () => {
               ) : activeFormMode === 'LOGIN' ? (
                 /* ================= FORM ĐĂNG NHẬP TRỰC TIẾP ================= */
                 <form onSubmit={handleLogin} className="mt-5 space-y-3.5">
-                  {/* Account Code */}
+                  {/* Tên đăng nhập / Mã tài khoản */}
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       MÃ TÀI KHOẢN / MSSV
@@ -506,7 +506,7 @@ const HomePage = () => {
                     </div>
                   </div>
 
-                  {/* Password */}
+                  {/* Mật khẩu */}
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                       MẬT KHẨU
@@ -524,7 +524,7 @@ const HomePage = () => {
                     </div>
                   </div>
 
-                  {/* CAPTCHA Row */}
+                  {/* Hàng mã xác thực CAPTCHA */}
                   <div className="space-y-1.5 pt-1">
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                       MÃ XÁC THỰC CAPTCHA
@@ -570,7 +570,7 @@ const HomePage = () => {
                     </div>
                   </div>
 
-                  {/* Submit Button (Blue #123891, text white, hover gold #ECA124) */}
+                  {/* Nút gửi (Nền xanh, chữ trắng, hover vàng) */}
                   <div className="pt-2">
                     <button
                       type="submit"
@@ -581,7 +581,7 @@ const HomePage = () => {
                     </button>
                   </div>
 
-                  {/* Student Register Switch */}
+                  {/* Nút chuyển sang đăng ký tài khoản sinh viên */}
                   <div className="pt-2 text-center border-t border-slate-100">
                     <button
                       type="button"
@@ -692,7 +692,7 @@ const HomePage = () => {
               )}
             </div>
 
-            {/* Quick Links Widget */}
+            {/* Tiện ích liên kết nhanh */}
             <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/90 p-5 shadow-2xs space-y-3 text-xs">
               <div className="font-bold text-slate-800 flex items-center gap-1.5 pb-2 border-b border-slate-100">
                 <Sparkles className="w-3.5 h-3.5 text-[#123891]" />
@@ -728,7 +728,7 @@ const HomePage = () => {
         </div>
       </main>
 
-      {/* 3. Modern Clean Footer */}
+      {/* 3. Chân trang hiện đại */}
       <footer className="bg-white border-t border-slate-200 mt-auto py-6 sm:py-8 text-xs text-slate-600">
         <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -739,13 +739,22 @@ const HomePage = () => {
             </div>
           </div>
           <div className="text-slate-500 text-center md:text-right">
-            <div>Địa chỉ: Số 12 Nguyễn Văn Bảo, Phường 4, Quận Gò Vấp, TP. Hồ Chí Minh</div>
+            <div>
+              <span>Mọi thắc mắc hoặc cần hỗ trợ, vui lòng liên hệ: </span>
+              <a
+                href="mailto:admin.it.fit@gmail.com"
+                className="font-semibold text-[#123891] hover:underline hover:text-[#0e2c73] transition-colors"
+              >
+                admin.it.fit@gmail.com
+              </a>
+            </div>
+            <div className="mt-0.5">Địa chỉ: Số 12 Nguyễn Văn Bảo, Phường 4, Quận Gò Vấp, TP. Hồ Chí Minh</div>
             <div className="mt-0.5">Bản quyền © 2026 IUH. Tất cả các quyền được bảo lưu.</div>
           </div>
         </div>
       </footer>
 
-      {/* News Detail Modal */}
+      {/* Modal chi tiết tin tức */}
       <NewsDetailModal
         news={selectedNews}
         isOpen={detailModalOpen}

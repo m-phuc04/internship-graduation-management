@@ -1,52 +1,52 @@
 import axiosClient from './axiosClient';
 
 const academicTermApi = {
-  // Get all terms
+  // Lấy danh sách tất cả học kỳ
   getAllTerms: async (params = {}) => {
     return await axiosClient.get('/academic-terms', { params });
   },
 
-  // Get current term (by date or active)
+  // Lấy học kỳ hiện tại (theo ngày hoặc đang kích hoạt)
   getCurrentTerm: async (params = {}) => {
     return await axiosClient.get('/academic-terms/current', { params });
   },
 
-  // Get active term
+  // Lấy học kỳ đang kích hoạt
   getActiveTerm: async () => {
     return await axiosClient.get('/academic-terms/active');
   },
 
-  // Get term details by ID
+  // Lấy thông tin chi tiết học kỳ theo ID
   getTermById: async (id) => {
     return await axiosClient.get(`/academic-terms/${id}`);
   },
 
-  // Create new term
+  // Tạo học kỳ mới
   createTerm: async (data) => {
     return await axiosClient.post('/academic-terms', data);
   },
 
-  // Update term
+  // Cập nhật thông tin học kỳ
   updateTerm: async (id, data) => {
     return await axiosClient.patch(`/academic-terms/${id}`, data);
   },
 
-  // Activate term
+  // Kích hoạt học kỳ
   activateTerm: async (id) => {
     return await axiosClient.patch(`/academic-terms/${id}/activate`);
   },
 
-  // Close term
+  // Đóng học kỳ
   closeTerm: async (id) => {
     return await axiosClient.patch(`/academic-terms/${id}/close`);
   },
 
-  // Delete term (safe delete)
+  // Xóa học kỳ (Xóa an toàn)
   deleteTerm: async (id) => {
     return await axiosClient.delete(`/academic-terms/${id}`);
   },
 
-  // Toggle thesis registration lock (TBM / ADMIN)
+  // Bật/tắt khóa đăng ký KLTN (TBM / ADMIN)
   toggleThesisRegistrationLock: async (id, data) => {
     return await axiosClient.patch(`/academic-terms/${id}/toggle-thesis-registration-lock`, data);
   },

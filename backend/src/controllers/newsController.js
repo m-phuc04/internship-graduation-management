@@ -1,6 +1,6 @@
 import newsService from "../services/newsService.js";
 
-// 1. GET /api/news (Public)
+// 1. GET /api/news (Lấy danh sách tin tức công khai)
 const getPublicNews = async (req, res, next) => {
   try {
     const result = await newsService.getPublicNews(req.query);
@@ -15,7 +15,7 @@ const getPublicNews = async (req, res, next) => {
   }
 };
 
-// 2. GET /api/news/:id (Public Detail)
+// 2. GET /api/news/:id (Xem chi tiết tin tức công khai)
 const getNewsById = async (req, res, next) => {
   try {
     const news = await newsService.getNewsById(req.params.id);
@@ -29,7 +29,7 @@ const getNewsById = async (req, res, next) => {
   }
 };
 
-// 3. POST /api/news (Lecturer/TBM/Admin)
+// 3. POST /api/news (Tạo tin tức - Giảng viên / TBM / Admin)
 const createNews = async (req, res, next) => {
   try {
     const news = await newsService.createNews(req.user.userId, req.body);
@@ -43,7 +43,7 @@ const createNews = async (req, res, next) => {
   }
 };
 
-// 4. GET /api/news/manage/my (Lecturer/TBM/Admin Management List)
+// 4. GET /api/news/manage/my (Danh sách tin tức quản lý cá nhân)
 const getMyNews = async (req, res, next) => {
   try {
     const result = await newsService.getLecturerNews(
@@ -62,7 +62,7 @@ const getMyNews = async (req, res, next) => {
   }
 };
 
-// 5. PUT /api/news/:id (Lecturer/TBM/Admin)
+// 5. PUT /api/news/:id (Cập nhật tin tức)
 const updateNews = async (req, res, next) => {
   try {
     const news = await newsService.updateNews(
@@ -81,7 +81,7 @@ const updateNews = async (req, res, next) => {
   }
 };
 
-// 6. PATCH /api/news/:id/status (Toggle Status)
+// 6. PATCH /api/news/:id/status (Bật/tắt trạng thái xuất bản)
 const togglePublishNews = async (req, res, next) => {
   try {
     const news = await newsService.togglePublishNews(
@@ -99,7 +99,7 @@ const togglePublishNews = async (req, res, next) => {
   }
 };
 
-// 7. DELETE /api/news/:id (Delete)
+// 7. DELETE /api/news/:id (Xóa tin tức)
 const deleteNews = async (req, res, next) => {
   try {
     const result = await newsService.deleteNews(

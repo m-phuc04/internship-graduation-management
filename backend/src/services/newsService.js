@@ -4,7 +4,7 @@ import AppError from "../utils/AppError.js";
 import notificationService from "./notificationService.js";
 
 // ====================
-// 1. Get Public News (Homepage)
+// 1. Lấy tin tức công khai (Trang chủ)
 // ====================
 const getPublicNews = async ({
   page = 1,
@@ -50,7 +50,7 @@ const getPublicNews = async ({
 };
 
 // ====================
-// 2. Get News by ID (Public Detail & increment views)
+// 2. Xem chi tiết tin tức theo ID và tăng lượt xem
 // ====================
 const getNewsById = async (id) => {
   const news = await News.findByIdAndUpdate(
@@ -67,7 +67,7 @@ const getNewsById = async (id) => {
 };
 
 // ====================
-// 3. Create News (Lecturer / TBM / Admin)
+// 3. Tạo tin tức mới (Giảng viên / TBM / Admin)
 // ====================
 const createNews = async (
   userId,
@@ -139,7 +139,7 @@ const createNews = async (
 };
 
 // ====================
-// 4. Get Lecturer / TBM News List (Management)
+// 4. Lấy danh sách tin tức quản lý cá nhân
 // ====================
 const getLecturerNews = async (
   userId,
@@ -148,7 +148,7 @@ const getLecturerNews = async (
 ) => {
   const query = {};
 
-  // If LECTURER -> only show their own news, TBM/ADMIN -> show all
+  // Giảng viên chỉ xem tin tức của mình, TBM/ADMIN xem toàn bộ
   if (userRole === "LECTURER") {
     query.authorId = userId;
   }
@@ -194,7 +194,7 @@ const getLecturerNews = async (
 };
 
 // ====================
-// 5. Update News
+// 5. Cập nhật tin tức
 // ====================
 const updateNews = async (
   id,
@@ -207,7 +207,7 @@ const updateNews = async (
     throw new AppError("Không tìm thấy tin tức cần cập nhật", 404);
   }
 
-  // Permission check: only author, TBM or ADMIN
+  // Kiểm tra quyền thực hiện: only author, TBM or ADMIN
   if (
     userRole !== "ADMIN" &&
     userRole !== "TBM" &&
@@ -256,7 +256,7 @@ const updateNews = async (
 };
 
 // ====================
-// 6. Toggle Publish Status
+// 6. Bật/tắt trạng thái xuất bản
 // ====================
 const togglePublishNews = async (id, userId, userRole) => {
   const news = await News.findById(id);
@@ -309,7 +309,7 @@ const togglePublishNews = async (id, userId, userRole) => {
 };
 
 // ====================
-// 7. Delete News
+// 7. Xóa tin tức
 // ====================
 const deleteNews = async (id, userId, userRole) => {
   const news = await News.findById(id);

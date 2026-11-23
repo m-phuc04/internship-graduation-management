@@ -25,7 +25,7 @@ const DEFAULT_FIELDS = [
   "Học máy & Deep Learning",
 ];
 
-// Seed default fields if empty
+// Khởi tạo các hướng nghiên cứu mặc định nếu bảng trống
 const seedInitialFields = async () => {
   try {
     const count = await ResearchField.countDocuments();
@@ -38,13 +38,13 @@ const seedInitialFields = async () => {
   }
 };
 
-// 1. Get all active fields
+// 1. Lấy danh sách tất cả hướng nghiên cứu đang hoạt động
 const getAllFields = async () => {
   await seedInitialFields();
   return await ResearchField.find({ isActive: true }).sort({ name: 1 }).lean();
 };
 
-// 2. Create a new field tag (TBM/Admin)
+// 2. Tạo thẻ hướng nghiên cứu mới (TBM / Admin)
 const createField = async ({ name, description = "", userId = null }) => {
   if (!name || !name.trim()) {
     throw new AppError("Tên lĩnh vực không được để trống", 400);
@@ -69,7 +69,7 @@ const createField = async ({ name, description = "", userId = null }) => {
   return field;
 };
 
-// 3. Delete a field tag (TBM/Admin)
+// 3. Xóa thẻ hướng nghiên cứu (TBM / Admin)
 const deleteField = async (id) => {
   const field = await ResearchField.findById(id);
   if (!field) {
@@ -79,7 +79,7 @@ const deleteField = async (id) => {
   return { message: "Xóa lĩnh vực thành công" };
 };
 
-// 4. Get all lecturers with fields (TBM/Admin)
+// 4. Lấy danh sách giảng viên kèm các hướng nghiên cứu
 const getLecturersWithFields = async () => {
   const lecturers = await Lecturer.find()
     .populate({
@@ -99,7 +99,7 @@ const getLecturersWithFields = async () => {
   }));
 };
 
-// 5. Assign fields to 1 or many lecturers (TBM/Admin)
+// 5. Gán hướng nghiên cứu cho giảng viên
 const assignFieldsToLecturers = async ({ lecturerIds = [], fields = [], updatedByUserId = null }) => {
   if (!Array.isArray(lecturerIds) || lecturerIds.length === 0) {
     throw new AppError("Vui lòng chọn ít nhất một giảng viên", 400);
@@ -119,7 +119,7 @@ const assignFieldsToLecturers = async ({ lecturerIds = [], fields = [], updatedB
     await lec.save();
     updatedLecturers.push(lec);
 
-    // Send notification to each lecturer
+    // Gửi thông báo đến từng giảng viên
     if (lec.userId?._id) {
       const fieldListStr = cleanFields.length > 0 ? cleanFields.join(", ") : "Chưa có";
       await notificationService.createNotification({
@@ -141,7 +141,7 @@ const assignFieldsToLecturers = async ({ lecturerIds = [], fields = [], updatedB
   };
 };
 
-// 6. Lecturer checks current pending request
+// 6. Giảng viên kiểm tra yêu cầu thay đổi hướng nghiên cứu đang chờ duyệt
 const getMyPendingRequest = async (userId) => {
   const lecturer = await Lecturer.findOne({ userId }).populate("userId");
   if (!lecturer) {
@@ -160,7 +160,7 @@ const getMyPendingRequest = async (userId) => {
   };
 };
 
-// 7. Lecturer creates/updates field change request
+// 7. Giảng viên tạo hoặc cập nhật yêu cầu thay đổi hướng nghiên cứu
 const createFieldChangeRequest = async ({ userId, requestedFields = [], proposedNewTags = [] }) => {
   const lecturer = await Lecturer.findOne({ userId }).populate("userId");
   if (!lecturer) {
@@ -199,7 +199,7 @@ const createFieldChangeRequest = async ({ userId, requestedFields = [], proposed
     });
   }
 
-  // Notify TBM and Admin users
+  // Gửi thông báo cho Trưởng bộ môn (TBM) and Admin users
   try {
     const managers = await User.find({
       role: { $in: ["TBM", "ADMIN"] },
@@ -225,7 +225,7 @@ const createFieldChangeRequest = async ({ userId, requestedFields = [], proposed
   return request;
 };
 
-// 8. TBM gets all change requests
+// 8. TBM lấy danh sách tất cả yêu cầu thay đổi hướng nghiên cứu
 const getAllRequests = async () => {
   return await FieldChangeRequest.find({ status: "PENDING" })
     .populate({
@@ -239,7 +239,7 @@ const getAllRequests = async () => {
     .lean();
 };
 
-// 9. TBM approves request
+// 9. TBM phê duyệt yêu cầu thay đổi
 const approveRequest = async (requestId, tbmUserId) => {
   const existing = await FieldChangeRequest.findById(requestId);
   if (!existing) {
@@ -253,7 +253,7 @@ const approveRequest = async (requestId, tbmUserId) => {
     );
   }
 
-  // Atomic state transition to prevent race condition
+  // Chuyển đổi trạng thái nguyên tử để tránh tranh chấp dữ liệu (Race Condition)
   const request = await FieldChangeRequest.findOneAndUpdate(
     { _id: requestId, status: "PENDING" },
     {
@@ -279,14 +279,14 @@ const approveRequest = async (requestId, tbmUserId) => {
     throw new AppError("Không tìm thấy giảng viên tương ứng", 404);
   }
 
-  // 1. Overwrite lecturer fields
+  // 1. Ghi đè danh sách hướng nghiên cứu của giảng viên
   lecturer.fields = request.requestedFields;
   if (request.requestedFields && request.requestedFields.length > 0) {
     lecturer.specialization = request.requestedFields.join(", ");
   }
   await lecturer.save();
 
-  // 2. Auto add any newly proposed tags into system ResearchField
+  // 2. Tự động thêm các thẻ đề xuất mới vào danh mục hệ thống
   for (const tag of request.requestedFields) {
     const cleanTag = tag.trim();
     if (!cleanTag) continue;
@@ -300,12 +300,12 @@ const approveRequest = async (requestId, tbmUserId) => {
           createdBy: tbmUserId,
         });
       } catch (e) {
-        // Ignore duplicate index race
+        // Bỏ qua lỗi nếu thẻ đã tồn tại đồng thời
       }
     }
   }
 
-  // 3. Send notification to lecturer & create log
+  // 3. Gửi thông báo cho giảng viên và ghi log hoạt động
   try {
     const reviewer = await User.findById(tbmUserId).select("fullName role").lean();
     const reviewerRoleTitle = reviewer?.role === "ADMIN" ? "Quản trị viên" : "Trưởng bộ môn";
@@ -323,7 +323,7 @@ const approveRequest = async (requestId, tbmUserId) => {
       });
     }
 
-    // System activity log
+    // Ghi nhật ký hoạt động hệ thống
     await Log.create({
       userId: tbmUserId,
       action: "Phê duyệt yêu cầu lĩnh vực",
@@ -343,7 +343,7 @@ const approveRequest = async (requestId, tbmUserId) => {
   };
 };
 
-// 10. TBM rejects request
+// 10. TBM từ chối yêu cầu thay đổi
 const rejectRequest = async (requestId, tbmUserId) => {
   const existing = await FieldChangeRequest.findById(requestId);
   if (!existing) {
@@ -357,7 +357,7 @@ const rejectRequest = async (requestId, tbmUserId) => {
     );
   }
 
-  // Atomic state transition to prevent race condition
+  // Chuyển đổi trạng thái nguyên tử để tránh tranh chấp dữ liệu (Race Condition)
   const request = await FieldChangeRequest.findOneAndUpdate(
     { _id: requestId, status: "PENDING" },
     {
@@ -395,7 +395,7 @@ const rejectRequest = async (requestId, tbmUserId) => {
       });
     }
 
-    // System activity log
+    // Ghi nhật ký hoạt động hệ thống
     await Log.create({
       userId: tbmUserId,
       action: "Từ chối yêu cầu lĩnh vực",

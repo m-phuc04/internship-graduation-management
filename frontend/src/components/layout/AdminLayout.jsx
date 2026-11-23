@@ -24,7 +24,7 @@ const AdminLayout = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-x-clip">
-      {/* Desktop Sidebar (Fixed >= 1300px) */}
+      {/* Thanh điều hướng Desktop (Cố định >= 1300px) */}
       <div
         className={`admin-desktop-sidebar flex-col shrink-0 sticky top-0 h-screen z-20 transition-all duration-300 ease-in-out overflow-hidden ${
           isSidebarCollapsed ? 'w-0 opacity-0 border-r-0 pointer-events-none' : 'w-64 opacity-100 border-r border-[#0e2c73]'
@@ -35,7 +35,7 @@ const AdminLayout = () => {
         />
       </div>
 
-      {/* Mobile & Tablet Drawer (< 1300px) */}
+      {/* Ngăn kéo điều hướng Mobile & Tablet (< 1300px) */}
       {mobileOpen && (
         <div className="fixed inset-0 z-50 admin-drawer-container flex">
           <div
@@ -49,12 +49,12 @@ const AdminLayout = () => {
         </div>
       )}
 
-      {/* Main Content Area */}
+      {/* Khu vực nội dung chính */}
       <div className="flex-1 flex flex-col min-w-0 min-h-screen overflow-x-clip">
-        {/* Top Header */}
+        {/* Thanh tiêu đề trên cùng */}
         <header className="admin-sticky-header h-16 bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-6 shadow-xs">
           <div className="flex items-center gap-3">
-            {/* Mobile & Tablet Hamburger Toggle */}
+            {/* Nút mở menu cho Mobile & Tablet */}
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
@@ -65,7 +65,7 @@ const AdminLayout = () => {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop Hamburger Toggle */}
+            {/* Nút thu gọn/mở menu cho Desktop */}
             <button
               type="button"
               onClick={toggleSidebar}
@@ -100,7 +100,7 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        {/* Page Content */}
+        {/* Nội dung trang */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full max-w-full">
           <Outlet />
         </main>
