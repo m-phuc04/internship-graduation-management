@@ -51,7 +51,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
       maxWidth="max-w-2xl"
     >
       <div className="space-y-4 text-xs">
-        {/* Header Summary */}
+        {/* Tóm tắt đầu mục */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
@@ -80,7 +80,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           </div>
         </div>
 
-        {/* SV2 Confirmation Status Banner */}
+        {/* Banner trạng thái xác nhận của sinh viên 2 */}
         {report.secondStudentId && (
           <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-white shadow-2xs">
             <div className="font-bold uppercase tracking-wider text-[11px] flex items-center justify-between">
@@ -117,7 +117,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           </div>
         )}
 
-        {/* Uploaded File Card */}
+        {/* Thẻ file đã tải lên */}
         {report.file?.fileUrl ? (
           <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-200/70 space-y-3">
             <div className="flex items-center justify-between">
@@ -175,7 +175,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           </div>
         )}
 
-        {/* Content */}
+        {/* Nội dung */}
         {report.content && (
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-1.5 shadow-2xs">
             <div className="font-bold text-slate-700 uppercase tracking-wider text-[11px] flex items-center gap-1.5 pb-1.5 border-b border-slate-100">
@@ -188,7 +188,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           </div>
         )}
 
-        {/* Lecturer Review Card */}
+        {/* Thẻ nhận xét của giảng viên */}
         {(report.lecturerScore !== null || report.lecturerComment) && (
           <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 space-y-2 shadow-2xs">
             <div className="font-bold text-[11px] uppercase tracking-wider flex items-center justify-between pb-2 border-b border-emerald-200/60">
@@ -222,7 +222,7 @@ const StudentReportDetailModal = ({ isOpen, onClose, report }) => {
           </div>
         )}
 
-        {/* Footer */}
+        {/* Chân trang */}
         <div className="flex items-center justify-end pt-3 border-t border-slate-100">
           <button
             type="button"

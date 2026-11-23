@@ -126,7 +126,7 @@ const StudentInternshipDocumentsPage = () => {
 
   const [activeTab, setActiveTab] = useState('GUIDES'); // 'GUIDES' | 'SUBMISSIONS'
 
-  // Sync tab from URL Query Params or Navigation State
+  // Đồng bộ tab từ tham số URL hoặc trạng thái điều hướng
   useEffect(() => {
     const tabParam = searchParams.get('tab') || location.state?.activeTab;
     if (tabParam && tabParam.toLowerCase() === 'submissions') {
@@ -136,7 +136,7 @@ const StudentInternshipDocumentsPage = () => {
     }
   }, [searchParams, location.state]);
 
-  // Data states
+  // Trạng thái dữ liệu
   const [guidesData, setGuidesData] = useState({
     hasInternship: false,
     internship: null,
@@ -148,10 +148,10 @@ const StudentInternshipDocumentsPage = () => {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  // Bộ lọc dữ liệu
   const [search, setSearch] = useState('');
 
-  // Submit File Modal State
+  // Trạng thái modal nộp tệp
   const [submitModalOpen, setSubmitModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [title, setTitle] = useState('');
@@ -160,12 +160,12 @@ const StudentInternshipDocumentsPage = () => {
   const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Delete Submission Modal State
+  // Trạng thái modal gỡ tệp nộp
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Fetch Guides from supervisor
+  // Lấy danh sách tài liệu hướng dẫn from supervisor
   const fetchGuides = useCallback(async () => {
     try {
       const res = await internshipDocumentApi.getStudentGuides({
@@ -189,7 +189,7 @@ const StudentInternshipDocumentsPage = () => {
     }
   }, [currentTerm?._id, search, showToast]);
 
-  // Fetch Submissions
+  // Lấy danh sách tài liệu sinh viên đã nộp
   const fetchSubmissions = useCallback(async () => {
     try {
       const res = await internshipDocumentApi.getStudentSubmissions({
@@ -357,7 +357,7 @@ const StudentInternshipDocumentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
+      {/* Thẻ tiêu đề */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -374,7 +374,7 @@ const StudentInternshipDocumentsPage = () => {
         </div>
       </div>
 
-      {/* Internship Info Banner */}
+      {/* Banner thông tin thực tập */}
       {guidesData.internship ? (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-50/70 to-indigo-50/50 border border-blue-200/60 shadow-2xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
           <div className="flex flex-wrap items-center gap-4">
@@ -415,7 +415,7 @@ const StudentInternshipDocumentsPage = () => {
         </div>
       )}
 
-      {/* Tabs Switcher */}
+      {/* Thanh chuyển tab */}
       <div className="flex items-center gap-2 border-b border-slate-200 pb-2 overflow-x-auto no-scrollbar">
         <button
           type="button"
@@ -468,12 +468,12 @@ const StudentInternshipDocumentsPage = () => {
         </button>
       </div>
 
-      {/* Content Area */}
+      {/* Khu vực nội dung */}
       <div className="space-y-4">
         {/* ================= TAB 1: TÀI LIỆU TỪ GVGS ================= */}
         {activeTab === 'GUIDES' && (
           <div className="space-y-4">
-            {/* Search toolbar */}
+            {/* Thanh công cụ tìm kiếm */}
             <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs flex items-center justify-between gap-2.5 sm:gap-3">
               <div className="flex-1 min-w-0 sm:w-80 sm:flex-none">
                 <SearchInput
@@ -493,7 +493,7 @@ const StudentInternshipDocumentsPage = () => {
               </button>
             </div>
 
-            {/* Table & Mobile Cards */}
+            {/* Bảng và thẻ hiển thị cho mobile */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {loading ? (
                 <div className="p-6">
@@ -511,11 +511,11 @@ const StudentInternshipDocumentsPage = () => {
                 />
               ) : (
                 <>
-                  {/* Mobile Card View (< 768px) */}
+                  {/* Hiển thị thẻ Mobile (< 768px) */}
                   <div className="block md:hidden divide-y divide-slate-100">
                     {guidesData.documents.map((doc) => (
                       <div key={doc._id} className="p-4 space-y-2.5 hover:bg-slate-50/50 transition">
-                        {/* Header: Icon + Title */}
+                        {/* Tiêu đề: Biểu tượng + Tiêu đề */}
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80 mt-0.5">
                             {getFileIcon(doc.fileName)}
@@ -532,7 +532,7 @@ const StudentInternshipDocumentsPage = () => {
                           </div>
                         </div>
 
-                        {/* Badges: Category & Scope */}
+                        {/* Huy hiệu: Danh mục & Phạm vi */}
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200">
                             <Tag className="w-3 h-3 text-slate-400" />
@@ -549,14 +549,14 @@ const StudentInternshipDocumentsPage = () => {
                           )}
                         </div>
 
-                        {/* Description (if any) */}
+                        {/* Mô tả (nếu có) */}
                         {doc.description ? (
                           <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed break-words">
                             {doc.description}
                           </div>
                         ) : null}
 
-                        {/* Footer: Metadata & Action */}
+                        {/* Chân thẻ: Siêu dữ liệu & Thao tác */}
                         <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-50">
                           <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                             <span className="font-semibold text-slate-700">{formatFileSize(doc.fileSize)}</span>
@@ -580,7 +580,7 @@ const StudentInternshipDocumentsPage = () => {
                     ))}
                   </div>
 
-                  {/* Tablet & Desktop Table View (>= 768px) */}
+                  {/* Hiển thị bảng cho Tablet & Desktop (>= 768px) */}
                   <div className="hidden md:block overflow-x-auto custom-scrollbar">
                     <table className="w-full min-w-[720px] text-left border-collapse">
                       <thead>
@@ -601,7 +601,7 @@ const StudentInternshipDocumentsPage = () => {
                               {idx + 1}
                             </td>
 
-                            {/* File */}
+                            {/* Tệp tin */}
                             <td className="py-3.5 px-4 pl-6">
                               <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
@@ -679,7 +679,7 @@ const StudentInternshipDocumentsPage = () => {
         {/* ================= TAB 2: NỘP FILE ================= */}
         {activeTab === 'SUBMISSIONS' && (
           <div className="space-y-4">
-            {/* Condition Warning Banner (if ineligible to submit) */}
+            {/* Banner cảnh báo (nếu chưa đủ điều kiện nộp) */}
             {!guidesData.canSubmit && (
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
                 <div className="flex items-center gap-3">
@@ -711,7 +711,7 @@ const StudentInternshipDocumentsPage = () => {
               </div>
             )}
 
-            {/* Top Action Bar */}
+            {/* Thanh thao tác phía trên */}
             <div className="flex items-center justify-between gap-2.5">
               <button
                 type="button"
@@ -742,7 +742,7 @@ const StudentInternshipDocumentsPage = () => {
               </button>
             </div>
 
-            {/* Submissions Table & Mobile Cards */}
+            {/* Bảng bài nộp & Danh sách thẻ Mobile */}
             <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
               {loading ? (
                 <div className="p-6">
@@ -756,11 +756,11 @@ const StudentInternshipDocumentsPage = () => {
                 />
               ) : (
                 <>
-                  {/* Mobile Card View (< 768px) */}
+                  {/* Hiển thị thẻ Mobile (< 768px) */}
                   <div className="block md:hidden divide-y divide-slate-100">
                     {submissions.map((sub) => (
                       <div key={sub._id} className="p-4 space-y-2.5 hover:bg-slate-50/50 transition">
-                        {/* Header: Icon + Title */}
+                        {/* Tiêu đề: Biểu tượng + Tiêu đề */}
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80 mt-0.5">
                             {getFileIcon(sub.fileName)}
@@ -777,7 +777,7 @@ const StudentInternshipDocumentsPage = () => {
                           </div>
                         </div>
 
-                        {/* Badges: Category & Status */}
+                        {/* Huy hiệu: Danh mục & Trạng thái */}
                         <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-medium text-slate-700 bg-slate-100 border border-slate-200">
                             <Tag className="w-3 h-3 text-slate-400" />
@@ -786,7 +786,7 @@ const StudentInternshipDocumentsPage = () => {
                           {renderSubmissionStatus(sub.status)}
                         </div>
 
-                        {/* Note / Description (if any) */}
+                        {/* Ghi chú / Mô tả (nếu có) */}
                         {sub.description ? (
                           <div className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100 leading-relaxed break-words">
                             {sub.description}
@@ -803,7 +803,7 @@ const StudentInternshipDocumentsPage = () => {
                           </div>
                         )}
 
-                        {/* Footer: Metadata & Actions */}
+                        {/* Chân thẻ: Siêu dữ liệu & Các thao tác */}
                         <div className="flex items-center justify-between pt-1 text-xs border-t border-slate-50">
                           <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
                             <span className="font-semibold text-slate-700">{formatFileSize(sub.fileSize)}</span>
@@ -839,7 +839,7 @@ const StudentInternshipDocumentsPage = () => {
                     ))}
                   </div>
 
-                  {/* Tablet & Desktop Table View (>= 768px) */}
+                  {/* Hiển thị bảng cho Tablet & Desktop (>= 768px) */}
                   <div className="hidden md:block overflow-x-auto custom-scrollbar">
                     <table className="w-full min-w-[720px] text-left border-collapse">
                       <thead>
@@ -860,7 +860,7 @@ const StudentInternshipDocumentsPage = () => {
                               {idx + 1}
                             </td>
 
-                            {/* File */}
+                            {/* Tệp tin */}
                             <td className="py-3.5 px-4 pl-6">
                               <div className="flex items-center gap-3">
                                 <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
@@ -950,7 +950,7 @@ const StudentInternshipDocumentsPage = () => {
       {submitModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/40 backdrop-blur-xs animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] sm:max-h-[90vh] flex flex-col animate-in zoom-in-95 duration-200">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
@@ -974,7 +974,7 @@ const StudentInternshipDocumentsPage = () => {
               </button>
             </div>
 
-            {/* Form */}
+            {/* Biểu mẫu */}
             <form onSubmit={handleSubmitFile} className="space-y-4 overflow-y-auto flex-1 overscroll-contain pr-0.5">
               {formError && (
                 <div className="p-3 rounded-xl bg-rose-50 text-rose-700 text-xs flex items-center gap-2 border border-rose-200">
@@ -983,7 +983,7 @@ const StudentInternshipDocumentsPage = () => {
                 </div>
               )}
 
-              {/* File Input */}
+              {/* Chọn tệp tin */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Chọn tệp tài liệu <span className="text-rose-500">*</span>
@@ -1031,7 +1031,7 @@ const StudentInternshipDocumentsPage = () => {
                 />
               </div>
 
-              {/* Category */}
+              {/* Danh mục */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Phân loại tài liệu
@@ -1048,7 +1048,7 @@ const StudentInternshipDocumentsPage = () => {
                   ))}
                 </select>
 
-                {/* Warning if report file already submitted and student is selecting report category */}
+                {/* Cảnh báo nếu đã nộp file báo cáo và sinh viên đang chọn danh mục báo cáo */}
                 {submissions.some((sub) => /báo cáo/i.test(sub.category || '')) && /báo cáo/i.test(category) && (
                   <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1 mt-2">
                     <div className="font-bold flex items-center gap-1.5 text-amber-950">
@@ -1062,7 +1062,7 @@ const StudentInternshipDocumentsPage = () => {
                 )}
               </div>
 
-              {/* Description */}
+              {/* Mô tả */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-slate-700">
                   Mô tả / Ghi chú cho GVGS
@@ -1076,7 +1076,7 @@ const StudentInternshipDocumentsPage = () => {
                 />
               </div>
 
-              {/* Actions */}
+              {/* Thao tác */}
               <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-100 shrink-0">
                 <button
                   type="button"

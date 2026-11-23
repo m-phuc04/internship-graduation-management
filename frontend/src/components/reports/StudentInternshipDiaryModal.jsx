@@ -82,7 +82,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
         maxWidth="max-w-4xl"
       >
         <div className="space-y-5 text-xs">
-          {/* Student & Internship Info Card */}
+          {/* Thẻ thông tin sinh viên và thực tập */}
           <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-[#102d7d] text-white font-bold text-lg flex items-center justify-center shadow-2xs shrink-0">
@@ -123,7 +123,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
             </div>
           </div>
 
-          {/* Subheader & Refresh */}
+          {/* Tiêu đề phụ và nút làm mới */}
           <div className="flex items-center justify-between pt-1">
             <div className="flex items-center gap-2 text-slate-800 font-bold text-xs uppercase tracking-wider">
               <BookOpen className="w-4 h-4 text-[#102d7d]" />
@@ -140,7 +140,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
             </button>
           </div>
 
-          {/* Table or Empty State */}
+          {/* Bảng dữ liệu hoặc trạng thái trống */}
           {loading ? (
             <div className="p-4 bg-white rounded-2xl border border-slate-200/80">
               <LoadingSkeleton rows={4} cols={5} />
@@ -289,7 +289,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
             </div>
           )}
 
-          {/* Footer */}
+          {/* Chân trang */}
           <div className="flex items-center justify-between pt-3 border-t border-slate-100">
             <div className="text-slate-500 text-xs">
               {reports.length > 0 ? (
@@ -311,7 +311,7 @@ const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {
         </div>
       </Modal>
 
-      {/* Week Report Detail Modal */}
+      {/* Modal chi tiết báo cáo tuần */}
       <StudentReportDetailModal
         isOpen={detailModalOpen}
         onClose={() => {

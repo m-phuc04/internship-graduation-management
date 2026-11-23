@@ -128,7 +128,7 @@ const fileFilter = (req, file, cb) => {
 export const uploadProgressFile = multer({
   storage: storageThesisProgress,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15MB max file size
+    fileSize: 15 * 1024 * 1024, // Giới hạn kích thước tệp tối đa 15MB
   },
   fileFilter,
 });
@@ -136,7 +136,7 @@ export const uploadProgressFile = multer({
 export const uploadInternshipReportFile = multer({
   storage: storageInternshipReports,
   limits: {
-    fileSize: 15 * 1024 * 1024, // 15MB max file size
+    fileSize: 15 * 1024 * 1024, // Giới hạn kích thước tệp tối đa 15MB
   },
   fileFilter,
 });
@@ -145,7 +145,7 @@ export const uploadInternshipReportFile = multer({
 export const uploadInternshipDocumentFile = multer({
   storage: storageInternshipDocuments,
   limits: {
-    fileSize: 30 * 1024 * 1024, // 30MB max file size
+    fileSize: 30 * 1024 * 1024, // Giới hạn kích thước tệp tối đa 30MB
   },
   fileFilter,
 });
@@ -153,7 +153,7 @@ export const uploadInternshipDocumentFile = multer({
 export const uploadThesisDocumentFile = multer({
   storage: storageThesisDocuments,
   limits: {
-    fileSize: 30 * 1024 * 1024, // 30MB max file size
+    fileSize: 30 * 1024 * 1024, // Giới hạn kích thước tệp tối đa 30MB
   },
   fileFilter,
 });

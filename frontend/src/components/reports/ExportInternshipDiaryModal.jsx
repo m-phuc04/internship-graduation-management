@@ -25,7 +25,7 @@ const ExportInternshipDiaryModal = ({
     window.print();
   };
 
-  // Map report by weekNumber
+  // Ánh xạ báo cáo theo số thứ tự tuần
   const reportMap = {};
   reports.forEach((r) => {
     if (r.weekNumber) {
@@ -41,7 +41,7 @@ const ExportInternshipDiaryModal = ({
       maxWidth="max-w-4xl"
     >
       <div className="space-y-6">
-        {/* Top Print Bar */}
+        {/* Thanh công cụ in phía trên */}
         <div className="flex items-center justify-between bg-slate-50 p-3.5 rounded-2xl border border-slate-200/80 print:hidden">
           <div className="text-xs text-slate-600">
             Xem trước tài liệu nhật ký đầy đủ tất cả các tuần ({weeks.length} tuần).
@@ -56,9 +56,9 @@ const ExportInternshipDiaryModal = ({
           </button>
         </div>
 
-        {/* Printable Document Container */}
+        {/* Khung chứa tài liệu để in */}
         <div className="p-8 sm:p-10 bg-white border border-slate-200 rounded-2xl space-y-6 text-slate-900 font-sans shadow-xs print:border-none print:shadow-none print:p-0">
-          {/* Header Title */}
+          {/* Tiêu đề đầu mục */}
           <div className="text-center border-b-2 border-slate-900 pb-5 space-y-1">
             <div className="text-xs uppercase font-extrabold tracking-widest text-slate-500">
               TRƯỜNG ĐẠI HỌC CÔNG THƯƠNG TP. HỒ CHÍ MINH (HUIT)
@@ -74,7 +74,7 @@ const ExportInternshipDiaryModal = ({
             </div>
           </div>
 
-          {/* Student & Internship Info Box */}
+          {/* Hộp thông tin sinh viên và thực tập */}
           <div className="border border-slate-300 rounded-xl p-5 bg-slate-50/50 space-y-3 text-xs">
             <h2 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-[#123891]" />
@@ -142,7 +142,7 @@ const ExportInternshipDiaryModal = ({
             </div>
           </div>
 
-          {/* Weeks Diary Content List */}
+          {/* Danh sách nội dung nhật ký các tuần */}
           <div className="space-y-5 pt-2">
             <h2 className="font-extrabold text-xs uppercase tracking-wider text-slate-900 border-b border-slate-300 pb-1.5 flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-[#123891]" />
@@ -158,7 +158,7 @@ const ExportInternshipDiaryModal = ({
                   key={week.weekNumber}
                   className="border border-slate-200 rounded-xl p-4 bg-white space-y-2.5 text-xs break-inside-avoid"
                 >
-                  {/* Week Header */}
+                  {/* Tiêu đề tuần */}
                   <div className="flex items-center justify-between border-b border-slate-100 pb-2 flex-wrap gap-2">
                     <div className="font-extrabold text-sm text-slate-900 uppercase">
                       TUẦN {week.weekNumber}
@@ -173,7 +173,7 @@ const ExportInternshipDiaryModal = ({
                     </div>
                   </div>
 
-                  {/* Week Body */}
+                  {/* Nội dung công việc tuần */}
                   {hasReport ? (
                     <div className="space-y-2">
                       {report.title && (
@@ -222,7 +222,7 @@ const ExportInternshipDiaryModal = ({
             })}
           </div>
 
-          {/* Signature Block */}
+          {/* Khối ký tên và đóng dấu */}
           <div className="grid grid-cols-2 gap-8 pt-8 border-t border-slate-200 text-center text-xs break-inside-avoid">
             <div className="space-y-16">
               <div className="font-bold uppercase">GIẢNG VIÊN HƯỚNG DẪN</div>
@@ -235,7 +235,7 @@ const ExportInternshipDiaryModal = ({
           </div>
         </div>
 
-        {/* Modal Close Action */}
+        {/* Thao tác đóng modal */}
         <div className="flex items-center justify-end pt-3 border-t border-slate-100 print:hidden">
           <button
             type="button"

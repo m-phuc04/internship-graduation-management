@@ -42,7 +42,7 @@ const AdminPermissionsPage = () => {
   const [search, setSearch] = useState('');
   const { showToast } = useToast();
 
-  // Modal state
+  // Trạng thái Modal
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedLecturer, setSelectedLecturer] = useState(null);
   const [selectedPermissions, setSelectedPermissions] = useState([]);
@@ -103,7 +103,7 @@ const AdminPermissionsPage = () => {
     }
   };
 
-  // Filter list by search
+  // Lọc danh sách theo từ khóa tìm kiếm
   const filteredLecturers = lecturers.filter((l) => {
     if (!search.trim()) return true;
     const term = search.toLowerCase();
@@ -115,7 +115,7 @@ const AdminPermissionsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Banner */}
+      {/* 1. Banner tiêu đề trang */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -132,7 +132,7 @@ const AdminPermissionsPage = () => {
         </div>
       </div>
 
-      {/* 2. Filter / Search */}
+      {/* 2. Bộ lọc / Tìm kiếm */}
       <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="w-full sm:w-80 md:w-96">
           <SearchInput
@@ -147,7 +147,7 @@ const AdminPermissionsPage = () => {
         </div>
       </div>
 
-      {/* 3. Table / Cards */}
+      {/* 3. Bảng / Danh sách thẻ */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -162,7 +162,7 @@ const AdminPermissionsPage = () => {
           </div>
         ) : (
           <>
-            {/* Desktop & Tablet Table View (>= 768px) */}
+            {/* Bảng hiển thị cho Desktop & Tablet (>= 768px) */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-xs min-w-[850px]">
                 <thead>
@@ -188,7 +188,7 @@ const AdminPermissionsPage = () => {
                           {idx + 1}
                         </td>
 
-                        {/* Name & Academic Title */}
+                        {/* Họ tên & Học hàm học vị */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           <div className="font-bold text-slate-900">
                             {item.academicTitle ? `${item.academicTitle} ` : ''}
@@ -199,7 +199,7 @@ const AdminPermissionsPage = () => {
                           </div>
                         </td>
 
-                        {/* Role */}
+                        {/* Vai trò */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {isTbm ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
@@ -214,7 +214,7 @@ const AdminPermissionsPage = () => {
                           )}
                         </td>
 
-                        {/* Permissions */}
+                        {/* Phân quyền */}
                         <td className="py-3.5 px-4">
                           <div className="flex flex-wrap gap-1">
                             {perms.includes('GVHD') && (
@@ -240,7 +240,7 @@ const AdminPermissionsPage = () => {
                           </div>
                         </td>
 
-                        {/* Status */}
+                        {/* Trạng thái */}
                         <td className="py-3.5 px-4 whitespace-nowrap">
                           {item.user?.isActive !== false ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
@@ -255,7 +255,7 @@ const AdminPermissionsPage = () => {
                           )}
                         </td>
 
-                        {/* Actions */}
+                        {/* Thao tác */}
                         <td className="py-3.5 px-4 text-right whitespace-nowrap">
                           <button
                             type="button"
@@ -272,7 +272,7 @@ const AdminPermissionsPage = () => {
               </table>
             </div>
 
-            {/* Mobile Card View (< 768px) */}
+            {/* Hiển thị thẻ Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
               {filteredLecturers.map((item, idx) => {
                 const role = item.user?.role || 'LECTURER';
@@ -281,7 +281,7 @@ const AdminPermissionsPage = () => {
 
                 return (
                   <div key={item._id} className="p-4 space-y-3 hover:bg-slate-50/60 transition">
-                    {/* Header Row: STT + Name + Role */}
+                    {/* Hàng tiêu đề: STT + Họ tên + Vai trò */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -298,7 +298,7 @@ const AdminPermissionsPage = () => {
                         </div>
                       </div>
 
-                      {/* Role Badge */}
+                      {/* Huy hiệu vai trò */}
                       <div className="shrink-0">
                         {isTbm ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200">
@@ -314,7 +314,7 @@ const AdminPermissionsPage = () => {
                       </div>
                     </div>
 
-                    {/* Permissions Badges */}
+                    {/* Huy hiệu các quyền */}
                     <div>
                       <div className="text-[10px] uppercase font-bold text-slate-400 mb-1">
                         Quyền nghiệp vụ
@@ -343,7 +343,7 @@ const AdminPermissionsPage = () => {
                       </div>
                     </div>
 
-                    {/* Footer Row: Status + Action Button */}
+                    {/* Hàng chân trang: Trạng thái + Nút thao tác */}
                     <div className="flex items-center justify-between pt-2 border-t border-slate-100/80 gap-3">
                       <div>
                         {item.user?.isActive !== false ? (
@@ -384,7 +384,7 @@ const AdminPermissionsPage = () => {
           maxWidth="max-w-lg"
         >
           <div className="space-y-5 text-xs">
-            {/* Lecturer Card */}
+            {/* Thẻ giảng viên */}
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-1">
               <div className="text-slate-400 text-[10px] uppercase font-bold tracking-wider">
                 Thông tin tài khoản
@@ -399,7 +399,7 @@ const AdminPermissionsPage = () => {
               </div>
             </div>
 
-            {/* Permission Checkboxes */}
+            {/* Các ô chọn phân quyền */}
             <div className="space-y-2.5">
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                 Quyền nghiệp vụ (Khóa luận tốt nghiệp)
@@ -434,7 +434,7 @@ const AdminPermissionsPage = () => {
               </div>
             </div>
 
-            {/* Role Switch (TBM vs LECTURER) */}
+            {/* Chuyển đổi vai trò (TBM / LECTURER) */}
             <div className="space-y-2 pt-2 border-t border-slate-100">
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">
                 Vai trò quản lý bộ môn
@@ -470,7 +470,7 @@ const AdminPermissionsPage = () => {
               </p>
             </div>
 
-            {/* Footer Buttons */}
+            {/* Các nút chân modal */}
             <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-2 pt-4 border-t border-slate-100">
               <button
                 type="button"

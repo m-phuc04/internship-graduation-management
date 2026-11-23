@@ -1,7 +1,7 @@
 import internshipReportService from "../services/internshipReportService.js";
 
 // ====================
-// Student Creates or Submits Report
+// Sinh viên tạo hoặc nộp báo cáo thực tập
 // ====================
 const createReport = async (req, res, next) => {
   try {
@@ -44,7 +44,7 @@ const createReport = async (req, res, next) => {
 };
 
 // ====================
-// Student Updates Report (Draft or Needs Revision)
+// Sinh viên cập nhật báo cáo (Bản nháp hoặc Cần chỉnh sửa)
 // ====================
 const updateReport = async (req, res, next) => {
   try {
@@ -88,7 +88,7 @@ const updateReport = async (req, res, next) => {
 };
 
 // ====================
-// Student 2 Confirms or Rejects Report
+// Sinh viên 2 xác nhận hoặc từ chối báo cáo
 // ====================
 const confirmStudent2 = async (req, res, next) => {
   try {
@@ -102,7 +102,7 @@ const confirmStudent2 = async (req, res, next) => {
 };
 
 // ====================
-// Student Gets All Their Own Reports
+// Sinh viên lấy toàn bộ báo cáo của mình
 // ====================
 const getMyReports = async (req, res, next) => {
   try {
@@ -123,7 +123,7 @@ const getMyReports = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer Gets Supervised Students' Reports
+// Giảng viên lấy danh sách báo cáo của sinh viên được phân công giám sát
 // ====================
 const getReportsForLecturer = async (req, res, next) => {
   try {
@@ -154,7 +154,7 @@ const getReportsForLecturer = async (req, res, next) => {
 };
 
 // ====================
-// TBM Gets All Reports
+// Trưởng bộ môn lấy danh sách tất cả báo cáo thực tập
 // ====================
 const getAllReportsForTbm = async (req, res, next) => {
   try {
@@ -180,7 +180,7 @@ const getAllReportsForTbm = async (req, res, next) => {
 };
 
 // ====================
-// Get Report By ID
+// Lấy thông tin báo cáo theo ID
 // ====================
 const getReportById = async (req, res, next) => {
   try {
@@ -200,7 +200,7 @@ const getReportById = async (req, res, next) => {
 };
 
 // ====================
-// Lecturer / TBM Review Report
+// Giảng viên / Trưởng bộ môn đánh giá, phản hồi báo cáo
 // ====================
 const reviewReport = async (req, res, next) => {
   try {
@@ -227,7 +227,7 @@ const reviewReport = async (req, res, next) => {
 };
 
 // ====================
-// Get All Reports for an Internship
+// Lấy toàn bộ báo cáo của một hồ sơ thực tập
 // ====================
 const getReportsByInternshipId = async (req, res, next) => {
   try {

@@ -1,7 +1,7 @@
 import axiosClient from './axiosClient';
 
 const newsApi = {
-  // Public APIs
+  // Các API công khai
   getPublicNews: (params) => {
     return axiosClient.get('/news', { params });
   },
@@ -10,7 +10,7 @@ const newsApi = {
     return axiosClient.get(`/news/${id}`);
   },
 
-  // Lecturer / TBM / Admin Management APIs
+  // Các API quản lý dành cho Giảng viên / TBM / Admin
   getMyNews: (params) => {
     return axiosClient.get('/news/manage/my', { params });
   },

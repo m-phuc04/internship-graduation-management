@@ -73,7 +73,7 @@ const AdminLogsPage = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Filter & Search states
+  // Trạng thái lọc và tìm kiếm
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -120,7 +120,7 @@ const AdminLogsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner */}
+      {/* Banner trên cùng */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -147,7 +147,7 @@ const AdminLogsPage = () => {
         </button>
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
@@ -176,7 +176,7 @@ const AdminLogsPage = () => {
         </div>
       </div>
 
-      {/* Main Table / Cards */}
+      {/* Bảng dữ liệu / Danh sách thẻ */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -189,7 +189,7 @@ const AdminLogsPage = () => {
           />
         ) : (
           <>
-            {/* Desktop & Tablet Table View (>= 768px) */}
+            {/* Bảng hiển thị cho Desktop & Tablet (>= 768px) */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full min-w-[880px] text-left border-collapse">
                 <thead>
@@ -295,7 +295,7 @@ const AdminLogsPage = () => {
               </table>
             </div>
 
-            {/* Mobile Card View (< 768px) */}
+            {/* Hiển thị thẻ Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
               {logs.map((item, idx) => {
                 const actor = item.userId;
@@ -305,7 +305,7 @@ const AdminLogsPage = () => {
 
                 return (
                   <div key={item._id} className="p-4 space-y-2.5 hover:bg-slate-50/60 transition">
-                    {/* Header Row: Actor + Role + STT */}
+                    {/* Hàng tiêu đề: Người thực hiện + Vai trò + STT */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -337,7 +337,7 @@ const AdminLogsPage = () => {
                       </span>
                     </div>
 
-                    {/* Action & Module */}
+                    {/* Hành động & Phân hệ */}
                     <div className="bg-slate-50/70 p-2.5 rounded-xl border border-slate-100 space-y-1">
                       <div className="font-semibold text-xs text-slate-900 flex items-center gap-1.5">
                         {isSuccess ? (
@@ -360,7 +360,7 @@ const AdminLogsPage = () => {
                       )}
                     </div>
 
-                    {/* Footer: Time & IP */}
+                    {/* Chân thẻ: Thời gian & IP */}
                     <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-0.5">
                       <div className="flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400 shrink-0" />
@@ -375,7 +375,7 @@ const AdminLogsPage = () => {
           </>
         )}
 
-        {/* Pagination Footer */}
+        {/* Chân trang phân trang */}
         {pagination && pagination.totalPages > 1 && (
           <div className="p-4 border-t border-slate-100">
             <Pagination

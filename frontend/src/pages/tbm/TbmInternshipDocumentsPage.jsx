@@ -47,14 +47,14 @@ const TbmInternshipDocumentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  // Add File Modal State
+  // Trạng thái modal thêm tệp
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [description, setDescription] = useState('');
   const [uploading, setUploading] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Delete File Modal State
+  // Trạng thái modal xóa tệp
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deletingDoc, setDeletingDoc] = useState(null);
   const [deleting, setDeleting] = useState(false);
@@ -177,7 +177,7 @@ const TbmInternshipDocumentsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
+      {/* Thẻ tiêu đề */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -191,9 +191,9 @@ const TbmInternshipDocumentsPage = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {/* Khu vực nội dung chính */}
       <div className="space-y-4">
-        {/* Search Bar */}
+        {/* Thanh tìm kiếm */}
         <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
           <SearchInput
             value={search}
@@ -214,7 +214,7 @@ const TbmInternshipDocumentsPage = () => {
           </button>
         </div>
 
-        {/* Table of Documents */}
+        {/* Bảng danh sách tài liệu */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
           {loading ? (
             <div className="p-6">
@@ -245,7 +245,7 @@ const TbmInternshipDocumentsPage = () => {
                         {idx + 1}
                       </td>
 
-                      {/* File Info */}
+                      {/* Thông tin file */}
                       <td className="py-3.5 px-4 pl-6">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center shrink-0 border border-slate-200/80">
@@ -343,7 +343,7 @@ const TbmInternshipDocumentsPage = () => {
                 </div>
               )}
 
-              {/* File upload drag/drop or picker */}
+              {/* Khu vực kéo thả hoặc chọn file tải lên */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Tệp đính kèm <span className="text-rose-500">*</span>
@@ -384,7 +384,7 @@ const TbmInternshipDocumentsPage = () => {
                 </div>
               </div>
 
-              {/* Note / Description input */}
+              {/* Ô nhập ghi chú / mô tả */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1.5">
                   Ghi chú mô tả
@@ -398,7 +398,7 @@ const TbmInternshipDocumentsPage = () => {
                 />
               </div>
 
-              {/* Actions */}
+              {/* Thao tác */}
               <div className="pt-3 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 border-t border-slate-100 shrink-0">
                 <button
                   type="button"

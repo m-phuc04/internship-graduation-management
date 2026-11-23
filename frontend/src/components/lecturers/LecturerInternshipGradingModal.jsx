@@ -41,7 +41,7 @@ const LecturerInternshipGradingModal = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Report File fetch state
+  // Trạng thái tải file báo cáo
   const [reportLoading, setReportLoading] = useState(false);
   const [reportFile, setReportFile] = useState(null);
   const [reportError, setReportError] = useState('');
@@ -52,7 +52,7 @@ const LecturerInternshipGradingModal = ({
       internship.evaluation?.score !== null,
   );
 
-  // Determine grading window status according to TBM timeline configuration
+  // Xác định trạng thái thời hạn chấm điểm theo cấu hình của TBM
   const internshipTerm =
     internship?.academicTermId && (internship.academicTermId.internship !== undefined || internship.academicTermId.name)
       ? internship.academicTermId
@@ -60,7 +60,7 @@ const LecturerInternshipGradingModal = ({
 
   const windowStatus = getInternshipGradingWindowStatus(internshipTerm);
 
-  // Fetch report file on open
+  // Tải file báo cáo khi mở modal
   useEffect(() => {
     if (!isOpen || !internship?._id) {
       setReportFile(null);
@@ -107,7 +107,7 @@ const LecturerInternshipGradingModal = ({
     };
   }, [isOpen, internship?._id]);
 
-  // Populate existing evaluation if present
+  // Điền điểm đánh giá hiện có nếu đã được chấm
   useEffect(() => {
     if (internship?.evaluation) {
       const ev = internship.evaluation;
@@ -166,7 +166,7 @@ const LecturerInternshipGradingModal = ({
       return;
     }
 
-    // Confirmation dialog before saving edit
+    // Hộp thoại xác nhận trước khi lưu chỉnh sửa
     if (isEditing) {
       const confirmed = window.confirm(
         `Bạn có chắc chắn muốn cập nhật điểm thực tập cho sinh viên ${
@@ -214,7 +214,7 @@ const LecturerInternshipGradingModal = ({
       maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-        {/* Student & Enterprise Card */}
+        {/* Thẻ thông tin sinh viên và doanh nghiệp */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-[#123891] font-bold text-lg flex items-center justify-center shadow-2xs shrink-0">
@@ -238,7 +238,7 @@ const LecturerInternshipGradingModal = ({
             </div>
           </div>
 
-          {/* Status Pills */}
+          {/* Huy hiệu trạng thái */}
           <div className="shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1.5 text-right">
             {isPretestPassed ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold text-[11px] shadow-2xs">
@@ -277,7 +277,7 @@ const LecturerInternshipGradingModal = ({
               <span>Tình trạng báo cáo thực tập</span>
             </div>
 
-            {/* Status Badge */}
+            {/* Huy hiệu trạng thái */}
             {reportLoading ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-600">
                 <RefreshCw className="w-3 h-3 animate-spin text-[#123891]" />
@@ -296,7 +296,7 @@ const LecturerInternshipGradingModal = ({
             )}
           </div>
 
-          {/* Report Details & Actions */}
+          {/* Chi tiết báo cáo & Thao tác */}
           {hasReport && effectiveReport ? (() => {
             const fileName = effectiveReport.originalName || effectiveReport.fileName || '';
             const isPdf = Boolean(fileName.toLowerCase().endsWith('.pdf') || (effectiveReport.fileUrl || '').toLowerCase().endsWith('.pdf'));
@@ -332,7 +332,7 @@ const LecturerInternshipGradingModal = ({
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Thao tác */}
                   <div className="flex items-center gap-2 shrink-0">
                     {isPdf && (
                       <a
@@ -377,7 +377,7 @@ const LecturerInternshipGradingModal = ({
           )}
         </div>
 
-        {/* Notice if Editing */}
+        {/* Lưu ý khi chỉnh sửa */}
         {isEditing && (
           <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200 text-amber-900 text-xs leading-relaxed space-y-1">
             <div className="font-bold flex items-center gap-1.5 text-amber-800">
@@ -394,7 +394,7 @@ const LecturerInternshipGradingModal = ({
           </div>
         )}
 
-        {/* Lock Warning Banner if window is not allowed */}
+        {/* Banner cảnh báo khóa khi ngoài thời hạn cho phép */}
         {!windowStatus.allowed && (
           <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 flex items-center gap-2.5 text-xs font-semibold">
             <Lock className="w-4 h-4 text-amber-600 shrink-0" />
@@ -402,7 +402,7 @@ const LecturerInternshipGradingModal = ({
           </div>
         )}
 
-        {/* Ineligible Warning Banner */}
+        {/* Banner cảnh báo không đủ điều kiện */}
         {!canSubmitGrading && (
           <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -413,7 +413,7 @@ const LecturerInternshipGradingModal = ({
           </div>
         )}
 
-        {/* Score & Comments Section */}
+        {/* Phần điểm số và nhận xét */}
         <div className="space-y-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-2xs">
           <div>
             <label className="block font-bold text-slate-800 text-xs mb-1.5 flex items-center justify-between">
@@ -457,7 +457,7 @@ const LecturerInternshipGradingModal = ({
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Các nút thao tác chân trang */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"

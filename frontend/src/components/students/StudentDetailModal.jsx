@@ -15,7 +15,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
       maxWidth="max-w-2xl"
     >
       <div className="space-y-6">
-        {/* Header Summary Banner */}
+        {/* Banner tóm tắt đầu trang */}
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-slate-50 to-blue-50/40 border border-slate-200/80">
           <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
             {student.userId?.fullName?.charAt(0).toUpperCase() || 'S'}
@@ -40,7 +40,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
           </div>
         </div>
 
-        {/* Academic Details Grid */}
+        {/* Lưới chi tiết học vụ */}
         <div>
           <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
             <Award className="w-4 h-4 text-[#123891]" /> Thông tin Học tập
@@ -76,7 +76,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
           </div>
         </div>
 
-        {/* Requirements and Registration Status */}
+        {/* Yêu cầu và trạng thái đăng ký */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="p-3.5 rounded-xl border border-slate-200 bg-white">
             <div className="text-xs text-slate-500 mb-1.5">Điều kiện tiên quyết</div>
@@ -112,7 +112,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
           </div>
         </div>
 
-        {/* Linked Details Summary if any */}
+        {/* Tóm tắt thông tin liên kết nếu có */}
         {(student.internshipDetails || student.thesisDetails) && (
           <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs">
             <div className="font-semibold text-slate-800 mb-1">Thông tin liên kết hiện tại:</div>
@@ -131,7 +131,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
           </div>
         )}
 
-        {/* Close Action */}
+        {/* Thao tác đóng */}
         <div className="flex justify-end pt-3 border-t border-slate-100">
           <button
             onClick={onClose}

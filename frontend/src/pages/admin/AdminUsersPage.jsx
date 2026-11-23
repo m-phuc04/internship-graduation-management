@@ -93,7 +93,7 @@ const AdminUsersPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* 1. Header Banner */}
+      {/* 1. Banner tiêu đề trang */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -110,7 +110,7 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
@@ -139,7 +139,7 @@ const AdminUsersPage = () => {
         </div>
       </div>
 
-      {/* 3. Table / Cards */}
+      {/* 3. Bảng / Danh sách thẻ */}
       <div className="bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -154,7 +154,7 @@ const AdminUsersPage = () => {
           </div>
         ) : (
           <>
-            {/* Desktop & Tablet Table View (>= 768px) */}
+            {/* Bảng hiển thị cho Desktop & Tablet (>= 768px) */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse text-xs min-w-[880px]">
                 <thead>
@@ -232,11 +232,11 @@ const AdminUsersPage = () => {
               </table>
             </div>
 
-            {/* Mobile Card View (< 768px) */}
+            {/* Hiển thị thẻ Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
               {users.map((item, idx) => (
                 <div key={item._id} className="p-4 space-y-3 hover:bg-slate-50/60 transition">
-                  {/* Top Line: STT + FullName + Role Badge */}
+                  {/* Dòng trên: STT + Họ tên + Huy hiệu vai trò */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -251,7 +251,7 @@ const AdminUsersPage = () => {
                     <div className="shrink-0">{getRoleBadge(item.role)}</div>
                   </div>
 
-                  {/* Info: Email, Code, Phone */}
+                  {/* Thông tin: Email, Mã, Điện thoại */}
                   <div className="space-y-1 text-xs text-slate-600 bg-slate-50/70 p-2.5 rounded-xl border border-slate-100">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-slate-400 text-[11px]">Email:</span>
@@ -275,7 +275,7 @@ const AdminUsersPage = () => {
                     </div>
                   </div>
 
-                  {/* Bottom Line: Status + Actions */}
+                  {/* Dòng dưới: Trạng thái + Thao tác */}
                   <div className="flex items-center justify-between pt-1 gap-2">
                     <div>
                       {item.isActive !== false ? (

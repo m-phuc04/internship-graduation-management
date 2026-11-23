@@ -6,7 +6,7 @@ const StatusBadge = ({
   label,
   size = 'md',
 }) => {
-  // Determine variant styling
+  // Xác định kiểu giao diện hiển thị cho huy hiệu
   let badgeStyles = 'bg-slate-100 text-slate-700 border-slate-200';
   let dotColor = 'bg-slate-400';
 

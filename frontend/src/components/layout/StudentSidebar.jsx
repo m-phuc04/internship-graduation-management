@@ -18,7 +18,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
   const { user } = useAuth();
   const location = useLocation();
 
-  // Accordion state: open by default if active route matches
+  // Trạng thái Accordion: mở mặc định nếu trùng khớp tuyến đường hiện tại
   const isInternshipRoute =
     location.pathname.startsWith('/student/internship') || location.pathname.startsWith('/student/reports');
   const isThesisRoute = location.pathname.startsWith('/student/thesis');
@@ -31,7 +31,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
     if (isThesisRoute) setThesisOpen(true);
   }, [location.pathname, isInternshipRoute, isThesisRoute]);
 
-  // Helper to check active state with query string precision
+  // Hàm kiểm tra trạng thái kích hoạt chính xác theo query string
   const isItemActive = (path, requiredSearch = '') => {
     if (location.pathname !== path) return false;
     if (requiredSearch) {
@@ -47,7 +47,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
         : 'text-slate-300 hover:text-white hover:bg-white/10'
     }`;
 
-  // Submenu items data
+  // Dữ liệu các mục menu con
   const internshipSubItems = [
     {
       to: '/student/internship/register',
@@ -116,7 +116,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
 
   return (
     <aside className="w-full h-full bg-[#123891] text-slate-200 flex flex-col shrink-0 min-h-0 select-none">
-      {/* Brand Header */}
+      {/* Tiêu đề thương hiệu hệ thống */}
       <div className="h-16 flex items-center justify-between px-3.5 border-b border-[#0e2c73] bg-[#0e2c73] shrink-0">
         <Link
           to="/"
@@ -149,7 +149,7 @@ const StudentSidebar = ({ onCloseMobile, onToggleCollapse }) => {
         )}
       </div>
 
-      {/* Navigation List */}
+      {/* Danh sách điều hướng */}
       <div className="flex-1 min-h-0 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         {/* 1. Tổng quan */}
         <div>

@@ -8,7 +8,7 @@ const axiosClient = axios.create({
   withCredentials: true,
 });
 
-// Request interceptor: attach Bearer token
+// Bộ chặn yêu cầu: Đính kèm Bearer token
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('accessToken');
@@ -20,19 +20,19 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response interceptor: handle token expiration / errors safely
+// Bộ chặn phản hồi: Xử lý an toàn khi hết hạn token hoặc lỗi
 axiosClient.interceptors.response.use(
   (response) => response.data,
   async (error) => {
     const originalRequest = error.config || {};
 
-    // Handle 401 and try refresh token once if user was logged in
+    // Xử lý mã lỗi 401 và thử làm mới token một lần nếu người dùng đã đăng nhập
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refreshToken');
       const accessToken = localStorage.getItem('accessToken');
 
-      // Only attempt refresh if tokens were present and this isn't an auth route
+      // Chỉ làm mới token nếu đã có token trước đó và không phải là tuyến đường xác thực
       if (refreshToken && accessToken && !originalRequest.url?.includes('/auth/')) {
         try {
           const res = await axios.post('/api/auth/refresh', { refreshToken });

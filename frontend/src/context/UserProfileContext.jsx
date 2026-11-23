@@ -48,18 +48,18 @@ export const UserProfileProvider = ({ children }) => {
         userIdOrObject.email;
     }
 
-    // Check if the clicked user is the current logged in user
+    // Kiểm tra người dùng được chọn có phải là người đang đăng nhập không
     const isSelf =
       Boolean(targetId && currentUser?._id && String(targetId) === String(currentUser._id)) ||
       Boolean(targetEmail && currentUser?.email && String(targetEmail).toLowerCase() === String(currentUser.email).toLowerCase());
 
     if (isSelf) {
-      // User clicked on themselves -> redirect to their personal profile page
+      // Người dùng bấm vào chính mình -> chuyển hướng đến trang hồ sơ cá nhân
       navigate(getMyProfilePath(currentUser?.role));
       return;
     }
 
-    // Otherwise, open public profile modal for other users
+    // Ngược lại, mở modal xem hồ sơ công khai của người dùng khác
     if (typeof userIdOrObject === 'string') {
       setModalState({
         isOpen: true,

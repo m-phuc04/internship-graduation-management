@@ -11,7 +11,7 @@ const Pagination = ({
   onPageChange,
   itemLabel = 'mục',
 }) => {
-  // Normalize pagination props (support both object and separate props)
+  // Chuẩn hóa props phân trang (hỗ trợ cả dạng object lẫn props rời)
   const page = currentPage || propPage || pagination?.page || 1;
   const totalPages = propTotalPages || pagination?.totalPages || 1;
   const total = propTotal ?? pagination?.total ?? 0;
@@ -22,7 +22,7 @@ const Pagination = ({
   const from = Math.max(1, (page - 1) * limit + 1);
   const to = total > 0 ? Math.min(page * limit, total) : page * limit;
 
-  // Generate page numbers
+  // Tạo danh sách số trang
   const pages = [];
   const maxVisiblePages = 5;
   let startPage = Math.max(1, page - Math.floor(maxVisiblePages / 2));

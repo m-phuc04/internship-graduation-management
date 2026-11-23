@@ -108,7 +108,7 @@ const StudentReportModal = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Check Extension
+    // Kiểm tra định dạng tệp mở rộng
     const ext = '.' + file.name.split('.').pop().toLowerCase();
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
       setError('Định dạng file không được hỗ trợ. Vui lòng chọn .pdf, .doc, .docx, .xls, .xlsx, .ppt, .pptx, .zip, .rar');
@@ -117,7 +117,7 @@ const StudentReportModal = ({
       return;
     }
 
-    // Check Size
+    // Kiểm tra kích thước tệp
     if (file.size > MAX_FILE_SIZE) {
       setError('File vượt quá dung lượng cho phép (tối đa 20MB).');
       showToast('File vượt quá dung lượng cho phép.', 'error');
@@ -255,7 +255,7 @@ const StudentReportModal = ({
       maxWidth="max-w-2xl"
     >
       <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
-        {/* Error Alert */}
+        {/* Cảnh báo lỗi */}
         {error && (
           <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-xl flex items-start gap-2 animate-in fade-in">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-600 mt-0.5" />
@@ -263,7 +263,7 @@ const StudentReportModal = ({
           </div>
         )}
 
-        {/* 2-Student Group Notice */}
+        {/* Thông báo nhóm 2 sinh viên */}
         {hasStudent2 && (
           <div className="p-3 bg-blue-50/80 border border-blue-200/80 text-blue-900 text-xs rounded-2xl flex items-start gap-2.5">
             <Users className="w-4 h-4 shrink-0 text-blue-600 mt-0.5" />
@@ -276,7 +276,7 @@ const StudentReportModal = ({
           </div>
         )}
 
-        {/* Week Info & Interactive Date Inputs */}
+        {/* Thông tin tuần & các ô chọn ngày */}
         <div className="p-4 bg-slate-50/80 border border-slate-200/90 rounded-2xl space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-slate-200/70">
             <div className="flex items-center gap-2">
@@ -337,7 +337,7 @@ const StudentReportModal = ({
           </div>
         </div>
 
-        {/* Title */}
+        {/* Tiêu đề */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
             Tiêu đề nhật ký <span className="text-rose-500">*</span>
@@ -351,7 +351,7 @@ const StudentReportModal = ({
           />
         </div>
 
-        {/* Text Content */}
+        {/* Nội dung văn bản */}
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -368,7 +368,7 @@ const StudentReportModal = ({
           />
         </div>
 
-        {/* File Upload Attachment */}
+        {/* File đính kèm tải lên */}
         <div>
           <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
             File đính kèm (nếu có)
@@ -442,7 +442,7 @@ const StudentReportModal = ({
           />
         </div>
 
-        {/* Modal Actions */}
+        {/* Các thao tác modal */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between pt-3 border-t border-slate-100 gap-2 sm:gap-3">
           <button
             type="button"

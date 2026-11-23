@@ -8,7 +8,7 @@ import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 
-// Modals
+// Modal xử lýs
 import InternshipDetailModal from '../../components/internships/InternshipDetailModal';
 import ApproveModal from '../../components/internships/ApproveModal';
 import RejectModal from '../../components/internships/RejectModal';
@@ -51,12 +51,12 @@ const InternshipManagement = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Filter & Search states
+  // Trạng thái lọc và tìm kiếm
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
 
-  // Modal states
+  // Trạng thái các Modal
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [approveModalOpen, setApproveModalOpen] = useState(false);
@@ -107,7 +107,7 @@ const InternshipManagement = () => {
     });
   };
 
-  // Get TTDN Window Badge for current term
+  // Lấy huy hiệu thời hạn đăng ký TTDN trong học kỳ
   const getInternshipWindowBadge = () => {
     if (!currentTerm?.internship?.registrationStart && !currentTerm?.internship?.registrationEnd) {
       return { text: 'Mở tự do', color: 'bg-slate-100 text-slate-700' };
@@ -131,7 +131,7 @@ const InternshipManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card */}
+      {/* Thẻ tiêu đề đầu trang */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -145,7 +145,7 @@ const InternshipManagement = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto justify-start sm:justify-end">
-          {/* Configure Timeline Window Button */}
+          {/* Nút cấu hình khung thời gian */}
           <button
             type="button"
             onClick={() => setTimelineModalOpen(true)}
@@ -172,7 +172,7 @@ const InternshipManagement = () => {
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
@@ -183,7 +183,7 @@ const InternshipManagement = () => {
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-start md:justify-end">
-          {/* Status Filter */}
+          {/* Bộ lọc theo trạng thái */}
           <select
             value={status}
             onChange={(e) => handleFilterChange(setStatus, e.target.value)}
@@ -198,7 +198,7 @@ const InternshipManagement = () => {
         </div>
       </div>
 
-      {/* Main Table */}
+      {/* Bảng chính */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -239,7 +239,7 @@ const InternshipManagement = () => {
                       {(page - 1) * 10 + idx + 1}
                     </td>
 
-                    {/* Student Info */}
+                    {/* Thông tin sinh viên */}
                     <td className="py-3.5 px-4">
                       <UserNameClickable
                         user={item.studentId}
@@ -249,7 +249,7 @@ const InternshipManagement = () => {
                       />
                     </td>
 
-                    {/* Company */}
+                    {/* Doanh nghiệp */}
                     <td className="py-3.5 px-4 font-medium text-slate-800 text-xs max-w-[180px] truncate">
                       <div className="font-semibold text-slate-900 truncate">
                         {item.companyId?.name}
@@ -261,18 +261,18 @@ const InternshipManagement = () => {
                       )}
                     </td>
 
-                    {/* Position */}
+                    {/* Vị trí thực tập */}
                     <td className="py-3.5 px-4 text-xs font-semibold text-slate-800 max-w-[160px] truncate">
                       {item.position}
                     </td>
 
-                    {/* Dates */}
+                    {/* Thời gian */}
                     <td className="py-3.5 px-4 text-xs text-slate-600">
                       <div>{formatDate(item.startDate)}</div>
                       <div className="text-slate-400 text-[11px]">đến {formatDate(item.endDate)}</div>
                     </td>
 
-                    {/* Lecturer */}
+                    {/* Giảng viên */}
                     <td className="py-3.5 px-4 text-xs">
                       {item.lecturerId ? (
                         <UserNameClickable
@@ -289,7 +289,7 @@ const InternshipManagement = () => {
                       )}
                     </td>
 
-                    {/* Status */}
+                    {/* Trạng thái */}
                     <td className="py-3.5 px-4">
                       {item.status === 'COMPLETED' || item.evaluation?.status === 'CONFIRMED' ? (
                         <StatusBadge status="COMPLETED" size="sm" />
@@ -298,13 +298,13 @@ const InternshipManagement = () => {
                       )}
                     </td>
 
-                    {/* Actions */}
+                    {/* Thao tác */}
                     <td
                       className="py-3.5 px-4 pr-6 text-right"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        {/* Detail */}
+                        {/* Chi tiết */}
                         <button
                           onClick={() => {
                             setSelectedInternship(item);
@@ -316,7 +316,7 @@ const InternshipManagement = () => {
                           <Eye className="w-4 h-4" />
                         </button>
 
-                        {/* Assign Lecturer (HIDE IF COMPLETED) */}
+                        {/* Phân công giảng viên (Ẩn nếu đã hoàn thành) */}
                         {item.status !== 'COMPLETED' && item.evaluation?.status !== 'CONFIRMED' && (
                           <button
                             onClick={() => {
@@ -330,7 +330,7 @@ const InternshipManagement = () => {
                           </button>
                         )}
 
-                        {/* Approve (if PENDING) */}
+                        {/* Duyệt (nếu đang chờ) */}
                         {item.status === 'PENDING' && (
                           <button
                             onClick={() => {
@@ -344,7 +344,7 @@ const InternshipManagement = () => {
                           </button>
                         )}
 
-                        {/* Reject (if PENDING) */}
+                        {/* Từ chối (nếu đang chờ) */}
                         {item.status === 'PENDING' && (
                           <button
                             onClick={() => {
@@ -364,7 +364,7 @@ const InternshipManagement = () => {
               </tbody>
             </table>
           </div>
-          {/* Mobile Card List (< 768px) */}
+          {/* Danh sách thẻ Mobile (< 768px) */}
           <div className="md:hidden divide-y divide-slate-100">
             {internships.map((item, idx) => (
               <div
@@ -375,7 +375,7 @@ const InternshipManagement = () => {
                   setDetailModalOpen(true);
                 }}
               >
-                {/* Header: STT + Student name + Status */}
+                {/* Đầu thẻ: STT + Tên sinh viên + Trạng thái */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
@@ -395,7 +395,7 @@ const InternshipManagement = () => {
                   )}
                 </div>
 
-                {/* Company & Position */}
+                {/* Doanh nghiệp & Vị trí thực tập */}
                 <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                   <div className="font-semibold text-slate-900 truncate">
                     {item.companyId?.name}
@@ -405,7 +405,7 @@ const InternshipManagement = () => {
                   </div>
                 </div>
 
-                {/* Dates & Supervisor */}
+                {/* Thời gian & Giảng viên giám sát */}
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                     <span className="text-slate-400 block text-[10px] uppercase font-bold">Thời gian</span>
@@ -425,7 +425,7 @@ const InternshipManagement = () => {
                   </div>
                 </div>
 
-                {/* Actions */}
+                {/* Thao tác */}
                 <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
                   {item.status === 'PENDING' && (
                     <>
@@ -485,13 +485,13 @@ const InternshipManagement = () => {
           </div>
         </>)}
 
-        {/* Pagination */}
+        {/* Phân trang */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">
           <Pagination pagination={pagination} onPageChange={setPage} />
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Các Modal */}
       <InternshipDetailModal
         isOpen={detailModalOpen}
         onClose={() => {

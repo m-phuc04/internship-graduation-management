@@ -1,13 +1,13 @@
 import crypto from 'crypto';
 
-// In-memory CAPTCHA store: captchaId -> { text, expiresAt }
+// Bộ nhớ lưu trữ CAPTCHA tạm thời: captchaId -> { text, expiresAt }
 const captchaStore = new Map();
 
-// Allowed characters: Uppercase alphanumeric excluding ambiguous chars (0, O, 1, I, L)
+// Ký tự cho phép: Chữ cái in hoa và số, loại trừ các ký tự dễ nhầm lẫn (0, O, 1, I, L)
 const CHAR_SET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 const CAPTCHA_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// Periodic cleanup of expired captchas every 60 seconds
+// Dọn dẹp định kỳ các mã CAPTCHA đã hết hạn mỗi 60 giây
 setInterval(() => {
   const now = Date.now();
   for (const [id, data] of captchaStore.entries()) {
@@ -18,7 +18,7 @@ setInterval(() => {
 }, 60 * 1000);
 
 /**
- * Generate a random string from safe character set
+ * Tạo một chuỗi ngẫu nhiên từ tập ký tự an toàn
  */
 const generateRandomText = (length = 5) => {
   let text = '';
@@ -30,12 +30,12 @@ const generateRandomText = (length = 5) => {
 };
 
 /**
- * Helper to get a random integer in range [min, max]
+ * Hàm tiện ích lấy số nguyên ngẫu nhiên trong khoảng [min, max]
  */
 const getRandomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
 
 /**
- * Helper to get distinct dark vibrant colors for text/lines
+ * Hàm tiện ích lấy các màu tối nổi bật cho chữ/đường nét
  */
 const getRandomColor = () => {
   const colors = [
@@ -46,19 +46,19 @@ const getRandomColor = () => {
 };
 
 /**
- * Generate SVG Image for the CAPTCHA with noise lines, dots, and distorted characters
+ * Tạo ảnh SVG cho mã CAPTCHA kèm các đường nhiễu, điểm chấm và ký tự biến dạng
  */
 const generateCaptchaSvg = (text) => {
   const width = 170;
   const height = 48;
 
-  // Background subtle gradient
+  // Tạo dải màu nền nhẹ cho CAPTCHA
   const bgHue = getRandomInt(200, 260);
   const bg1 = `hsl(${bgHue}, 40%, 96%)`;
   const bg2 = `hsl(${bgHue + 20}, 40%, 92%)`;
 
   let noiseLines = '';
-  // 5 curved noise lines
+  // Vẽ 5 đường cong gây nhiễu
   for (let i = 0; i < 5; i++) {
     const x1 = getRandomInt(0, 30);
     const y1 = getRandomInt(5, height - 5);
@@ -72,7 +72,7 @@ const generateCaptchaSvg = (text) => {
   }
 
   let noiseDots = '';
-  // 30 random noise dots
+  // Vẽ 30 điểm chấm ngẫu nhiên gây nhiễu
   for (let i = 0; i < 30; i++) {
     const cx = getRandomInt(5, width - 5);
     const cy = getRandomInt(5, height - 5);
@@ -81,7 +81,7 @@ const generateCaptchaSvg = (text) => {
     noiseDots += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}" opacity="0.35" />`;
   }
 
-  // Render individual distorted characters
+  // Vẽ từng ký tự bị biến dạng ngẫu nhiên
   let charElements = '';
   const charSpacing = (width - 30) / text.length;
 
@@ -126,7 +126,7 @@ const generateCaptchaSvg = (text) => {
 };
 
 /**
- * Generate a new CAPTCHA session
+ * Tạo một phiên CAPTCHA mới
  */
 export const createCaptcha = () => {
   const captchaId = crypto.randomUUID();
@@ -147,7 +147,7 @@ export const createCaptcha = () => {
 };
 
 /**
- * Verify and invalidate the CAPTCHA (single-use)
+ * Xác minh và vô hiệu hóa mã CAPTCHA (sử dụng một lần)
  */
 export const verifyCaptcha = (captchaId, answer) => {
   if (!captchaId || !answer || typeof answer !== 'string') {
@@ -158,7 +158,7 @@ export const verifyCaptcha = (captchaId, answer) => {
 
   const stored = captchaStore.get(captchaId);
 
-  // Invalidate immediately to prevent replay
+  // Hủy CAPTCHA ngay lập tức để chống tấn công phát lại (Replay Attack)
   captchaStore.delete(captchaId);
 
   if (!stored) {

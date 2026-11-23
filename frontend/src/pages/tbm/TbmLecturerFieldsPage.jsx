@@ -24,25 +24,25 @@ import {
 const TbmLecturerFieldsPage = () => {
   const { showToast } = useToast();
 
-  // Loading states
+  // Trạng thái tải dữ liệu
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Data states
+  // Trạng thái dữ liệu
   const [requests, setRequests] = useState([]);
   const [lecturers, setLecturers] = useState([]);
   const [allFields, setAllFields] = useState([]);
 
-  // Selection states
+  // Trạng thái lựa chọn
   const [selectedLecturerIds, setSelectedLecturerIds] = useState([]);
   const [activeTags, setActiveTags] = useState([]);
 
-  // Tag Management Modal state
+  // Trạng thái modal quản lý thẻ hướng nghiên cứu
   const [isTagModalOpen, setIsTagModalOpen] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [tagModalLoading, setTagModalLoading] = useState(false);
 
-  // Confirm Dialog states
+  // Trạng thái hộp thoại xác nhận
   const [confirmDialog, setConfirmDialog] = useState({
     isOpen: false,
     title: '',
@@ -53,7 +53,7 @@ const TbmLecturerFieldsPage = () => {
     onConfirm: () => {},
   });
 
-  // Fetch all initial data
+  // Tải toàn bộ dữ liệu khởi tạo
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -77,7 +77,7 @@ const TbmLecturerFieldsPage = () => {
     fetchData();
   }, [fetchData]);
 
-  // Sync activeTags when lecturer selection changes
+  // Đồng bộ thẻ hướng nghiên cứu khi chọn giảng viên khác
   useEffect(() => {
     if (selectedLecturerIds.length === 1) {
       const singleLec = lecturers.find((l) => l._id === selectedLecturerIds[0]);
@@ -87,15 +87,15 @@ const TbmLecturerFieldsPage = () => {
         setActiveTags([]);
       }
     } else {
-      // 0 or >= 2 lecturers: start with empty (gray) tags
+      // Khi chọn 0 hoặc từ 2 giảng viên: hiển thị các thẻ chưa chọn (màu xám)
       setActiveTags([]);
     }
   }, [selectedLecturerIds, lecturers]);
 
-  // Lecturer list
+  // Danh sách giảng viên
   const filteredLecturers = lecturers;
 
-  // Check if exactly 1 lecturer selected
+  // Kiểm tra khi chỉ có đúng 1 giảng viên được chọn
   const singleLecturer = useMemo(() => {
     if (selectedLecturerIds.length === 1) {
       return lecturers.find((l) => l._id === selectedLecturerIds[0]) || null;
@@ -103,7 +103,7 @@ const TbmLecturerFieldsPage = () => {
     return null;
   }, [selectedLecturerIds, lecturers]);
 
-  // Determine if tags changed for 1 lecturer
+  // Xác định danh sách hướng nghiên cứu có thay đổi so với ban đầu không
   const isSingleLecturerTagsChanged = useMemo(() => {
     if (!singleLecturer) return false;
     const original = [...(singleLecturer.fields || [])].sort();
@@ -111,24 +111,24 @@ const TbmLecturerFieldsPage = () => {
     return JSON.stringify(original) !== JSON.stringify(current);
   }, [singleLecturer, activeTags]);
 
-  // Determine if Confirm button is enabled
+  // Xác định nút Xác nhận có được phép bấm hay không
   const isConfirmEnabled = useMemo(() => {
     if (selectedLecturerIds.length === 0) return false;
     if (selectedLecturerIds.length === 1) {
       return isSingleLecturerTagsChanged;
     }
-    // Multiple lecturers selected (>= 2): enabled if at least 1 tag is selected
+    // Khi chọn nhiều giảng viên (>= 2): cho phép lưu nếu chọn ít nhất 1 hướng nghiên cứu
     return activeTags.length > 0;
   }, [selectedLecturerIds.length, isSingleLecturerTagsChanged, activeTags.length]);
 
-  // Checkbox toggle lecturer
+  // Chọn / bỏ chọn giảng viên
   const handleToggleLecturer = (lecId) => {
     setSelectedLecturerIds((prev) =>
       prev.includes(lecId) ? prev.filter((id) => id !== lecId) : [...prev, lecId]
     );
   };
 
-  // Select all / Deselect all filtered lecturers
+  // Chọn tất cả / Bỏ chọn tất cả giảng viên đã lọc
   const handleSelectAllFiltered = (e) => {
     if (e.target.checked) {
       const allFilteredIds = filteredLecturers.map((l) => l._id);
@@ -139,7 +139,7 @@ const TbmLecturerFieldsPage = () => {
     }
   };
 
-  // Toggle active tag in right panel
+  // Bật / tắt thẻ hướng nghiên cứu ở khung bên phải
   const handleToggleTag = (tagName) => {
     if (selectedLecturerIds.length === 0) {
       showToast('Vui lòng chọn ít nhất 1 giảng viên', 'info');
@@ -150,7 +150,7 @@ const TbmLecturerFieldsPage = () => {
     );
   };
 
-  // Submit assign fields to selected lecturers
+  // Lưu gán hướng nghiên cứu cho các giảng viên đã chọn
   const handleSaveFields = async () => {
     if (selectedLecturerIds.length === 0) return;
     setActionLoading(true);
@@ -165,7 +165,7 @@ const TbmLecturerFieldsPage = () => {
           `Cập nhật lĩnh vực thành công cho ${selectedLecturerIds.length} giảng viên`,
           'success'
         );
-        // Refresh lecturers
+        // Làm mới danh sách giảng viên
         const lecRes = await researchFieldApi.getLecturersWithFields();
         if (lecRes.success) setLecturers(lecRes.data || []);
       }
@@ -176,7 +176,7 @@ const TbmLecturerFieldsPage = () => {
     }
   };
 
-  // Approve a field change request
+  // Phê duyệt yêu cầu thay đổi hướng nghiên cứu
   const handleApproveRequest = (request) => {
     const lecName = request.lecturerId?.userId?.fullName || 'giảng viên';
     setConfirmDialog({
@@ -211,7 +211,7 @@ const TbmLecturerFieldsPage = () => {
           } else {
             showToast(err.message || 'Không thể duyệt yêu cầu', 'error');
           }
-          // Always refresh to sync UI state and clear processed items
+          // Luôn làm mới giao diện để đồng bộ dữ liệu đã xử lý
           await fetchData();
         } finally {
           setActionLoading(false);
@@ -221,7 +221,7 @@ const TbmLecturerFieldsPage = () => {
     });
   };
 
-  // Reject a field change request
+  // Từ chối yêu cầu thay đổi hướng nghiên cứu
   const handleRejectRequest = (request) => {
     const lecName = request.lecturerId?.userId?.fullName || 'giảng viên';
     setConfirmDialog({
@@ -256,7 +256,7 @@ const TbmLecturerFieldsPage = () => {
           } else {
             showToast(err.message || 'Không thể từ chối yêu cầu', 'error');
           }
-          // Always refresh to sync UI state and clear processed items
+          // Luôn làm mới giao diện để đồng bộ dữ liệu đã xử lý
           await fetchData();
         } finally {
           setActionLoading(false);
@@ -266,7 +266,7 @@ const TbmLecturerFieldsPage = () => {
     });
   };
 
-  // Add a new system tag in Modal
+  // Thêm thẻ hướng nghiên cứu hệ thống mới
   const handleCreateSystemTag = async () => {
     const cleanName = newTagName.trim();
     if (!cleanName) {
@@ -290,7 +290,7 @@ const TbmLecturerFieldsPage = () => {
     }
   };
 
-  // Delete a system tag in Modal
+  // Xóa thẻ hướng nghiên cứu hệ thống
   const handleDeleteSystemTag = (tag) => {
     setConfirmDialog({
       isOpen: true,
@@ -424,7 +424,7 @@ const TbmLecturerFieldsPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
+      {/* Tiêu đề trang */}
       <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#123891] to-[#1B4DA1] text-white font-bold text-xl flex items-center justify-center shadow-md shadow-blue-200 shrink-0">
@@ -563,7 +563,7 @@ const TbmLecturerFieldsPage = () => {
               </tbody>
             </table>
           </div>
-          {/* Mobile Card List (< 768px) */}
+          {/* Danh sách thẻ Mobile (< 768px) */}
           <div className="md:hidden divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white">
             {requests.map((req, idx) => {
               const lecUser = req.lecturerId?.userId;
@@ -573,7 +573,7 @@ const TbmLecturerFieldsPage = () => {
 
               return (
                 <div key={req._id} className="p-4 space-y-3 bg-white">
-                  {/* Header: STT + Lecturer Name */}
+                  {/* Đầu thẻ: STT + Tên giảng viên */}
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <div className="flex items-center gap-2">
@@ -589,7 +589,7 @@ const TbmLecturerFieldsPage = () => {
                     </div>
                   </div>
 
-                  {/* Current Fields */}
+                  {/* Hướng nghiên cứu hiện tại */}
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs space-y-1">
                     <span className="text-[10px] uppercase font-bold text-slate-400 block">Lĩnh vực hiện tại</span>
                     <div className="flex flex-wrap gap-1.5">
@@ -608,7 +608,7 @@ const TbmLecturerFieldsPage = () => {
                     </div>
                   </div>
 
-                  {/* Requested Fields */}
+                  {/* Hướng nghiên cứu yêu cầu thay đổi */}
                   <div className="p-2.5 rounded-xl bg-blue-50/50 border border-blue-100 text-xs space-y-1">
                     <span className="text-[10px] uppercase font-bold text-[#123891] block">Yêu cầu thay đổi</span>
                     <div className="flex flex-wrap gap-1.5">
@@ -638,7 +638,7 @@ const TbmLecturerFieldsPage = () => {
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Thao tác */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
                     <button
                       type="button"
@@ -691,7 +691,7 @@ const TbmLecturerFieldsPage = () => {
             </button>
           </div>
 
-          {/* Selection counter & bulk action */}
+          {/* Bộ đếm số lượng chọn & thao tác hàng loạt */}
           <div className="flex items-center justify-between text-xs text-slate-500 bg-slate-50/70 p-2.5 rounded-xl border border-slate-200/60">
             <span>
               Đang chọn:{' '}
@@ -711,7 +711,7 @@ const TbmLecturerFieldsPage = () => {
             )}
           </div>
 
-          {/* Table */}
+          {/* Bảng dữ liệu */}
           <div className="overflow-x-auto rounded-2xl border border-slate-200 max-h-[600px] overflow-y-auto">
             <table className="w-full min-w-[680px] text-left text-xs border-collapse">
               <thead className="sticky top-0 bg-slate-100 z-10">
@@ -808,7 +808,7 @@ const TbmLecturerFieldsPage = () => {
 
         {/* CỘT PHẢI (5/12): DANH SÁCH TAG LĨNH VỰC & THAO TÁC GÁN */}
         <div className="lg:col-span-5 p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-5 sticky top-4">
-          {/* Header */}
+          {/* Tiêu đề */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
               <Tag className="w-5 h-5 text-[#123891]" />
@@ -870,7 +870,7 @@ const TbmLecturerFieldsPage = () => {
             </div>
           )}
 
-          {/* Interactive Tag Container */}
+          {/* Khung chứa thẻ tương tác */}
           <div className="space-y-3">
             {selectedLecturerIds.length > 0 && (
               <div className="flex items-center justify-end text-xs">
@@ -888,7 +888,7 @@ const TbmLecturerFieldsPage = () => {
                   'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100';
 
                 if (selectedLecturerIds.length === 1) {
-                  // Exactly 1 lecturer selected: active tags in GREEN, inactive in GRAY
+                  // Khi chọn đúng 1 giảng viên: các thẻ đã có hiển thị màu xanh lá, thẻ chưa có màu xám
                   if (isSelected) {
                     tagStyle =
                       'bg-emerald-500 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-300';
@@ -897,7 +897,7 @@ const TbmLecturerFieldsPage = () => {
                       'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200 hover:text-slate-800';
                   }
                 } else if (selectedLecturerIds.length >= 2) {
-                  // >=2 lecturers selected: starts gray, selected tags in EMERALD / BLUE
+                  // Khi chọn từ 2 giảng viên: các thẻ được chọn hiển thị màu xanh
                   if (isSelected) {
                     tagStyle =
                       'bg-[#123891] text-white border-[#123891] shadow-xs ring-2 ring-blue-300';
@@ -952,7 +952,7 @@ const TbmLecturerFieldsPage = () => {
       {isTagModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl space-y-5 border border-slate-200 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            {/* Header */}
+            {/* Tiêu đề */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3 shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-blue-50 text-[#123891] flex items-center justify-center">
@@ -976,7 +976,7 @@ const TbmLecturerFieldsPage = () => {
               </button>
             </div>
 
-            {/* Body */}
+            {/* Thân modal / nội dung */}
             <div className="space-y-4 overflow-y-auto pr-1 flex-1">
               {/* Form thêm tag mới */}
               <div>
@@ -1041,7 +1041,7 @@ const TbmLecturerFieldsPage = () => {
               </div>
             </div>
 
-            {/* Footer */}
+            {/* Chân trang */}
             <div className="flex items-center justify-end border-t border-slate-100 pt-3 shrink-0">
               <button
                 type="button"
@@ -1055,7 +1055,7 @@ const TbmLecturerFieldsPage = () => {
         </div>
       )}
 
-      {/* Confirm Dialog */}
+      {/* Hộp thoại xác nhận */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
         title={confirmDialog.title}

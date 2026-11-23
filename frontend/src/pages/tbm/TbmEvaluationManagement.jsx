@@ -45,7 +45,7 @@ const TbmEvaluationManagement = () => {
   const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
   const isTermActive = currentTerm?.status === 'ACTIVE';
 
-  // Evaluations State
+  // Trạng thái danh sách đánh giá
   const [evaluations, setEvaluations] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -53,11 +53,11 @@ const TbmEvaluationManagement = () => {
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
 
-  // Detail Modal
+  // Modal chi tiết
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [detailItem, setDetailItem] = useState(null);
 
-  // Modals
+  // Modal xử lýs
 
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
   const [targetInternship, setTargetInternship] = useState(null);
@@ -65,24 +65,24 @@ const TbmEvaluationManagement = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Modal: Publish All Scores
+  // Modal xử lý: Publish All Scores
   const [publishAllModalOpen, setPublishAllModalOpen] = useState(false);
   const [allTermInternships, setAllTermInternships] = useState([]);
   const [loadingAllInternships, setLoadingAllInternships] = useState(false);
   const [selectedPublishIds, setSelectedPublishIds] = useState([]);
   const [publishing, setPublishing] = useState(false);
 
-  // Modal: Hide Single Score
+  // Modal xử lý: Hide Single Score
   const [hideSingleModalOpen, setHideSingleModalOpen] = useState(false);
   const [targetHideItem, setTargetHideItem] = useState(null);
   const [hideReason, setHideReason] = useState('');
 
-  // Modal: Republish Single Score
+  // Modal xử lý: Republish Single Score
   const [republishSingleModalOpen, setRepublishSingleModalOpen] = useState(false);
   const [targetRepublishItem, setTargetRepublishItem] = useState(null);
   const [republishReason, setRepublishReason] = useState('');
 
-  // Modal: Hide Bulk Scores
+  // Modal xử lý: Hide Bulk Scores
   const [hideBulkModalOpen, setHideBulkModalOpen] = useState(false);
   const [selectedHideIds, setSelectedHideIds] = useState([]);
   const [hideBulkReason, setHideBulkReason] = useState('');
@@ -176,7 +176,7 @@ const TbmEvaluationManagement = () => {
     fetchEvaluations();
   }, [fetchEvaluations]);
 
-  // Open Bulk Publish Modal
+  // Mở modal công bố điểm hàng loạt
   const handleOpenPublishAllModal = async () => {
     setPublishAllModalOpen(true);
     setLoadingAllInternships(true);
@@ -196,7 +196,7 @@ const TbmEvaluationManagement = () => {
 
       setAllTermInternships(list);
 
-      // Auto-tick all items that have a valid score
+      // Tự động chọn tất cả sinh viên đã có điểm hợp lệ
       const validIds = list
         .filter((it) => {
           const hasScore = Boolean(
@@ -221,9 +221,9 @@ const TbmEvaluationManagement = () => {
     }
   };
 
-  // Sorted list for Bulk Modal:
-  // Eligible (has valid score) on TOP
-  // Ineligible (no score) on BOTTOM (disabled/greyed out)
+  // Danh sách sắp xếp cho modal công bố hàng loạt:
+  // Đủ điều kiện (đã có điểm hợp lệ) hiển thị ở TRÊN
+  // Chưa đủ điều kiện (chưa có điểm) ở DƯỚI (vô hiệu hóa / màu xám)
   const sortedBulkList = useMemo(() => {
     const list = [...allTermInternships];
     return list.sort((a, b) => {
@@ -237,7 +237,7 @@ const TbmEvaluationManagement = () => {
       if (aHasScore && !bHasScore) return -1;
       if (!aHasScore && bHasScore) return 1;
 
-      // If both have score, unpublished ones come first
+      // Nếu cả hai đều có điểm, hồ sơ chưa công bố sẽ hiển thị trước
       if (aHasScore && bHasScore) {
         if (!a.isScorePublished && b.isScorePublished) return -1;
         if (a.isScorePublished && !b.isScorePublished) return 1;
@@ -310,7 +310,7 @@ const TbmEvaluationManagement = () => {
     }
   };
 
-  // Single Hide Handlers
+  // Xử lý ẩn điểm cho từng sinh viên
   const handleOpenHideSingle = (item) => {
     setTargetHideItem(item);
     setHideReason('');
@@ -338,7 +338,7 @@ const TbmEvaluationManagement = () => {
     }
   };
 
-  // Single Republish Handlers
+  // Xử lý công bố lại điểm cho từng sinh viên
   const handleOpenRepublishSingle = (item) => {
     setTargetRepublishItem(item);
     setRepublishReason('');
@@ -366,7 +366,7 @@ const TbmEvaluationManagement = () => {
     }
   };
 
-  // Single Publish Handler
+  // Xử lý công bố điểm cho từng sinh viên
   const handlePublishSingle = async (item) => {
     setActionLoading(true);
     try {
@@ -382,7 +382,7 @@ const TbmEvaluationManagement = () => {
     }
   };
 
-  // Bulk Hide Handlers
+  // Xử lý ẩn điểm hàng loạt
   const handleOpenHideBulkModal = async () => {
     setHideBulkModalOpen(true);
     setLoadingAllInternships(true);
@@ -691,7 +691,7 @@ const TbmEvaluationManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Card */}
+      {/* Thẻ tiêu đề */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-5">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-[#123891] text-white flex items-center justify-center shrink-0 shadow-xs">
@@ -742,9 +742,9 @@ const TbmEvaluationManagement = () => {
         </div>
       </div>
 
-      {/* Main Content: Evaluations List */}
+      {/* Nội dung chính: Danh sách đánh giá */}
       <div className="space-y-4">
-        {/* Filter & Search Bar */}
+        {/* Thanh tìm kiếm và bộ lọc */}
         <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
           <div className="w-full md:w-96">
             <SearchInput
@@ -758,7 +758,7 @@ const TbmEvaluationManagement = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full md:w-auto justify-start md:justify-end">
-            {/* Academic Term Selector */}
+            {/* Bộ chọn học kỳ */}
             <select
               value={currentTerm?._id || ''}
               onChange={(e) => {
@@ -777,7 +777,7 @@ const TbmEvaluationManagement = () => {
                 ))}
             </select>
 
-            {/* Status Filter */}
+            {/* Bộ lọc theo trạng thái */}
             <select
               value={status}
               onChange={(e) => {
@@ -795,7 +795,7 @@ const TbmEvaluationManagement = () => {
           </div>
         </div>
 
-        {/* Closed term notice banner */}
+        {/* Banner thông báo học kỳ đã đóng */}
         {!isTermActive && (
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-2.5 text-xs text-amber-900">
             <Lock className="w-4 h-4 text-amber-600 shrink-0" />
@@ -805,7 +805,7 @@ const TbmEvaluationManagement = () => {
           </div>
         )}
 
-        {/* Evaluations Table */}
+        {/* Bảng kết quả đánh giá */}
         <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
           {loading ? (
             <div className="p-6">
@@ -855,7 +855,7 @@ const TbmEvaluationManagement = () => {
                           {(page - 1) * (pagination?.limit || 10) + idx + 1}
                         </td>
 
-                        {/* Student */}
+                        {/* Sinh viên */}
                         <td className="py-3.5 px-4 pl-6">
                           <div className="font-bold text-slate-900 group-hover:text-[#102d7d] transition">
                             {item.studentId?.userId?.fullName}
@@ -865,7 +865,7 @@ const TbmEvaluationManagement = () => {
                           </div>
                         </td>
 
-                        {/* Company */}
+                        {/* Doanh nghiệp */}
                         <td className="py-3.5 px-4 text-xs text-slate-700">
                           <div className="font-semibold text-slate-800">
                             {item.companyId?.name || item.companyId?.companyName || '—'}
@@ -876,7 +876,7 @@ const TbmEvaluationManagement = () => {
                           </div>
                         </td>
 
-                        {/* Supervisor Lecturer */}
+                        {/* Giảng viên giám sát */}
                         <td className="py-3.5 px-4 text-xs text-slate-700">
                           {item.lecturerId ? (
                             <div>
@@ -890,12 +890,12 @@ const TbmEvaluationManagement = () => {
                           )}
                         </td>
 
-                        {/* Status */}
+                        {/* Trạng thái */}
                         <td className="py-3.5 px-4">
                           <StatusBadge status={item.status} size="sm" />
                         </td>
 
-                        {/* Score */}
+                        {/* Điểm số */}
                         <td className="py-3.5 px-4">
                           {hasValidScore ? (
                             <div className="inline-flex items-baseline gap-1 font-bold text-[#102d7d] bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
@@ -911,7 +911,7 @@ const TbmEvaluationManagement = () => {
                           )}
                         </td>
 
-                        {/* Result */}
+                        {/* Kết quả */}
                         <td className="py-3.5 px-4 text-center">
                           {isItemPass ? (
                             <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1">
@@ -955,7 +955,7 @@ const TbmEvaluationManagement = () => {
                           )}
                         </td>
 
-                        {/* Actions */}
+                        {/* Thao tác */}
                         <td className="py-3.5 px-4 pr-6 text-right">
                           <div
                             className="flex items-center justify-end gap-1.5"
@@ -1048,7 +1048,7 @@ const TbmEvaluationManagement = () => {
                 </tbody>
               </table>
             </div>
-            {/* Mobile Card List (< 768px) */}
+            {/* Danh sách thẻ Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
               {evaluations.map((item, idx) => {
                 const hasValidScore = Boolean(
@@ -1066,7 +1066,7 @@ const TbmEvaluationManagement = () => {
                     key={item._id}
                     className="p-4 space-y-3 bg-white hover:bg-slate-50/60 transition"
                   >
-                    {/* Header: STT + Student name + Single Unified Result Badge */}
+                    {/* Đầu thẻ: STT + Tên sinh viên + Huy hiệu kết quả thống nhất */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -1097,7 +1097,7 @@ const TbmEvaluationManagement = () => {
                       )}
                     </div>
 
-                    {/* Company & Position */}
+                    {/* Doanh nghiệp & Vị trí thực tập */}
                     <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                       <div className="font-semibold text-slate-900 truncate">
                         {item.companyId?.name}
@@ -1124,7 +1124,7 @@ const TbmEvaluationManagement = () => {
                       )}
                     </div>
 
-                    {/* Publish Status Pill & Actions */}
+                    {/* Huy hiệu trạng thái công bố & Các thao tác */}
                     <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
                       <div>
                         {isPublished ? (
@@ -1214,7 +1214,7 @@ const TbmEvaluationManagement = () => {
             </div>
           </>)}
 
-          {/* Pagination */}
+          {/* Phân trang */}
           {pagination && pagination.pages > 1 && (
             <div className="p-4 border-t border-slate-100">
               <Pagination
@@ -1231,7 +1231,7 @@ const TbmEvaluationManagement = () => {
       {publishAllModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95 flex flex-col max-h-[85vh]">
-            {/* Modal Header */}
+            {/* Tiêu đề Modal */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
               <h3 className="font-bold text-lg sm:text-xl text-slate-900">Xác nhận công bố điểm Thực tập Doanh nghiệp</h3>
               <button
@@ -1243,7 +1243,7 @@ const TbmEvaluationManagement = () => {
               </button>
             </div>
 
-            {/* Modal Subheader Summary & Controls */}
+            {/* Tóm tắt đầu mục modal & Các bộ điều khiển */}
             <div className="px-6 py-3.5 bg-slate-50 border-b border-slate-200/80 shrink-0 text-xs space-y-2.5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <button
@@ -1282,7 +1282,7 @@ const TbmEvaluationManagement = () => {
               )}
             </div>
 
-            {/* Modal Body: List of Students */}
+            {/* Thân modal: Danh sách sinh viên */}
             <div className="p-6 overflow-y-auto space-y-2.5 text-xs flex-1">
               {loadingAllInternships ? (
                 <div className="py-8 text-center text-slate-400">
@@ -1315,7 +1315,7 @@ const TbmEvaluationManagement = () => {
                           : 'bg-white border-slate-200 hover:border-slate-300 text-slate-700 cursor-pointer'
                       }`}
                     >
-                      {/* Left: Checkbox + Student Info */}
+                      {/* Bên trái: Hộp kiểm + Thông tin sinh viên */}
                       <div className="flex items-center gap-3 min-w-0">
                         <input
                           type="checkbox"
@@ -1345,7 +1345,7 @@ const TbmEvaluationManagement = () => {
                         </div>
                       </div>
 
-                      {/* Right: Score Status / Disabled Badge */}
+                      {/* Bên phải: Trạng thái điểm / Huy hiệu vô hiệu hóa */}
                       <div className="shrink-0 text-right">
                         {hasScore ? (
                           <div className="space-y-1">
@@ -1376,7 +1376,7 @@ const TbmEvaluationManagement = () => {
               )}
             </div>
 
-            {/* Modal Footer */}
+            {/* Chân trang modal */}
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end gap-2.5 shrink-0">
               <button
                 type="button"
@@ -1408,9 +1408,9 @@ const TbmEvaluationManagement = () => {
         </div>
       )}
 
-      {/* MODALS */}
+      {/* CÁC MODAL */}
 
-      {/* 2. Complete / Lock Confirmation Modal */}
+      {/* 2. Modal xác nhận hoàn thành / khóa hồ sơ */}
       {completeModalOpen && targetInternship && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
@@ -1453,7 +1453,7 @@ const TbmEvaluationManagement = () => {
         </div>
       )}
 
-      {/* 4. Delete Evaluation Modal */}
+      {/* 4. Modal xóa đánh giá */}
       {deleteEvalModalOpen && deleteTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
@@ -1496,7 +1496,7 @@ const TbmEvaluationManagement = () => {
         </div>
       )}
 
-      {/* 5. Hide Single Score Modal */}
+      {/* 5. Modal ẩn điểm đơn lẻ */}
       {hideSingleModalOpen && targetHideItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
@@ -1568,7 +1568,7 @@ const TbmEvaluationManagement = () => {
         </div>
       )}
 
-      {/* 6. Republish Single Score Modal */}
+      {/* 6. Modal công bố lại điểm đơn lẻ */}
       {republishSingleModalOpen && targetRepublishItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
           <div className="bg-white max-w-md w-full p-6 rounded-3xl shadow-2xl border border-slate-200 space-y-4 animate-in zoom-in-95">
@@ -1639,11 +1639,11 @@ const TbmEvaluationManagement = () => {
         </div>
       )}
 
-      {/* 7. Bulk Hide Modal */}
+      {/* 7. Modal ẩn điểm hàng loạt */}
       {hideBulkModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-100 overflow-hidden my-8 animate-in zoom-in-95 flex flex-col max-h-[85vh]">
-            {/* Modal Header */}
+            {/* Tiêu đề Modal */}
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
               <h3 className="font-bold text-lg sm:text-xl text-slate-900">Ẩn điểm đã công bố hàng loạt</h3>
               <button
@@ -1655,9 +1655,9 @@ const TbmEvaluationManagement = () => {
               </button>
             </div>
 
-            {/* Toolbar: Search & Selection Bar */}
+            {/* Thanh công cụ: Tìm kiếm & Chọn nhanh */}
             <div className="p-4 bg-slate-50 border-b border-slate-200/80 space-y-3 shrink-0">
-              {/* Thanh search */}
+              {/* Thanh tìm kiếm */}
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -1690,7 +1690,7 @@ const TbmEvaluationManagement = () => {
               </div>
             </div>
 
-            {/* List */}
+            {/* Danh sách */}
             <div className="flex-1 overflow-y-auto p-4 space-y-2 divide-y divide-slate-100">
               {loadingAllInternships ? (
                 <div className="p-8 text-center text-xs text-slate-500 flex items-center justify-center gap-2">
@@ -1748,7 +1748,7 @@ const TbmEvaluationManagement = () => {
               )}
             </div>
 
-            {/* Modal Footer */}
+            {/* Chân trang modal */}
             <div className="px-6 py-4 bg-slate-50 border-t border-slate-200/80 flex items-center justify-end gap-2.5 shrink-0">
               <button
                 type="button"
@@ -1780,7 +1780,7 @@ const TbmEvaluationManagement = () => {
         </div>
       )}
 
-      {/* 8. Evaluation Detail Modal */}
+      {/* 8. Modal chi tiết đánh giá */}
       <EvaluationDetailModal
         isOpen={detailModalOpen}
         onClose={() => {

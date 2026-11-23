@@ -1,6 +1,6 @@
 /**
- * Helper to build full backend URL for uploaded files
- * Handles both relative paths (/uploads/...) and full absolute URLs
+ * Hàm tiện ích xây dựng URL backend đầy đủ cho các file đã tải lên
+ * Xử lý cả đường dẫn tương đối (/uploads/...) và URL tuyệt đối
  */
 export const getFileUrl = (url) => {
   if (!url) return '';

@@ -56,7 +56,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
       maxWidth="max-w-4xl"
     >
       <div className="space-y-5 text-xs max-h-[78vh] overflow-y-auto pr-1">
-        {/* Toggle between interactive detail and printable preview */}
+        {/* Chuyển đổi giữa xem chi tiết và bản in xem trước */}
         {showPrintDoc ? (
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50 border border-blue-100">
@@ -88,7 +88,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
           </div>
         ) : (
           <>
-            {/* Banner Summary */}
+            {/* Banner tóm tắt thông tin */}
             <div className="p-4 rounded-2xl bg-blue-50/70 border border-blue-200/80 text-[#123891] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <IUHLogo className="h-10 w-auto object-contain" />
@@ -383,7 +383,7 @@ const EvaluationDetailModal = ({ isOpen, onClose, internship, onDeleteEvaluation
           </>
         )}
 
-        {/* Modal Footer */}
+        {/* Chân trang modal */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-slate-100">
           <div className="flex items-center gap-2">
             {ev && !showPrintDoc && (

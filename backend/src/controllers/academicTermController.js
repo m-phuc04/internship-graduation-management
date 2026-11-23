@@ -1,7 +1,7 @@
 import academicTermService from "../services/academicTermService.js";
 
 // ====================
-// 1. Get All Academic Terms
+// 1. Lấy danh sách tất cả học kỳ
 // ====================
 const getAllTerms = async (req, res, next) => {
   try {
@@ -23,7 +23,7 @@ const getAllTerms = async (req, res, next) => {
 };
 
 // ====================
-// 2. Get Active Academic Term
+// 2. Lấy học kỳ đang kích hoạt
 // ====================
 const getActiveTerm = async (req, res, next) => {
   try {
@@ -39,7 +39,7 @@ const getActiveTerm = async (req, res, next) => {
 };
 
 // ====================
-// 2b. Get Current Academic Term (by Date)
+// 2b. Lấy học kỳ hiện tại (theo ngày)
 // ====================
 const getCurrentTerm = async (req, res, next) => {
   try {
@@ -56,7 +56,7 @@ const getCurrentTerm = async (req, res, next) => {
 };
 
 // ====================
-// 3. Get Term Details by ID
+// 3. Lấy thông tin chi tiết học kỳ theo ID
 // ====================
 const getTermById = async (req, res, next) => {
   try {
@@ -72,7 +72,7 @@ const getTermById = async (req, res, next) => {
 };
 
 // ====================
-// 4. Create Academic Term
+// 4. Tạo học kỳ mới
 // ====================
 const createTerm = async (req, res, next) => {
   try {
@@ -92,7 +92,7 @@ const createTerm = async (req, res, next) => {
 };
 
 // ====================
-// 5. Update Academic Term
+// 5. Cập nhật thông tin học kỳ
 // ====================
 const updateTerm = async (req, res, next) => {
   try {
@@ -112,7 +112,7 @@ const updateTerm = async (req, res, next) => {
 };
 
 // ====================
-// 6. Activate Academic Term
+// 6. Kích hoạt học kỳ
 // ====================
 const activateTerm = async (req, res, next) => {
   try {
@@ -129,7 +129,7 @@ const activateTerm = async (req, res, next) => {
 };
 
 // ====================
-// 7. Close Academic Term
+// 7. Đóng học kỳ
 // ====================
 const closeTerm = async (req, res, next) => {
   try {
@@ -146,7 +146,7 @@ const closeTerm = async (req, res, next) => {
 };
 
 // ====================
-// 8. Delete Academic Term
+// 8. Xóa học kỳ
 // ====================
 const deleteTerm = async (req, res, next) => {
   try {
@@ -163,7 +163,7 @@ const deleteTerm = async (req, res, next) => {
 };
 
 // ====================
-// 8b. Toggle Thesis Registration Lock
+// 8b. Bật/tắt khóa đăng ký Khóa luận Tốt nghiệp
 // ====================
 const toggleThesisRegistrationLock = async (req, res, next) => {
   try {

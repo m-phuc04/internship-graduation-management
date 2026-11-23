@@ -77,7 +77,7 @@ const StudentReportPage = () => {
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Modals
+  // Modal xử lýs
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [targetWeekForCreate, setTargetWeekForCreate] = useState(null);
   const [editingReport, setEditingReport] = useState(null);
@@ -130,7 +130,7 @@ const StudentReportPage = () => {
     });
   };
 
-  // Check if current logged-in user is SV1 or SV2
+  // Kiểm tra người dùng đăng nhập là Sinh viên 1 hay Sinh viên 2
   const isSV1 = useMemo(() => {
     if (!internship?.studentId || !user) return false;
     const s1UserId = internship.studentId?.userId?._id || internship.studentId?.userId || internship.studentId;
@@ -145,7 +145,7 @@ const StudentReportPage = () => {
 
   const hasStudent2 = !!internship?.secondStudentId;
 
-  // Map existing reports by weekNumber
+  // Ánh xạ các báo cáo đã có theo số thứ tự tuần
   const reportMap = useMemo(() => {
     const map = {};
     reports.forEach((r) => {
@@ -156,7 +156,7 @@ const StudentReportPage = () => {
     return map;
   }, [reports]);
 
-  // Check if internship has been approved by TBM
+  // Kiểm tra hồ sơ thực tập đã được TBM phê duyệt chưa
   const isApprovedByTBM = useMemo(() => {
     if (!internship) return false;
     if (
@@ -174,7 +174,7 @@ const StudentReportPage = () => {
     );
   }, [internship]);
 
-  // Check if supervisor lecturer is assigned
+  // Kiểm tra hồ sơ đã được phân công giảng viên giám sát chưa
   const hasAssignedLecturer = useMemo(() => {
     return Boolean(
       internship?.lecturerId ||
@@ -183,13 +183,13 @@ const StudentReportPage = () => {
     );
   }, [internship]);
 
-  // Total duration: 10 or 12 weeks according to registered duration
+  // Tổng thời gian thực tập: 10 hoặc 12 tuần theo thời lượng đăng ký
   const totalWeeks = useMemo(() => {
     if (!internship || !isApprovedByTBM) return 0;
     return getDurationWeeks(internship);
   }, [internship, isApprovedByTBM]);
 
-  // Report cycle configured by GVGS (1, 2, or 3 weeks/time)
+  // Chu kỳ báo cáo do GVGS thiết lập (1, 2 hoặc 3 tuần/lần)
   const cycle = useMemo(() => {
     return Number(internship?.reportCycle) || 1;
   }, [internship?.reportCycle]);
@@ -235,7 +235,7 @@ const StudentReportPage = () => {
     return result;
   }, [isApprovedByTBM, totalWeeks, internship?.startDate, cycle]);
 
-  // Statistics
+  // Thống kê
   const completedWeeks = useMemo(() => {
     return Object.values(reportMap).filter(
       (r) => ['SUBMITTED', 'REVIEWING', 'APPROVED'].includes(r.status),
@@ -311,7 +311,7 @@ const StudentReportPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Header Banner */}
+      {/* Banner tiêu đề */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-4 sm:gap-5">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-[#123891] font-semibold text-xs tracking-wider uppercase">
@@ -345,14 +345,14 @@ const StudentReportPage = () => {
         </div>
       </div>
 
-      {/* 1. Loading State */}
+      {/* 1. Trạng thái đang tải */}
       {loading && (
         <div className="p-6 bg-white rounded-3xl border border-slate-200/80 shadow-2xs">
           <LoadingSkeleton rows={4} cols={4} />
         </div>
       )}
 
-      {/* 2. Unregistered Student Guidance Card */}
+      {/* 2. Thẻ hướng dẫn cho sinh viên chưa đăng ký */}
       {!loading && !internship && (
         <div className="bg-white rounded-3xl border border-slate-200/80 p-8 sm:p-12 text-center shadow-2xs space-y-4">
           <div className="w-16 h-16 rounded-3xl bg-blue-50 text-[#123891] flex items-center justify-center mx-auto shadow-inner">
@@ -378,7 +378,7 @@ const StudentReportPage = () => {
         </div>
       )}
 
-      {/* 3. Registered Internship Overview Summary Card */}
+      {/* 3. Thẻ tóm tắt tổng quan hồ sơ thực tập đã đăng ký */}
       {!loading && internship && (
         <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#0e2c73] via-[#123891] to-[#102d7d] text-white shadow-md border border-blue-800/40 space-y-4">
           <div className="flex items-start justify-between flex-wrap gap-3 pb-3 border-b border-blue-800/60">
@@ -447,7 +447,7 @@ const StudentReportPage = () => {
         </div>
       )}
 
-      {/* 4. Warning if internship is not approved yet */}
+      {/* 4. Cảnh báo nếu hồ sơ thực tập chưa được duyệt */}
       {!loading && internship && !isApprovedByTBM && (
         <div className="p-5 rounded-3xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3.5 shadow-2xs">
           <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
@@ -462,7 +462,7 @@ const StudentReportPage = () => {
         </div>
       )}
 
-      {/* 4b. Notice if internship is approved but waiting for supervisor assignment */}
+      {/* 4b. Thông báo nếu hồ sơ thực tập đã duyệt nhưng chờ phân công GVGS */}
       {!loading && internship && isApprovedByTBM && !hasAssignedLecturer && (
         <div className="p-5 rounded-3xl bg-blue-50 border border-blue-200 text-blue-900 text-xs flex items-start gap-3.5 shadow-2xs">
           <Clock className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
@@ -559,7 +559,7 @@ const StudentReportPage = () => {
                         : 'border-dashed border-slate-200 hover:border-slate-300 bg-slate-50/40'
                     }`}
                   >
-                    {/* 1. Card Header: Week Title & Status Badges */}
+                    {/* 1. Đầu thẻ: Tiêu đề tuần & Huy hiệu trạng thái */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
                       <div className="flex items-center gap-2.5 flex-wrap">
                         <span
@@ -663,7 +663,7 @@ const StudentReportPage = () => {
                       </div>
                     </div>
 
-                    {/* 2. Body Content */}
+                    {/* 2. Nội dung chi tiết */}
                     <div className="py-2.5 space-y-2.5">
                       {report ? (
                         <>
@@ -680,7 +680,7 @@ const StudentReportPage = () => {
                             </p>
                           )}
 
-                          {/* File Attachment */}
+                          {/* Tệp tin đính kèm */}
                           {fileName && (
                             <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#102d7d] bg-blue-50/60 px-3.5 py-2 rounded-2xl border border-blue-100">
                               <div className="flex items-center gap-2 min-w-0">
@@ -719,7 +719,7 @@ const StudentReportPage = () => {
                             </div>
                           )}
 
-                          {/* SV2 Rejection Notice Alert */}
+                          {/* Cảnh báo thông báo từ chối từ sinh viên 2 */}
                           {isNeedsRevision && report.student2RejectedReason && (
                             <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-xs text-rose-900 space-y-1">
                               <div className="flex items-center gap-1.5 font-bold text-rose-700">
@@ -732,7 +732,7 @@ const StudentReportPage = () => {
                             </div>
                           )}
 
-                          {/* SV2 Confirmation Info */}
+                          {/* Thông tin xác nhận của sinh viên 2 */}
                           {report.student2Status === 'CONFIRMED' && (
                             <div className="text-[11px] text-emerald-700 flex items-center gap-1 font-medium bg-emerald-50/50 px-2.5 py-1 rounded-xl border border-emerald-100 w-fit">
                               <Check className="w-3.5 h-3.5 text-emerald-600" />
@@ -742,7 +742,7 @@ const StudentReportPage = () => {
                             </div>
                           )}
 
-                          {/* Lecturer Comment */}
+                          {/* Nhận xét của giảng viên */}
                           {report.lecturerComment && (
                             <div className="p-3.5 rounded-2xl border text-xs space-y-1 bg-slate-50 border-slate-200 text-slate-900">
                               <div className="flex items-center justify-between font-bold text-[11px] uppercase tracking-wider text-[#123891]">
@@ -763,7 +763,7 @@ const StudentReportPage = () => {
                       )}
                     </div>
 
-                    {/* 3. Card Actions Footer */}
+                    {/* 3. Chân thẻ các thao tác */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-3 border-t border-slate-100 text-[11px] text-slate-400">
                       <div>
                         {report ? (
@@ -846,7 +846,7 @@ const StudentReportPage = () => {
         </div>
       )}
 
-      {/* Modals */}
+      {/* Các Modal */}
       <StudentReportModal
         isOpen={createModalOpen}
         onClose={() => {

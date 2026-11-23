@@ -1,9 +1,9 @@
 /**
- * Utility functions for date parsing and formatting in Vietnamese standard format (DD/MM/YYYY)
+ * Các hàm tiện ích xử lý và định dạng ngày theo chuẩn Việt Nam (DD/MM/YYYY)
  */
 
 /**
- * Safely parse date from Date object, ISO string, or 'YYYY-MM-DD' without UTC timezone shift
+ * Phân tích ngày an toàn từ đối tượng Date, chuỗi ISO hoặc 'YYYY-MM-DD' tránh lệch múi giờ UTC
  * @param {Date|string|number} d
  * @returns {Date|null}
  */
@@ -14,7 +14,7 @@ export const parseLocalDate = (d) => {
     return d;
   }
   if (typeof d === 'string') {
-    // If format is YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss...
+    // Nếu định dạng là YYYY-MM-DD hoặc YYYY-MM-DDTHH:mm:ss...
     const datePart = d.split('T')[0];
     const parts = datePart.split('-');
     if (parts.length === 3) {
@@ -31,7 +31,7 @@ export const parseLocalDate = (d) => {
 };
 
 /**
- * Format date to standard Vietnamese DD/MM/YYYY (e.g. 11/08/2026)
+ * Định dạng ngày theo chuẩn Việt Nam DD/MM/YYYY (ví dụ: 11/08/2026)
  * @param {Date|string|number} d
  * @returns {string}
  */
@@ -63,7 +63,7 @@ export const formatFullDateVN = (d) => {
 };
 
 /**
- * Format date for HTML <input type="date"> (YYYY-MM-DD) safely using local time
+ * Định dạng ngày cho HTML <input type="date"> (YYYY-MM-DD) an toàn theo giờ địa phương
  * @param {Date|string|number} d
  * @returns {string}
  */
@@ -79,9 +79,9 @@ export const formatDateForInput = (d) => {
 };
 
 /**
- * Automatically calculate TTDN grading milestones based on registrationEnd
- * - gradingStart = registrationEnd + 10 weeks (70 days)
- * - gradingEnd = gradingStart + 15 days
+ * Tự động tính các mốc chấm điểm TTDN dựa vào ngày kết thúc đăng ký
+ * - Bắt đầu chấm điểm = Ngày kết thúc đăng ký + 10 tuần (70 ngày)
+ * - Kết thúc chấm điểm = Bắt đầu chấm điểm + 15 ngày
  * @param {Date|string|number} regEndDate
  * @returns {{ gradingStart: string, gradingEnd: string }}
  */
@@ -100,7 +100,7 @@ export const calculateInternshipGradingDates = (regEndDate) => {
 };
 
 /**
- * Check if the report time / defense time of a Council room has expired (ended)
+ * Kiểm tra xem thời gian báo cáo / bảo vệ của phòng Hội đồng đã kết thúc chưa
  * @param {Object} council
  * @returns {boolean}
  */
@@ -110,7 +110,7 @@ export const isCouncilReportTimeExpired = (council) => {
   try {
     const now = new Date();
 
-    // 1. If reportDate is set
+    // 1. Nếu có cấu hình reportDate
     if (council.reportDate) {
       const dateObj = parseLocalDate(council.reportDate);
       if (dateObj) {
@@ -135,7 +135,7 @@ export const isCouncilReportTimeExpired = (council) => {
       }
     }
 
-    // 2. Parse from reportTime string (e.g. "08:00 - 11:30, 07/10/2026")
+    // 2. Phân tích từ chuỗi reportTime (ví dụ: "08:00 - 11:30, 07/10/2026")
     if (council.reportTime && typeof council.reportTime === 'string') {
       const dateMatchVN = council.reportTime.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       const dateMatchISO = council.reportTime.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
@@ -165,7 +165,7 @@ export const isCouncilReportTimeExpired = (council) => {
       }
     }
 
-    // 3. Fallback: defenseDate
+    // 3. Dự phòng: Sử dụng defenseDate
     if (council.defenseDate) {
       const defDate = parseLocalDate(council.defenseDate);
       if (defDate) {

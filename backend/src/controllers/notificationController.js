@@ -1,6 +1,6 @@
 import notificationService from "../services/notificationService.js";
 
-// Get user's notifications
+// Lấy danh sách thông báo của người dùng
 const getMyNotifications = async (req, res, next) => {
   try {
     const { page, limit, unreadOnly } = req.query;
@@ -26,7 +26,7 @@ const getMyNotifications = async (req, res, next) => {
   }
 };
 
-// Mark single notification as read
+// Đánh dấu một thông báo đã đọc
 const markAsRead = async (req, res, next) => {
   try {
     const notification = await notificationService.markAsRead(
@@ -44,7 +44,7 @@ const markAsRead = async (req, res, next) => {
   }
 };
 
-// Mark all as read
+// Đánh dấu tất cả thông báo đã đọc
 const markAllAsRead = async (req, res, next) => {
   try {
     const result = await notificationService.markAllAsRead(req.user.userId);
@@ -59,7 +59,7 @@ const markAllAsRead = async (req, res, next) => {
   }
 };
 
-// Get unread count
+// Lấy số lượng thông báo chưa đọc
 const getUnreadCount = async (req, res, next) => {
   try {
     const result = await notificationService.getUnreadCount(req.user.userId);
@@ -75,7 +75,7 @@ const getUnreadCount = async (req, res, next) => {
   }
 };
 
-// Create a new notification
+// Tạo thông báo mới
 const createNotification = async (req, res, next) => {
   try {
     const {
@@ -114,7 +114,7 @@ const createNotification = async (req, res, next) => {
   }
 };
 
-// Send notification when assigned to council
+// Gửi thông báo khi được phân công vào hội đồng bảo vệ
 const notifyCouncilAssignment = async (req, res, next) => {
   try {
     const { lecturerUserIds = [], councilName = "Hội đồng", councilRoom = "" } = req.body;
@@ -148,7 +148,7 @@ const notifyCouncilAssignment = async (req, res, next) => {
 };
 
 // ====================
-// Email Notification Settings (TTDN, KLTN, News)
+// Cấu hình thông báo qua email (TTDN, KLTN, Tin tức)
 // ====================
 
 const getEmailSettings = async (req, res, next) => {

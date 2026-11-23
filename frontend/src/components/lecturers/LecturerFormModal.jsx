@@ -29,14 +29,14 @@ const LecturerFormModal = ({
 
   const [errors, setErrors] = useState({});
 
-  // Research fields state
+  // Trạng thái danh mục hướng nghiên cứu
   const [allFields, setAllFields] = useState([]);
   const [loadingFields, setLoadingFields] = useState(false);
   const [showAddField, setShowAddField] = useState(false);
   const [newFieldName, setNewFieldName] = useState('');
   const [creatingField, setCreatingField] = useState(false);
 
-  // Fetch all system research fields
+  // Lấy tất cả hướng nghiên cứu hệ thống
   useEffect(() => {
     if (!isOpen) return;
     let isMounted = true;
@@ -48,7 +48,7 @@ const LecturerFormModal = ({
           setAllFields(res.data);
         }
       } catch {
-        // Safe ignore
+        // Bỏ qua an toàn
       } finally {
         if (isMounted) setLoadingFields(false);
       }
@@ -109,7 +109,7 @@ const LecturerFormModal = ({
     }
   };
 
-  // Toggle field selection (select / deselect)
+  // Bật / tắt chọn hướng nghiên cứu
   const handleToggleField = (fieldName) => {
     setFormData((prev) => {
       const exists = prev.fields.includes(fieldName);
@@ -208,7 +208,7 @@ const LecturerFormModal = ({
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full Name */}
+        {/* Họ và tên */}
         <div>
           <label className="block text-xs font-semibold text-slate-700 mb-1">
             Họ và tên giảng viên <span className="text-rose-500">*</span>
@@ -228,7 +228,7 @@ const LecturerFormModal = ({
           )}
         </div>
 
-        {/* Email & Phone */}
+        {/* Email & Số điện thoại */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -264,7 +264,7 @@ const LecturerFormModal = ({
           </div>
         </div>
 
-        {/* Academic Title & Availability */}
+        {/* Học hàm / học vị & tình trạng nhận hướng dẫn */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -308,7 +308,7 @@ const LecturerFormModal = ({
 
         {/* Lĩnh vực (Research Fields / Expertise) */}
         <div className="space-y-2.5">
-          {/* Header Row */}
+          {/* Hàng tiêu đề */}
           <div className="flex items-center justify-between">
             <label className="text-xs font-semibold text-slate-700 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-[#123891]" />
@@ -321,7 +321,7 @@ const LecturerFormModal = ({
             </label>
           </div>
 
-          {/* 1. Selected Field Tags Display Box */}
+          {/* 1. Hộp hiển thị các thẻ hướng nghiên cứu đã chọn */}
           <div>
             <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
               Lĩnh vực đã chọn
@@ -352,7 +352,7 @@ const LecturerFormModal = ({
             </div>
           </div>
 
-          {/* 2. Interactive Pills of ALL available research fields */}
+          {/* 2. Danh sách tất cả hướng nghiên cứu khả dụng */}
           <div>
             <div className="mb-1.5">
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
@@ -413,7 +413,7 @@ const LecturerFormModal = ({
               </div>
             )}
 
-            {/* Inline Add New Field Form - Located directly below the system field tags list */}
+            {/* Form thêm mới hướng nghiên cứu - Đặt ngay dưới danh sách thẻ */}
             {showAddField && (
               <div className="mt-2.5 p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2 animate-in fade-in duration-150">
                 <div className="flex items-center justify-between">
@@ -466,7 +466,7 @@ const LecturerFormModal = ({
           </div>
         </div>
 
-        {/* Password (if create) / Account Active status (if edit) */}
+        {/* Mật khẩu (nếu tạo mới) / Trạng thái hoạt động (nếu chỉnh sửa) */}
         {!isEdit ? (
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -508,7 +508,7 @@ const LecturerFormModal = ({
           </div>
         )}
 
-        {/* Footer Actions */}
+        {/* Các nút thao tác chân trang */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-100">
           <button
             type="button"

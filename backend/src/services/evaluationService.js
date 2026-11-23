@@ -204,7 +204,7 @@ export const computeInternshipEvaluationResult = (internship, evaluation, term, 
     }
   }
 
-  // Check if student has valid evaluation score
+  // Kiểm tra sinh viên đã có điểm đánh giá hợp lệ hay chưa
   const hasValidScore = Boolean(
     evaluation &&
     evaluation.score !== null &&
@@ -221,11 +221,11 @@ export const computeInternshipEvaluationResult = (internship, evaluation, term, 
   let isFail = false;
 
   if (hasValidScore) {
-    // RULE: Has valid score -> ALWAYS PASS (even after deadline, result is preserved)
+    // QUY TẮC: Đã có điểm hợp lệ -> Luôn ĐẠT (kể cả sau hạn chót, kết quả vẫn được bảo lưu)
     result = "PASS";
     isPass = true;
   } else if (isExpired) {
-    // RULE: Expired and no valid score -> FAIL
+    // QUY TẮC: Quá hạn và chưa có điểm hợp lệ -> KHÔNG ĐẠT
     result = "FAIL";
     isFail = true;
   } else if (isNotOpen) {
@@ -270,7 +270,7 @@ const getEvaluationById = async (evaluationId, requestingUser) => {
     throw new AppError("Không tìm thấy hồ sơ thực tập tương ứng", 404);
   }
 
-  // Access Control
+  // Kiểm soát quyền truy cập
   if (requestingUser.role === "LECTURER") {
     const lecturer = await Lecturer.findOne({ userId: requestingUser.userId });
     if (
@@ -416,7 +416,7 @@ const getAllEvaluationsForTbm = async ({
     const ev = evalMap.get(intern._id.toString());
     const evalResult = computeInternshipEvaluationResult(intern, ev, intern.academicTermId);
 
-    // Determine 3-state score publish status (PUBLISHED, HIDDEN, UNPUBLISHED)
+    // Xác định 3 trạng thái công bố điểm (PUBLISHED, HIDDEN, UNPUBLISHED)
     const isHidden = intern.scorePublishStatus === "HIDDEN" || ev?.scorePublishStatus === "HIDDEN";
     const isPublished = !isHidden && Boolean(
       intern.scorePublishStatus === "PUBLISHED" ||
@@ -475,7 +475,7 @@ const getAllEvaluationsForTbm = async ({
 };
 
 // ==========================================
-// TBM: Delete Evaluation Result
+// TBM: Xóa kết quả đánh giá
 // ==========================================
 // ==========================================
 // TBM: Xóa kết quả đánh giá thực tập
@@ -573,7 +573,7 @@ const gradeInternshipByLecturer = async ({
     throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể chấm điểm thực tập.", 400);
   }
 
-  // Ensure this lecturer is assigned as GVGS for this internship
+  // Đảm bảo giảng viên này là GVGS được phân công cho hồ sơ thực tập
   if (!internship.lecturerId || internship.lecturerId.toString() !== lecturer._id.toString()) {
     throw new AppError("Bạn không phải là Giảng viên Giám sát được phân công cho hồ sơ này", 403);
   }
@@ -638,10 +638,10 @@ const gradeInternshipByLecturer = async ({
     throw new AppError(`Chưa đủ điều kiện chấm điểm: Sinh viên chưa hoàn thành đầy đủ nhật ký thực tập theo chu kỳ nộp${missingText}.`, 400);
   }
 
-  // Validate Grading Window for current academic term
+  // Kiểm tra thời hạn chấm điểm trong học kỳ hiện tại
   validateInternshipGradingWindow(term, new Date());
 
-  // Find or create Evaluation record
+  // Tìm hoặc tạo bản ghi Đánh giá (Evaluation)
   let evaluation = await Evaluation.findOne({
     evaluationType: "INTERNSHIP",
     targetId: internship._id,
@@ -715,12 +715,12 @@ const gradeInternshipByLecturer = async ({
     });
   }
 
-  // Update internship status to COMPLETED and link evaluation
+  // Cập nhật trạng thái thực tập thành COMPLETED và liên kết phiếu đánh giá
   internship.status = "COMPLETED";
   internship.evaluation = evaluation._id;
   await internship.save();
 
-  // Scores remain unpublished until officially published
+  // Điểm số ở trạng thái chưa công bố cho đến khi được duyệt công bố chính thức
   evaluation.isScorePublished = false;
   await evaluation.save();
 
@@ -739,7 +739,7 @@ const gradeInternshipByLecturer = async ({
 
 
 // ==========================================
-// TBM / Lecturer: Publish Single Internship Score
+// TBM / Giảng viên: Công bố điểm thực tập cho một sinh viên
 // ==========================================
 // TBM / Giảng viên: Công bố điểm một hồ sơ thực tập
 // ==========================================
@@ -761,7 +761,7 @@ const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser 
     throw new AppError("Học kỳ đã kết thúc (CLOSED). Không thể công bố điểm.", 400);
   }
 
-  // Access control: If requesting user is LECTURER, must be assigned supervisor
+  // Phân quyền: Nếu người thực hiện là GIẢNG VIÊN, phải là GVGS được phân công
   if (requestingUser && requestingUser.role === "LECTURER") {
     const lecturer = await Lecturer.findOne({
       userId: requestingUser.userId || requestingUser._id || requestingUser.id,
@@ -813,7 +813,7 @@ const publishInternshipScore = async ({ internshipId, tbmUserId, requestingUser 
   });
   await internship.save();
 
-  // Send Notification to Student ONLY when officially published and not a duplicate
+  // Chỉ gửi thông báo cho sinh viên khi điểm được công bố chính thức và không gửi trùng lặp
   if (!wasAlreadyPublished) {
     const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
     if (student?.userId?._id) {
@@ -902,7 +902,7 @@ const publishInternshipScoresBulk = async ({ internshipIds, tbmUserId }) => {
       });
       await internship.save();
 
-      // Notify Student ONLY when not already published (prevent duplicate notifications)
+      // Chỉ thông báo cho sinh viên khi chưa công bố trước đó (tránh trùng lặp thông báo)
       if (!wasAlreadyPublished) {
         const student = await Student.findById(internship.studentId._id || internship.studentId).populate("userId");
         if (student?.userId?._id) {

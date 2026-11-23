@@ -47,7 +47,7 @@ const StudentDashboard = () => {
         academicTermId: currentTerm?._id || '',
       });
 
-      // If no internship found under currentTerm, fallback to dashboard without term constraint
+      // Nếu không tìm thấy hồ sơ trong học kỳ hiện tại, dự phòng tìm theo toàn bộ học kỳ
       if ((!res?.success || !res?.data?.internship) && currentTerm?._id) {
         const fallbackRes = await dashboardApi.getStudentDashboard();
         if (fallbackRes?.success && fallbackRes?.data?.internship) {
@@ -55,7 +55,7 @@ const StudentDashboard = () => {
         }
       }
 
-      // If still no internship found, sync directly with internshipApi.getMyInternship()
+      // Nếu vẫn chưa có hồ sơ, đồng bộ trực tiếp với internshipApi.getMyInternship()
       if (!res?.data?.internship) {
         try {
           const internRes = await internshipApi.getMyInternship();
@@ -65,7 +65,7 @@ const StudentDashboard = () => {
             }
           }
         } catch {
-          // ignore
+          // Bỏ qua lỗi
         }
       }
 
@@ -106,7 +106,7 @@ const StudentDashboard = () => {
           };
         });
       } catch {
-        // ignore
+        // Bỏ qua lỗi
       }
     }
 
@@ -243,7 +243,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-full overflow-hidden">
-      {/* 1. Top Student Identity Card */}
+      {/* 1. Thẻ thông tin sinh viên */}
       <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-[#123891] text-white shadow-lg shadow-blue-900/10 flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 relative overflow-hidden">
         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-48 h-48 bg-white/10 rounded-full blur-2xl pointer-events-none" />
 
@@ -290,7 +290,7 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* 2. Core Operational Modules (TTDN & KLTN) */}
+      {/* 2. Các phân hệ vận hành chính (TTDN & KLTN) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {/* Module 1: Thực tập Doanh nghiệp (TTDN) */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4">
@@ -537,9 +537,9 @@ const StudentDashboard = () => {
         </div>
       </div>
 
-      {/* 3. Bottom Columns: Pending Actions & Real Notifications */}
+      {/* 3. Các cột phía dưới: Việc cần xử lý & Thông báo thực tế */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-        {/* Left: Pending Action Items */}
+        {/* Bên trái: Danh sách việc cần xử lý */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">
@@ -719,7 +719,7 @@ const StudentDashboard = () => {
           )}
         </div>
 
-        {/* Right: Notifications Feed */}
+        {/* Bên phải: Luồng thông báo */}
         <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 gap-2">
             <div className="flex items-center gap-2 font-bold text-sm text-slate-900">

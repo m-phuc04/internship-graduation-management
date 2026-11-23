@@ -63,7 +63,7 @@ const InternshipDetailModal = ({
         maxWidth="max-w-3xl"
       >
       <div className="space-y-6">
-        {/* Header Summary Banner */}
+        {/* Banner tóm tắt đầu trang */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 text-[#102d7d] font-bold text-lg flex items-center justify-center shadow-2xs">
@@ -94,9 +94,9 @@ const InternshipDetailModal = ({
           </div>
         </div>
 
-        {/* 2-Column Info Grid */}
+        {/* Lưới thông tin 2 cột */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
-          {/* Section 1: Student Details */}
+          {/* Phần 1: Thông tin chi tiết sinh viên */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <GraduationCap className="w-4 h-4 text-[#123891]" />
@@ -130,7 +130,7 @@ const InternshipDetailModal = ({
             </div>
           </div>
 
-          {/* Section 2: Company Details */}
+          {/* Phần 2: Thông tin chi tiết doanh nghiệp */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <Building2 className="w-4 h-4 text-[#123891]" />
@@ -156,7 +156,7 @@ const InternshipDetailModal = ({
             </div>
           </div>
 
-          {/* Section 3: Internship Position & Time */}
+          {/* Phần 3: Vị trí và thời gian thực tập */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <Calendar className="w-4 h-4 text-[#123891]" />
@@ -188,7 +188,7 @@ const InternshipDetailModal = ({
             </div>
           </div>
 
-          {/* Section 4: Mentor & Academic Supervisor */}
+          {/* Phần 4: Cán bộ hướng dẫn & Giảng viên giám sát */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/80 space-y-3 shadow-2xs">
             <div className="flex items-center gap-2 font-bold text-slate-900 uppercase tracking-wider pb-2 border-b border-slate-100">
               <UserCheck className="w-4 h-4 text-[#123891]" />
@@ -231,7 +231,7 @@ const InternshipDetailModal = ({
             </div>
           </div>
 
-          {/* Section: Rejection Info if REJECTED */}
+          {/* Phần thông tin từ chối nếu hồ sơ bị từ chối */}
           {internship.status === 'REJECTED' && (
             <div className="md:col-span-2 p-4 rounded-2xl bg-rose-50/80 border border-rose-200/80 text-rose-900 space-y-1">
               <div className="flex items-center gap-2 font-bold text-sm text-rose-700">
@@ -251,7 +251,7 @@ const InternshipDetailModal = ({
             </div>
           )}
 
-          {/* Section 5: Evaluation Summary if available */}
+          {/* Phần 5: Tóm tắt đánh giá (nếu có) */}
           {internship.evaluation && (
             <div className="md:col-span-2 p-4 rounded-2xl bg-gradient-to-r from-amber-50/80 to-emerald-50/80 border border-amber-200/70 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="flex items-center gap-3">
@@ -278,7 +278,7 @@ const InternshipDetailModal = ({
           )}
         </div>
 
-        {/* Footer Actions for TBM */}
+        {/* Các thao tác dưới chân trang cho TBM */}
         <div className="flex items-center justify-between pt-4 border-t border-slate-100">
           <div className="flex items-center gap-2">
             <button
@@ -301,7 +301,7 @@ const InternshipDetailModal = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Assign Lecturer button - ONLY IF NOT COMPLETED */}
+            {/* Nút phân công giảng viên - Chỉ áp dụng khi chưa hoàn thành */}
             {internship.status !== 'COMPLETED' && internship.evaluation?.status !== 'CONFIRMED' && (
               <button
                 type="button"
@@ -313,7 +313,7 @@ const InternshipDetailModal = ({
               </button>
             )}
 
-            {/* Reject button (if PENDING) */}
+            {/* Nút từ chối (nếu đang chờ duyệt) */}
             {internship.status === 'PENDING' && (
               <button
                 type="button"
@@ -325,7 +325,7 @@ const InternshipDetailModal = ({
               </button>
             )}
 
-            {/* Approve button (if PENDING) */}
+            {/* Nút phê duyệt (nếu đang chờ duyệt) */}
             {internship.status === 'PENDING' && (
               <button
                 type="button"
@@ -341,7 +341,7 @@ const InternshipDetailModal = ({
       </div>
     </Modal>
 
-    {/* Student Weekly Diary Detail Modal */}
+    {/* Modal chi tiết nhật ký tuần của sinh viên */}
     <StudentInternshipDiaryModal
       isOpen={diaryModalOpen}
       onClose={() => setDiaryModalOpen(false)}

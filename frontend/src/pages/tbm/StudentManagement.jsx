@@ -28,7 +28,7 @@ const StudentManagement = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Filter & Search states
+  // Trạng thái lọc và tìm kiếm
   const [search, setSearch] = useState('');
   const [className, setClassName] = useState('');
   const [prerequisiteCompleted, setPrerequisiteCompleted] = useState('');
@@ -36,7 +36,7 @@ const StudentManagement = () => {
   const [thesisRegistered, setThesisRegistered] = useState('');
   const [page, setPage] = useState(1);
 
-  // Modal states
+  // Trạng thái các Modal
   const [formModalOpen, setFormModalOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -78,22 +78,22 @@ const StudentManagement = () => {
     fetchStudents();
   }, [fetchStudents]);
 
-  // Reset page when filters change
+  // Đặt lại về trang 1 khi thay đổi bộ lọc
   const handleFilterChange = (setter, val) => {
     setter(val);
     setPage(1);
   };
 
-  // Handle Form Submit (Create / Edit)
+  // Xử lý lưu form (Tạo mới / Chỉnh sửa)
   const handleFormSubmit = async (formData) => {
     setActionLoading(true);
     try {
       if (selectedStudent) {
-        // Edit
+        // Chỉnh sửa
         await studentApi.update(selectedStudent._id, formData);
         showToast('Cập nhật thông tin sinh viên thành công!', 'success');
       } else {
-        // Create
+        // Tạo mới
         await studentApi.create(formData);
         showToast('Thêm mới sinh viên thành công!', 'success');
       }
@@ -107,7 +107,7 @@ const StudentManagement = () => {
     }
   };
 
-  // Handle Deactivate (Soft Delete)
+  // Xử lý vô hiệu hóa tài khoản (Xóa mềm)
   const handleDeactivateConfirm = async () => {
     if (!selectedStudent) return;
     setActionLoading(true);
@@ -124,7 +124,7 @@ const StudentManagement = () => {
     }
   };
 
-  // Handle Reactivate
+  // Xử lý kích hoạt lại tài khoản
   const handleActivateConfirm = async () => {
     if (!selectedStudent) return;
     setActionLoading(true);
@@ -141,7 +141,7 @@ const StudentManagement = () => {
     }
   };
 
-  // Handle Reset Password
+  // Xử lý đặt lại mật khẩu
   const handleResetPasswordConfirm = async () => {
     if (!selectedStudent) return;
     setActionLoading(true);
@@ -160,7 +160,7 @@ const StudentManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Header Card */}
+      {/* Thẻ tiêu đề đầu trang */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5 p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-3.5 sm:gap-4">
           <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0 shadow-xs">
@@ -188,7 +188,7 @@ const StudentManagement = () => {
         </button>
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
         <div className="w-full md:w-80">
           <SearchInput
@@ -234,7 +234,7 @@ const StudentManagement = () => {
         </div>
       </div>
 
-      {/* Main Table & Mobile Cards */}
+      {/* Bảng chính & Danh sách thẻ Mobile */}
       <div className="rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -257,7 +257,7 @@ const StudentManagement = () => {
           </div>
         ) : (
           <>
-            {/* Desktop & Tablet Table View (>= 768px) */}
+            {/* Bảng hiển thị cho Desktop & Tablet (>= 768px) */}
             <div className="hidden md:block overflow-x-auto custom-scrollbar">
               <table className="w-full text-left border-collapse min-w-[880px]">
                 <thead>
@@ -288,7 +288,7 @@ const StudentManagement = () => {
                           {(page - 1) * (pagination?.limit || 10) + idx + 1}
                         </td>
 
-                        {/* Student Info */}
+                        {/* Thông tin sinh viên */}
                         <td className="py-3.5 px-4">
                           <UserNameClickable
                             user={st}
@@ -298,14 +298,14 @@ const StudentManagement = () => {
                           />
                         </td>
 
-                        {/* Class */}
+                        {/* Lớp sinh hoạt */}
                         <td className="py-3.5 px-4 font-medium text-slate-700 text-xs">
                           <span className="px-2 py-1 bg-slate-100 rounded-md font-mono">
                             {st.className}
                           </span>
                         </td>
 
-                        {/* GPA & Credits */}
+                        {/* Điểm GPA & Tín chỉ */}
                         <td className="py-3.5 px-4 text-xs">
                           <div className="font-bold text-slate-800">
                             {Number(st.gpa).toFixed(2)} / 4.0
@@ -315,7 +315,7 @@ const StudentManagement = () => {
                           </div>
                         </td>
 
-                        {/* Prerequisite Condition */}
+                        {/* Điều kiện tiên quyết */}
                         <td className="py-3.5 px-4">
                           {st.prerequisiteCompleted ? (
                             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
@@ -328,7 +328,7 @@ const StudentManagement = () => {
                           )}
                         </td>
 
-                        {/* Internship Status */}
+                        {/* Trạng thái thực tập */}
                         <td className="py-3.5 px-4">
                           <StatusBadge
                             status={st.internshipRegistered}
@@ -337,7 +337,7 @@ const StudentManagement = () => {
                           />
                         </td>
 
-                        {/* Thesis Status */}
+                        {/* Trạng thái khóa luận */}
                         <td className="py-3.5 px-4">
                           <StatusBadge
                             status={st.thesisRegistered}
@@ -346,7 +346,7 @@ const StudentManagement = () => {
                           />
                         </td>
 
-                        {/* User Account Active Status */}
+                        {/* Trạng thái hoạt động của tài khoản người dùng */}
                         <td className="py-3.5 px-4">
                           {isStudentActive ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
@@ -361,7 +361,7 @@ const StudentManagement = () => {
                           )}
                         </td>
 
-                        {/* Actions */}
+                        {/* Thao tác */}
                         <td className="py-3.5 px-4 pr-6 text-right">
                           <div className="flex items-center justify-end gap-1">
                             <button
@@ -386,7 +386,7 @@ const StudentManagement = () => {
                               <Edit2 className="w-4 h-4" />
                             </button>
 
-                            {/* Reset Password Button */}
+                            {/* Nút đặt lại mật khẩu */}
                             <button
                               onClick={() => {
                                 setSelectedStudent(st);
@@ -398,7 +398,7 @@ const StudentManagement = () => {
                               <RefreshCw className="w-4 h-4" />
                             </button>
 
-                            {/* Toggle Active / Deactivate Button */}
+                            {/* Nút Bật / Khóa tài khoản */}
                             {isStudentActive ? (
                               <button
                                 onClick={() => {
@@ -431,13 +431,13 @@ const StudentManagement = () => {
               </table>
             </div>
 
-            {/* Mobile Card View (< 768px) */}
+            {/* Hiển thị thẻ Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
               {students.map((st, idx) => {
                 const isStudentActive = st.userId?.isActive !== false && st.isActive !== false;
                 return (
                   <div key={st._id} className={`p-4 space-y-3 hover:bg-slate-50/60 transition ${!isStudentActive ? 'bg-slate-50/40 opacity-80' : ''}`}>
-                    {/* Header Row: STT + Student Info + Active status */}
+                    {/* Hàng đầu thẻ: STT + Thông tin sinh viên + Trạng thái */}
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -465,7 +465,7 @@ const StudentManagement = () => {
                       )}
                     </div>
 
-                    {/* Stats & Badges Grid */}
+                    {/* Lưới thống kê & Huy hiệu */}
                     <div className="grid grid-cols-2 gap-2 text-xs p-2.5 bg-slate-50/70 rounded-xl border border-slate-100">
                       <div>
                         <span className="text-slate-400 text-[10px] block">GPA / Tín chỉ:</span>
@@ -503,7 +503,7 @@ const StudentManagement = () => {
                       </div>
                     </div>
 
-                    {/* Actions Row */}
+                    {/* Hàng thao tác */}
                     <div className="flex items-center justify-end gap-1.5 pt-1">
                       <button
                         onClick={() => {
@@ -569,13 +569,13 @@ const StudentManagement = () => {
           </>
         )}
 
-        {/* Pagination */}
+        {/* Phân trang */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">
           <Pagination pagination={pagination} onPageChange={setPage} />
         </div>
       </div>
 
-      {/* Form Modal */}
+      {/* Modal biểu mẫu */}
       <StudentFormModal
         isOpen={formModalOpen}
         onClose={() => {
@@ -588,7 +588,7 @@ const StudentManagement = () => {
         loading={actionLoading}
       />
 
-      {/* Detail Modal */}
+      {/* Modal chi tiết */}
       <StudentDetailModal
         isOpen={detailModalOpen}
         onClose={() => {
@@ -598,7 +598,7 @@ const StudentManagement = () => {
         student={selectedStudent}
       />
 
-      {/* Deactivate (Soft Delete) Confirmation Dialog */}
+      {/* Hộp thoại xác nhận vô hiệu hóa (Xóa mềm) */}
       <ConfirmDialog
         isOpen={deactivateDialogOpen}
         onClose={() => {
@@ -612,7 +612,7 @@ const StudentManagement = () => {
         loading={actionLoading}
       />
 
-      {/* Activate Confirmation Dialog */}
+      {/* Hộp thoại xác nhận kích hoạt tài khoản */}
       <ConfirmDialog
         isOpen={activateDialogOpen}
         onClose={() => {
@@ -626,7 +626,7 @@ const StudentManagement = () => {
         loading={actionLoading}
       />
 
-      {/* Reset Password Confirmation Dialog */}
+      {/* Hộp thoại xác nhận đặt lại mật khẩu */}
       <ConfirmDialog
         isOpen={resetPasswordDialogOpen}
         onClose={() => {

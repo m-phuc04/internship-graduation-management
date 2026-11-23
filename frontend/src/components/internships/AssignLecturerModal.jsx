@@ -68,7 +68,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
       maxWidth="max-w-lg"
     >
       <div className="space-y-4 text-xs">
-        {/* Student & Internship Info */}
+        {/* Thông tin sinh viên và thực tập */}
         <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200/80 text-[#123891] space-y-1">
           <div className="font-bold text-sm">
             Sinh viên: {internship.studentId?.userId?.fullName} ({internship.studentId?.studentCode})
@@ -83,7 +83,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
           )}
         </div>
 
-        {/* Lecturer Selector */}
+        {/* Bộ chọn giảng viên */}
         <div>
           <label className="block font-semibold text-slate-700 mb-1.5">
             Chọn Giảng viên Giám sát <span className="text-rose-500">*</span>
@@ -139,7 +139,7 @@ const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
           {error && <p className="text-rose-500 mt-1.5">{error}</p>}
         </div>
 
-        {/* Action Buttons */}
+        {/* Các nút thao tác */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-2.5 pt-3 border-t border-slate-100">
           <button
             type="button"

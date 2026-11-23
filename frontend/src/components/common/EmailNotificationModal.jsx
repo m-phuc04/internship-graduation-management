@@ -20,7 +20,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
   const { user, updateUser } = useAuth();
   const { showToast } = useToast();
 
-  // Validate email format
+  // Kiểm tra định dạng email hợp lệ
   const checkEmailValid = (emailStr) => {
     if (!emailStr || typeof emailStr !== 'string') return false;
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -35,7 +35,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
   const [enabledThesis, setEnabledThesis] = useState(Boolean(user?.emailThesisEnabled));
   const [enabledNews, setEnabledNews] = useState(Boolean(user?.emailNewsEnabled));
 
-  // Sync latest settings from backend whenever modal opens
+  // Đồng bộ cài đặt mới nhất từ backend mỗi khi mở modal
   useEffect(() => {
     if (!isOpen) return;
 
@@ -75,7 +75,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
     };
   }, [isOpen, user]);
 
-  // Handle Toggle Switch for individual module
+  // Xử lý bật/tắt thông báo cho từng module
   const handleToggle = async (key) => {
     if (savingKey) return;
 
@@ -99,7 +99,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
 
     const nextState = !currentVal;
 
-    // Check email requirement before enabling
+    // Yêu cầu có địa chỉ email trước khi bật thông báo
     if (nextState && !hasValidEmail) {
       showToast(
         'Tài khoản của bạn chưa có địa chỉ email hợp lệ. Vui lòng cập nhật email trong phần Hồ sơ cá nhân trước khi bật nhận email thông báo.',
@@ -145,7 +145,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
       maxWidth="max-w-xl"
     >
       <div className="space-y-4 text-xs">
-        {/* Card 1: Email Address Info */}
+        {/* Thẻ 1: Thông tin địa chỉ email */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="font-bold text-slate-700 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
@@ -177,7 +177,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Warning if no valid email */}
+          {/* Cảnh báo nếu chưa có email hợp lệ */}
           {!hasValidEmail && (
             <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-800 flex items-start gap-2">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -188,7 +188,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           )}
         </div>
 
-        {/* Card 2: Modules Toggle List */}
+        {/* Thẻ 2: Danh sách cấu hình thông báo module */}
         <div className="space-y-3">
           {/* Nhóm 1: TTDN */}
           <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-2xs space-y-2">
@@ -225,7 +225,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                 </p>
               </div>
 
-              {/* Toggle Switch */}
+              {/* Nút gạt chuyển trạng thái */}
               <div className="shrink-0 pt-1">
                 <button
                   type="button"
@@ -293,7 +293,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                 </p>
               </div>
 
-              {/* Toggle Switch */}
+              {/* Nút gạt chuyển trạng thái */}
               <div className="shrink-0 pt-1">
                 <button
                   type="button"
@@ -361,7 +361,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                 </p>
               </div>
 
-              {/* Toggle Switch */}
+              {/* Nút gạt chuyển trạng thái */}
               <div className="shrink-0 pt-1">
                 <button
                   type="button"
@@ -395,7 +395,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Card 3: Important Notice */}
+        {/* Thẻ 3: Lưu ý quan trọng */}
         <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex items-start gap-2.5 text-blue-950">
           <Info className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
           <div className="text-[11px] leading-relaxed">
@@ -403,7 +403,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           </div>
         </div>
 
-        {/* Footer Actions */}
+        {/* Các nút thao tác chân trang */}
         <div className="flex justify-end pt-3 border-t border-slate-100">
           <button
             type="button"

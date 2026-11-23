@@ -41,7 +41,7 @@ const NotificationDropdown = () => {
         0;
       setUnreadCount(Number(rawCount) || 0);
     } catch {
-      // ignore
+      // Bỏ qua lỗi
     }
   }, [user]);
 
@@ -61,7 +61,7 @@ const NotificationDropdown = () => {
             const link = item.link || '';
             const title = item.title || '';
 
-            // Always allow research field change notifications for Admin
+            // Luôn hiển thị thông báo thay đổi hướng nghiên cứu cho Admin
             if (/lĩnh vực/i.test(title)) return true;
 
             const isOperational =
@@ -85,13 +85,13 @@ const NotificationDropdown = () => {
         }
       }
     } catch {
-      // ignore
+      // Bỏ qua lỗi
     } finally {
       if (!silent) setLoading(false);
     }
   }, [user]);
 
-  // Synchronized unread count: either from API or computed from loaded unread items
+  // Số lượng chưa đọc đồng bộ: Lấy từ API hoặc tính từ các mục đã tải
   const displayUnreadCount = Math.max(
     Number(unreadCount) || 0,
     (notifications || []).filter((n) => !n.isRead).length
@@ -104,14 +104,14 @@ const NotificationDropdown = () => {
       return;
     }
 
-    // Initial fetch
+    // Tải dữ liệu ban đầu
     fetchUnreadCount();
     fetchNotifications(true); // background silent fetch
 
-    // Poll every 10 seconds for timely notification badge updates
+    // Thăm dò định kỳ mỗi 10 giây để cập nhật huy hiệu thông báo
     const interval = setInterval(fetchUnreadCount, 10000);
 
-    // Refetch when tab regains focus or becomes visible
+    // Tải lại dữ liệu khi chuyển lại tab trình duyệt
     const handleFocusOrVisible = () => {
       if (document.visibilityState === 'visible') {
         fetchUnreadCount();
@@ -121,7 +121,7 @@ const NotificationDropdown = () => {
     window.addEventListener('focus', handleFocusOrVisible);
     document.addEventListener('visibilitychange', handleFocusOrVisible);
 
-    // Refetch when notifications_updated event fires
+    // Tải lại dữ liệu khi nhận sự kiện notifications_updated
     const handleCustomUpdate = () => {
       fetchUnreadCount();
       fetchNotifications(true);
@@ -136,7 +136,7 @@ const NotificationDropdown = () => {
     };
   }, [user, fetchUnreadCount, fetchNotifications]);
 
-  // Re-check unread notifications on route changes
+  // Kiểm tra lại thông báo chưa đọc khi chuyển trang
   useEffect(() => {
     if (user) {
       fetchUnreadCount();
@@ -149,7 +149,7 @@ const NotificationDropdown = () => {
     }
   }, [open, fetchNotifications]);
 
-  // Click outside to close
+  // Bấm ra ngoài để đóng menu
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -170,7 +170,7 @@ const NotificationDropdown = () => {
       setUnreadCount((prev) => Math.max(0, prev - 1));
       triggerNotificationRefresh();
     } catch {
-      // ignore
+      // Bỏ qua lỗi
     }
   };
 
@@ -198,7 +198,7 @@ const NotificationDropdown = () => {
       return;
     }
 
-    // Determine target URL based on notification type and title/message
+    // Xác định đường dẫn điều hướng dựa trên loại thông báo và tiêu đề
     let targetLink = item.link;
     const role = user?.role;
     const titleLower = item.title?.toLowerCase() || '';
@@ -417,7 +417,7 @@ const NotificationDropdown = () => {
           targetLink.startsWith('/lecturer/') ||
           targetLink.startsWith('/student/')
         ) {
-          // Do not navigate ADMIN to non-admin operational pages
+          // Không điều hướng tài khoản ADMIN vào các trang nghiệp vụ không thuộc quyền
           return;
         }
       }
@@ -477,7 +477,7 @@ const NotificationDropdown = () => {
       setUnreadCount(0);
       triggerNotificationRefresh();
     } catch {
-      // ignore
+      // Bỏ qua lỗi
     }
   };
 
@@ -516,7 +516,7 @@ const NotificationDropdown = () => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bell Button */}
+      {/* Nút chuông thông báo */}
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
@@ -532,10 +532,10 @@ const NotificationDropdown = () => {
         )}
       </button>
 
-      {/* Popover */}
+      {/* Hộp thông tin Popover */}
       {open && (
         <div className="fixed left-3 right-3 top-16 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-96 rounded-2xl bg-white border border-slate-200/90 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100 max-h-[calc(100vh-5rem)] flex flex-col">
-          {/* Header */}
+          {/* Tiêu đề */}
           <div className="flex items-center justify-between p-3.5 border-b border-slate-100 bg-slate-50/80 shrink-0">
             <div className="flex items-center gap-2 min-w-0">
               <span className="font-bold text-xs text-slate-900 truncate">Thông báo</span>
@@ -558,7 +558,7 @@ const NotificationDropdown = () => {
             )}
           </div>
 
-          {/* List */}
+          {/* Danh sách */}
           <div className="max-h-80 sm:max-h-96 overflow-y-auto divide-y divide-slate-100 text-xs flex-1">
             {loading ? (
               <div className="p-6 text-center text-slate-400 text-xs">Đang tải thông báo...</div>

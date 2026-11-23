@@ -101,7 +101,7 @@ const StudentFormModal = ({
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Full Name & Student Code */}
+        {/* Họ và tên & Mã sinh viên */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -143,7 +143,7 @@ const StudentFormModal = ({
           </div>
         </div>
 
-        {/* Email & Phone */}
+        {/* Email & Số điện thoại */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -179,7 +179,7 @@ const StudentFormModal = ({
           </div>
         </div>
 
-        {/* Class & Password (if create) */}
+        {/* Lớp & Mật khẩu (nếu tạo mới) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -242,7 +242,7 @@ const StudentFormModal = ({
           )}
         </div>
 
-        {/* GPA & Accumulated Credits */}
+        {/* Điểm GPA & Tín chỉ tích lũy */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">
@@ -275,7 +275,7 @@ const StudentFormModal = ({
           </div>
         </div>
 
-        {/* Checkbox: Prerequisite condition */}
+        {/* Hộp kiểm: Điều kiện tiên quyết */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
           <label className="flex items-center gap-3 cursor-pointer">
             <input
@@ -296,7 +296,7 @@ const StudentFormModal = ({
           </label>
         </div>
 
-        {/* Footer Actions */}
+        {/* Các nút thao tác chân trang */}
         <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-4 border-t border-slate-100">
           <button
             type="button"

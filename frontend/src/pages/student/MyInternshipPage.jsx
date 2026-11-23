@@ -51,7 +51,7 @@ const MyInternshipPage = () => {
   const [evalData, setEvalData] = useState(null);
   const { showToast } = useToast();
 
-  // Report File Upload & Delete State
+  // Trạng thái tải lên và gỡ file báo cáo
   const [reportFileToUpload, setReportFileToUpload] = useState(null);
   const [uploadingReport, setUploadingReport] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -60,12 +60,12 @@ const MyInternshipPage = () => {
   const fetchMyInternship = useCallback(async () => {
     setLoading(true);
     try {
-      // 1. Try fetching with currentTerm filter
+      // 1. Thử tải dữ liệu với bộ lọc học kỳ hiện tại
       let res = await internshipApi.getMyInternship({
         academicTermId: currentTerm?._id || '',
       });
 
-      // 2. Fallback to fetching without term constraint
+      // 2. Dự phòng: Tải dữ liệu không ràng buộc học kỳ
       if ((!res?.success || !res?.data?.internship) && currentTerm?._id) {
         const fallbackRes = await internshipApi.getMyInternship();
         if (fallbackRes?.success && fallbackRes?.data?.internship) {
@@ -73,7 +73,7 @@ const MyInternshipPage = () => {
         }
       }
 
-      // 3. Fallback to student dashboard API
+      // 3. Dự phòng: Tải dữ liệu từ API dashboard sinh viên
       let resolvedInternship = res?.data?.internship || (res?.data?._id ? res.data : null);
       let resolvedStudent = res?.data?.student || resolvedInternship?.studentId;
 
@@ -85,7 +85,7 @@ const MyInternshipPage = () => {
             resolvedStudent = dashRes.data.student || resolvedStudent;
           }
         } catch {
-          // ignore
+          // Bỏ qua lỗi
         }
       }
 
@@ -104,7 +104,7 @@ const MyInternshipPage = () => {
         });
       }
 
-      // Fetch evaluation request / grading data if API function exists
+      // Tải dữ liệu yêu cầu đánh giá / chấm điểm nếu có API
       if (typeof evaluationApi?.getStudentEvaluationRequest === 'function') {
         try {
           let evalRes = await evaluationApi.getStudentEvaluationRequest({
@@ -122,7 +122,7 @@ const MyInternshipPage = () => {
             setEvalData(evalRes.data);
           }
         } catch {
-          // Safe ignore
+          // Bỏ qua an toàn
         }
       }
     } catch (err) {
@@ -136,7 +136,7 @@ const MyInternshipPage = () => {
     fetchMyInternship();
   }, [fetchMyInternship]);
 
-  // Smooth scroll to evaluation section when ?view=evaluation is present
+  // Tự động cuộn mượt đến phần đánh giá khi có tham số ?view=evaluation
   useEffect(() => {
     if (location.search.includes('view=evaluation')) {
       const el = document.getElementById('evaluation-section');
@@ -168,7 +168,7 @@ const MyInternshipPage = () => {
   );
   const canRegisterNew = !hasActiveInternship;
 
-  // Active evaluation data
+  // Dữ liệu đánh giá hiện tại
   const activeEvaluation = evalData?.evaluation ||
     data?.evaluation ||
     (typeof internship?.evaluation === 'object' && internship?.evaluation?._id ? internship.evaluation : null);
@@ -183,10 +183,10 @@ const MyInternshipPage = () => {
     (internship?.score !== undefined && internship?.score !== null)
   );
 
-  // Student ONLY sees score if isScorePublished is true!
+  // Sinh viên chỉ nhìn thấy điểm khi điểm đã được công bố chính thức!
   const hasPublishedScore = Boolean(isScorePublished && rawHasScore);
 
-  // Lecturer has graded, but TBM has not published yet
+  // Giảng viên đã chấm điểm nhưng TBM chưa duyệt công bố
   const isGradedPendingPublish = Boolean(
     !isScorePublished && (
       evalData?.hasGraded ||
@@ -206,7 +206,7 @@ const MyInternshipPage = () => {
     activeEvaluation?.status === 'COMPLETED'
   );
 
-  // Time window for grading
+  // Khoảng thời gian cho phép chấm điểm
   const termInternshipCfg = evalData?.term?.internship || currentTerm?.internship || {};
   const gradingStartRaw = termInternshipCfg.gradingStart;
   const gradingEndRaw = termInternshipCfg.gradingEnd;
@@ -372,7 +372,7 @@ const MyInternshipPage = () => {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      {/* Top Banner Card */}
+      {/* Thẻ banner trên cùng */}
       <div className="p-4 sm:p-6 lg:p-8 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
         <div className="flex items-start sm:items-center gap-4">
           <div className="w-14 h-14 rounded-2xl bg-blue-50 text-[#123891] flex items-center justify-center shrink-0">
@@ -395,11 +395,11 @@ const MyInternshipPage = () => {
 
       </div>
 
-      {/* Main Grid: Details */}
+      {/* Lưới chính: Chi tiết thông tin */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Left Column (2 Cols): Student & Company Info */}
+        {/* Cột trái (2 cột): Thông tin sinh viên & Doanh nghiệp */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
-          {/* Section 1: Student & Position */}
+          {/* Phần 1: Sinh viên & Vị trí thực tập */}
           <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <UserCheck className="w-5 h-5 text-[#123891]" />
@@ -439,7 +439,7 @@ const MyInternshipPage = () => {
             </div>
           </div>
 
-          {/* Section 2: Company Information */}
+          {/* Phần 2: Thông tin doanh nghiệp */}
           <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4 sm:space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-slate-100">
               <Building2 className="w-5 h-5 text-[#123891]" />
@@ -575,7 +575,7 @@ const MyInternshipPage = () => {
               )}
             </div>
 
-            {/* Display submitted file or upload form */}
+            {/* Hiển thị file đã nộp hoặc form tải lên */}
             {internship.reportFile?.fileUrl ? (
               <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -669,7 +669,7 @@ const MyInternshipPage = () => {
           </div>
         </div>
 
-        {/* Right Column (1 Col): Supervisor Lecturer & Evaluation Outcome */}
+        {/* Cột phải (1 cột): Giảng viên giám sát & Kết quả đánh giá */}
         <div className="space-y-4 sm:space-y-6">
           {/* Section 3: Giảng viên Giám sát (GVGS) */}
           <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs space-y-4">
@@ -736,7 +736,7 @@ const MyInternshipPage = () => {
               ) : null}
             </div>
 
-            {/* Condition A: Internship PENDING */}
+            {/* Trường hợp A: Hồ sơ thực tập đang chờ duyệt (PENDING) */}
             {internship.status === 'PENDING' && (
               <div className="p-4 rounded-2xl bg-[#123891]/5 border border-[#123891]/20 text-[#123891] text-xs leading-relaxed space-y-1">
                 <div className="font-bold flex items-center gap-1.5 text-[#123891]">
@@ -749,7 +749,7 @@ const MyInternshipPage = () => {
               </div>
             )}
 
-            {/* Condition B1: Has Published Score */}
+            {/* Trường hợp B1: Đã công bố điểm số */}
             {hasPublishedScore && (
               <div className="space-y-4 text-xs">
                 <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/90 text-emerald-950 space-y-3">
@@ -771,7 +771,7 @@ const MyInternshipPage = () => {
                     </div>
                   </div>
 
-                  {/* Comments from GVGS */}
+                  {/* Nhận xét từ Giảng viên giám sát */}
                   {activeEvaluation?.comments && (
                     <div className="p-3 rounded-xl bg-white/80 border border-emerald-200/60 text-slate-700 space-y-1">
                       <div className="font-bold text-slate-800 text-[11px] uppercase">Nhận xét của Giảng viên:</div>
@@ -784,7 +784,7 @@ const MyInternshipPage = () => {
               </div>
             )}
 
-            {/* Condition C: Approved / Interning, awaiting lecturer grading */}
+            {/* Trường hợp C: Đã duyệt / Đang thực tập, chờ giảng viên chấm điểm */}
             {internship.status !== 'PENDING' && !hasPublishedScore && (
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs space-y-3">
                 <div className="font-bold text-slate-800 flex items-center gap-1.5">
@@ -807,7 +807,7 @@ const MyInternshipPage = () => {
             )}
           </div>
 
-          {/* Application Metadata */}
+          {/* Siêu dữ liệu đơn thực tập */}
           <div className="p-4 sm:p-6 rounded-2xl sm:rounded-3xl bg-slate-50 border border-slate-200/80 text-xs text-slate-500 space-y-2">
             <div className="flex justify-between">
               <span>Ngày gửi đăng ký:</span>
@@ -823,7 +823,7 @@ const MyInternshipPage = () => {
         </div>
       </div>
 
-      {/* Document Viewer Modal */}
+      {/* Modal xem tài liệu */}
       {docModalOpen && (
         <DocumentViewerModal
           isOpen={docModalOpen}
@@ -834,7 +834,7 @@ const MyInternshipPage = () => {
         </DocumentViewerModal>
       )}
 
-      {/* Delete Report File Confirmation Modal */}
+      {/* Modal xác nhận gỡ file báo cáo */}
       {deleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4">

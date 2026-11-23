@@ -12,7 +12,7 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import LecturerInternshipDetailModal from '../../components/lecturers/LecturerInternshipDetailModal';
 
-// Document Components
+// Các component tài liệu và biểu mẫu
 import InternshipConfirmationDoc from '../../components/documents/InternshipConfirmationDoc';
 import InternshipEvaluationDoc from '../../components/documents/InternshipEvaluationDoc';
 import DocumentViewerModal from '../../components/documents/DocumentViewerModal';
@@ -63,17 +63,17 @@ const LecturerInternshipPage = () => {
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Search & Pagination
+  // Tìm kiếm và phân trang
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
-  // Modals
+  // Modal xử lýs
   const [selectedInternship, setSelectedInternship] = useState(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [gradingModalOpen, setGradingModalOpen] = useState(false);
   const [gradingTarget, setGradingTarget] = useState(null);
 
-  // Accept, Reject & Complete Modals
+  // Các modal tiếp nhận, từ chối và hoàn thành thực tập
   const [acceptModalOpen, setAcceptModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [completeModalOpen, setCompleteModalOpen] = useState(false);
@@ -87,11 +87,11 @@ const LecturerInternshipPage = () => {
   const [selectedCycle, setSelectedCycle] = useState(1);
   const [cycleLoading, setCycleLoading] = useState(false);
 
-  // Publish Score Modal State
+  // Trạng thái modal công bố điểm
   const [publishModalOpen, setPublishModalOpen] = useState(false);
   const [targetPublishItem, setTargetPublishItem] = useState(null);
 
-  // Document Modal States
+  // Trạng thái các modal tài liệu
   const [docModalOpen, setDocModalOpen] = useState(false);
   const [docType, setDocType] = useState('CONFIRMATION'); // 'CONFIRMATION' | 'EVALUATION'
   const [confirmationData, setConfirmationData] = useState(null);
@@ -197,7 +197,7 @@ const LecturerInternshipPage = () => {
           const parsed = JSON.parse(text);
           if (parsed.message) msg = parsed.message;
         } catch {
-          // ignore
+          // Bỏ qua lỗi
         }
       }
       showToast(msg, 'error');
@@ -390,7 +390,7 @@ const LecturerInternshipPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* Top Banner with Lecturer Workload Stats & Actions */}
+      {/* Banner đầu trang kèm thống kê tải công việc giảng viên & Thao tác */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-2xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -410,7 +410,7 @@ const LecturerInternshipPage = () => {
             </div>
           </div>
 
-          {/* Action & Workload Stats Pill */}
+          {/* Huy hiệu thao tác và thống kê tải công việc */}
           <div className="flex flex-wrap items-center gap-3">
             {/* Button Xuất danh sách sinh viên */}
             <button
@@ -435,7 +435,7 @@ const LecturerInternshipPage = () => {
         </div>
       </div>
 
-      {/* Search & Filter Bar */}
+      {/* Thanh tìm kiếm và bộ lọc */}
       <div className="p-4 rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-center justify-between">
         <div className="w-full md:w-96">
           <SearchInput
@@ -487,7 +487,7 @@ const LecturerInternshipPage = () => {
         </div>
       </div>
 
-      {/* Main Table */}
+      {/* Bảng chính */}
       <div className="bg-white rounded-2xl border border-slate-200/80 shadow-2xs overflow-hidden">
         {loading ? (
           <div className="p-6">
@@ -529,7 +529,7 @@ const LecturerInternshipPage = () => {
                       {item.studentId?.studentCode}
                     </td>
 
-                    {/* Student Name */}
+                    {/* Họ tên sinh viên */}
                     <td className="py-3.5 px-4">
                       <div className="min-w-0">
                         <div className="font-semibold text-slate-900 text-xs">
@@ -541,7 +541,7 @@ const LecturerInternshipPage = () => {
                       </div>
                     </td>
 
-                    {/* Company */}
+                    {/* Doanh nghiệp */}
                     <td className="py-3.5 px-4 font-medium text-slate-800 text-xs max-w-[180px] truncate">
                       <div className="font-semibold text-slate-900 truncate">
                         {item.companyId?.name}
@@ -589,7 +589,7 @@ const LecturerInternshipPage = () => {
                       )}
                     </td>
 
-                    {/* Diary Completion Status (Prompt 2 - Requirement 2) */}
+                    {/* Trạng thái hoàn thành nhật ký */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       {item.diaryStatus?.isCompleted ? (
                         <span
@@ -610,7 +610,7 @@ const LecturerInternshipPage = () => {
                       )}
                     </td>
 
-                    {/* Report File Status (Prompt 2 - Requirement 1) */}
+                    {/* Trạng thái nộp file báo cáo */}
                     <td
                       className="py-3.5 px-4 text-center whitespace-nowrap"
                       onClick={(e) => e.stopPropagation()}
@@ -634,7 +634,7 @@ const LecturerInternshipPage = () => {
                       )}
                     </td>
 
-                    {/* Score */}
+                    {/* Điểm số */}
                     <td className="py-3.5 px-4 text-xs font-bold">
                       {item.evaluation?.score !== undefined && item.evaluation?.score !== null ? (
                         <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
@@ -645,12 +645,12 @@ const LecturerInternshipPage = () => {
                       )}
                     </td>
 
-                    {/* Status */}
+                    {/* Trạng thái */}
                     <td className="py-3.5 px-4">
                       <StatusBadge status={item.status} size="sm" />
                     </td>
 
-                    {/* Actions */}
+                    {/* Thao tác */}
                     <td
                       className="py-3.5 px-4 pr-6 text-right"
                       onClick={(e) => e.stopPropagation()}
@@ -760,7 +760,7 @@ const LecturerInternshipPage = () => {
               </tbody>
             </table>
           </div>
-          {/* Mobile Card List (< 768px) */}
+          {/* Danh sách thẻ Mobile (< 768px) */}
           <div className="md:hidden divide-y divide-slate-100">
             {internships.map((item) => {
               const hasScore =
@@ -800,13 +800,13 @@ const LecturerInternshipPage = () => {
                     setDetailModalOpen(true);
                   }}
                 >
-                  {/* Top Bar: MSSV, Pretest, Status */}
+                  {/* Thanh trên cùng: MSSV, Điều kiện, Trạng thái */}
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-mono font-bold text-xs text-[#102d7d]">
                       {item.studentId?.studentCode}
                     </span>
                     <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      {/* PASS PRETEST TOGGLE */}
+                      {/* CHUYỂN ĐỔI ĐIỀU KIỆN ĐẠT TIÊN QUYẾT */}
                       {item.pretestPassed ? (
                         <button
                           type="button"
@@ -842,7 +842,7 @@ const LecturerInternshipPage = () => {
                     </div>
                   </div>
 
-                  {/* Student Name & Class */}
+                  {/* Họ tên sinh viên & Lớp */}
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 leading-tight">
                       {item.studentId?.userId?.fullName || 'Chưa cập nhật'}
@@ -852,7 +852,7 @@ const LecturerInternshipPage = () => {
                     </div>
                   </div>
 
-                  {/* Company & Position */}
+                  {/* Doanh nghiệp & Vị trí thực tập */}
                   <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
                     <div className="font-semibold text-slate-900 truncate">
                       {item.companyId?.name || 'Doanh nghiệp'}
@@ -862,7 +862,7 @@ const LecturerInternshipPage = () => {
                     </div>
                   </div>
 
-                  {/* Diary & Report File & Score Overview */}
+                  {/* Tổng quan nhật ký, file báo cáo và điểm số */}
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
                       <span className="text-slate-400 block text-[10px] uppercase font-bold">Nhật ký</span>
@@ -900,7 +900,7 @@ const LecturerInternshipPage = () => {
                     </div>
                   </div>
 
-                  {/* Score & Action Buttons */}
+                  {/* Điểm số & Các nút thao tác */}
                   <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-100" onClick={(e) => e.stopPropagation()}>
                     <div>
                       <span className="text-[10px] uppercase font-bold text-slate-400 block">Điểm GV</span>
@@ -965,13 +965,13 @@ const LecturerInternshipPage = () => {
           </div>
         </>)}
 
-        {/* Pagination */}
+        {/* Phân trang */}
         <div className="border-t border-slate-100 bg-slate-50/50 px-4">
           <Pagination pagination={pagination} onPageChange={setPage} />
         </div>
       </div>
 
-      {/* Detail Modal */}
+      {/* Modal chi tiết */}
       <LecturerInternshipGradingModal
         isOpen={gradingModalOpen}
         onClose={() => {
@@ -991,7 +991,7 @@ const LecturerInternshipPage = () => {
         internship={selectedInternship}
       />
 
-      {/* Accept Confirmation Modal */}
+      {/* Modal xác nhận tiếp nhận */}
       {acceptModalOpen && targetInternship && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -1054,7 +1054,7 @@ const LecturerInternshipPage = () => {
         </div>
       )}
 
-      {/* Reject Modal */}
+      {/* Modal từ chối */}
       {rejectModalOpen && targetInternship && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <form onSubmit={handleConfirmReject} className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -1110,7 +1110,7 @@ const LecturerInternshipPage = () => {
         </div>
       )}
 
-      {/* Complete Confirmation Modal */}
+      {/* Modal xác nhận hoàn thành */}
       {completeModalOpen && targetInternship && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
@@ -1244,7 +1244,7 @@ const LecturerInternshipPage = () => {
         </div>
       )}
 
-      {/* Printable Document Modal */}
+      {/* Modal xem tài liệu in ấn */}
       <DocumentViewerModal
         isOpen={docModalOpen}
         onClose={() => setDocModalOpen(false)}
@@ -1357,7 +1357,7 @@ const LecturerInternshipPage = () => {
         </div>
       )}
 
-      {/* Publish Score Confirmation Modal (Prompt Requirement 3) */}
+      {/* Modal xác nhận công bố điểm */}
       {publishModalOpen && targetPublishItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">

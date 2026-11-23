@@ -13,7 +13,7 @@ import {
 } from "../utils/token.js";
 
 // ====================
-// Register
+// Đăng ký tài khoản
 // ====================
 
 const register = async ({
@@ -33,7 +33,7 @@ const register = async ({
   const normalizedConfirmPassword = (confirmPassword || "").trim();
   const normalizedClass = (className || "DHKTPM18A").trim();
 
-  // 1. Validation checks
+  // 1. Kiểm tra tính hợp lệ của dữ liệu
   if (!normalizedCode) {
     const error = new Error("Mã số sinh viên (MSSV) không được để trống");
     error.statusCode = 400;
@@ -83,7 +83,7 @@ const register = async ({
     throw error;
   }
 
-  // 2. Check uniqueness
+  // 2. Kiểm tra tính duy nhất
   const existingStudent = await Student.findOne({ studentCode: normalizedCode });
   const existingUserCode = await User.findOne({ code: normalizedCode });
   if (existingStudent || existingUserCode) {
@@ -99,10 +99,10 @@ const register = async ({
     throw error;
   }
 
-  // 3. Hash password
+  // 3. Băm mật khẩu (Hash password)
   const hashedPassword = await bcrypt.hash(normalizedPassword, 12);
 
-  // 4. Create User (Strictly STUDENT role)
+  // 4. Tạo người dùng User (chỉ dành cho vai trò STUDENT)
   const user = await User.create({
     fullName: normalizedFullName,
     email: normalizedEmail,
@@ -113,7 +113,7 @@ const register = async ({
     isActive: true,
   });
 
-  // 5. Create Student profile linked to User
+  // 5. Tạo hồ sơ Sinh viên liên kết với User
   try {
     const student = await Student.create({
       userId: user._id,
@@ -136,14 +136,14 @@ const register = async ({
 
     return userResponse;
   } catch (error) {
-    // Rollback user if student record creation fails
+    // Hoàn tác tạo User nếu tạo hồ sơ sinh viên thất bại
     await User.findByIdAndDelete(user._id);
     throw error;
   }
 };
 
 // ====================
-// Login (Authenticate via Account Code: studentCode, lecturerCode, companyCode)
+// Đăng nhập (Xác thực qua mã tài khoản: studentCode, lecturerCode, companyCode)
 // ====================
 
 const login = async ({ accountCode, username, code, email, password, captchaId, captchaAnswer }) => {
@@ -161,7 +161,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
   let user = null;
   let extraInfo = {};
 
-  // 1. Check Student by studentCode (MSSV)
+  // 1. Kiểm tra sinh viên theo mã sinh viên (studentCode/MSSV)
   const student = await Student.findOne({ studentCode: loginIdentifier });
   if (student && student.userId) {
     user = await User.findById(student.userId);
@@ -174,7 +174,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     }
   }
 
-  // 2. Check Lecturer / TBM by lecturerCode
+  // 2. Kiểm tra giảng viên / TBM theo mã giảng viên (lecturerCode)
   if (!user) {
     const lecturer = await Lecturer.findOne({ lecturerCode: loginIdentifier });
     if (lecturer && lecturer.userId) {
@@ -190,7 +190,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     }
   }
 
-  // 3. Check User by code (e.g. ADMIN001) or email
+  // 3. Kiểm tra người dùng theo mã (ví dụ ADMIN001) hoặc email
   if (!user) {
     user = await User.findOne({
       $or: [
@@ -217,7 +217,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     throw error;
   }
 
-  // Attach active permissions from Permission collection for LECTURER / TBM
+  // Gắn quyền đang kích hoạt từ collection Permission cho LECTURER / TBM
   if (user.role === "LECTURER" || user.role === "TBM") {
     const activePermDocs = await Permission.find({
       userId: user._id,
@@ -271,7 +271,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
 };
 
 // ====================
-// Refresh Access Token
+// Làm mới Access Token
 // ====================
 
 const refreshAccessToken = async (refreshToken) => {
@@ -322,7 +322,7 @@ const refreshAccessToken = async (refreshToken) => {
 };
 
 // ====================
-// Logout
+// Đăng xuất
 // ====================
 
 const logout = async (userId) => {
@@ -345,7 +345,7 @@ const logout = async (userId) => {
 };
 
 // ====================
-// Get Profile with Role-Specific Details
+// Lấy thông tin hồ sơ chi tiết theo vai trò
 // ====================
 
 const getProfile = async (userId) => {
@@ -412,7 +412,7 @@ const getProfile = async (userId) => {
 };
 
 // ====================
-// Update Profile (Strict Whitelist: Email, Phone, Company & Lecturer Info)
+// Cập nhật hồ sơ (Chỉ cho phép: Email, Số điện thoại, Thông tin công ty & Giảng viên)
 // ====================
 
 const updateProfile = async (userId, updateData = {}) => {
@@ -423,7 +423,7 @@ const updateProfile = async (userId, updateData = {}) => {
     throw error;
   }
 
-  // 1. Email Handling (Optional, format validation, duplicate check)
+  // 1. Xử lý email (Kiểm tra định dạng và trùng lặp nếu có cập nhật)
   if (updateData.email !== undefined) {
     const emailVal = updateData.email ? updateData.email.trim().toLowerCase() : "";
     if (emailVal === "") {
@@ -451,7 +451,7 @@ const updateProfile = async (userId, updateData = {}) => {
     }
   }
 
-  // 2. Phone Handling (Optional, format validation)
+  // 2. Xử lý số điện thoại (Kiểm tra định dạng)
   if (updateData.phone !== undefined) {
     const phoneVal = updateData.phone ? updateData.phone.trim() : "";
     if (phoneVal === "") {
@@ -469,7 +469,7 @@ const updateProfile = async (userId, updateData = {}) => {
 
   await user.save();
 
-  // 3. Optional Lecturer Supervision Capacity Updates
+  // 3. Cập nhật giới hạn số lượng sinh viên hướng dẫn của giảng viên
   if (user.role === "LECTURER" || user.role === "TBM") {
     const lecturer = await Lecturer.findOne({ userId });
     if (lecturer) {
@@ -520,7 +520,7 @@ const updateProfile = async (userId, updateData = {}) => {
 };
 
 // ====================
-// Change Password (Dedicated Security Function)
+// Đổi mật khẩu (Chức năng bảo mật)
 // ====================
 
 const changePassword = async (userId, { currentPassword, newPassword, confirmPassword }) => {
@@ -564,7 +564,7 @@ const changePassword = async (userId, { currentPassword, newPassword, confirmPas
 };
 
 // ====================
-// Get Public Profile of Any User
+// Xem thông tin hồ sơ công khai của người dùng
 // ====================
 
 const getPublicUserProfile = async (targetId) => {
@@ -574,7 +574,7 @@ const getPublicUserProfile = async (targetId) => {
     throw error;
   }
 
-  // 1. Try finding by User._id
+  // 1. Tìm theo User._id
   let user = null;
   let student = null;
   let lecturer = null;
@@ -584,10 +584,10 @@ const getPublicUserProfile = async (targetId) => {
       .select("fullName email avatar phone role isActive createdAt")
       .lean();
   } catch {
-    // Might not be valid User ObjectId directly
+    // Có thể không phải là User ObjectId trực tiếp
   }
 
-  // 2. If not found by User ID, check if targetId is a Student._id or Lecturer._id or Company._id
+  // 2. Nếu không tìm thấy theo User ID, kiểm tra targetId là Student._id, Lecturer._id hoặc Company._id
   if (!user) {
     try {
       student = await Student.findById(targetId)
@@ -618,7 +618,7 @@ const getPublicUserProfile = async (targetId) => {
 
   const userId = user._id;
 
-  // Populate student / lecturer details if not already fetched
+  // Nạp thông tin chi tiết sinh viên / giảng viên nếu chưa có
   if (user.role === "STUDENT" && !student) {
     student = await Student.findOne({ userId })
       .select("studentCode class faculty gpa accumulatedCredits")
@@ -650,7 +650,7 @@ const getPublicUserProfile = async (targetId) => {
 };
 
 // ====================
-// Export
+// Xuất dữ liệu
 // ====================
 
 export default {

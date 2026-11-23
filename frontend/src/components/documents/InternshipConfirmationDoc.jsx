@@ -29,7 +29,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
 
   return (
     <div className="bg-white text-black p-8 sm:p-12 max-w-4xl mx-auto shadow-lg print:shadow-none print:p-0 print:max-w-none text-sm leading-relaxed font-serif">
-      {/* Header with University and National Motto */}
+      {/* Tiêu ngữ và thông tin trường đại học */}
       <div className="flex justify-between items-start pb-6 border-b border-black/80">
         <div className="text-center font-bold text-xs uppercase tracking-tight">
           <div>Bộ Giáo Dục và Đào Tạo</div>
@@ -56,7 +56,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
         </div>
       </div>
 
-      {/* Document Title */}
+      {/* Tiêu đề tài liệu */}
       <div className="text-center my-8">
         <h1 className="text-xl font-extrabold uppercase tracking-wide">
           Giấy Xác Nhận Giám Sát Thực Tập Doanh Nghiệp
@@ -66,7 +66,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
         </div>
       </div>
 
-      {/* Lecturer & Company Information */}
+      {/* Thông tin giảng viên và doanh nghiệp */}
       <div className="space-y-3 mb-6 text-xs leading-relaxed">
         <p>
           Khoa Công nghệ Thông tin — Trường Đại học Công nghiệp TP. Hồ Chí Minh
@@ -103,7 +103,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
         </div>
       </div>
 
-      {/* Student List Table */}
+      {/* Bảng danh sách sinh viên */}
       <div className="mb-8">
         <div className="font-bold text-xs uppercase tracking-wider mb-2">
           Danh sách sinh viên thực tập được phân công (Tổng số: {totalStudents}{' '}
@@ -155,7 +155,7 @@ const InternshipConfirmationDoc = ({ docData }) => {
         </table>
       </div>
 
-      {/* Signature Section */}
+      {/* Phần ký tên và đóng dấu */}
       <div className="grid grid-cols-3 gap-4 text-center text-xs mt-12 pt-4 page-break-inside-avoid">
         <div>
           <div className="font-bold uppercase">Trưởng Khoa / Bộ Môn</div>

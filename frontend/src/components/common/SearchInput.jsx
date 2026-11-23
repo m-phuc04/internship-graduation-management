@@ -14,18 +14,18 @@ const SearchInput = ({
   const isInitialMount = useRef(true);
   const lastEmittedValue = useRef(initialValue);
 
-  // Keep latest onChange callback in ref
+  // Lưu callback onChange mới nhất vào ref
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
 
-  // Sync internal state when initialValue changes from parent
+  // Đồng bộ state nội bộ khi initialValue từ component cha thay đổi
   useEffect(() => {
     setValue(initialValue);
     lastEmittedValue.current = initialValue;
   }, [initialValue]);
 
-  // Debounce only when value changes and differs from last emitted value
+  // Trì hoãn xử lý (debounce) khi giá trị thay đổi khác với giá trị trước đó
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
