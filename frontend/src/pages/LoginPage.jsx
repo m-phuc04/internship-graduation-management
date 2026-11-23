@@ -121,11 +121,11 @@ const LoginPage = () => {
 
     // Kiểm tra tính hợp lệ của dữ liệu phía client
     if (!mssv) {
-      showToast('Vui lòng nhập Mã số sinh viên (MSSV)', 'error');
+      showToast('Vui lòng nhập Mã số sinh viên', 'error');
       return;
     }
     if (!/^\d{8}$/.test(mssv)) {
-      showToast('Mã số sinh viên (MSSV) phải gồm đúng 8 chữ số', 'error');
+      showToast('Mã số sinh viên phải gồm đúng 8 chữ số', 'error');
       return;
     }
     if (!fullName) {

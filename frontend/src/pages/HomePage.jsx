@@ -173,7 +173,7 @@ const HomePage = () => {
     const confirmPass = regConfirmPassword.trim();
 
     if (!mssv || !/^\d{8}$/.test(mssv)) {
-      showToast('Vui lòng nhập Mã số sinh viên (MSSV gồm đúng 8 chữ số)', 'error');
+      showToast('Vui lòng nhập Mã số sinh viên (gồm đúng 8 chữ số)', 'error');
       return;
     }
     if (!fullName) {
