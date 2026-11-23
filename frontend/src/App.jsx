@@ -48,6 +48,7 @@ import LecturerNewsManagement from './pages/lecturer/LecturerNewsManagement';
 import ProfilePage from './pages/ProfilePage';
 import PublicProfilePage from './pages/PublicProfilePage';
 import HomePage from './pages/HomePage';
+import NewsDetailPage from './pages/NewsDetailPage';
 
 
 // Component điều hướng hồ sơ cá nhân linh hoạt
@@ -107,6 +108,7 @@ function App() {
                 <Routes>
                 {/* Các tuyến đường công khai (Public) */}
                 <Route path="/" element={<HomePage />} />
+                <Route path="/news/:id" element={<NewsDetailPage />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 

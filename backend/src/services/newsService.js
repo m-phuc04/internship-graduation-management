@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import News from "../models/News.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
@@ -53,6 +54,10 @@ const getPublicNews = async ({
 // 2. Xem chi tiết tin tức theo ID và tăng lượt xem
 // ====================
 const getNewsById = async (id) => {
+  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+    throw new AppError("Không tìm thấy tin tức", 404);
+  }
+
   const news = await News.findByIdAndUpdate(
     id,
     { $inc: { views: 1 } },
@@ -111,7 +116,7 @@ const createNews = async (
       newsDoc.emailBroadcasted = true;
       await newsDoc.save();
 
-      await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
+      await notificationService.createNotificationForRole(["STUDENT", "LECTURER", "TBM", "ADMIN"], {
         senderId: senderUserId,
         type: "SYSTEM",
         title: `Bản tin mới: ${newsDoc.title}`,
@@ -233,7 +238,7 @@ const updateNews = async (
       news.emailBroadcasted = true;
       await news.save();
 
-      await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
+      await notificationService.createNotificationForRole(["STUDENT", "LECTURER", "TBM", "ADMIN"], {
         senderId: userId,
         type: "SYSTEM",
         title: `Bản tin mới: ${news.title}`,
@@ -286,7 +291,7 @@ const togglePublishNews = async (id, userId, userRole) => {
       news.emailBroadcasted = true;
       await news.save();
 
-      await notificationService.createNotificationForRole(["STUDENT", "LECTURER"], {
+      await notificationService.createNotificationForRole(["STUDENT", "LECTURER", "TBM", "ADMIN"], {
         senderId: userId,
         type: "SYSTEM",
         title: `Bản tin mới: ${news.title}`,

@@ -364,7 +364,11 @@ const HomePage = () => {
                       className="py-4.5 first:pt-1 last:pb-1 flex items-start gap-3.5 sm:gap-5 group hover:bg-blue-50/20 -mx-2 px-2 rounded-2xl transition duration-150"
                     >
                       {/* Huy hiệu ngày tháng tương thích giao diện */}
-                      <div className="flex flex-col items-center justify-center w-13 sm:w-15 rounded-xl sm:rounded-2xl overflow-hidden border border-blue-100 shadow-2xs shrink-0 bg-white select-none">
+                      <div
+                        onClick={() => navigate(`/news/${item._id}`)}
+                        className="flex flex-col items-center justify-center w-13 sm:w-15 rounded-xl sm:rounded-2xl overflow-hidden border border-blue-100 shadow-2xs shrink-0 bg-white select-none cursor-pointer"
+                        title="Xem chi tiết thông báo"
+                      >
                         <div className="w-full bg-[#123891] text-white text-[9px] sm:text-[10px] font-bold py-1 text-center uppercase tracking-wider">
                           THG {dateInfo.month}
                         </div>
@@ -394,8 +398,7 @@ const HomePage = () => {
 
                         <h2
                           onClick={() => {
-                            setSelectedNews(item);
-                            setDetailModalOpen(true);
+                            navigate(`/news/${item._id}`);
                           }}
                           className="text-sm sm:text-[15px] font-bold text-slate-900 group-hover:text-[#123891] transition cursor-pointer line-clamp-2 leading-snug"
                         >
@@ -410,8 +413,7 @@ const HomePage = () => {
                           <button
                             type="button"
                             onClick={() => {
-                              setSelectedNews(item);
-                              setDetailModalOpen(true);
+                              navigate(`/news/${item._id}`);
                             }}
                             className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline inline-flex items-center gap-1 cursor-pointer"
                           >
