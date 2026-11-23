@@ -13,6 +13,7 @@ import {
   Award,
   RotateCcw,
   Tag,
+  Newspaper,
 } from 'lucide-react';
 
 const NotificationDropdown = () => {
@@ -481,12 +482,20 @@ const NotificationDropdown = () => {
     }
   };
 
-  const getIconForType = (type, title = '') => {
+  const getIconForType = (type, title = '', metadata = null) => {
     if (type === 'EVALUATION_RECREATE' || title?.toLowerCase().includes('tạo lại link')) {
       return <RotateCcw className="w-4 h-4 text-amber-600" />;
     }
     if (title?.toLowerCase().includes('lĩnh vực')) {
       return <Tag className="w-4 h-4 text-[#123891]" />;
+    }
+    if (
+      type === 'NEWS' ||
+      metadata?.module === 'NEWS' ||
+      title?.toLowerCase().includes('bản tin') ||
+      title?.toLowerCase().includes('tin tức')
+    ) {
+      return <Newspaper className="w-4 h-4 text-amber-600" />;
     }
     switch (type) {
       case 'EVALUATION':
@@ -577,7 +586,7 @@ const NotificationDropdown = () => {
                   }`}
                 >
                   <div className="p-2 rounded-xl bg-slate-100 shrink-0 mt-0.5">
-                    {getIconForType(item.type, item.title)}
+                    {getIconForType(item.type, item.title, item.metadata)}
                   </div>
 
                   <div className="flex-1 min-w-0">
