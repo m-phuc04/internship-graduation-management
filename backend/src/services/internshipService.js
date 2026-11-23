@@ -189,11 +189,15 @@ const createInternship = async ({
 
   // Kiểm tra nếu sinh viên đã từng hoàn thành thực tập và đã được công bố điểm ở bất kỳ học kỳ nào
   const completedInternshipWithScore = await Internship.findOne({
-    studentId: student._id,
-    status: "COMPLETED",
-    $or: [
-      { isScorePublished: true },
-      { scorePublishStatus: "PUBLISHED" },
+    $and: [
+      { $or: [{ studentId: student._id }, { secondStudentId: student._id }] },
+      { status: "COMPLETED" },
+      {
+        $or: [
+          { isScorePublished: true },
+          { scorePublishStatus: "PUBLISHED" },
+        ],
+      },
     ],
   });
 
@@ -918,11 +922,15 @@ const getMyInternship = async (userId, academicTermId = null) => {
 
   // Kiểm tra xem sinh viên đã từng hoàn thành thực tập và được công bố điểm ở bất kỳ học kỳ nào chưa
   const completedAnyTerm = await Internship.findOne({
-    $or: [{ studentId: student._id }, { secondStudentId: student._id }],
-    status: "COMPLETED",
-    $or: [
-      { isScorePublished: true },
-      { scorePublishStatus: "PUBLISHED" },
+    $and: [
+      { $or: [{ studentId: student._id }, { secondStudentId: student._id }] },
+      { status: "COMPLETED" },
+      {
+        $or: [
+          { isScorePublished: true },
+          { scorePublishStatus: "PUBLISHED" },
+        ],
+      },
     ],
   }).lean();
 
