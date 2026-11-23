@@ -51,8 +51,13 @@ axiosClient.interceptors.response.use(
       }
     }
 
+    let rawMessage = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
+    if (typeof rawMessage === 'string') {
+      rawMessage = rawMessage.replace(/\s*\(MSSV\)/g, '');
+    }
+
     const customError = {
-      message: error.response?.data?.message || error.message || 'Đã có lỗi xảy ra',
+      message: rawMessage,
       status: error.response?.status || 500,
       data: error.response?.data,
     };

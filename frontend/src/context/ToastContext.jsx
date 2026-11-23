@@ -12,8 +12,9 @@ export const ToastProvider = ({ children }) => {
 
   const showToast = useCallback((message, type = 'success', duration = 4000) => {
     if (!message) return;
+    const cleanMessage = String(message).replace(/\s*\(MSSV\)/g, '');
     const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, message: String(message), type }]);
+    setToasts((prev) => [...prev, { id, message: cleanMessage, type }]);
 
     if (duration > 0) {
       setTimeout(() => {
