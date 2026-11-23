@@ -313,9 +313,7 @@ const RegisterInternshipPage = () => {
   const isCompleted = Boolean(
     profileData?.isCompleted ||
     internship?.status === 'COMPLETED' ||
-    profileData?.isScorePublished ||
-    internship?.isScorePublished ||
-    profileData?.evaluation?.isScorePublished
+    (internship && (internship?.isScorePublished || profileData?.evaluation?.isScorePublished))
   );
 
   const hasActiveInternship = Boolean(
