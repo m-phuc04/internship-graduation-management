@@ -20,22 +20,71 @@ const testLogin = async () => {
   await mongoose.connect(mongoUri);
 
   try {
-    const ADMIN_PASSWORD = "1111";
     const LECTURER_PASSWORD = "11111111";
+
+    const adminPasswords = {
+      ADMIN001: process.env.ADMIN001_PASSWORD || process.env.ADMIN_PASSWORD,
+      ADMIN002: process.env.ADMIN002_PASSWORD,
+      ADMIN003: process.env.ADMIN003_PASSWORD,
+    };
 
     // 1. Kiểm tra 3 tài khoản Admin: ADMIN001, ADMIN002, ADMIN003
     console.log("1. Kiểm tra 3 tài khoản Quản trị viên (ADMIN):");
     const adminCodes = ["ADMIN001", "ADMIN002", "ADMIN003"];
+    const verifiedHashes = new Set();
+    const verifiedPasswords = new Set();
+
     for (const code of adminCodes) {
       const admin = await User.findOne({ code, role: "ADMIN" });
       if (!admin) {
         throw new Error(`Không tìm thấy tài khoản Admin ${code}!`);
       }
-      const isPasswordValid = await bcrypt.compare(ADMIN_PASSWORD, admin.password);
+
+      const rawPassword = adminPasswords[code];
+      if (!rawPassword || rawPassword.length < 16) {
+        throw new Error(`Mật khẩu trong .env cho ${code} phải có tối thiểu 16 ký tự!`);
+      }
+
+      // Kiểm tra độ mạnh: hoa, thường, số, ký tự đặc biệt
+      const hasUpper = /[A-Z]/.test(rawPassword);
+      const hasLower = /[a-z]/.test(rawPassword);
+      const hasDigit = /[0-9]/.test(rawPassword);
+      const hasSpecial = /[^A-Za-z0-9]/.test(rawPassword);
+
+      if (!hasUpper || !hasLower || !hasDigit || !hasSpecial) {
+        throw new Error(`Mật khẩu của ${code} phải kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt!`);
+      }
+
+      // Kiểm tra mật khẩu riêng biệt
+      if (verifiedPasswords.has(rawPassword)) {
+        throw new Error(`Phát hiện mật khẩu trùng lặp giữa các tài khoản Admin! Mật khẩu phải riêng biệt.`);
+      }
+      verifiedPasswords.add(rawPassword);
+
+      // Kiểm tra lưu dưới dạng bcrypt hash trong DB
+      const isBcryptHash = typeof admin.password === "string" && admin.password.startsWith("$2");
+      if (!isBcryptHash) {
+        throw new Error(`Mật khẩu của ${code} trong DB không phải dạng hash bcrypt!`);
+      }
+
+      if (verifiedHashes.has(admin.password)) {
+        throw new Error(`Phát hiện bcrypt hash trùng lặp giữa các tài khoản Admin!`);
+      }
+      verifiedHashes.add(admin.password);
+
+      const isPasswordValid = await bcrypt.compare(rawPassword, admin.password);
+      const isWrongPasswordRejected = !(await bcrypt.compare("SaiMatKhauAdmin@123", admin.password));
+
       console.log(`  ✓ ${admin.code}: ${admin.fullName} (${admin.email})`);
       console.log(`    - Role: ${admin.role} | isActive: ${admin.isActive}`);
-      console.log(`    - Khớp mật khẩu 1111: ${isPasswordValid ? "HỢP LỆ" : "SAI MẬT KHẨU"}`);
-      if (!isPasswordValid) throw new Error(`Mật khẩu tài khoản ${code} không đúng!`);
+      console.log(`    - Lưu hash bcrypt: ${isBcryptHash ? "ĐẠT CHUẨN BẢO MẬT" : "KHÔNG ĐẠT"}`);
+      console.log(`    - Độ dài >= 16 và đa dạng ký tự: ĐẠT (${rawPassword.length} ký tự)`);
+      console.log(`    - Xác thực đăng nhập mật khẩu .env: ${isPasswordValid ? "THÀNH CÔNG" : "THẤT BẠI"}`);
+      console.log(`    - Chặn mật khẩu sai: ${isWrongPasswordRejected ? "CHÍNH XÁC" : "THẤT BẠI"}`);
+
+      if (!isPasswordValid || !isWrongPasswordRejected) {
+        throw new Error(`Xác thực đăng nhập tài khoản ${code} không hợp lệ!`);
+      }
 
       // Kiểm tra đảm bảo Admin không nằm trong bảng Lecturer
       const inLec = await Lecturer.findOne({ userId: admin._id });

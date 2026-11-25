@@ -274,9 +274,10 @@ export const sendPasswordResetEmail = async ({
   }
 
   const codeDisplay = accountCode || studentCode || "—";
-  const isLecturer = role === "LECTURER";
-  const userTypeTitle = roleLabel || (isLecturer ? "Giảng viên" : "Sinh viên");
-  const codeTitle = isLecturer ? "Mã giảng viên" : "Mã số sinh viên (MSSV)";
+  const isStaff = role === "LECTURER" || role === "TBM";
+  const defaultTitle = role === "TBM" ? "Trưởng bộ môn" : isStaff ? "Giảng viên" : "Sinh viên";
+  const userTypeTitle = roleLabel || defaultTitle;
+  const codeTitle = isStaff ? "Mã giảng viên" : "Mã số sinh viên (MSSV)";
 
   const targetEmail = to.trim();
   const frontendBaseUrl = process.env.APP_FRONTEND_URL || "http://localhost:5173";

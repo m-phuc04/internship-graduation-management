@@ -1,5 +1,6 @@
 import thesisService from "../services/thesisService.js";
 import exportService from "../services/exportService.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // Student Registers Thesis
@@ -9,6 +10,15 @@ const createThesis = async (req, res, next) => {
     const thesis = await thesisService.createThesis({
       userId: req.user.userId,
       ...req.body,
+    });
+
+    await logActivity(req, {
+      action: "Đề xuất đề tài khóa luận",
+      module: "THESIS",
+      description: `Sinh viên đã đề xuất đề tài khóa luận: "${thesis.title || 'Đề tài KLTN'}"`,
+      targetId: thesis._id,
+      targetModel: "Thesis",
+      status: "SUCCESS",
     });
 
     res.status(201).json({
@@ -177,6 +187,15 @@ const approveThesis = async (req, res, next) => {
       tbmUserId: req.user.userId,
     });
 
+    await logActivity(req, {
+      action: "Phê duyệt đề tài khóa luận",
+      module: "THESIS",
+      description: `TBM đã phê duyệt đề tài khóa luận mã ${req.params.id}`,
+      targetId: thesis._id,
+      targetModel: "Thesis",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Phê duyệt đề tài khóa luận tốt nghiệp thành công",
@@ -195,6 +214,15 @@ const rejectThesis = async (req, res, next) => {
     const thesis = await thesisService.rejectThesis(req.params.id, {
       reason: req.body?.reason || null,
       tbmUserId: req.user.userId,
+    });
+
+    await logActivity(req, {
+      action: "Từ chối đề tài khóa luận",
+      module: "THESIS",
+      description: `TBM đã từ chối đề tài khóa luận mã ${req.params.id}. Lý do: ${req.body?.reason || "Không đạt"}`,
+      targetId: thesis._id,
+      targetModel: "Thesis",
+      status: "SUCCESS",
     });
 
     res.status(200).json({
@@ -217,6 +245,15 @@ const assignSupervisor = async (req, res, next) => {
       tbmUserId: req.user.userId,
     });
 
+    await logActivity(req, {
+      action: "Phân công giảng viên hướng dẫn KLTN",
+      module: "THESIS",
+      description: `TBM đã phân công GVHD cho đề tài khóa luận mã ${req.params.id}`,
+      targetId: thesis._id,
+      targetModel: "Thesis",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Phân công giảng viên hướng dẫn thành công",
@@ -237,6 +274,15 @@ const assignReviewers = async (req, res, next) => {
       reviewer2Id: req.body?.reviewer2Id,
       reviewers: req.body?.reviewers,
       tbmUserId: req.user.userId,
+    });
+
+    await logActivity(req, {
+      action: "Phân công giảng viên phản biện KLTN",
+      module: "THESIS",
+      description: `TBM đã phân công GVPB cho đề tài khóa luận mã ${req.params.id}`,
+      targetId: thesis._id,
+      targetModel: "Thesis",
+      status: "SUCCESS",
     });
 
     res.status(200).json({

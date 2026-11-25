@@ -26,9 +26,14 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
   const user = targetUser || studentUser;
   if (!user) return null;
 
-  const isLecturer = user.role === 'LECTURER';
-  const roleTitle = isLecturer ? 'Giảng viên' : 'Sinh viên';
-  const codeTitle = isLecturer ? 'Mã giảng viên' : 'MSSV';
+  const roleMap = {
+    STUDENT: 'Sinh viên',
+    LECTURER: 'Giảng viên',
+    TBM: 'Trưởng bộ môn',
+  };
+  const roleTitle = roleMap[user.role] || user.role;
+  const isStaff = user.role === 'LECTURER' || user.role === 'TBM';
+  const codeTitle = isStaff ? 'Mã giảng viên' : 'MSSV';
   const accountCode = user.code || user.studentCode || user.lecturerCode || 'Chưa cập nhật';
   const fullName = user.fullName || user.name || roleTitle;
   const email = user.email || '';
@@ -89,7 +94,7 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
             {/* Thẻ thông tin tài khoản */}
             <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2.5">
               <div className="flex items-center gap-2.5 text-xs text-slate-500">
-                {isLecturer ? (
+                {isStaff ? (
                   <Briefcase className="w-4 h-4 text-[#123891]" />
                 ) : (
                   <GraduationCap className="w-4 h-4 text-[#123891]" />
@@ -105,7 +110,11 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
                   <span className="text-slate-500">Vai trò:</span>
                   <span
                     className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      isLecturer ? 'bg-blue-100 text-[#102d7d]' : 'bg-blue-100 text-blue-700'
+                      user.role === 'TBM'
+                        ? 'bg-amber-100 text-amber-800'
+                        : user.role === 'LECTURER'
+                        ? 'bg-blue-100 text-[#102d7d]'
+                        : 'bg-blue-100 text-blue-700'
                     }`}
                   >
                     {roleTitle}

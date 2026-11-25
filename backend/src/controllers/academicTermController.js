@@ -1,4 +1,5 @@
 import academicTermService from "../services/academicTermService.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // 1. Lấy danh sách tất cả học kỳ
@@ -81,6 +82,15 @@ const createTerm = async (req, res, next) => {
       req.user?.userId,
     );
 
+    await logActivity(req, {
+      action: "Tạo mới học kỳ",
+      module: "SCHEDULE",
+      description: `Đã tạo mới học kỳ ${newTerm.code || ""} (${newTerm.academicYear || ""})`,
+      targetId: newTerm._id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
+
     res.status(201).json({
       success: true,
       message: "Tạo mới học kỳ thành công",
@@ -101,6 +111,15 @@ const updateTerm = async (req, res, next) => {
       req.body,
     );
 
+    await logActivity(req, {
+      action: "Cập nhật học kỳ",
+      module: "SCHEDULE",
+      description: `Đã cập nhật thông tin học kỳ ${updated.code || req.params.id}`,
+      targetId: updated._id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Cập nhật học kỳ thành công",
@@ -117,6 +136,15 @@ const updateTerm = async (req, res, next) => {
 const activateTerm = async (req, res, next) => {
   try {
     const activated = await academicTermService.activateTerm(req.params.id);
+
+    await logActivity(req, {
+      action: "Thiết lập học kỳ hiện tại",
+      module: "SCHEDULE",
+      description: `Đã kích hoạt học kỳ ${activated.code} làm học kỳ hiện tại`,
+      targetId: activated._id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,
@@ -135,6 +163,15 @@ const closeTerm = async (req, res, next) => {
   try {
     const closed = await academicTermService.closeTerm(req.params.id);
 
+    await logActivity(req, {
+      action: "Đóng học kỳ",
+      module: "SCHEDULE",
+      description: `Đã đóng học kỳ ${closed.code || req.params.id}`,
+      targetId: closed._id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: `Đã đóng học kỳ ${closed.code}.`,
@@ -151,6 +188,15 @@ const closeTerm = async (req, res, next) => {
 const deleteTerm = async (req, res, next) => {
   try {
     const result = await academicTermService.deleteTerm(req.params.id);
+
+    await logActivity(req, {
+      action: "Xóa học kỳ",
+      module: "SCHEDULE",
+      description: `Đã xóa học kỳ ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,

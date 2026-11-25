@@ -1,4 +1,5 @@
 import adminService from "../services/adminService.js";
+import { logActivity } from "../services/logService.js";
 
 const getPermissionsList = async (req, res, next) => {
   try {
@@ -20,6 +21,16 @@ const updateLecturerPermissions = async (req, res, next) => {
       permissions,
       role,
     });
+
+    await logActivity(req, {
+      action: "Cập nhật phân quyền giảng viên",
+      module: "USER",
+      description: `Quản trị viên đã cập nhật quyền hạn hướng dẫn/phản biện cho giảng viên ${data?.fullName || lecturerId}`,
+      targetId: lecturerId,
+      targetModel: "Lecturer",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Cập nhật phân quyền giảng viên thành công",
@@ -47,6 +58,17 @@ const toggleUserStatus = async (req, res, next) => {
   try {
     const { userId } = req.params;
     const user = await adminService.toggleUserStatus(userId);
+    const actionName = user.isActive ? "Kích hoạt tài khoản" : "Khóa tài khoản";
+
+    await logActivity(req, {
+      action: actionName,
+      module: "USER",
+      description: `Quản trị viên đã ${actionName.toLowerCase()} người dùng ${user.fullName} (${user.email || user.code})`,
+      targetId: user._id,
+      targetModel: "User",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: user.isActive ? "Đã kích hoạt tài khoản" : "Đã vô hiệu hóa tài khoản",
@@ -60,7 +82,7 @@ const toggleUserStatus = async (req, res, next) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const result = await adminService.resetPassword(userId, req.user);
+    const result = await adminService.resetPassword(userId, req.user, req);
     res.status(200).json({
       success: true,
       ...result,
@@ -114,7 +136,7 @@ const importStudentExcel = async (req, res, next) => {
         message: "Không có dòng dữ liệu hợp lệ nào để tạo tài khoản.",
       });
     }
-    const result = await adminService.importStudentExcel(validRows, req.user);
+    const result = await adminService.importStudentExcel(validRows, req.user, req);
     res.status(200).json({
       success: true,
       message: result.message,
@@ -127,8 +149,18 @@ const importStudentExcel = async (req, res, next) => {
 
 const getSystemLogs = async (req, res, next) => {
   try {
-    const { page, limit, role, search } = req.query;
-    const data = await adminService.getSystemLogs({ page, limit, role, search });
+    const { page, limit, role, status, module, action, search, dateFrom, dateTo } = req.query;
+    const data = await adminService.getSystemLogs({
+      page,
+      limit,
+      role,
+      status,
+      module,
+      action,
+      search,
+      dateFrom,
+      dateTo,
+    });
     res.status(200).json({
       success: true,
       ...data,

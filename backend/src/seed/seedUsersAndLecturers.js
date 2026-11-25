@@ -1,5 +1,6 @@
 import path from "path";
 import { fileURLToPath } from "url";
+import crypto from "crypto";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import connectDatabase from "../config/database.js";
@@ -13,6 +14,45 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config();
+
+/**
+ * Tạo mật khẩu quản trị viên ngẫu nhiên bảo mật cao nếu chưa có trong biến môi trường
+ * Tối thiểu 18 ký tự, gồm chữ hoa, chữ thường, chữ số và ký tự đặc biệt
+ */
+const generateSecureAdminPassword = (length = 18) => {
+  const uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lowers = "abcdefghijkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const specials = "!@#$%^&*()_+~|}{[]:;?><";
+  const all = uppers + lowers + digits + specials;
+
+  const pwd = [
+    uppers[crypto.randomInt(0, uppers.length)],
+    lowers[crypto.randomInt(0, lowers.length)],
+    digits[crypto.randomInt(0, digits.length)],
+    specials[crypto.randomInt(0, specials.length)],
+  ];
+
+  while (pwd.length < length) {
+    pwd.push(all[crypto.randomInt(0, all.length)]);
+  }
+
+  for (let i = pwd.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
+  }
+
+  return pwd.join("");
+};
+
+const getAdminSeedPassword = (code) => {
+  const envKey = `${code.toUpperCase()}_PASSWORD`;
+  const envVal = process.env[envKey] || (code === "ADMIN001" ? process.env.ADMIN_PASSWORD : null);
+  if (envVal && envVal.trim().length >= 16) {
+    return envVal.trim();
+  }
+  return generateSecureAdminPassword(18);
+};
 
 const seedUsersAndLecturers = async () => {
   let createdAdminsCount = 0;
@@ -29,7 +69,6 @@ const seedUsersAndLecturers = async () => {
 
     const DEFAULT_LECTURER_PASSWORD = "11111111";
     const lecturerPasswordHash = await bcrypt.hash(DEFAULT_LECTURER_PASSWORD, 12);
-    const adminPasswordHash = await bcrypt.hash("1111", 12);
 
     // ==========================================
     // 0. SEED TÀI KHOẢN QUẢN TRỊ VIÊN (ADMIN001, ADMIN002, ADMIN003)
@@ -70,6 +109,8 @@ const seedUsersAndLecturers = async () => {
       });
 
       if (!existingAdmin) {
+        const plainPassword = getAdminSeedPassword(adm.code);
+        const adminPasswordHash = await bcrypt.hash(plainPassword, 12);
         existingAdmin = await User.create({
           fullName: adm.fullName,
           code: adm.code,
@@ -79,7 +120,7 @@ const seedUsersAndLecturers = async () => {
           role: "ADMIN",
           isActive: true,
         });
-        console.log(`✓ Tạo mới tài khoản ADMIN: ${adm.code} / 1111 (${adm.email})`);
+        console.log(`✓ Tạo mới tài khoản ADMIN: ${adm.code} (${adm.email})`);
         createdAdminsCount++;
       } else {
         console.log(`- Tài khoản ADMIN ${adm.code} đã tồn tại, giữ nguyên thông tin.`);
@@ -421,7 +462,7 @@ const seedUsersAndLecturers = async () => {
     console.log(`- Tổng số lỗi: ${errorsCount}`);
     console.log("------------------------------------------");
     console.log("🔑 THÔNG TIN ĐĂNG NHẬP:");
-    console.log("   - Quản trị viên (ADMIN001, ADMIN002, ADMIN003): Mật khẩu 1111");
+    console.log("   - Quản trị viên (ADMIN001, ADMIN002, ADMIN003): Mật khẩu bảo mật được cấu hình an toàn qua biến môi trường (.env)");
     console.log("   - Giảng viên & Trưởng Bộ Môn (20240001 - 20240012): Mật khẩu 11111111");
     console.log("==========================================\n");
 

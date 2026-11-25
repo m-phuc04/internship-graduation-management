@@ -1,4 +1,5 @@
 import internshipDocumentService from "../services/internshipDocumentService.js";
+import { logActivity } from "../services/logService.js";
 
 const getUserId = (req) => req.user?.userId || req.user?._id || req.user?.id || null;
 
@@ -32,6 +33,15 @@ export const createDocument = async (req, res, next) => {
       academicTermId: academicTermId || null,
       userId: getUserId(req),
     });
+
+    await logActivity(req, {
+      action: "Tải lên tài liệu thực tập",
+      module: "INTERNSHIP",
+      description: `Đã tải lên tài liệu thực tập: "${title || "Tài liệu"}"`,
+      targetId: document._id,
+      targetModel: "InternshipDocument",
+      status: "SUCCESS",
+    });
     res.status(201).json({
       success: true,
       message: "Tải lên tài liệu thực tập thành công",
@@ -49,6 +59,15 @@ export const deleteDocument = async (req, res, next) => {
       id,
       getUserId(req),
     );
+
+    await logActivity(req, {
+      action: "Xóa tài liệu thực tập",
+      module: "INTERNSHIP",
+      description: `Đã xóa tài liệu thực tập mã ID: ${id}`,
+      targetId: id,
+      targetModel: "InternshipDocument",
+      status: "SUCCESS",
+    });
     res.status(200).json({
       success: true,
       message: result.message,

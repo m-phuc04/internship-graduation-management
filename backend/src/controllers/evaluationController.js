@@ -1,4 +1,5 @@
 import evaluationService from "../services/evaluationService.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // Lấy thông tin đánh giá theo ID
@@ -106,6 +107,15 @@ const gradeInternship = async (req, res, next) => {
       criteria,
     });
 
+    await logActivity(req, {
+      action: "Đánh giá kết quả thực tập",
+      module: "EVALUATION",
+      description: `Giảng viên đã chấm điểm đánh giá thực tập cho hồ sơ ${internshipId || req.params.id}`,
+      targetId: result?._id || req.params.id,
+      targetModel: "Evaluation",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Chấm điểm thực tập doanh nghiệp thành công",
@@ -127,6 +137,15 @@ const publishScore = async (req, res, next) => {
       internshipId: id,
       tbmUserId: userId,
       requestingUser: req.user,
+    });
+
+    await logActivity(req, {
+      action: "Công bố kết quả đánh giá",
+      module: "EVALUATION",
+      description: `Đã công bố điểm đánh giá thực tập cho hồ sơ ${id}`,
+      targetId: id,
+      targetModel: "Internship",
+      status: "SUCCESS",
     });
     res.status(200).json({
       success: true,

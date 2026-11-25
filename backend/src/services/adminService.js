@@ -3,6 +3,7 @@ import User from "../models/User.js";
 import Student from "../models/Student.js";
 import Permission from "../models/Permission.js";
 import Log from "../models/Log.js";
+import { logActivity, getDistinctActions } from "./logService.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import ExcelJS from "exceljs";
@@ -150,32 +151,59 @@ const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
 };
 
 /**
- * Lấy danh sách tất cả người dùng cho trang quản trị tổng quan
+ * Lấy danh sách tất cả người dùng cho trang quản trị tổng quan kèm phân trang, tìm kiếm và lọc
  */
-const getAllUsers = async ({ role = "", search = "", page = 1, limit = 20 }) => {
+const getAllUsers = async ({ role = "", search = "", page = 1, limit = 10 }) => {
   const query = {};
   if (role && role !== "ALL") {
     query.role = role;
   }
   if (search && search.trim()) {
-    const regex = new RegExp(search.trim(), "i");
-    query.$or = [{ fullName: regex }, { email: regex }, { code: regex }];
+    const searchTrimmed = search.trim();
+    const regex = new RegExp(searchTrimmed, "i");
+
+    // Tìm kiếm thêm cả sinh viên theo studentCode nếu có
+    const matchingStudents = await Student.find({ studentCode: regex }).select("userId").lean();
+    const studentUserIds = matchingStudents.map((s) => s.userId).filter(Boolean);
+
+    query.$or = [
+      { fullName: regex },
+      { email: regex },
+      { code: regex },
+      { _id: { $in: studentUserIds } },
+    ];
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const pageNum = Math.max(1, parseInt(page, 10) || 1);
+  const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+  const skip = (pageNum - 1) * limitNum;
+
   const [users, total] = await Promise.all([
-    User.find(query).select("-password -refreshToken").sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+    User.find(query)
+      .select("-password -refreshToken")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum)
+      .lean(),
     User.countDocuments(query),
   ]);
+
+  const totalPages = Math.ceil(total / limitNum) || 1;
 
   return {
     users,
     pagination: {
-      page: Number(page),
-      limit: Number(limit),
+      page: pageNum,
+      limit: limitNum,
       total,
-      totalPages: Math.ceil(total / Number(limit)),
+      totalPages,
+      hasNextPage: pageNum < totalPages,
+      hasPrevPage: pageNum > 1,
     },
+    page: pageNum,
+    limit: limitNum,
+    total,
+    totalPages,
   };
 };
 
@@ -208,24 +236,31 @@ const toggleUserStatus = async (userId) => {
 };
 
 /**
- * Đặt lại mật khẩu cho tài khoản Sinh viên hoặc Giảng viên (Chỉ áp dụng cho role STUDENT và LECTURER)
- * Quy trình: Kiểm tra STUDENT / LECTURER -> Tạo mật khẩu ngẫu nhiên -> Gửi email trước -> Lưu DB và thu hồi token
+ * Đặt lại mật khẩu cho tài khoản Sinh viên, Giảng viên hoặc Trưởng bộ môn (STUDENT, LECTURER, TBM)
+ * Tuyệt đối cấm ADMIN
+ * Quy trình: Kiểm tra STUDENT / LECTURER / TBM -> Tạo mật khẩu ngẫu nhiên -> Gửi email trước -> Lưu DB và thu hồi token
  */
-const resetPassword = async (userId, adminUser) => {
+const resetPassword = async (userId, adminUser, req = null) => {
   const user = await User.findById(userId);
   if (!user) {
     throw new AppError("Không tìm thấy tài khoản người dùng", 404);
   }
 
-  // 1. Kiểm tra phân quyền: Chỉ cho phép STUDENT hoặc LECTURER, tuyệt đối cấm ADMIN
-  if (user.role !== "STUDENT" && user.role !== "LECTURER") {
+  // 1. Kiểm tra phân quyền: Chỉ cho phép STUDENT, LECTURER hoặc TBM, tuyệt đối cấm ADMIN
+  const ALLOWED_ROLES = ["STUDENT", "LECTURER", "TBM"];
+  if (!ALLOWED_ROLES.includes(user.role)) {
     throw new AppError(
-      "Chức năng này chỉ áp dụng cho tài khoản Sinh viên hoặc Giảng viên. Không được phép đặt lại mật khẩu của Quản trị viên.",
+      "Chức năng này chỉ áp dụng cho tài khoản Sinh viên, Giảng viên hoặc Trưởng bộ môn. Không được phép đặt lại mật khẩu của Quản trị viên.",
       403,
     );
   }
 
-  const roleLabel = user.role === "LECTURER" ? "Giảng viên" : "Sinh viên";
+  const roleLabelMap = {
+    STUDENT: "Sinh viên",
+    LECTURER: "Giảng viên",
+    TBM: "Trưởng bộ môn",
+  };
+  const roleLabel = roleLabelMap[user.role] || user.role;
 
   if (!user.isActive) {
     throw new AppError(`Tài khoản ${roleLabel.toLowerCase()} này đang bị khóa. Vui lòng kích hoạt trước khi đặt lại mật khẩu.`, 400);
@@ -235,7 +270,7 @@ const resetPassword = async (userId, adminUser) => {
   if (user.role === "STUDENT") {
     const student = await Student.findOne({ userId: user._id });
     accountCode = student?.studentCode || user.code;
-  } else if (user.role === "LECTURER") {
+  } else if (user.role === "LECTURER" || user.role === "TBM") {
     const lecturer = await Lecturer.findOne({ userId: user._id });
     accountCode = lecturer?.lecturerCode || user.code;
   }
@@ -280,18 +315,16 @@ const resetPassword = async (userId, adminUser) => {
   await user.save();
 
   // 4. Ghi nhật ký hệ thống (KHÔNG lưu mật khẩu vào log)
-  try {
-    await Log.create({
-      userId: adminUser?._id || adminUser?.userId || adminUser,
-      action: `Reset mật khẩu ${roleLabel.toLowerCase()}`,
-      module: "USER",
-      description: `Quản trị viên ${adminUser?.fullName || "Admin"} đã đặt lại mật khẩu cho ${roleLabel.toLowerCase()} ${accountCode} (${user.fullName}) gửi đến email ${user.email}`,
-      status: "SUCCESS",
-      ipAddress: "127.0.0.1",
-    });
-  } catch (logErr) {
-    console.warn("Lỗi ghi log reset mật khẩu:", logErr.message);
-  }
+  await logActivity(req, {
+    userId: adminUser?._id || adminUser?.userId || adminUser,
+    role: "ADMIN",
+    action: `Reset mật khẩu ${roleLabel.toLowerCase()}`,
+    module: "USER",
+    description: `Quản trị viên ${adminUser?.fullName || "Admin"} đã đặt lại mật khẩu cho ${roleLabel.toLowerCase()} ${accountCode} (${user.fullName}) gửi đến email ${user.email}`,
+    targetId: user._id,
+    targetModel: "User",
+    status: "SUCCESS",
+  });
 
   return {
     message: `Đã đặt lại mật khẩu thành công và gửi thông tin đến email ${roleLabel.toLowerCase()}`,
@@ -579,7 +612,7 @@ const previewStudentExcel = async (fileBuffer) => {
 /**
  * Xác nhận tạo tài khoản sinh viên từ các dòng hợp lệ
  */
-const importStudentExcel = async (validRows, adminUser) => {
+const importStudentExcel = async (validRows, adminUser, req = null) => {
   if (!Array.isArray(validRows) || validRows.length === 0) {
     throw new AppError("Không có danh sách dữ liệu hợp lệ để tạo tài khoản", 400);
   }
@@ -655,19 +688,17 @@ const importStudentExcel = async (validRows, adminUser) => {
   }
 
   // Ghi nhật ký hệ thống
-  if (adminUser && createdCount > 0) {
-    try {
-      await Log.create({
-        userId: adminUser._id || adminUser.userId || adminUser,
-        action: "Import sinh viên Excel",
-        module: "USER",
-        description: `Quản trị viên ${adminUser.fullName || "Admin"} đã import thành công ${createdCount} tài khoản sinh viên từ Excel`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-      });
-    } catch (logErr) {
-      console.warn("Lỗi ghi log import excel:", logErr.message);
-    }
+  if (adminUser) {
+    const isSuccess = createdCount > 0;
+    await logActivity(req, {
+      userId: adminUser._id || adminUser.userId || adminUser,
+      role: "ADMIN",
+      action: "Import sinh viên Excel",
+      module: "USER",
+      description: `Quản trị viên ${adminUser.fullName || "Admin"} đã import ${createdCount} tài khoản sinh viên thành công (${skippedCount} bị bỏ qua/lỗi) từ Excel`,
+      status: isSuccess ? "SUCCESS" : "FAILED",
+      errorMessage: errorsList.length > 0 ? `Có ${errorsList.length} lỗi khi import` : null,
+    });
   }
 
   return {
@@ -686,138 +717,81 @@ const importStudentExcel = async (validRows, adminUser) => {
 /**
  * Khởi tạo dữ liệu nhật ký mẫu ban đầu nếu collection còn trống
  */
-const seedInitialLogsIfEmpty = async () => {
-  try {
-    const count = await Log.countDocuments();
-    if (count > 0) return;
-
-    // Lấy người dùng mẫu theo các vai trò
-    const users = await User.find({ isActive: true }).select("_id fullName role email").lean();
-    if (!users || users.length === 0) return;
-
-    const admins = users.filter((u) => u.role === "ADMIN");
-    const tbms = users.filter((u) => u.role === "TBM");
-    const lecturers = users.filter((u) => u.role === "LECTURER");
-    const students = users.filter((u) => u.role === "STUDENT");
-
-    const sampleLogs = [];
-    const now = Date.now();
-
-    // Hành động mẫu của Quản trị viên (Admin)
-    admins.forEach((admin, i) => {
-      sampleLogs.push({
-        userId: admin._id,
-        action: "Cập nhật phân quyền",
-        module: "USER",
-        description: `Quản trị viên ${admin.fullName} đã cập nhật quyền hạn hướng dẫn cho giảng viên`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 2),
-      });
-      sampleLogs.push({
-        userId: admin._id,
-        action: "Đăng nhập hệ thống",
-        module: "AUTH",
-        description: `Quản trị viên ${admin.fullName} đăng nhập thành công vào Cổng Quản Trị`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 5),
-      });
-    });
-
-    // Hành động mẫu của Trưởng bộ môn (TBM)
-    tbms.forEach((tbm, i) => {
-      sampleLogs.push({
-        userId: tbm._id,
-        action: "Phê duyệt lĩnh vực",
-        module: "USER",
-        description: `Trưởng bộ môn ${tbm.fullName} đã phê duyệt đề xuất lĩnh vực nghiên cứu cho giảng viên`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 3),
-      });
-      sampleLogs.push({
-        userId: tbm._id,
-        action: "Cấu hình mốc thời gian",
-        module: "SCHEDULE",
-        description: `Trưởng bộ môn ${tbm.fullName} cập nhật thời hạn chấm điểm và nộp báo cáo TTDN`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 8),
-      });
-    });
-
-    // Hành động mẫu của Giảng viên
-    lecturers.forEach((lec, i) => {
-      sampleLogs.push({
-        userId: lec._id,
-        action: "Yêu cầu thay đổi lĩnh vực",
-        module: "USER",
-        description: `Giảng viên ${lec.fullName} gửi yêu cầu cập nhật lĩnh vực nghiên cứu chuyên môn`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 4),
-      });
-      sampleLogs.push({
-        userId: lec._id,
-        action: "Đánh giá báo cáo thực tập",
-        module: "EVALUATION",
-        description: `Giảng viên ${lec.fullName} đã nhận xét và chấm điểm nhật ký tuần của sinh viên`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 12),
-      });
-    });
-
-    // Hành động mẫu của Sinh viên
-    students.slice(0, 5).forEach((stu, i) => {
-      sampleLogs.push({
-        userId: stu._id,
-        action: "Đăng ký thực tập doanh nghiệp",
-        module: "INTERNSHIP",
-        description: `Sinh viên ${stu.fullName} đã nộp hồ sơ đăng ký nguyện vọng thực tập`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 6),
-      });
-      sampleLogs.push({
-        userId: stu._id,
-        action: "Nộp báo cáo tuần thực tập",
-        module: "INTERNSHIP_REPORT",
-        description: `Sinh viên ${stu.fullName} đã nộp báo cáo tiến độ tuần`,
-        status: "SUCCESS",
-        ipAddress: "127.0.0.1",
-        createdAt: new Date(now - (i + 1) * 3600000 * 15),
-      });
-    });
-
-    if (sampleLogs.length > 0) {
-      await Log.insertMany(sampleLogs, { ordered: false });
-    }
-  } catch (err) {
-    console.warn("Could not seed initial logs:", err.message);
-  }
-};
-
 /**
- * Lấy nhật ký hoạt động hệ thống có phân trang, lọc theo vai trò và tìm kiếm
+ * Lấy nhật ký hoạt động hệ thống có phân trang, lọc đa điều kiện (role, status, module, action, dateFrom, dateTo, search)
  */
-const getSystemLogs = async ({ page = 1, limit = 10, role = "", search = "" }) => {
-  await seedInitialLogsIfEmpty();
-
+const getSystemLogs = async ({
+  page = 1,
+  limit = 15,
+  role = "",
+  status = "",
+  module = "",
+  action = "",
+  search = "",
+  dateFrom = "",
+  dateTo = "",
+}) => {
   const pageNum = Math.max(1, parseInt(page, 10) || 1);
-  const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+  const limitNum = Math.max(1, parseInt(limit, 10) || 15);
 
   const andConditions = [];
 
-  // Lọc theo vai trò (nếu có)
+  // 1. Lọc theo vai trò (hỗ trợ cả SYSTEM và các vai trò User)
   if (role && role !== "ALL" && role !== "") {
-    const usersInRole = await User.find({ role }).select("_id").lean();
-    const userIds = usersInRole.map((u) => u._id);
-    andConditions.push({ userId: { $in: userIds } });
+    if (role === "SYSTEM") {
+      andConditions.push({
+        $or: [{ role: "SYSTEM" }, { userId: null }],
+      });
+    } else {
+      const usersInRole = await User.find({ role }).select("_id").lean();
+      const userIds = usersInRole.map((u) => u._id);
+      andConditions.push({
+        $or: [{ role }, { userId: { $in: userIds } }],
+      });
+    }
   }
 
-  // Lọc theo tìm kiếm (hành động, mô tả, module hoặc thông tin người dùng)
+  // 2. Lọc theo trạng thái (SUCCESS / FAILED)
+  if (status && status !== "ALL" && status !== "") {
+    andConditions.push({ status });
+  }
+
+  // 3. Lọc theo phân hệ (module)
+  if (module && module !== "ALL" && module !== "") {
+    andConditions.push({ module });
+  }
+
+  // 4. Lọc theo hành động (action)
+  if (action && action !== "ALL" && action !== "") {
+    andConditions.push({ action });
+  }
+
+  // 5. Lọc theo khoảng thời gian (theo múi giờ Việt Nam UTC+7)
+  if (dateFrom || dateTo) {
+    const dateQuery = {};
+    if (dateFrom && dateFrom.trim()) {
+      const start = new Date(`${dateFrom.trim()}T00:00:00.000+07:00`);
+      if (!isNaN(start.getTime())) {
+        dateQuery.$gte = start;
+      }
+    }
+    if (dateTo && dateTo.trim()) {
+      const end = new Date(`${dateTo.trim()}T23:59:59.999+07:00`);
+      if (!isNaN(end.getTime())) {
+        dateQuery.$lte = end;
+      }
+    }
+    if (dateQuery.$gte && dateQuery.$lte && dateQuery.$gte > dateQuery.$lte) {
+      const temp = dateQuery.$gte;
+      dateQuery.$gte = new Date(`${dateTo.trim()}T00:00:00.000+07:00`);
+      dateQuery.$lte = new Date(`${dateFrom.trim()}T23:59:59.999+07:00`);
+    }
+    if (Object.keys(dateQuery).length > 0) {
+      andConditions.push({ createdAt: dateQuery });
+    }
+  }
+
+  // 6. Lọc theo tìm kiếm (hành động, mô tả, module hoặc thông tin người dùng)
   if (search && search.trim()) {
     const rawSearch = search.trim();
     const escapedSearch = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -841,7 +815,7 @@ const getSystemLogs = async ({ page = 1, limit = 10, role = "", search = "" }) =
   const query = andConditions.length > 0 ? { $and: andConditions } : {};
   const skip = (pageNum - 1) * limitNum;
 
-  const [logs, total] = await Promise.all([
+  const [logs, total, availableActions] = await Promise.all([
     Log.find(query)
       .populate("userId", "fullName email role code avatar")
       .sort({ createdAt: -1 })
@@ -849,6 +823,7 @@ const getSystemLogs = async ({ page = 1, limit = 10, role = "", search = "" }) =
       .limit(limitNum)
       .lean(),
     Log.countDocuments(query),
+    getDistinctActions(),
   ]);
 
   const totalPages = Math.ceil(total / limitNum) || 1;
@@ -863,6 +838,7 @@ const getSystemLogs = async ({ page = 1, limit = 10, role = "", search = "" }) =
       hasNextPage: pageNum < totalPages,
       hasPrevPage: pageNum > 1,
     },
+    availableActions: availableActions.filter(Boolean).sort(),
   };
 };
 

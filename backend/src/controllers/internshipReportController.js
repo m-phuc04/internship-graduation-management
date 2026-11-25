@@ -1,4 +1,5 @@
 import internshipReportService from "../services/internshipReportService.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // Sinh viên tạo hoặc nộp báo cáo thực tập
@@ -28,6 +29,15 @@ const createReport = async (req, res, next) => {
       ...req.body,
       file: fileMeta,
       fileCategory: req.body.category || req.body.fileCategory || fileMeta?.category || null,
+    });
+
+    await logActivity(req, {
+      action: "Nộp báo cáo thực tập",
+      module: "INTERNSHIP_REPORT",
+      description: `Sinh viên đã ${report.status === "DRAFT" ? "lưu nháp" : "nộp"} báo cáo thực tập`,
+      targetId: report._id,
+      targetModel: "InternshipReport",
+      status: "SUCCESS",
     });
 
     res.status(201).json({
@@ -215,6 +225,15 @@ const reviewReport = async (req, res, next) => {
         status,
       },
     );
+
+    await logActivity(req, {
+      action: "Nhận xét báo cáo thực tập",
+      module: "INTERNSHIP_REPORT",
+      description: `Giảng viên đã nhận xét và đánh giá báo cáo thực tập mã ${req.params.id}`,
+      targetId: report._id,
+      targetModel: "InternshipReport",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,

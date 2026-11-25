@@ -8,6 +8,12 @@ const logSchema = new mongoose.Schema(
       default: null,
     },
 
+    role: {
+      type: String,
+      enum: ["ADMIN", "TBM", "LECTURER", "STUDENT", "SYSTEM", null],
+      default: null,
+    },
+
     action: {
       type: String,
       required: [true, "Hành động là bắt buộc"],

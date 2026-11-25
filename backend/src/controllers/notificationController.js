@@ -1,4 +1,5 @@
 import notificationService from "../services/notificationService.js";
+import { logActivity } from "../services/logService.js";
 
 // Lấy danh sách thông báo của người dùng
 const getMyNotifications = async (req, res, next) => {
@@ -102,6 +103,15 @@ const createNotification = async (req, res, next) => {
       link,
       priority,
       metadata,
+    });
+
+    await logActivity(req, {
+      action: "Gửi thông báo hệ thống",
+      module: "NOTIFICATION",
+      description: `Đã gửi thông báo "${title || ""}" đến người dùng ${recipientId || userId}`,
+      targetId: notification?._id,
+      targetModel: "Notification",
+      status: "SUCCESS",
     });
 
     res.status(201).json({

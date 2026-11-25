@@ -10,7 +10,7 @@ import Evaluation from "../models/Evaluation.js";
 import AcademicTerm from "../models/AcademicTerm.js";
 import InternshipReport from "../models/InternshipReport.js";
 import InternshipDocument from "../models/InternshipDocument.js";
-import Log from "../models/Log.js";
+import { logActivity } from "./logService.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
@@ -1847,20 +1847,17 @@ const deleteReportFile = async ({ internshipId = null, userId, reason = "" }) =>
   internship.reportRemovalHistory.push(removalRecord);
 
   // 5. Ghi vào collection Log hệ thống để phục vụ đối chiếu, thanh tra
-  try {
-    await Log.create({
-      userId: user._id,
-      action: "REMOVE_REPORT_FILE",
-      module: "INTERNSHIP_REPORT",
-      description: `${actorName} (${actorRole}) đã gỡ file báo cáo "${removalRecord.fileName}" của sinh viên ${studentName} (${studentCode}). Lý do: ${finalReason}`,
-      targetId: internship._id,
-      targetModel: "Internship",
-      method: "DELETE",
-      status: "SUCCESS",
-    });
-  } catch (logErr) {
-    console.warn("[deleteReportFile] Failed to write system Log:", logErr.message);
-  }
+  await logActivity(null, {
+    userId: user._id,
+    role: actorRole,
+    action: "Gỡ file báo cáo thực tập",
+    module: "INTERNSHIP_REPORT",
+    description: `${actorName} (${actorRole}) đã gỡ file báo cáo "${removalRecord.fileName}" của sinh viên ${studentName} (${studentCode}). Lý do: ${finalReason}`,
+    targetId: internship._id,
+    targetModel: "Internship",
+    method: "DELETE",
+    status: "SUCCESS",
+  });
 
   // 6. Xóa file vật lý của internship.reportFile
   const oldReportUrl = internship.reportFile.fileUrl;
