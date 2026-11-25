@@ -179,44 +179,51 @@ const LoginPage = () => {
             {/* CAPTCHA Xác thực bảo mật */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Mã bảo vệ
+                Mã bảo vệ (CAPTCHA)
               </label>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="flex-1 h-11 bg-slate-100 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden px-2">
-                  {captchaLoading ? (
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
-                      <RotateCw className="w-4 h-4 animate-spin" />
-                      <span>Đang tải mã...</span>
-                    </div>
-                  ) : captchaData?.captchaSvg ? (
-                    <div
-                      className="w-full h-full flex items-center justify-center [&>svg]:h-full [&>svg]:w-auto"
-                      dangerouslySetInnerHTML={{ __html: captchaData.captchaSvg }}
-                    />
-                  ) : (
-                    <span className="text-xs text-slate-400">Không có CAPTCHA</span>
-                  )}
+              <div className="flex items-center gap-2">
+                <div className="flex-1 relative">
+                  <ShieldCheck className="w-4 h-4 text-slate-400 absolute left-3 top-3.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={captchaInput}
+                    onChange={(e) => setCaptchaInput(e.target.value.toUpperCase())}
+                    placeholder="MÃ XÁC THỰC"
+                    maxLength={6}
+                    required
+                    autoComplete="off"
+                    className="w-full h-11 pl-9 pr-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold uppercase tracking-widest text-slate-900 placeholder:text-slate-400 placeholder:font-normal placeholder:tracking-normal focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] transition"
+                  />
                 </div>
+
                 <button
                   type="button"
                   onClick={loadCaptcha}
                   disabled={captchaLoading}
-                  title="Lấy mã khác"
-                  className="h-11 px-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl border border-slate-200 flex items-center justify-center transition disabled:opacity-50 cursor-pointer"
+                  title="Đổi mã khác"
+                  className="w-11 h-11 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 transition cursor-pointer shrink-0 disabled:opacity-50"
                 >
-                  <RotateCw className={`w-4 h-4 ${captchaLoading ? 'animate-spin' : ''}`} />
+                  <RotateCw className={`w-4 h-4 text-[#123891] ${captchaLoading ? 'animate-spin' : ''}`} />
                 </button>
-              </div>
-              <div className="relative">
-                <ShieldCheck className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
-                <input
-                  type="text"
-                  value={captchaInput}
-                  onChange={(e) => setCaptchaInput(e.target.value)}
-                  placeholder="Nhập chính xác ký tự trong hình trên"
-                  required
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] transition"
-                />
+
+                <div
+                  onClick={loadCaptcha}
+                  title="Nhấp để đổi mã CAPTCHA khác"
+                  className="w-[145px] h-11 shrink-0 bg-white rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 shadow-2xs transition"
+                >
+                  {captchaLoading ? (
+                    <span className="text-[11px] text-slate-400 animate-pulse">Tạo mã...</span>
+                  ) : captchaData?.image ? (
+                    <img
+                      src={captchaData.image}
+                      alt="CAPTCHA"
+                      className="w-full h-full object-fill select-none"
+                      draggable="false"
+                    />
+                  ) : (
+                    <span className="text-[11px] text-slate-400">Không có mã</span>
+                  )}
+                </div>
               </div>
             </div>
 

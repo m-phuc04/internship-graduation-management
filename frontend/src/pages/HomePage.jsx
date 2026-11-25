@@ -464,16 +464,16 @@ const HomePage = () => {
                       MÃ XÁC THỰC CAPTCHA
                     </label>
                     <div className="flex items-center gap-2">
-                      <div className="w-28 shrink-0">
+                      <div className="flex-1">
                         <input
                           type="text"
                           value={captchaInput}
                           onChange={(e) => setCaptchaInput(e.target.value.toUpperCase())}
-                          placeholder="MÃ SỐ"
+                          placeholder="MÃ XÁC THỰC"
                           maxLength={6}
                           required
                           autoComplete="off"
-                          className="w-full px-2.5 py-2 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-center uppercase tracking-widest text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#123891] focus:ring-2 focus:ring-blue-200/50"
+                          className="w-full h-10 px-3 bg-slate-50/70 border border-slate-200 rounded-xl text-xs font-bold text-center uppercase tracking-widest text-slate-900 placeholder:text-slate-400 placeholder:tracking-normal placeholder:font-normal focus:outline-none focus:border-[#123891] focus:ring-2 focus:ring-blue-200/50 transition"
                         />
                       </div>
 
@@ -481,20 +481,24 @@ const HomePage = () => {
                         type="button"
                         onClick={loadCaptcha}
                         disabled={captchaLoading}
-                        title="Làm mới mã"
-                        className="p-2 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-600 transition cursor-pointer shrink-0 disabled:opacity-50"
+                        title="Đổi mã khác"
+                        className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-600 flex items-center justify-center transition cursor-pointer shrink-0 disabled:opacity-50"
                       >
                         <RotateCw className={`w-4 h-4 text-[#123891] ${captchaLoading ? 'animate-spin' : ''}`} />
                       </button>
 
-                      <div className="flex-1 h-10 bg-slate-100 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center p-0.5 relative">
+                      <div
+                        onClick={loadCaptcha}
+                        title="Nhấp để đổi mã CAPTCHA khác"
+                        className="w-[142px] h-10 shrink-0 bg-white rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center cursor-pointer hover:opacity-90 shadow-2xs transition"
+                      >
                         {captchaLoading ? (
                           <span className="text-[10px] text-slate-400 animate-pulse">Tạo mã...</span>
                         ) : captchaData?.image ? (
                           <img
                             src={captchaData.image}
                             alt="CAPTCHA"
-                            className="w-full h-full object-contain select-none"
+                            className="w-full h-full object-fill select-none"
                             draggable="false"
                           />
                         ) : (
