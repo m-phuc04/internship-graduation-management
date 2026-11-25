@@ -2,7 +2,7 @@ import ResearchField from "../models/ResearchField.js";
 import FieldChangeRequest from "../models/FieldChangeRequest.js";
 import Lecturer from "../models/Lecturer.js";
 import User from "../models/User.js";
-import Log from "../models/Log.js";
+import { logActivity } from "./logService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
 
@@ -324,11 +324,14 @@ const approveRequest = async (requestId, tbmUserId) => {
     }
 
     // Ghi nhật ký hoạt động hệ thống
-    await Log.create({
+    await logActivity(null, {
       userId: tbmUserId,
+      role: reviewer?.role || "TBM",
       action: "Phê duyệt yêu cầu lĩnh vực",
       module: "USER",
       description: `${reviewerRoleTitle} ${reviewer?.fullName || ""} đã phê duyệt yêu cầu thay đổi lĩnh vực cho giảng viên ${lecturer.lecturerCode || ""}. Lĩnh vực mới: ${request.requestedFields.join(", ")}`,
+      targetId: request._id,
+      targetModel: "FieldChangeRequest",
       status: "SUCCESS",
     });
   } catch (err) {
@@ -396,11 +399,14 @@ const rejectRequest = async (requestId, tbmUserId) => {
     }
 
     // Ghi nhật ký hoạt động hệ thống
-    await Log.create({
+    await logActivity(null, {
       userId: tbmUserId,
+      role: reviewer?.role || "TBM",
       action: "Từ chối yêu cầu lĩnh vực",
       module: "USER",
       description: `${reviewerRoleTitle} ${reviewer?.fullName || ""} đã từ chối yêu cầu thay đổi lĩnh vực của giảng viên`,
+      targetId: request._id,
+      targetModel: "FieldChangeRequest",
       status: "SUCCESS",
     });
   } catch (err) {

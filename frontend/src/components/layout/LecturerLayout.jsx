@@ -17,6 +17,8 @@ import {
   ChevronDown,
   Sparkles,
   Mail,
+  AlertTriangle,
+  KeyRound,
 } from 'lucide-react';
 
 const LecturerLayout = () => {
@@ -276,6 +278,25 @@ const LecturerLayout = () => {
             </div>
           </div>
         </header>
+
+        {/* Thanh cảnh báo đổi mật khẩu bắt buộc */}
+        {user?.mustChangePassword && (
+          <div className="bg-amber-500 text-white px-4 py-2.5 text-xs font-medium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 shadow-xs shrink-0">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-white animate-pulse" />
+              <span>
+                <strong>Bắt buộc đổi mật khẩu:</strong> Tài khoản của bạn vừa được cấp mới hoặc đặt lại mật khẩu. Vui lòng đổi mật khẩu ngay để kích hoạt đầy đủ bảo mật tài khoản.
+              </span>
+            </div>
+            <Link
+              to="/lecturer/profile"
+              className="inline-flex items-center gap-1.5 px-3 py-1 bg-white text-amber-900 rounded-lg text-xs font-bold hover:bg-amber-50 transition shrink-0 shadow-2xs"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+              <span>Đổi mật khẩu ngay</span>
+            </Link>
+          </div>
+        )}
 
         {/* Khu vực hiển thị nội dung route */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 w-full max-w-full">

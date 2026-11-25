@@ -126,7 +126,7 @@ const AdminPermissionsPage = () => {
               Quản lý Phân quyền Giảng viên & Bộ môn
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Phân quyền nghiệp vụ (GVHD, GVPB) và chỉ định vai trò Trưởng Bộ Môn (TBM)
+              Phân quyền nghiệp vụ (GVHD, GVPB) và chỉ định vai trò Trưởng Bộ Môn
             </p>
           </div>
         </div>
@@ -450,7 +450,7 @@ const AdminPermissionsPage = () => {
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  Giảng viên (LECTURER)
+                  Giảng viên
                 </button>
 
                 <button
@@ -462,11 +462,11 @@ const AdminPermissionsPage = () => {
                       : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                   }`}
                 >
-                  Trưởng Bộ Môn (TBM)
+                  Trưởng Bộ Môn
                 </button>
               </div>
               <p className="text-[10px] text-slate-400 italic">
-                * Chỉ định tài khoản làm Trưởng Bộ Môn (TBM) để quản lý phê duyệt đề tài và phân công hội đồng phản biện.
+                * Chỉ định tài khoản làm Trưởng Bộ Môn để quản lý phê duyệt đề tài và phân công hội đồng phản biện.
               </p>
             </div>
 

@@ -78,7 +78,7 @@ const AdminSidebar = ({ onCloseMobile, onToggleCollapse }) => {
               Cổng Quản Trị
             </div>
             <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
-              Quản trị viên (ADMIN)
+              Quản trị viên
             </div>
           </div>
         </Link>

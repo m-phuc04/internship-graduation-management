@@ -7,6 +7,7 @@ import Student from "../models/Student.js";
 import Lecturer from "../models/Lecturer.js";
 import Company from "../models/Company.js";
 import User from "../models/User.js";
+import AppError from "../utils/AppError.js";
 
 // Hàm bổ trợ: Định dạng ngày tháng DD/MM/YYYY
 const formatDate = (date) => {
@@ -689,7 +690,540 @@ const exportTheses = async ({
   };
 };
 
+// ==========================================
+// 3. Export Danh sách Sinh viên TTDN theo Học kỳ
+// ==========================================
+const exportTermStudentsTTDN = async (academicTermId) => {
+  if (!academicTermId) {
+    throw new AppError("Thiếu mã định danh học kỳ", 400, "MISSING_ACADEMIC_TERM_ID");
+  }
+
+  const term = await AcademicTerm.findById(academicTermId).lean();
+  if (!term) {
+    throw new AppError("Không tìm thấy thông tin học kỳ yêu cầu", 404, "ACADEMIC_TERM_NOT_FOUND");
+  }
+
+  // Điều kiện sử dụng: Chỉ cho phép tải đối với các học kỳ Sắp diễn ra, Đang diễn ra, Đã đóng
+  const allowedStatuses = ["UPCOMING", "ACTIVE", "CLOSED"];
+  if (!allowedStatuses.includes(term.status)) {
+    throw new AppError(
+      "Học kỳ chưa mở hoặc chưa đến thời điểm được phép tải danh sách sinh viên. Chỉ cho phép tải đối với học kỳ Sắp diễn ra, Đang diễn ra hoặc Đã đóng.",
+      400,
+      "TERM_STATUS_NOT_ALLOWED"
+    );
+  }
+
+  // Lọc chính xác theo học kỳ, không lấy nhầm học kỳ khác
+  const internships = await Internship.find({ academicTermId: term._id })
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate("companyId")
+    .populate({
+      path: "lecturerId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .lean();
+
+  if (!internships || internships.length === 0) {
+    throw new AppError(
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia thực tập doanh nghiệp (TTDN).`,
+      400,
+      "NO_STUDENTS_IN_TERM"
+    );
+  }
+
+  // Lấy dữ liệu đánh giá chính thức từ bảng Evaluation
+  const internshipIds = internships.map((i) => i._id);
+  const evaluations = await Evaluation.find({
+    evaluationType: "INTERNSHIP",
+    targetId: { $in: internshipIds },
+  }).lean();
+
+  const evalMap = new Map();
+  evaluations.forEach((ev) => {
+    evalMap.set(ev.targetId.toString(), ev);
+  });
+
+  const studentRows = [];
+  const seenStudentCodes = new Set();
+
+  for (const item of internships) {
+    // Lấy điểm thực tập từ nguồn đánh giá chính thức
+    const ev = evalMap.get(item._id.toString());
+    let scoreVal = null;
+    if (ev?.score !== undefined && ev?.score !== null && !isNaN(ev.score)) {
+      scoreVal = Number(ev.score);
+    } else if (item.finalScore !== undefined && item.finalScore !== null && !isNaN(item.finalScore)) {
+      scoreVal = Number(item.finalScore);
+    } else if (item.score !== undefined && item.score !== null && !isNaN(item.score)) {
+      scoreVal = Number(item.score);
+    }
+
+    const companyName = item.companyId?.name || item.companyId?.companyName || "Chưa xác định";
+    const supervisorUser = item.lecturerId?.userId;
+    const supervisorName = supervisorUser?.fullName
+      ? `${item.lecturerId.academicTitle ? `${item.lecturerId.academicTitle} ` : ""}${supervisorUser.fullName}`
+      : "Chưa phân công";
+    const statusText = mapInternshipStatus(item.status);
+
+    // Sinh viên 1
+    if (item.studentId) {
+      const s1 = item.studentId;
+      const code = s1.studentCode || "";
+      if (code && !seenStudentCodes.has(code)) {
+        seenStudentCodes.add(code);
+        studentRows.push({
+          studentCode: code,
+          fullName: s1.userId?.fullName || "",
+          email: s1.userId?.email || "",
+          className: s1.className || "",
+          companyName,
+          supervisorName,
+          statusText,
+          scoreVal,
+        });
+      }
+    }
+
+    // Sinh viên 2 (nếu có đăng ký cặp)
+    if (item.secondStudentId) {
+      const s2 = item.secondStudentId;
+      const code = s2.studentCode || "";
+      if (code && !seenStudentCodes.has(code)) {
+        seenStudentCodes.add(code);
+        studentRows.push({
+          studentCode: code,
+          fullName: s2.userId?.fullName || "",
+          email: s2.userId?.email || "",
+          className: s2.className || "",
+          companyName,
+          supervisorName,
+          statusText,
+          scoreVal,
+        });
+      }
+    }
+  }
+
+  if (studentRows.length === 0) {
+    throw new AppError(
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia thực tập doanh nghiệp (TTDN).`,
+      400,
+      "NO_STUDENTS_IN_TERM"
+    );
+  }
+
+  // Sắp xếp theo MSSV
+  studentRows.sort((a, b) => a.studentCode.localeCompare(b.studentCode));
+
+  // Khởi tạo file Excel
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Hệ thống Quản lý Thực tập & Khóa luận Tốt nghiệp";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet("DS Sinh Viên TTDN", {
+    views: [{ showGridLines: true, state: "frozen", ySplit: 5 }],
+  });
+
+  const cleanTermCode = (term.code || "HocKy").replace(/[^a-zA-Z0-9_-]/g, "_");
+  const filename = `Danh_sach_TTDN_${cleanTermCode}.xlsx`;
+  const termName = `${term.name} - Năm học ${term.academicYear}`;
+
+  // 9 Cột theo yêu cầu mục 4
+  const columns = [
+    { header: "STT", key: "stt", width: 8 },
+    { header: "MSSV", key: "studentCode", width: 16 },
+    { header: "Họ và tên", key: "fullName", width: 26 },
+    { header: "Email", key: "email", width: 28 },
+    { header: "Lớp", key: "className", width: 14 },
+    { header: "Doanh nghiệp", key: "companyName", width: 34 },
+    { header: "Giảng viên hướng dẫn", key: "supervisorName", width: 26 },
+    { header: "Trạng thái hồ sơ", key: "statusText", width: 20 },
+    { header: "Điểm thực tập", key: "scoreVal", width: 16 },
+  ];
+
+  // Tiêu đề đầu trang
+  worksheet.mergeCells("A1:I1");
+  const t1 = worksheet.getCell("A1");
+  t1.value = "TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM - KHOA CÔNG NGHỆ THÔNG TIN";
+  t1.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF334155" } };
+  t1.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A2:I2");
+  const t2 = worksheet.getCell("A2");
+  t2.value = "DANH SÁCH SINH VIÊN THỰC TẬP DOANH NGHIỆP (TTDN)";
+  t2.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF1E3A8A" } };
+  t2.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A3:I3");
+  const t3 = worksheet.getCell("A3");
+  t3.value = `Học kỳ: ${termName}  |  Ngày xuất: ${formatDate(new Date())}  |  Tổng số: ${studentRows.length} sinh viên`;
+  t3.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF64748B" } };
+  t3.alignment = { horizontal: "center", vertical: "middle" };
+
+  // Dòng 4 trống
+  worksheet.addRow([]);
+
+  // Dòng 5: Tiêu đề cột
+  worksheet.getRow(5).values = columns.map((c) => c.header);
+  worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
+
+  const headerRow = worksheet.getRow(5);
+  headerRow.height = 28;
+  headerRow.eachCell((cell) => {
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF1E3A8A" },
+    };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFCBD5E1" } },
+      left: { style: "thin", color: { argb: "FFCBD5E1" } },
+      bottom: { style: "medium", color: { argb: "FF0F172A" } },
+      right: { style: "thin", color: { argb: "FFCBD5E1" } },
+    };
+  });
+
+  // Bật bộ lọc AutoFilter
+  worksheet.autoFilter = "A5:I5";
+
+  // Thêm dữ liệu từng dòng
+  studentRows.forEach((item, index) => {
+    const row = worksheet.addRow({
+      stt: index + 1,
+      studentCode: item.studentCode,
+      fullName: item.fullName,
+      email: item.email,
+      className: item.className,
+      companyName: item.companyName,
+      supervisorName: item.supervisorName,
+      statusText: item.statusText,
+      scoreVal: item.scoreVal !== null && item.scoreVal !== undefined ? item.scoreVal : "",
+    });
+
+    row.height = 24;
+
+    row.eachCell((cell, colNumber) => {
+      cell.font = { name: "Arial", size: 9.5 };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE2E8F0" } },
+        left: { style: "thin", color: { argb: "FFE2E8F0" } },
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+        right: { style: "thin", color: { argb: "FFE2E8F0" } },
+      };
+
+      // Định dạng văn bản cho MSSV để không mất số 0 đầu
+      if (colNumber === 2) {
+        cell.numFmt = "@";
+      }
+
+      // Cột điểm định dạng số 2 chữ số thập phân nếu có điểm
+      if (colNumber === 9 && typeof cell.value === "number") {
+        cell.numFmt = "0.00";
+      }
+
+      // Căn giữa: STT (1), MSSV (2), Lớp (5), Trạng thái (8), Điểm (9)
+      if ([1, 2, 5, 8, 9].includes(colNumber)) {
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      } else {
+        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      }
+
+      // Đổi màu dòng so le
+      if (index % 2 === 1) {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF8FAFC" },
+        };
+      }
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return { buffer, filename, totalRecords: studentRows.length };
+};
+
+// ==========================================
+// 4. Export Danh sách Sinh viên KLTN theo Học kỳ
+// ==========================================
+const exportTermStudentsKLTN = async (academicTermId) => {
+  if (!academicTermId) {
+    throw new AppError("Thiếu mã định danh học kỳ", 400, "MISSING_ACADEMIC_TERM_ID");
+  }
+
+  const term = await AcademicTerm.findById(academicTermId).lean();
+  if (!term) {
+    throw new AppError("Không tìm thấy thông tin học kỳ yêu cầu", 404, "ACADEMIC_TERM_NOT_FOUND");
+  }
+
+  // Điều kiện sử dụng: Chỉ cho phép tải đối với các học kỳ Sắp diễn ra, Đang diễn ra, Đã đóng
+  const allowedStatuses = ["UPCOMING", "ACTIVE", "CLOSED"];
+  if (!allowedStatuses.includes(term.status)) {
+    throw new AppError(
+      "Học kỳ chưa mở hoặc chưa đến thời điểm được phép tải danh sách sinh viên. Chỉ cho phép tải đối với học kỳ Sắp diễn ra, Đang diễn ra hoặc Đã đóng.",
+      400,
+      "TERM_STATUS_NOT_ALLOWED"
+    );
+  }
+
+  // Lọc chính xác theo học kỳ, không lấy nhầm học kỳ khác
+  const theses = await Thesis.find({ academicTermId: term._id })
+    .populate({
+      path: "studentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "secondStudentId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .populate({
+      path: "supervisorId",
+      populate: { path: "userId", select: "fullName email phone" },
+    })
+    .lean();
+
+  if (!theses || theses.length === 0) {
+    throw new AppError(
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia khóa luận tốt nghiệp (KLTN).`,
+      400,
+      "NO_STUDENTS_IN_TERM"
+    );
+  }
+
+  const studentRows = [];
+  const seenStudentCodes = new Set();
+
+  for (const item of theses) {
+    const supervisorUser = item.supervisorId?.userId;
+    const supervisorName = supervisorUser?.fullName
+      ? `${item.supervisorId.academicTitle ? `${item.supervisorId.academicTitle} ` : ""}${supervisorUser.fullName}`
+      : "Chưa phân công";
+    const statusText = mapThesisStatus(item.status);
+    const thesisTitle = item.thesisTitle || "";
+
+    // Điểm khóa luận cuối cùng của Sinh viên 1 (lấy đúng điểm cuối cùng ghi nhận trong hệ thống)
+    let s1Score = null;
+    if (
+      item.scores?.student1FinalScore !== null &&
+      item.scores?.student1FinalScore !== undefined &&
+      !isNaN(item.scores.student1FinalScore)
+    ) {
+      s1Score = Number(item.scores.student1FinalScore);
+    } else if (
+      item.scores?.finalScore !== null &&
+      item.scores?.finalScore !== undefined &&
+      !isNaN(item.scores.finalScore)
+    ) {
+      s1Score = Number(item.scores.finalScore);
+    }
+
+    // Sinh viên 1
+    if (item.studentId) {
+      const s1 = item.studentId;
+      const code = s1.studentCode || "";
+      if (code && !seenStudentCodes.has(code)) {
+        seenStudentCodes.add(code);
+        studentRows.push({
+          studentCode: code,
+          fullName: s1.userId?.fullName || "",
+          email: s1.userId?.email || "",
+          className: s1.className || "",
+          thesisTitle,
+          supervisorName,
+          statusText,
+          scoreVal: s1Score,
+        });
+      }
+    }
+
+    // Sinh viên 2 (nếu đề tài theo nhóm 2 SV và không bị từ chối)
+    if (item.secondStudentId && item.student2Status !== "REJECTED") {
+      const s2 = item.secondStudentId;
+      const code = s2.studentCode || "";
+      if (code && !seenStudentCodes.has(code)) {
+        seenStudentCodes.add(code);
+        let s2Score = null;
+        if (
+          item.scores?.student2FinalScore !== null &&
+          item.scores?.student2FinalScore !== undefined &&
+          !isNaN(item.scores.student2FinalScore)
+        ) {
+          s2Score = Number(item.scores.student2FinalScore);
+        } else if (
+          item.scores?.finalScore !== null &&
+          item.scores?.finalScore !== undefined &&
+          !isNaN(item.scores.finalScore)
+        ) {
+          s2Score = Number(item.scores.finalScore);
+        }
+
+        studentRows.push({
+          studentCode: code,
+          fullName: s2.userId?.fullName || "",
+          email: s2.userId?.email || "",
+          className: s2.className || "",
+          thesisTitle,
+          supervisorName,
+          statusText,
+          scoreVal: s2Score,
+        });
+      }
+    }
+  }
+
+  if (studentRows.length === 0) {
+    throw new AppError(
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia khóa luận tốt nghiệp (KLTN).`,
+      400,
+      "NO_STUDENTS_IN_TERM"
+    );
+  }
+
+  // Sắp xếp theo MSSV
+  studentRows.sort((a, b) => a.studentCode.localeCompare(b.studentCode));
+
+  // Khởi tạo file Excel
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = "Hệ thống Quản lý Thực tập & Khóa luận Tốt nghiệp";
+  workbook.created = new Date();
+
+  const worksheet = workbook.addWorksheet("DS Sinh Viên KLTN", {
+    views: [{ showGridLines: true, state: "frozen", ySplit: 5 }],
+  });
+
+  const cleanTermCode = (term.code || "HocKy").replace(/[^a-zA-Z0-9_-]/g, "_");
+  const filename = `Danh_sach_KLTN_${cleanTermCode}.xlsx`;
+  const termName = `${term.name} - Năm học ${term.academicYear}`;
+
+  // 9 Cột theo yêu cầu mục 5
+  const columns = [
+    { header: "STT", key: "stt", width: 8 },
+    { header: "MSSV", key: "studentCode", width: 16 },
+    { header: "Họ và tên", key: "fullName", width: 26 },
+    { header: "Email", key: "email", width: 28 },
+    { header: "Lớp", key: "className", width: 14 },
+    { header: "Tên đề tài", key: "thesisTitle", width: 38 },
+    { header: "Giảng viên hướng dẫn", key: "supervisorName", width: 26 },
+    { header: "Trạng thái đề tài", key: "statusText", width: 20 },
+    { header: "Điểm khóa luận", key: "scoreVal", width: 16 },
+  ];
+
+  // Tiêu đề đầu trang
+  worksheet.mergeCells("A1:I1");
+  const t1 = worksheet.getCell("A1");
+  t1.value = "TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP.HCM - KHOA CÔNG NGHỆ THÔNG TIN";
+  t1.font = { name: "Arial", size: 11, bold: true, color: { argb: "FF334155" } };
+  t1.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A2:I2");
+  const t2 = worksheet.getCell("A2");
+  t2.value = "DANH SÁCH SINH VIÊN KHÓA LUẬN TỐT NGHIỆP (KLTN)";
+  t2.font = { name: "Arial", size: 14, bold: true, color: { argb: "FF123891" } };
+  t2.alignment = { horizontal: "center", vertical: "middle" };
+
+  worksheet.mergeCells("A3:I3");
+  const t3 = worksheet.getCell("A3");
+  t3.value = `Học kỳ: ${termName}  |  Ngày xuất: ${formatDate(new Date())}  |  Tổng số: ${studentRows.length} sinh viên`;
+  t3.font = { name: "Arial", size: 10, italic: true, color: { argb: "FF64748B" } };
+  t3.alignment = { horizontal: "center", vertical: "middle" };
+
+  // Dòng 4 trống
+  worksheet.addRow([]);
+
+  // Dòng 5: Tiêu đề cột
+  worksheet.getRow(5).values = columns.map((c) => c.header);
+  worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
+
+  const headerRow = worksheet.getRow(5);
+  headerRow.height = 28;
+  headerRow.eachCell((cell) => {
+    cell.font = { name: "Arial", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FF123891" },
+    };
+    cell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FFCBD5E1" } },
+      left: { style: "thin", color: { argb: "FFCBD5E1" } },
+      bottom: { style: "medium", color: { argb: "FF0F172A" } },
+      right: { style: "thin", color: { argb: "FFCBD5E1" } },
+    };
+  });
+
+  // Bật bộ lọc AutoFilter
+  worksheet.autoFilter = "A5:I5";
+
+  // Thêm dữ liệu từng dòng
+  studentRows.forEach((item, index) => {
+    const row = worksheet.addRow({
+      stt: index + 1,
+      studentCode: item.studentCode,
+      fullName: item.fullName,
+      email: item.email,
+      className: item.className,
+      thesisTitle: item.thesisTitle,
+      supervisorName: item.supervisorName,
+      statusText: item.statusText,
+      scoreVal: item.scoreVal !== null && item.scoreVal !== undefined ? item.scoreVal : "",
+    });
+
+    row.height = 24;
+
+    row.eachCell((cell, colNumber) => {
+      cell.font = { name: "Arial", size: 9.5 };
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFE2E8F0" } },
+        left: { style: "thin", color: { argb: "FFE2E8F0" } },
+        bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+        right: { style: "thin", color: { argb: "FFE2E8F0" } },
+      };
+
+      // Định dạng văn bản cho MSSV để không mất số 0 đầu
+      if (colNumber === 2) {
+        cell.numFmt = "@";
+      }
+
+      // Cột điểm định dạng số 2 chữ số thập phân nếu có điểm
+      if (colNumber === 9 && typeof cell.value === "number") {
+        cell.numFmt = "0.00";
+      }
+
+      // Căn giữa: STT (1), MSSV (2), Lớp (5), Trạng thái (8), Điểm (9)
+      if ([1, 2, 5, 8, 9].includes(colNumber)) {
+        cell.alignment = { horizontal: "center", vertical: "middle" };
+      } else {
+        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+      }
+
+      // Đổi màu dòng so le
+      if (index % 2 === 1) {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FFF8FAFC" },
+        };
+      }
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  return { buffer, filename, totalRecords: studentRows.length };
+};
+
 export default {
   exportInternships,
   exportTheses,
+  exportTermStudentsTTDN,
+  exportTermStudentsKLTN,
 };

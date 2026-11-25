@@ -50,6 +50,20 @@ const academicTermApi = {
   toggleThesisRegistrationLock: async (id, data) => {
     return await axiosClient.patch(`/academic-terms/${id}/toggle-thesis-registration-lock`, data);
   },
+
+  // Xuất danh sách sinh viên TTDN theo học kỳ (ADMIN)
+  exportTermStudentsTTDN: async (id) => {
+    return await axiosClient.get(`/academic-terms/${id}/export/ttdn`, {
+      responseType: 'blob',
+    });
+  },
+
+  // Xuất danh sách sinh viên KLTN theo học kỳ (ADMIN)
+  exportTermStudentsKLTN: async (id) => {
+    return await axiosClient.get(`/academic-terms/${id}/export/kltn`, {
+      responseType: 'blob',
+    });
+  },
 };
 
 export default academicTermApi;

@@ -245,14 +245,6 @@ const StudentManagement = () => {
             <EmptyState
               title="Không tìm thấy sinh viên nào"
               description="Hãy thử thay đổi từ khóa tìm kiếm hoặc các tiêu chí bộ lọc."
-              actionText="Xóa bộ lọc"
-              onAction={() => {
-                setSearch('');
-                setClassName('');
-                setPrerequisiteCompleted('');
-                setInternshipRegistered('');
-                setThesisRegistered('');
-              }}
             />
           </div>
         ) : (

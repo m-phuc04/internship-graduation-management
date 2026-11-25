@@ -1,4 +1,5 @@
 import companyService from "../services/companyService.js";
+import { logActivity } from "../services/logService.js";
 
 const getAllCompanies = async (req, res, next) => {
   try {
@@ -30,6 +31,16 @@ const getCompanyById = async (req, res, next) => {
 const createCompany = async (req, res, next) => {
   try {
     const company = await companyService.createCompany(req.body);
+
+    await logActivity(req, {
+      action: "Thêm doanh nghiệp mới",
+      module: "INTERNSHIP",
+      description: `Đã thêm doanh nghiệp mới: ${company.name || "Doanh nghiệp"}`,
+      targetId: company._id,
+      targetModel: "Company",
+      status: "SUCCESS",
+    });
+
     res.status(201).json({
       success: true,
       message: "Tạo doanh nghiệp mới thành công",
@@ -43,6 +54,16 @@ const createCompany = async (req, res, next) => {
 const updateCompany = async (req, res, next) => {
   try {
     const company = await companyService.updateCompany(req.params.id, req.body);
+
+    await logActivity(req, {
+      action: "Cập nhật doanh nghiệp",
+      module: "INTERNSHIP",
+      description: `Đã cập nhật thông tin doanh nghiệp: ${company?.name || req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "Company",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Cập nhật thông tin doanh nghiệp thành công",
@@ -56,6 +77,16 @@ const updateCompany = async (req, res, next) => {
 const deleteCompany = async (req, res, next) => {
   try {
     const result = await companyService.deleteCompany(req.params.id);
+
+    await logActivity(req, {
+      action: "Xóa doanh nghiệp",
+      module: "INTERNSHIP",
+      description: `Đã xóa doanh nghiệp mã ID: ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "Company",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: result.message,

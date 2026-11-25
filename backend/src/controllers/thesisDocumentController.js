@@ -1,4 +1,5 @@
 import thesisDocumentService from "../services/thesisDocumentService.js";
+import { logActivity } from "../services/logService.js";
 
 const getUserId = (req) => req.user?.userId || req.user?._id || req.user?.id;
 
@@ -47,6 +48,15 @@ export const createLecturerGuide = async (req, res, next) => {
       scope,
       thesisId,
       academicTermId,
+    });
+
+    await logActivity(req, {
+      action: "Tải lên tài liệu khóa luận",
+      module: "THESIS",
+      description: `Đã tải lên tài liệu khóa luận: "${description || "Tài liệu KLTN"}"`,
+      targetId: doc._id,
+      targetModel: "ThesisDocument",
+      status: "SUCCESS",
     });
 
     res.status(201).json({

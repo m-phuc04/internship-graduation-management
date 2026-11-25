@@ -1,4 +1,5 @@
 import thesisProgressService from "../services/thesisProgressService.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // Sinh viên tạo báo cáo tiến độ / nhật ký KLTN
@@ -23,6 +24,15 @@ const createProgress = async (req, res, next) => {
       userId: req.user.userId,
       ...req.body,
       file: fileMeta,
+    });
+
+    await logActivity(req, {
+      action: "Cập nhật tiến độ khóa luận",
+      module: "THESIS_PROGRESS",
+      description: "Sinh viên đã nộp báo cáo tiến độ khóa luận tốt nghiệp",
+      targetId: progress._id,
+      targetModel: "ThesisProgress",
+      status: "SUCCESS",
     });
 
     res.status(201).json({
@@ -191,6 +201,15 @@ const reviewProgress = async (req, res, next) => {
         userRole: req.user.role,
       },
     );
+
+    await logActivity(req, {
+      action: "Nhận xét tiến độ khóa luận",
+      module: "THESIS_PROGRESS",
+      description: `Giảng viên đã nhận xét và đánh giá tiến độ KLTN mã ${req.params.id}`,
+      targetId: progress._id,
+      targetModel: "ThesisProgress",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,

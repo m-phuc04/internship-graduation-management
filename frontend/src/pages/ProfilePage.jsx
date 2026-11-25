@@ -293,6 +293,9 @@ const ProfilePage = () => {
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        if (updateUser) {
+          updateUser({ mustChangePassword: false });
+        }
       }
     } catch (err) {
       setPwError(err.message || 'Đổi mật khẩu thất bại. Vui lòng kiểm tra lại mật khẩu hiện tại.');
@@ -332,13 +335,13 @@ const ProfilePage = () => {
   const getRoleBadge = (role) => {
     switch (role) {
       case 'ADMIN':
-        return { label: 'Quản Trị Viên Hệ Thống (ADMIN)', color: 'bg-rose-50 text-rose-700 border-rose-200' };
+        return { label: 'Quản Trị Viên Hệ Thống', color: 'bg-rose-50 text-rose-700 border-rose-200' };
       case 'TBM':
-        return { label: 'Trưởng Bộ Môn (TBM)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
+        return { label: 'Trưởng Bộ Môn', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'LECTURER':
-        return { label: 'Giảng Viên (LECTURER)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
+        return { label: 'Giảng Viên', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'STUDENT':
-        return { label: 'Sinh Viên (STUDENT)', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+        return { label: 'Sinh Viên', color: 'bg-blue-50 text-blue-700 border-blue-200' };
       default:
         return { label: role, color: 'bg-slate-100 text-slate-700 border-slate-200' };
     }
@@ -488,9 +491,11 @@ const ProfilePage = () => {
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center justify-between">
                 <span>Địa chỉ Email</span>
-                <span className="text-[10px] text-slate-400 font-normal">Không bắt buộc</span>
+                {authUser?.role !== 'STUDENT' && (
+                  <span className="text-[10px] text-slate-400 font-normal">Không bắt buộc</span>
+                )}
               </label>
-              {isEditing ? (
+              {isEditing && authUser?.role !== 'STUDENT' ? (
                 <div className="relative">
                   <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
@@ -504,7 +509,7 @@ const ProfilePage = () => {
               ) : (
                 <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-slate-50 border border-slate-200/70 rounded-xl text-xs font-semibold text-slate-900">
                   <Mail className="w-4 h-4 text-slate-400" />
-                  <span>{user?.email || <em className="text-slate-400 font-normal">Chưa cập nhật email</em>}</span>
+                  <span className="truncate">{user?.email || <em className="text-slate-400 font-normal">Chưa cập nhật email</em>}</span>
                 </div>
               )}
             </div>

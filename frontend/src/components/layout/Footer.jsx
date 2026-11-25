@@ -44,7 +44,7 @@ const Footer = ({ className = '', dark = false }) => {
           </div>
         </div>
 
-        {/* Hàng dưới: Thông tin liên hệ hỗ trợ */}
+        {/* Hàng dưới: Thông tin liên hệ hỗ trợ & Địa chỉ */}
         <div className={`pt-2 border-t flex flex-col sm:flex-row items-center justify-between gap-1 text-[11px] text-center sm:text-left ${
           dark ? 'border-white/10 text-slate-400' : 'border-slate-200/60 text-slate-500'
         }`}>
@@ -60,10 +60,19 @@ const Footer = ({ className = '', dark = false }) => {
             >
               admin.it.fit@gmail.com
             </a>
+            <span className={dark ? 'text-slate-700 hidden md:inline mx-1.5' : 'text-slate-300 hidden md:inline mx-1.5'}>•</span>
+            <span className="block md:inline mt-0.5 md:mt-0">Địa chỉ: Số 12 Nguyễn Văn Bảo, Phường Hạnh Thông, TP. Hồ Chí Minh</span>
           </div>
           <div className={`text-[10px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
             Khoa Công nghệ Thông tin – Trường Đại học Công nghiệp TP. Hồ Chí Minh
           </div>
+        </div>
+
+        {/* Dòng ghi chú lưu ý đồ án */}
+        <div className={`pt-1.5 border-t text-center text-[10px] sm:text-[11px] italic ${
+          dark ? 'border-white/5 text-slate-400' : 'border-slate-100 text-slate-500'
+        }`}>
+          Đây là website chỉ phục vụ cho mục đích đồ án, không đại diện cho Trường Đại học Công nghiệp TP. Hồ Chí Minh.
         </div>
       </div>
     </footer>

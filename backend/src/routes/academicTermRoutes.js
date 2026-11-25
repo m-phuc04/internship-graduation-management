@@ -65,6 +65,22 @@ router.patch(
   academicTermController.toggleThesisRegistrationLock,
 );
 
+// Xuất danh sách sinh viên TTDN theo học kỳ (chỉ ADMIN)
+router.get(
+  "/:id/export/ttdn",
+  authMiddleware,
+  authorizeRoles("ADMIN"),
+  academicTermController.exportTermStudentsTTDN,
+);
+
+// Xuất danh sách sinh viên KLTN theo học kỳ (chỉ ADMIN)
+router.get(
+  "/:id/export/kltn",
+  authMiddleware,
+  authorizeRoles("ADMIN"),
+  academicTermController.exportTermStudentsKLTN,
+);
+
 // Xóa học kỳ (chỉ ADMIN)
 router.delete(
   "/:id",

@@ -1,6 +1,7 @@
 import internshipService from "../services/internshipService.js";
 import exportService from "../services/exportService.js";
 import Lecturer from "../models/Lecturer.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // Sinh viên đăng ký thực tập doanh nghiệp
@@ -10,6 +11,15 @@ const createInternship = async (req, res, next) => {
     const internship = await internshipService.createInternship({
       userId: req.user.userId,
       ...req.body,
+    });
+
+    await logActivity(req, {
+      action: "Đăng ký thực tập doanh nghiệp",
+      module: "INTERNSHIP",
+      description: "Sinh viên đã nộp đơn đăng ký nguyện vọng thực tập doanh nghiệp",
+      targetId: internship._id,
+      targetModel: "Internship",
+      status: "SUCCESS",
     });
 
     res.status(201).json({
@@ -85,6 +95,15 @@ const assignLecturer = async (req, res, next) => {
       req.user.userId,
     );
 
+    await logActivity(req, {
+      action: "Phân công giảng viên hướng dẫn TTDN",
+      module: "INTERNSHIP",
+      description: `TBM đã phân công giảng viên hướng dẫn cho hồ sơ thực tập ${req.params.id}`,
+      targetId: internship._id,
+      targetModel: "Internship",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Phân công Giảng viên Giám sát thành công",
@@ -106,6 +125,15 @@ const approveInternship = async (req, res, next) => {
       req.user.userId,
       lecturerId,
     );
+
+    await logActivity(req, {
+      action: "Phê duyệt hồ sơ thực tập",
+      module: "INTERNSHIP",
+      description: `TBM đã phê duyệt hồ sơ đăng ký thực tập mã ${req.params.id}`,
+      targetId: internship._id,
+      targetModel: "Internship",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,
@@ -129,6 +157,15 @@ const rejectInternship = async (req, res, next) => {
       req.user.userId,
       reason,
     );
+
+    await logActivity(req, {
+      action: "Từ chối hồ sơ thực tập",
+      module: "INTERNSHIP",
+      description: `TBM đã từ chối hồ sơ thực tập mã ${req.params.id}. Lý do: ${reason || "Không đạt yêu cầu"}`,
+      targetId: internship._id,
+      targetModel: "Internship",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,
@@ -246,6 +283,15 @@ const supervisorAcceptInternship = async (req, res, next) => {
       req.params.id,
       req.user,
     );
+
+    await logActivity(req, {
+      action: "Tiếp nhận hướng dẫn thực tập",
+      module: "INTERNSHIP",
+      description: `Giảng viên đã chấp nhận tiếp nhận hướng dẫn sinh viên cho hồ sơ thực tập ${req.params.id}`,
+      targetId: internship._id,
+      targetModel: "Internship",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,

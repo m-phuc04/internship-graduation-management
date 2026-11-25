@@ -1,4 +1,5 @@
 import newsService from "../services/newsService.js";
+import { logActivity } from "../services/logService.js";
 
 // 1. GET /api/news (Lấy danh sách tin tức công khai)
 const getPublicNews = async (req, res, next) => {
@@ -33,6 +34,15 @@ const getNewsById = async (req, res, next) => {
 const createNews = async (req, res, next) => {
   try {
     const news = await newsService.createNews(req.user.userId, req.body);
+
+    await logActivity(req, {
+      action: "Tạo tin tức mới",
+      module: "NOTIFICATION",
+      description: `Đã tạo bài viết tin tức: "${news.title || "Tin tức mới"}"`,
+      targetId: news._id,
+      targetModel: "News",
+      status: "SUCCESS",
+    });
     res.status(201).json({
       success: true,
       message: "Tạo tin tức thành công",
@@ -71,6 +81,15 @@ const updateNews = async (req, res, next) => {
       req.user.role,
       req.body
     );
+
+    await logActivity(req, {
+      action: "Cập nhật bài viết tin tức",
+      module: "NOTIFICATION",
+      description: `Đã cập nhật bài viết tin tức: "${news.title || req.params.id}"`,
+      targetId: news._id,
+      targetModel: "News",
+      status: "SUCCESS",
+    });
     res.status(200).json({
       success: true,
       message: "Cập nhật tin tức thành công",
@@ -89,6 +108,16 @@ const togglePublishNews = async (req, res, next) => {
       req.user.userId,
       req.user.role
     );
+
+    const actionText = news.isPublished ? "Đăng tin tức" : "Ẩn tin tức";
+    await logActivity(req, {
+      action: actionText,
+      module: "NOTIFICATION",
+      description: `Đã ${news.isPublished ? "hiển thị" : "ẩn"} bài viết tin tức: "${news.title || req.params.id}"`,
+      targetId: news._id,
+      targetModel: "News",
+      status: "SUCCESS",
+    });
     res.status(200).json({
       success: true,
       message: `Đã ${news.isPublished ? "hiển thị" : "ẩn"} bài viết`,
@@ -107,6 +136,15 @@ const deleteNews = async (req, res, next) => {
       req.user.userId,
       req.user.role
     );
+
+    await logActivity(req, {
+      action: "Xóa bài viết tin tức",
+      module: "NOTIFICATION",
+      description: `Đã xóa bài viết tin tức mã ID ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "News",
+      status: "SUCCESS",
+    });
     res.status(200).json({
       success: true,
       message: result.message,

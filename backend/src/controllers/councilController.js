@@ -1,4 +1,5 @@
 import councilService from "../services/councilService.js";
+import { logActivity } from "../services/logService.js";
 
 // ====================
 // Lấy danh sách hội đồng
@@ -48,6 +49,15 @@ const createCouncil = async (req, res, next) => {
       req.user?.userId
     );
 
+    await logActivity(req, {
+      action: "Thành lập hội đồng bảo vệ KLTN",
+      module: "THESIS",
+      description: `Tạo phòng hội đồng mới: ${council?.name || "Hội đồng KLTN"}`,
+      targetId: council._id,
+      targetModel: "Council",
+      status: "SUCCESS",
+    });
+
     res.status(201).json({
       success: true,
       message: "Tạo phòng hội đồng mới thành công",
@@ -69,6 +79,15 @@ const updateCouncil = async (req, res, next) => {
       req.user?.userId
     );
 
+    await logActivity(req, {
+      action: "Cập nhật hội đồng bảo vệ KLTN",
+      module: "THESIS",
+      description: `Cập nhật thông tin phòng hội đồng mã ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "Council",
+      status: "SUCCESS",
+    });
+
     res.status(200).json({
       success: true,
       message: "Cập nhật phòng hội đồng thành công",
@@ -85,6 +104,15 @@ const updateCouncil = async (req, res, next) => {
 const deleteCouncil = async (req, res, next) => {
   try {
     const result = await councilService.deleteCouncil(req.params.id);
+
+    await logActivity(req, {
+      action: "Xóa hội đồng bảo vệ KLTN",
+      module: "THESIS",
+      description: `Xóa phòng hội đồng mã ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "Council",
+      status: "SUCCESS",
+    });
 
     res.status(200).json({
       success: true,

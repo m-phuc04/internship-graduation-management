@@ -47,6 +47,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    mustChangePassword: {
+      type: Boolean,
+      default: false,
+    },
     emailNotificationEnabled: {
       type: Boolean,
       default: false,

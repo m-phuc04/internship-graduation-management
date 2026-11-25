@@ -9,7 +9,6 @@
     "start": "node src/server.js",
     "create-admin": "node src/scripts/createAdminUser.js",
     "seed": "node src/seed/seedUsersAndLecturers.js",
-    "seed:master": "node src/seed/seedMasterData.js",
     "cleanup:chat": "node src/scripts/cleanupChatData.js"
   },
   "keywords": [],
@@ -27,7 +26,8 @@
     "mongoose": "^9.9.2",
     "multer": "^2.2.0",
     "nodemailer": "^10.0.13",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

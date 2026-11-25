@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Lecturer from "../models/Lecturer.js";
@@ -7,60 +8,112 @@ import Permission from "../models/Permission.js";
 
 dotenv.config();
 
+const generateSecureAdminPassword = (length = 18) => {
+  const uppers = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+  const lowers = "abcdefghijkmnpqrstuvwxyz";
+  const digits = "23456789";
+  const specials = "!@#$%^&*()_+~|}{[]:;?><";
+  const all = uppers + lowers + digits + specials;
+
+  const pwd = [
+    uppers[crypto.randomInt(0, uppers.length)],
+    lowers[crypto.randomInt(0, lowers.length)],
+    digits[crypto.randomInt(0, digits.length)],
+    specials[crypto.randomInt(0, specials.length)],
+  ];
+
+  while (pwd.length < length) {
+    pwd.push(all[crypto.randomInt(0, all.length)]);
+  }
+
+  for (let i = pwd.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [pwd[i], pwd[j]] = [pwd[j], pwd[i]];
+  }
+
+  return pwd.join("");
+};
+
+const getAdminSeedPassword = (code) => {
+  const envKey = `${code.toUpperCase()}_PASSWORD`;
+  const envVal = process.env[envKey] || (code === "ADMIN001" ? process.env.ADMIN_PASSWORD : null);
+  if (envVal && envVal.trim().length >= 16) {
+    return envVal.trim();
+  }
+  return generateSecureAdminPassword(18);
+};
+
 const createAdmin = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || "mongodb://localhost:27017/internship-graduation-management";
     await mongoose.connect(mongoUri);
     console.log("Connected to MongoDB.");
 
-    const passwordHash = await bcrypt.hash("1111", 12);
-
-    // 1. Create or update main ADMIN account (ADMIN001)
-    let adminUser = await User.findOne({
-      $or: [{ code: "ADMIN001" }, { email: "admin@iuh.edu.vn" }],
-    });
-
-    if (!adminUser) {
-      adminUser = await User.create({
+    const adminAccounts = [
+      {
         code: "ADMIN001",
         fullName: "Quản Trị Viên Hệ Thống",
         email: "admin@iuh.edu.vn",
-        password: passwordHash,
+        phone: "0909999999",
         role: "ADMIN",
         isActive: true,
+      },
+      {
+        code: "ADMIN002",
+        fullName: "Quản Trị Viên Hệ Thống 02",
+        email: "admin002@iuh.edu.vn",
+        phone: "0909999992",
+        role: "ADMIN",
+        isActive: true,
+      },
+      {
+        code: "ADMIN003",
+        fullName: "Quản Trị Viên Hệ Thống 03",
+        email: "admin003@iuh.edu.vn",
+        phone: "0909999993",
+        role: "ADMIN",
+        isActive: true,
+      },
+    ];
+
+    for (const adm of adminAccounts) {
+      let adminUser = await User.findOne({
+        $or: [{ code: adm.code }, { email: adm.email }],
       });
-      console.log("Created new ADMIN user: ADMIN001");
-    } else {
-      adminUser.code = "ADMIN001";
-      adminUser.fullName = "Quản Trị Viên Hệ Thống";
-      adminUser.email = "admin@iuh.edu.vn";
-      adminUser.password = passwordHash;
-      adminUser.role = "ADMIN";
-      adminUser.isActive = true;
-      await adminUser.save();
-      console.log("Updated existing ADMIN user: ADMIN001");
+
+      if (!adminUser) {
+        const plainPassword = getAdminSeedPassword(adm.code);
+        const passwordHash = await bcrypt.hash(plainPassword, 12);
+        adminUser = await User.create({
+          code: adm.code,
+          fullName: adm.fullName,
+          email: adm.email,
+          phone: adm.phone,
+          password: passwordHash,
+          role: "ADMIN",
+          isActive: true,
+        });
+        console.log(`Created new ADMIN user: ${adm.code} (${adm.email})`);
+      } else {
+        console.log(`ADMIN user ${adm.code} already exists, keeping existing info.`);
+      }
+
+      await Lecturer.deleteMany({
+        $or: [{ userId: adminUser._id }, { lecturerCode: adm.code }, { lecturerCode: "99999999" }],
+      });
+      await Permission.deleteMany({ userId: adminUser._id });
     }
 
-    // 2. Ensure ADMIN is NOT in Lecturer collection (Admin is pure System Administrator)
-    await Lecturer.deleteMany({
-      $or: [{ userId: adminUser._id }, { lecturerCode: "99999999" }],
-    });
-    console.log("Verified ADMIN is not in Lecturer collection.");
-
-    // 3. Clean up any lecturer-specific permissions for ADMIN
-    await Permission.deleteMany({ userId: adminUser._id });
-    console.log("Cleaned up any lecturer permissions for ADMIN001.");
-
     console.log("\n============================================================");
-    console.log("THÔNG TIN TÀI KHOẢN ADMIN ĐÃ SẴN SÀNG:");
+    console.log("THÔNG TIN CÁC TÀI KHOẢN ADMIN:");
     console.log("------------------------------------------------------------");
-    console.log("1. Mã tài khoản: ADMIN001 (hoặc email: admin@iuh.edu.vn)");
-    console.log("2. Mật khẩu:     1111");
-    console.log("3. Họ và tên:    Quản Trị Viên Hệ Thống");
-    console.log("4. Role:         ADMIN");
+    console.log("1. ADMIN001 (admin@iuh.edu.vn)");
+    console.log("2. ADMIN002 (admin002@iuh.edu.vn)");
+    console.log("3. ADMIN003 (admin003@iuh.edu.vn)");
+    console.log("* Mật khẩu được quản lý an toàn qua biến môi trường (.env)");
     console.log("============================================================\n");
   } catch (error) {
-    console.error("Error creating ADMIN account:", error.message);
+    console.error("Error creating ADMIN accounts:", error.message);
   } finally {
     await mongoose.disconnect();
   }

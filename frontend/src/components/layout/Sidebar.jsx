@@ -136,7 +136,7 @@ const Sidebar = ({ onCloseMobile, onToggleCollapse }) => {
               {isAdmin ? 'Cổng Quản Trị' : 'Cổng Trưởng Bộ Môn'}
             </div>
             <div className="text-[10.5px] text-blue-200/90 font-medium truncate mt-0.5">
-              {isAdmin ? 'Quản trị viên (ADMIN)' : 'Quản lý Nghiệp vụ TBM'}
+              {isAdmin ? 'Quản trị viên' : 'Quản lý Nghiệp vụ TBM'}
             </div>
           </div>
         </Link>

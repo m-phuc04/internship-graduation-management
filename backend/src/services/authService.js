@@ -13,133 +13,13 @@ import {
 } from "../utils/token.js";
 
 // ====================
-// Đăng ký tài khoản
+// Đăng ký tài khoản (Đã vô hiệu hóa - Chỉ Quản trị viên mới được tạo tài khoản)
 // ====================
 
-const register = async ({
-  studentCode,
-  code,
-  fullName,
-  email,
-  password,
-  confirmPassword,
-  className,
-  phone,
-}) => {
-  const normalizedCode = (studentCode || code || "").trim();
-  const normalizedFullName = (fullName || "").trim();
-  const normalizedEmail = (email || "").trim().toLowerCase();
-  const normalizedPassword = (password || "").trim();
-  const normalizedConfirmPassword = (confirmPassword || "").trim();
-  const normalizedClass = (className || "DHKTPM18A").trim();
-
-  // 1. Kiểm tra tính hợp lệ của dữ liệu
-  if (!normalizedCode) {
-    const error = new Error("Mã số sinh viên (MSSV) không được để trống");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (!/^\d{8}$/.test(normalizedCode)) {
-    const error = new Error("Mã số sinh viên (MSSV) phải gồm đúng 8 chữ số");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (!normalizedFullName) {
-    const error = new Error("Họ và tên sinh viên không được để trống");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (!normalizedEmail) {
-    const error = new Error("Email không được để trống");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(normalizedEmail)) {
-    const error = new Error("Định dạng email không hợp lệ");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (!normalizedPassword) {
-    const error = new Error("Mật khẩu không được để trống");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (normalizedPassword.length < 6) {
-    const error = new Error("Mật khẩu phải có ít nhất 6 ký tự");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  if (normalizedConfirmPassword && normalizedConfirmPassword !== normalizedPassword) {
-    const error = new Error("Xác nhận mật khẩu không khớp với mật khẩu");
-    error.statusCode = 400;
-    throw error;
-  }
-
-  // 2. Kiểm tra tính duy nhất
-  const existingStudent = await Student.findOne({ studentCode: normalizedCode });
-  const existingUserCode = await User.findOne({ code: normalizedCode });
-  if (existingStudent || existingUserCode) {
-    const error = new Error("Mã sinh viên (MSSV) này đã được đăng ký trong hệ thống");
-    error.statusCode = 409;
-    throw error;
-  }
-
-  const existingEmail = await User.findOne({ email: normalizedEmail });
-  if (existingEmail) {
-    const error = new Error("Địa chỉ email này đã được sử dụng");
-    error.statusCode = 409;
-    throw error;
-  }
-
-  // 3. Băm mật khẩu (Hash password)
-  const hashedPassword = await bcrypt.hash(normalizedPassword, 12);
-
-  // 4. Tạo người dùng User (chỉ dành cho vai trò STUDENT)
-  const user = await User.create({
-    fullName: normalizedFullName,
-    email: normalizedEmail,
-    code: normalizedCode,
-    password: hashedPassword,
-    phone: phone ? phone.trim() : null,
-    role: "STUDENT",
-    isActive: true,
-  });
-
-  // 5. Tạo hồ sơ Sinh viên liên kết với User
-  try {
-    const student = await Student.create({
-      userId: user._id,
-      studentCode: normalizedCode,
-      className: normalizedClass,
-      gpa: 0,
-      accumulatedCredits: 0,
-      prerequisiteCompleted: true,
-      internshipRegistered: false,
-      thesisRegistered: false,
-      isActive: true,
-    });
-
-    const userResponse = user.toObject();
-    delete userResponse.password;
-    delete userResponse.refreshToken;
-    userResponse.studentId = student._id;
-    userResponse.studentCode = student.studentCode;
-    userResponse.className = student.className;
-
-    return userResponse;
-  } catch (error) {
-    // Hoàn tác tạo User nếu tạo hồ sơ sinh viên thất bại
-    await User.findByIdAndDelete(user._id);
-    throw error;
-  }
+const register = async () => {
+  const error = new Error("Chức năng tự đăng ký tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Quản trị viên để được cấp tài khoản.");
+  error.statusCode = 403;
+  throw error;
 };
 
 // ====================
@@ -425,6 +305,16 @@ const updateProfile = async (userId, updateData = {}) => {
 
   // 1. Xử lý email (Kiểm tra định dạng và trùng lặp nếu có cập nhật)
   if (updateData.email !== undefined) {
+    if (user.role === "STUDENT") {
+      const trimmedNew = (updateData.email || "").trim().toLowerCase();
+      const currentEmail = (user.email || "").toLowerCase();
+      if (trimmedNew && trimmedNew !== currentEmail) {
+        const error = new Error("Sinh viên không được phép tự thay đổi email trường đã xác thực");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     const emailVal = updateData.email ? updateData.email.trim().toLowerCase() : "";
     if (emailVal === "") {
       user.email = null;
@@ -557,6 +447,7 @@ const changePassword = async (userId, { currentPassword, newPassword, confirmPas
   }
 
   user.password = await bcrypt.hash(newPassword, 12);
+  user.mustChangePassword = false;
   user.refreshToken = null; // Invalidate other sessions
   await user.save();
 
