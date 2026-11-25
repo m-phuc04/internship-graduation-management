@@ -72,25 +72,25 @@ const PublicProfilePage = () => {
     switch (role) {
       case 'ADMIN':
         return {
-          label: 'Quản Trị Viên (ADMIN)',
+          label: 'Quản Trị Viên',
           bg: 'bg-rose-50 text-rose-700 border-rose-200',
           icon: ShieldCheck,
         };
       case 'TBM':
         return {
-          label: 'Trưởng Bộ Môn (TBM)',
+          label: 'Trưởng Bộ Môn',
           bg: 'bg-amber-50 text-amber-700 border-amber-200',
           icon: ShieldCheck,
         };
       case 'LECTURER':
         return {
-          label: 'Giảng Viên (Lecturer)',
+          label: 'Giảng Viên',
           bg: 'bg-blue-50 text-blue-700 border-blue-200',
           icon: BookOpen,
         };
       case 'STUDENT':
         return {
-          label: 'Sinh Viên (Student)',
+          label: 'Sinh Viên',
           bg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
           icon: GraduationCap,
         };

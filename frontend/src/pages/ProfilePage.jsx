@@ -332,13 +332,13 @@ const ProfilePage = () => {
   const getRoleBadge = (role) => {
     switch (role) {
       case 'ADMIN':
-        return { label: 'Quản Trị Viên Hệ Thống (ADMIN)', color: 'bg-rose-50 text-rose-700 border-rose-200' };
+        return { label: 'Quản Trị Viên Hệ Thống', color: 'bg-rose-50 text-rose-700 border-rose-200' };
       case 'TBM':
-        return { label: 'Trưởng Bộ Môn (TBM)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
+        return { label: 'Trưởng Bộ Môn', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'LECTURER':
-        return { label: 'Giảng Viên (LECTURER)', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
+        return { label: 'Giảng Viên', color: 'bg-blue-50 text-[#102d7d] border-blue-200' };
       case 'STUDENT':
-        return { label: 'Sinh Viên (STUDENT)', color: 'bg-blue-50 text-blue-700 border-blue-200' };
+        return { label: 'Sinh Viên', color: 'bg-blue-50 text-blue-700 border-blue-200' };
       default:
         return { label: role, color: 'bg-slate-100 text-slate-700 border-slate-200' };
     }

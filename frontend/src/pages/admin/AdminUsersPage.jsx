@@ -19,10 +19,10 @@ import {
 
 const ROLE_OPTIONS = [
   { value: 'ALL', label: 'Tất cả vai trò' },
-  { value: 'ADMIN', label: 'Quản trị viên (ADMIN)' },
-  { value: 'TBM', label: 'Trưởng Bộ Môn (TBM)' },
-  { value: 'LECTURER', label: 'Giảng viên (LECTURER)' },
-  { value: 'STUDENT', label: 'Sinh viên (STUDENT)' },
+  { value: 'ADMIN', label: 'Quản trị viên' },
+  { value: 'TBM', label: 'Trưởng Bộ Môn' },
+  { value: 'LECTURER', label: 'Giảng viên' },
+  { value: 'STUDENT', label: 'Sinh viên' },
 ];
 
 const AdminUsersPage = () => {
