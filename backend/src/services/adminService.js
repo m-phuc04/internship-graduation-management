@@ -9,7 +9,7 @@ import crypto from "crypto";
 import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
 import AppError from "../utils/AppError.js";
-import {
+import emailService, {
   sendPasswordResetEmail,
   sendAccountCreationEmail,
 } from "./emailService.js";
@@ -287,13 +287,22 @@ const resetPassword = async (userId, adminUser, req = null) => {
     throw new AppError(`Tài khoản ${roleLabel.toLowerCase()} này chưa có email xác thực để nhận mật khẩu.`, 400);
   }
 
-  // Tạo mật khẩu ngẫu nhiên mới, riêng biệt và đủ độ mạnh
-  const newPlainPassword = generateSecurePassword(10);
+  // 1. Tạo mật khẩu ngẫu nhiên mới, riêng biệt và đủ độ mạnh (16 ký tự an toàn)
+  const newPlainPassword = generateSecurePassword(16);
 
-  // 2. GỬI EMAIL TRƯỚC (Đảm bảo không đổi mật khẩu nếu email gửi thất bại)
-  let emailResult;
+  // 2. CẬP NHẬT MẬT KHẨU VÀO DATABASE TRƯỚC (mã hóa bcrypt chi phí 12, thu hồi token cũ)
+  user.password = await bcrypt.hash(newPlainPassword, 12);
+  user.mustChangePassword = true;
+  user.refreshToken = null; // Thu hồi toàn bộ Refresh Token hoặc phiên đăng nhập cũ
+  await user.save();
+
+  // 3. GỬI EMAIL THÔNG BÁO MẬT KHẨU MỚI ĐẾN MÁY CHỦ SMTP
+  // Việc gửi email thất bại KHÔNG làm mất hoặc hủy thao tác reset mật khẩu
+  let emailSent = false;
+  let emailError = null;
+
   try {
-    emailResult = await sendPasswordResetEmail({
+    const emailResult = await emailService.sendPasswordResetEmail({
       to: user.email,
       recipientName: user.fullName,
       accountCode,
@@ -302,40 +311,39 @@ const resetPassword = async (userId, adminUser, req = null) => {
       roleLabel,
       newPassword: newPlainPassword,
     });
+
+    if (emailResult && emailResult.success) {
+      emailSent = true;
+    } else {
+      emailSent = false;
+      emailError = emailResult?.error || "Máy chủ SMTP không tiếp nhận email";
+    }
   } catch (err) {
-    throw new AppError(
-      `Gửi email chứa mật khẩu mới đến ${roleLabel.toLowerCase()} thất bại: ${err.message}. Mật khẩu hiện tại chưa bị thay đổi.`,
-      500,
-    );
+    emailSent = false;
+    emailError = err.message || "Lỗi máy chủ email khi gửi qua SMTP";
   }
 
-  if (!emailResult || !emailResult.success) {
-    throw new AppError(
-      `Gửi email chứa mật khẩu mới đến ${roleLabel.toLowerCase()} thất bại: ${emailResult?.error || "Lỗi máy chủ email"}. Mật khẩu hiện tại chưa bị thay đổi.`,
-      500,
-    );
-  }
-
-  // 3. CẬP NHẬT MẬT KHẨU SAU KHI GỬI EMAIL THÀNH CÔNG
-  user.password = await bcrypt.hash(newPlainPassword, 12);
-  user.mustChangePassword = true;
-  user.refreshToken = null; // Thu hồi toàn bộ Refresh Token hoặc phiên đăng nhập cũ
-  await user.save();
-
-  // 4. Ghi nhật ký hệ thống (KHÔNG lưu mật khẩu vào log)
+  // 4. Ghi nhật ký hệ thống (TUYỆT ĐỐI KHÔNG lưu mật khẩu vào log)
   await logActivity(req, {
     userId: adminUser?._id || adminUser?.userId || adminUser,
     role: "ADMIN",
     action: `Reset mật khẩu ${roleLabel.toLowerCase()}`,
     module: "USER",
-    description: `Quản trị viên ${adminUser?.fullName || "Admin"} đã đặt lại mật khẩu cho ${roleLabel.toLowerCase()} ${accountCode} (${user.fullName}) gửi đến email ${user.email}`,
+    description: `Quản trị viên ${adminUser?.fullName || "Admin"} đã đặt lại mật khẩu cho ${roleLabel.toLowerCase()} ${accountCode} (${user.fullName}). Trạng thái email: ${
+      emailSent ? "Máy chủ SMTP đã tiếp nhận" : "Gửi thất bại (" + emailError + ")"
+    }`,
     targetId: user._id,
     targetModel: "User",
     status: "SUCCESS",
   });
 
   return {
-    message: `Đã đặt lại mật khẩu thành công và gửi thông tin đến email ${roleLabel.toLowerCase()}`,
+    success: true,
+    emailSent,
+    emailError,
+    message: emailSent
+      ? `Đã đặt lại mật khẩu thành công. Thông tin mật khẩu mới đã được máy chủ SMTP tiếp nhận.`
+      : `Đã đặt lại mật khẩu thành công, nhưng máy chủ SMTP gửi email thất bại: ${emailError}. Vui lòng sao chép mật khẩu bên dưới để cung cấp cho người dùng.`,
     data: {
       fullName: user.fullName,
       code: accountCode,
@@ -344,6 +352,8 @@ const resetPassword = async (userId, adminUser, req = null) => {
       role: user.role,
       roleLabel,
       newPassword: newPlainPassword,
+      emailSent,
+      emailError,
     },
   };
 };
@@ -392,21 +402,28 @@ const generateExcelTemplate = async () => {
     };
   });
 
-  // Dữ liệu minh họa theo yêu cầu đề bài
+  // Dữ liệu minh họa (chấp nhận mọi nhà cung cấp email: Gmail, Outlook, IUH, v.v.)
   const sampleData = [
     {
       stt: 1,
       mssv: "22635271",
       fullName: "Lê Minh Phúc",
-      email: "22635271.phuc@student.iuh.edu.vn",
+      email: "minhphuc.dev@gmail.com",
       className: "DHCNTT18A",
     },
     {
       stt: 2,
       mssv: "22635272",
       fullName: "Nguyễn Văn A",
-      email: "22635272.a@student.iuh.edu.vn",
+      email: "nguyenvana@outlook.com",
       className: "DHCNTT18A",
+    },
+    {
+      stt: 3,
+      mssv: "22635273",
+      fullName: "Trần Thị B",
+      email: "22635273.b@student.iuh.edu.vn",
+      className: "DHCNTT18B",
     },
   ];
 
@@ -415,6 +432,9 @@ const generateExcelTemplate = async () => {
     row.height = 22;
     row.eachCell((cell, colNumber) => {
       cell.font = { name: "Arial", size: 10 };
+      if (colNumber === 2) {
+        cell.numFmt = "@";
+      }
       cell.alignment = {
         vertical: "middle",
         horizontal: colNumber === 1 || colNumber === 2 || colNumber === 5 ? "center" : "left",
@@ -649,13 +669,6 @@ const previewStudentExcel = async (fileBuffer) => {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(item.email)) {
         item.errors.push("Email không đúng định dạng chuẩn");
-      } else if (!item.email.endsWith("@student.iuh.edu.vn")) {
-        item.errors.push("Email phải có tên miền @student.iuh.edu.vn");
-      } else if (item.mssv && /^\d{8}$/.test(item.mssv)) {
-        const localPart = item.email.split("@")[0];
-        if (!localPart.startsWith(item.mssv)) {
-          item.errors.push(`MSSV trong email không trùng khớp với MSSV (${item.mssv})`);
-        }
       }
     }
 
@@ -758,7 +771,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
   const errorsList = [];
 
   for (const row of validRows) {
-    const mssv = (row.mssv || "").trim();
+    const mssv = (row.mssv || row.studentCode || "").trim();
     const fullName = (row.fullName || "").trim();
     const email = (row.email || "").trim().toLowerCase();
     const className = (row.className || "").trim();
@@ -810,14 +823,19 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
 
       createdCount++;
 
-      // 4. Gửi email thông tin tài khoản cho sinh viên
-      const emailRes = await sendAccountCreationEmail({
-        to: email,
-        recipientName: fullName,
-        studentCode: mssv,
-        password: plainPassword,
-        className,
-      });
+      // 4. Gửi email thông tin tài khoản cho sinh viên qua SMTP
+      let emailRes = null;
+      try {
+        emailRes = await emailService.sendAccountCreationEmail({
+          to: email,
+          recipientName: fullName,
+          studentCode: mssv,
+          password: plainPassword,
+          className,
+        });
+      } catch (mailErr) {
+        emailRes = { success: false, error: mailErr.message };
+      }
 
       if (emailRes && emailRes.success) {
         emailSuccessCount++;
@@ -827,16 +845,19 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
           email,
           className,
           emailSent: true,
+          password: plainPassword,
         });
       } else {
         emailFailCount++;
-        const errMsg = emailRes?.error || "Gửi email thất bại";
+        const errMsg = emailRes?.error || "Máy chủ SMTP không tiếp nhận email";
         failedEmailStudents.push({
           mssv,
           fullName,
           email,
           className,
+          emailSent: false,
           error: errMsg,
+          password: plainPassword,
         });
         createdStudents.push({
           mssv,
@@ -845,6 +866,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
           className,
           emailSent: false,
           emailError: errMsg,
+          password: plainPassword,
         });
       }
     } catch (err) {
@@ -854,7 +876,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
     }
   }
 
-  // Ghi nhật ký hệ thống
+  // Ghi nhật ký hệ thống (TUYỆT ĐỐI KHÔNG lưu mật khẩu vào log)
   if (adminUser) {
     const isSuccess = createdCount > 0;
     await logActivity(req, {
@@ -862,7 +884,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
       role: "ADMIN",
       action: "Import sinh viên Excel",
       module: "USER",
-      description: `Quản trị viên đã import: Tạo thành công ${createdCount} tài khoản (Gửi email: ${emailSuccessCount} thành công, ${emailFailCount} thất bại). Bỏ qua ${skippedCount} dòng.`,
+      description: `Quản trị viên đã import: Tạo thành công ${createdCount} tài khoản (SMTP tiếp nhận email: ${emailSuccessCount} thành công, ${emailFailCount} thất bại). Bỏ qua ${skippedCount} dòng.`,
       status: isSuccess ? "SUCCESS" : "FAILED",
       errorMessage: errorsList.length > 0 ? `Có ${errorsList.length} lỗi khi import` : null,
     });
@@ -870,7 +892,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
 
   return {
     success: true,
-    message: `Đã tạo thành công ${createdCount} tài khoản sinh viên (${emailSuccessCount} email gửi thành công, ${emailFailCount} email gửi thất bại). Bỏ qua ${skippedCount} dòng đã tồn tại hoặc không hợp lệ.`,
+    message: `Đã tạo thành công ${createdCount} tài khoản sinh viên (Máy chủ SMTP đã tiếp nhận ${emailSuccessCount} email, ${emailFailCount} email gửi thất bại). Bỏ qua ${skippedCount} dòng đã tồn tại hoặc không hợp lệ.`,
     summary: {
       totalRequested: validRows.length,
       created: createdCount,
@@ -928,7 +950,7 @@ const resendStudentCredentials = async ({ mssv, mssvs }, adminUser, req = null) 
       await user.save();
 
       // Gửi email mới
-      const emailRes = await sendAccountCreationEmail({
+      const emailRes = await emailService.sendAccountCreationEmail({
         to: user.email,
         recipientName: user.fullName,
         studentCode: code,
@@ -938,14 +960,25 @@ const resendStudentCredentials = async ({ mssv, mssvs }, adminUser, req = null) 
 
       if (emailRes && emailRes.success) {
         successCount++;
-        results.push({ mssv: code, email: user.email, success: true });
-      } else {
-        failCount++;
         results.push({
           mssv: code,
+          fullName: user.fullName,
+          email: user.email,
+          success: true,
+          emailSent: true,
+          newPassword: newPlainPassword,
+        });
+      } else {
+        failCount++;
+        const errMsg = emailRes?.error || "Máy chủ SMTP không tiếp nhận email";
+        results.push({
+          mssv: code,
+          fullName: user.fullName,
           email: user.email,
           success: false,
-          error: emailRes?.error || "Gửi email thất bại",
+          emailSent: false,
+          error: errMsg,
+          newPassword: newPlainPassword,
         });
       }
     } catch (err) {

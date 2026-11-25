@@ -19,6 +19,8 @@ import {
   MailCheck,
   MailX,
   RotateCcw,
+  Copy,
+  Check,
 } from 'lucide-react';
 
 const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
@@ -38,6 +40,8 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
   const [importResult, setImportResult] = useState(null);
   const [resendingCode, setResendingCode] = useState(null);
   const [resendingAll, setResendingAll] = useState(false);
+  const [copiedKey, setCopiedKey] = useState(null);
+  const [resultTab, setResultTab] = useState('FAILED'); // 'FAILED' | 'ALL'
 
   // Tải file Excel mẫu
   const handleDownloadTemplate = async () => {
@@ -142,14 +146,39 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
     }
   };
 
+  // Sao chép văn bản vào clipboard
+  const handleCopyText = (text, key) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedKey(key);
+    showToast('Đã sao chép vào bộ nhớ tạm', 'success');
+    setTimeout(() => setCopiedKey(null), 2500);
+  };
+
+  // Sao chép toàn bộ danh sách tài khoản & mật khẩu gửi email thất bại
+  const handleCopyAllFailed = () => {
+    if (!importResult?.failedEmails || importResult.failedEmails.length === 0) return;
+    const text = importResult.failedEmails
+      .map(
+        (item, idx) =>
+          `${idx + 1}. MSSV: ${item.mssv} | Họ tên: ${item.fullName} | Email: ${item.email} | Mật khẩu: ${
+            item.password || '—'
+          }`
+      )
+      .join('\n');
+    handleCopyText(text, 'all-failed');
+    showToast(`Đã sao chép danh sách ${importResult.failedEmails.length} tài khoản gửi lỗi!`, 'success');
+  };
+
   // Gửi lại email thông tin đăng nhập cho 1 sinh viên
   const handleResendSingleEmail = async (student) => {
     if (!student || !student.mssv) return;
     setResendingCode(student.mssv);
     try {
       const res = await adminApi.resendStudentCredentials({ mssv: student.mssv });
-      if (res?.success) {
-        showToast(`Đã gửi lại email đăng nhập cho sinh viên ${student.mssv} thành công!`, 'success');
+      const itemResult = res?.data?.results?.[0];
+      if (res?.success && itemResult?.success) {
+        showToast(`Đã cấp lại mật khẩu và máy chủ SMTP đã tiếp nhận email cho sinh viên ${student.mssv}!`, 'success');
         setImportResult((prev) => {
           if (!prev) return prev;
           const updatedFailed = (prev.failedEmails || []).filter((f) => f.mssv !== student.mssv);
@@ -166,7 +195,26 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
           };
         });
       } else {
-        showToast(res?.message || 'Gửi lại email thất bại', 'error');
+        const errDesc = itemResult?.emailError || res?.message || 'Gửi lại email thất bại';
+        showToast(`Gửi email cho ${student.mssv} thất bại: ${errDesc}. Mật khẩu mới đã được cập nhật.`, 'warning');
+        if (itemResult?.newPassword) {
+          setImportResult((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              failedEmails: (prev.failedEmails || []).map((f) =>
+                f.mssv === student.mssv
+                  ? { ...f, password: itemResult.newPassword, error: itemResult.emailError }
+                  : f
+              ),
+              createdStudents: (prev.createdStudents || []).map((c) =>
+                c.mssv === student.mssv
+                  ? { ...c, password: itemResult.newPassword, emailSent: false, emailError: itemResult.emailError }
+                  : c
+              ),
+            };
+          });
+        }
       }
     } catch (err) {
       showToast(err.message || 'Lỗi khi gửi lại email', 'error');
@@ -185,12 +233,22 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
       const mssvs = failedList.map((f) => f.mssv);
       const res = await adminApi.resendStudentCredentials({ mssvs });
       if (res?.success) {
-        const successes = res.data?.results?.filter((r) => r.success).map((r) => r.mssv) || [];
-        showToast(res.message || `Đã gửi lại email cho ${successes.length} sinh viên`, 'success');
+        const results = res.data?.results || [];
+        const successList = results.filter((r) => r.success);
+        const successes = successList.map((r) => r.mssv);
+        showToast(res.message || `Đã xử lý gửi lại cho ${failedList.length} sinh viên`, 'success');
 
         setImportResult((prev) => {
           if (!prev) return prev;
-          const remainingFailed = (prev.failedEmails || []).filter((f) => !successes.includes(f.mssv));
+          const remainingFailed = (prev.failedEmails || [])
+            .filter((f) => !successes.includes(f.mssv))
+            .map((f) => {
+              const match = results.find((r) => r.mssv === f.mssv);
+              if (match && match.newPassword) {
+                return { ...f, password: match.newPassword, error: match.emailError };
+              }
+              return f;
+            });
           return {
             ...prev,
             failedEmails: remainingFailed,
@@ -251,8 +309,8 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
                   <p className="font-bold text-[#123891]">Quy định chuẩn dữ liệu Excel:</p>
                   <ul className="list-disc list-inside text-slate-600 space-y-0.5 text-[11px]">
                     <li>Các cột bắt buộc: <strong>STT, MSSV, Họ và tên, Email, Lớp</strong></li>
-                    <li>MSSV gồm 8 chữ số và phải trùng khớp với mã sinh viên trong Email</li>
-                    <li>Email phải có định dạng chính thức: <strong>{'{mssv}.{tên}@student.iuh.edu.vn'}</strong></li>
+                    <li>MSSV gồm đúng <strong>8 chữ số</strong></li>
+                    <li>Email chấp nhận mọi nhà cung cấp hợp lệ (Gmail, Outlook, IUH...), không bắt buộc dùng email IUH và không yêu cầu MSSV trùng đầu email</li>
                   </ul>
                 </div>
               </div>
@@ -564,13 +622,13 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
 
               <h4 className="text-lg font-bold text-slate-900 mt-3">
                 {(importResult.summary?.emailFailed || 0) > 0
-                  ? 'Import hoàn tất (Có email chưa gửi được)'
-                  : 'Khởi tạo tài khoản & Gửi email hoàn tất!'}
+                  ? 'Tạo tài khoản thành công (Có email chưa gửi được)'
+                  : 'Khởi tạo tài khoản & Gửi email thành công!'}
               </h4>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="text-xs text-slate-500 mt-1 max-w-xl mx-auto">
                 {(importResult.summary?.emailFailed || 0) > 0
-                  ? 'Tất cả tài khoản sinh viên đã được tạo an toàn trong cơ sở dữ liệu. Vui lòng kiểm tra các email gửi thất bại bên dưới.'
-                  : 'Hệ thống đã tạo tài khoản và gửi thông tin đăng nhập thành công đến email IUH của sinh viên.'}
+                  ? 'Tất cả tài khoản sinh viên đã được lưu an toàn trong cơ sở dữ liệu. Máy chủ SMTP gặp lỗi khi gửi một số email. Quản trị viên có thể sao chép mật khẩu bên dưới hoặc bấm gửi lại.'
+                  : 'Tất cả tài khoản sinh viên đã được khởi tạo và máy chủ SMTP đã tiếp nhận email gửi thông tin đăng nhập.'}
               </p>
             </div>
 
@@ -593,11 +651,11 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-center">
-                <span className="text-[11px] font-semibold text-emerald-700 block">Gửi email</span>
+                <span className="text-[11px] font-semibold text-emerald-700 block">Email tiếp nhận</span>
                 <span className="text-xl font-bold text-emerald-600 mt-0.5 block">
                   {importResult.summary?.emailSuccess || 0}
                 </span>
-                <span className="text-[10px] text-emerald-600 block">thành công</span>
+                <span className="text-[10px] text-emerald-600 block">SMTP chấp nhận</span>
               </div>
 
               <div
@@ -623,7 +681,7 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
                 <span className="text-xl font-bold text-amber-600 mt-0.5 block">
                   {previewData?.summary?.existed || 0}
                 </span>
-                <span className="text-[10px] text-amber-600 block">đã tồn tại</span>
+                <span className="text-[10px] text-amber-600 block">trùng trong DB</span>
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-center">
@@ -631,81 +689,229 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
                 <span className="text-xl font-bold text-slate-600 mt-0.5 block">
                   {previewData?.summary?.error || 0}
                 </span>
-                <span className="text-[10px] text-slate-400 block">bị từ chối</span>
+                <span className="text-[10px] text-slate-400 block">không hợp lệ</span>
               </div>
             </div>
 
-            {/* Khu vực xử lý khi có Email gửi thất bại */}
-            {importResult.failedEmails && importResult.failedEmails.length > 0 ? (
-              <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3 text-left">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <MailX className="w-5 h-5 text-rose-600 shrink-0" />
-                    <div>
-                      <h5 className="text-xs font-bold text-rose-800">
-                        Danh sách tài khoản gửi email thất bại ({importResult.failedEmails.length})
-                      </h5>
-                      <p className="text-[11px] text-rose-600">
-                        Tài khoản đã được tạo nhưng email chưa đến được hộp thư. Bạn có thể bấm gửi lại.
-                      </p>
+            {/* Thanh Tab chuyển chế độ xem */}
+            <div className="flex items-center gap-2 border-b border-slate-200 pb-2">
+              <button
+                type="button"
+                onClick={() => setResultTab('FAILED')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  resultTab === 'FAILED'
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <MailX className="w-4 h-4" />
+                <span>Tài khoản gửi email thất bại</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-rose-200 text-rose-800 font-bold">
+                  {importResult.failedEmails?.length || 0}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setResultTab('ALL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+                  resultTab === 'ALL'
+                    ? 'bg-blue-100 text-[#123891]'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                <UserCheck className="w-4 h-4" />
+                <span>Tất cả tài khoản vừa tạo</span>
+                <span className="ml-1 px-1.5 py-0.2 rounded-full text-[10px] bg-blue-200 text-[#123891] font-bold">
+                  {importResult.createdStudents?.length || 0}
+                </span>
+              </button>
+            </div>
+
+            {/* TAB 1: Danh sách tài khoản gửi email thất bại */}
+            {resultTab === 'FAILED' && (
+              <div className="space-y-3 text-left">
+                {importResult.failedEmails && importResult.failedEmails.length > 0 ? (
+                  <div className="p-4 bg-rose-50/70 border border-rose-200 rounded-2xl space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <MailX className="w-5 h-5 text-rose-600 shrink-0" />
+                        <div>
+                          <h5 className="text-xs font-bold text-rose-800">
+                            Danh sách tài khoản gửi email thất bại ({importResult.failedEmails.length})
+                          </h5>
+                          <p className="text-[11px] text-rose-600">
+                            Tài khoản đã tạo thành công trong DB. Bạn có thể sao chép mật khẩu bên dưới hoặc bấm gửi lại.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={handleCopyAllFailed}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold shadow-2xs transition cursor-pointer"
+                        >
+                          {copiedKey === 'all-failed' ? (
+                            <Check className="w-3.5 h-3.5 text-emerald-600" />
+                          ) : (
+                            <Copy className="w-3.5 h-3.5" />
+                          )}
+                          <span>{copiedKey === 'all-failed' ? 'Đã chép!' : 'Sao chép tất cả'}</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={handleResendAllFailedEmails}
+                          disabled={resendingAll || resendingCode !== null}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
+                        >
+                          {resendingAll ? (
+                            <>
+                              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                              <span>Đang gửi lại...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Gửi lại tất cả</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Bảng chi tiết các email thất bại */}
+                    <div className="max-h-56 overflow-y-auto rounded-xl border border-rose-200 bg-white">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-rose-100/60 text-rose-900 uppercase text-[10px] tracking-wider sticky top-0">
+                          <tr>
+                            <th className="py-2 px-3">MSSV</th>
+                            <th className="py-2 px-3">Họ và tên</th>
+                            <th className="py-2 px-3">Email nhận</th>
+                            <th className="py-2 px-3">Mật khẩu khởi tạo</th>
+                            <th className="py-2 px-3">Lý do SMTP</th>
+                            <th className="py-2 px-3 text-right">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-rose-100">
+                          {importResult.failedEmails.map((item, fIdx) => (
+                            <tr key={fIdx} className="hover:bg-rose-50/40 transition">
+                              <td className="py-2 px-3 font-mono font-bold text-slate-800">{item.mssv}</td>
+                              <td className="py-2 px-3 font-medium text-slate-700">{item.fullName}</td>
+                              <td className="py-2 px-3 font-mono text-[11px] text-slate-600">{item.email}</td>
+                              <td className="py-2 px-3">
+                                <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                                  <span className="font-mono text-xs font-semibold text-slate-800">
+                                    {item.password || '••••••••'}
+                                  </span>
+                                  {item.password && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleCopyText(item.password, `failed-${item.mssv}`)}
+                                      className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded transition cursor-pointer"
+                                      title="Sao chép mật khẩu"
+                                    >
+                                      {copiedKey === `failed-${item.mssv}` ? (
+                                        <Check className="w-3 h-3 text-emerald-600" />
+                                      ) : (
+                                        <Copy className="w-3 h-3" />
+                                      )}
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="py-2 px-3 text-rose-600 text-[11px]">
+                                {item.error || 'Lỗi kết nối SMTP'}
+                              </td>
+                              <td className="py-2 px-3 text-right">
+                                <button
+                                  type="button"
+                                  onClick={() => handleResendSingleEmail(item)}
+                                  disabled={resendingCode === item.mssv || resendingAll}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
+                                >
+                                  {resendingCode === item.mssv ? (
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <RotateCcw className="w-3 h-3" />
+                                  )}
+                                  <span>Gửi lại</span>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
+                ) : (
+                  <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 text-left space-y-1.5">
+                    <p className="font-bold flex items-center gap-1.5 text-emerald-800">
+                      <MailCheck className="w-4 h-4 text-emerald-600" />
+                      Không có email nào gửi thất bại!
+                    </p>
+                    <p className="text-emerald-700 text-[11px]">
+                      Máy chủ SMTP đã tiếp nhận toàn bộ email thông tin tài khoản của đợt Import này.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
 
-                  <button
-                    type="button"
-                    onClick={handleResendAllFailedEmails}
-                    disabled={resendingAll || resendingCode !== null}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer disabled:opacity-50"
-                  >
-                    {resendingAll ? (
-                      <>
-                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Đang gửi lại tất cả...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Gửi lại tất cả ({importResult.failedEmails.length})</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                {/* Bảng chi tiết các email thất bại */}
-                <div className="max-h-48 overflow-y-auto rounded-xl border border-rose-200 bg-white">
+            {/* TAB 2: Tất cả tài khoản vừa tạo */}
+            {resultTab === 'ALL' && (
+              <div className="space-y-3 text-left">
+                <div className="max-h-56 overflow-y-auto rounded-xl border border-slate-200 bg-white">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-rose-100/60 text-rose-900 uppercase text-[10px] tracking-wider sticky top-0">
+                    <thead className="bg-slate-100 text-slate-700 uppercase text-[10px] tracking-wider sticky top-0">
                       <tr>
-                        <th className="py-1.5 px-3">MSSV</th>
-                        <th className="py-1.5 px-3">Họ và tên</th>
-                        <th className="py-1.5 px-3">Email</th>
-                        <th className="py-1.5 px-3">Lý do</th>
-                        <th className="py-1.5 px-3 text-right">Thao tác</th>
+                        <th className="py-2 px-3">MSSV</th>
+                        <th className="py-2 px-3">Họ và tên</th>
+                        <th className="py-2 px-3">Email</th>
+                        <th className="py-2 px-3">Mật khẩu khởi tạo</th>
+                        <th className="py-2 px-3 text-center">Trạng thái SMTP</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-rose-100">
-                      {importResult.failedEmails.map((item, fIdx) => (
-                        <tr key={fIdx} className="hover:bg-rose-50/40 transition">
-                          <td className="py-2 px-3 font-mono font-bold text-slate-800">{item.mssv}</td>
-                          <td className="py-2 px-3 font-medium text-slate-700">{item.fullName}</td>
-                          <td className="py-2 px-3 font-mono text-[11px] text-slate-600">{item.email}</td>
-                          <td className="py-2 px-3 text-rose-600 text-[11px]">
-                            {item.error || 'Lỗi kết nối SMTP'}
-                          </td>
-                          <td className="py-2 px-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => handleResendSingleEmail(item)}
-                              disabled={resendingCode === item.mssv || resendingAll}
-                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold transition cursor-pointer disabled:opacity-50"
-                            >
-                              {resendingCode === item.mssv ? (
-                                <RefreshCw className="w-3 h-3 animate-spin" />
-                              ) : (
-                                <RotateCcw className="w-3 h-3" />
+                    <tbody className="divide-y divide-slate-100">
+                      {(importResult.createdStudents || []).map((student, sIdx) => (
+                        <tr key={sIdx} className="hover:bg-slate-50 transition">
+                          <td className="py-2 px-3 font-mono font-bold text-slate-800">{student.mssv}</td>
+                          <td className="py-2 px-3 font-medium text-slate-700">{student.fullName}</td>
+                          <td className="py-2 px-3 font-mono text-[11px] text-slate-600">{student.email}</td>
+                          <td className="py-2 px-3">
+                            <div className="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-lg border border-slate-200">
+                              <span className="font-mono text-xs font-semibold text-slate-800">
+                                {student.password || '••••••••'}
+                              </span>
+                              {student.password && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopyText(student.password, `created-${student.mssv}`)}
+                                  className="p-1 text-slate-500 hover:text-slate-800 hover:bg-slate-200 rounded transition cursor-pointer"
+                                  title="Sao chép mật khẩu"
+                                >
+                                  {copiedKey === `created-${student.mssv}` ? (
+                                    <Check className="w-3 h-3 text-emerald-600" />
+                                  ) : (
+                                    <Copy className="w-3 h-3" />
+                                  )}
+                                </button>
                               )}
-                              <span>Gửi lại</span>
-                            </button>
+                            </div>
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            {student.emailSent ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+                                <MailCheck className="w-3 h-3" />
+                                SMTP đã nhận
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                                <MailX className="w-3 h-3" />
+                                Gửi lỗi
+                              </span>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -713,23 +919,23 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
                   </table>
                 </div>
               </div>
-            ) : (
-              /* Thông báo bảo mật khi toàn bộ email thành công */
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-xs text-emerald-900 text-left space-y-1.5">
-                <p className="font-bold flex items-center gap-1.5 text-emerald-800">
-                  <MailCheck className="w-4 h-4 text-emerald-600" />
-                  Toàn bộ thông tin tài khoản đã được bảo mật & gửi email thành công:
-                </p>
-                <ul className="list-disc list-inside text-emerald-700 space-y-1 text-[11px] pl-1">
-                  <li>Mật khẩu ngẫu nhiên an toàn (tối thiểu 12 ký tự) được sinh riêng biệt cho từng sinh viên.</li>
-                  <li>Mật khẩu đã được mã hóa chuẩn bcrypt trước khi lưu trữ vào hệ thống.</li>
-                  <li>Tài khoản được đánh dấu bắt buộc đổi mật khẩu ở lần đăng nhập đầu tiên.</li>
-                  <li>Không ghi đè hoặc tạo trùng bất kỳ tài khoản sinh viên nào đã tồn tại.</li>
-                </ul>
-              </div>
             )}
 
-            {/* Nút đóng */}
+            {/* Thông báo bảo mật hệ thống */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-left text-[11px] text-slate-600 space-y-1">
+              <p className="font-bold text-slate-700 flex items-center gap-1.5">
+                <AlertCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                Lưu ý bảo mật mật khẩu khởi tạo:
+              </p>
+              <ul className="list-disc list-inside space-y-0.5 pl-1 text-slate-500 text-[10px]">
+                <li>Mật khẩu hiển thị ở đây chỉ tồn tại tạm thời trong bộ nhớ phiên làm việc này để Quản trị viên sao chép khi cần bàn giao trực tiếp.</li>
+                <li>Cơ sở dữ liệu chỉ lưu trữ mật khẩu đã băm bằng chuẩn an toàn bcrypt (cost 12), tuyệt đối không lưu mật khẩu dạng văn bản thuần.</li>
+                <li>Mọi tài khoản mới tạo đều được đánh dấu bắt buộc đổi mật khẩu ở lần đăng nhập đầu tiên.</li>
+                <li>Khi đóng cửa sổ này, mật khẩu dạng văn bản thuần sẽ được giải phóng hoàn toàn khỏi bộ nhớ trình duyệt.</li>
+              </ul>
+            </div>
+
+            {/* Nút hoàn tất */}
             <div className="flex items-center justify-center pt-2 border-t border-slate-100">
               <button
                 type="button"

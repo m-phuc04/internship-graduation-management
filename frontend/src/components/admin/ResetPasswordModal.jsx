@@ -49,7 +49,11 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
       const res = await adminApi.resetPassword(user._id);
       if (res.success && res.data) {
         setResultData(res.data);
-        showToast(`Đặt lại mật khẩu thành công và đã gửi email cho ${roleTitle.toLowerCase()}!`, 'success');
+        if (res.data.emailSent) {
+          showToast(`Đặt lại mật khẩu thành công! Email đã được máy chủ SMTP tiếp nhận.`, 'success');
+        } else {
+          showToast(`Đặt lại mật khẩu thành công nhưng gửi email thất bại: ${res.data.emailError || 'Lỗi máy chủ SMTP'}`, 'warning');
+        }
         if (onSuccess) onSuccess();
       } else {
         showToast(res.message || 'Lỗi khi đặt lại mật khẩu', 'error');
@@ -82,8 +86,10 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
       title={resultData ? 'Đặt lại mật khẩu thành công' : `Xác nhận đặt lại mật khẩu ${roleTitle}`}
       subtitle={
         resultData
-          ? `Mật khẩu mới đã được khởi tạo và gửi trực tiếp đến hộp thư của ${roleTitle.toLowerCase()}`
-          : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới và gửi thông tin qua email xác thực của ${roleTitle.toLowerCase()}`
+          ? resultData.emailSent
+            ? `Mật khẩu mới đã được khởi tạo thành công và máy chủ SMTP đã tiếp nhận email gửi đến ${roleTitle.toLowerCase()}.`
+            : `Mật khẩu mới đã được cập nhật thành công (Gửi email thất bại). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
+          : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới (16 ký tự), cập nhật vào cơ sở dữ liệu và gửi thông tin qua máy chủ SMTP.`
       }
       maxWidth="max-w-lg"
     >
@@ -125,7 +131,7 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
                   <span className="font-mono font-bold text-[#123891]">{accountCode}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-500">Email nhận mật khẩu:</span>
+                  <span className="text-slate-500">Email nhận thông báo:</span>
                   <span className="font-mono text-slate-800 text-[11px] font-semibold">
                     {email || <span className="text-rose-500 italic">Chưa có email</span>}
                   </span>
@@ -134,15 +140,15 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
             </div>
 
             {/* Cảnh báo quy trình an toàn */}
-            <div className="p-3.5 bg-amber-50/80 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-xs text-amber-900">
-              <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
+              <AlertTriangle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
               <div className="space-y-1 text-[11px]">
-                <p className="font-bold text-amber-950">Quy trình bảo mật nghiêm ngặt:</p>
-                <ul className="list-disc list-inside text-amber-800 space-y-0.5">
-                  <li>Email chứa mật khẩu sẽ được gửi đến người dùng trước khi cập nhật dữ liệu.</li>
-                  <li>Nếu gửi email thất bại, mật khẩu của tài khoản được giữ nguyên an toàn.</li>
-                  <li>Tất cả phiên đăng nhập cũ sẽ lập tức bị thu hồi.</li>
-                  <li>Tài khoản bắt buộc phải đổi mật khẩu ở lần đăng nhập tiếp theo.</li>
+                <p className="font-bold text-blue-950">Quy trình bảo mật & gửi email:</p>
+                <ul className="list-disc list-inside text-blue-800 space-y-0.5">
+                  <li>Mật khẩu mới được sinh ngẫu nhiên mạnh (16 ký tự) và mã hóa bcrypt trước khi lưu.</li>
+                  <li>Yêu cầu gửi email sẽ được chuyển đến máy chủ SMTP.</li>
+                  <li>Nếu máy chủ SMTP gặp lỗi, thao tác reset vẫn được bảo lưu và mật khẩu mới hiển thị ngay cho ADMIN sao chép.</li>
+                  <li>Tất cả phiên đăng nhập cũ bị thu hồi và người dùng bắt buộc đổi mật khẩu ở lần đăng nhập tiếp theo.</li>
                 </ul>
               </div>
             </div>
@@ -180,10 +186,27 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
         ) : (
           // ================= VIEW KẾT QUẢ CHO ADMIN =================
           <div className="space-y-4">
-            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center gap-2.5 text-xs text-emerald-800 font-semibold">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <span>Đã hoàn tất đặt lại mật khẩu và gửi email thành công!</span>
-            </div>
+            {resultData.emailSent ? (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-900 font-medium">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-emerald-800">Đặt lại mật khẩu thành công!</span>
+                  <p className="text-[11px] text-emerald-700 mt-0.5">
+                    Máy chủ SMTP đã tiếp nhận email thông báo gửi đến địa chỉ <strong>{resultData.email}</strong>.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl flex items-start gap-2.5 text-xs text-amber-950 font-medium">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-amber-900">Đặt lại mật khẩu thành công (Gửi email thất bại)</span>
+                  <p className="text-[11px] text-amber-800 mt-0.5">
+                    Lý do: {resultData.emailError || 'Máy chủ SMTP không tiếp nhận email'}. Mật khẩu mới đã được lưu an toàn trong cơ sở dữ liệu. Vui lòng sao chép mật khẩu bên dưới để cung cấp cho người dùng.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Chi tiết thông tin đã reset */}
             <div className="p-4 bg-slate-50 border border-slate-200/80 rounded-2xl space-y-2 text-xs">
@@ -200,8 +223,20 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
                 <span className="font-mono font-bold text-[#123891]">{resultData.code || resultData.studentCode || accountCode}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-slate-200/60">
-                <span className="text-slate-500">Email đã gửi:</span>
+                <span className="text-slate-500">Email:</span>
                 <span className="font-mono text-slate-800 text-[11px] font-semibold">{resultData.email}</span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-slate-200/60">
+                <span className="text-slate-500">Trạng thái gửi email:</span>
+                {resultData.emailSent ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
+                    <CheckCircle2 className="w-3.5 h-3.5" /> SMTP đã tiếp nhận
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">
+                    <AlertTriangle className="w-3.5 h-3.5" /> Gửi thất bại
+                  </span>
+                )}
               </div>
 
               {/* Ô hiển thị mật khẩu mới và nút sao chép */}

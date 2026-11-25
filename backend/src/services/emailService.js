@@ -378,9 +378,14 @@ Thời gian: ${sentTimeStr}
 
   const activeTransporter = getTransporter();
   if (activeTransporter) {
-    const info = await activeTransporter.sendMail(mailOptions);
-    console.log(`[EmailService] Password reset email sent to ${targetEmail} (MessageId: ${info.messageId})`);
-    return { success: true, messageId: info.messageId };
+    try {
+      const info = await activeTransporter.sendMail(mailOptions);
+      console.log(`[EmailService] Password reset email accepted by SMTP for ${targetEmail} (MessageId: ${info.messageId})`);
+      return { success: true, messageId: info.messageId };
+    } catch (err) {
+      console.error(`[EmailService] SMTP rejected password reset email for ${targetEmail}:`, err.message);
+      return { success: false, error: err.message };
+    }
   } else {
     console.log(`\n================== [PASSWORD RESET EMAIL SIMULATED] ==================`);
     console.log(`To: ${targetEmail} (${recipientName})`);
@@ -456,16 +461,32 @@ export const sendAccountCreationEmail = async ({
 </html>
   `;
 
+  const textContent = `
+[KHOA CNTT - ĐH CÔNG NGHIỆP TP.HCM] THÔNG TIN TÀI KHOẢN SINH VIÊN MỚI
+
+Xin chào ${recipientName},
+Tài khoản sinh viên của bạn đã được khởi tạo trên Hệ thống Quản lý TTDN & KLTN:
+- Mã số sinh viên (MSSV): ${studentCode}
+- Lớp học: ${className || '—'}
+- Email đăng nhập: ${targetEmail}
+- Mật khẩu khởi tạo: ${password}
+
+* Lưu ý: Bạn sẽ được yêu cầu đổi mật khẩu ở lần đăng nhập đầu tiên.
+Đăng nhập tại: ${frontendBaseUrl}
+Thời gian: ${sentTimeStr}
+  `;
+
   try {
     const activeTransporter = getTransporter();
     if (activeTransporter) {
-      await activeTransporter.sendMail({
+      const info = await activeTransporter.sendMail({
         from: fromAddress,
         to: targetEmail,
         subject: `[Cổng thông tin TTDN & KLTN] Thông tin tài khoản sinh viên`,
+        text: textContent,
         html: htmlContent,
       });
-      return { success: true };
+      return { success: true, messageId: info?.messageId };
     } else {
       console.log(`[EmailService Simulated] Account creation email sent to ${targetEmail} (MSSV: ${studentCode}, Pass: ${password})`);
       return { success: true, simulated: true };
