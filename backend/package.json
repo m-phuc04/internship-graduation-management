@@ -9,7 +9,6 @@
     "start": "node src/server.js",
     "create-admin": "node src/scripts/createAdminUser.js",
     "seed": "node src/seed/seedUsersAndLecturers.js",
-    "seed:master": "node src/seed/seedMasterData.js",
     "cleanup:chat": "node src/scripts/cleanupChatData.js"
   },
   "keywords": [],
