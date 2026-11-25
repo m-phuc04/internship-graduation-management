@@ -20,28 +20,21 @@ const getCaptcha = async (req, res, next) => {
 };
 
 // ====================
-// Đăng ký tài khoản
+// Đăng ký tài khoản (Đã vô hiệu hóa - Chỉ Quản trị viên mới được tạo tài khoản)
 // ====================
 
 const register = async (req, res, next) => {
   try {
-    const user = await authService.register(req.body);
-
     await logActivity(req, {
-      userId: user._id,
-      role: user.role,
-      action: "Đăng ký tài khoản",
+      action: "Tự đăng ký tài khoản bị từ chối",
       module: "AUTH",
-      description: `Tài khoản mới ${user.fullName} (${user.email || user.code}) đã được đăng ký thành công`,
-      targetId: user._id,
-      targetModel: "User",
-      status: "SUCCESS",
+      description: `Yêu cầu tự đăng ký bị từ chối (Chức năng đã vô hiệu hóa). Dữ liệu gửi: ${req.body?.studentCode || req.body?.code || req.body?.email || "N/A"}`,
+      status: "FAILED",
     });
 
-    res.status(201).json({
-      success: true,
-      message: "Đăng ký tài khoản thành công",
-      data: user,
+    return res.status(403).json({
+      success: false,
+      message: "Chức năng tự đăng ký tài khoản đã bị vô hiệu hóa. Vui lòng liên hệ Quản trị viên để được cấp tài khoản.",
     });
   } catch (error) {
     next(error);

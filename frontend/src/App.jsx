@@ -110,6 +110,7 @@ function App() {
                 <Route path="/" element={<HomePage />} />
                 <Route path="/news/:id" element={<NewsDetailPage />} />
                 <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route path="/register" element={<Navigate to="/" replace />} />
                 <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
                 {/* Tuyến đường hồ sơ người dùng công khai */}

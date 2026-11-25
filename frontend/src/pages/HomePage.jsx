@@ -36,22 +36,12 @@ const HomePage = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   // Trạng thái Form
-  const [activeFormMode, setActiveFormMode] = useState('LOGIN'); // 'LOGIN' | 'REGISTER'
   const [accountCode, setAccountCode] = useState('');
   const [password, setPassword] = useState('');
   const [captchaInput, setCaptchaInput] = useState('');
   const [captchaData, setCaptchaData] = useState(null);
   const [captchaLoading, setCaptchaLoading] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
-
-  // Trạng thái đăng ký tài khoản sinh viên
-  const [regStudentCode, setRegStudentCode] = useState('');
-  const [regFullName, setRegFullName] = useState('');
-  const [regEmail, setRegEmail] = useState('');
-  const [regClassName, setRegClassName] = useState('');
-  const [regPassword, setRegPassword] = useState('');
-  const [regConfirmPassword, setRegConfirmPassword] = useState('');
-  const [regLoading, setRegLoading] = useState(false);
 
   // Tải mã xác thực CAPTCHA
   const loadCaptcha = async () => {
@@ -162,65 +152,7 @@ const HomePage = () => {
     }
   };
 
-  const handleRegister = async (e) => {
-    if (e) e.preventDefault();
 
-    const mssv = regStudentCode.trim();
-    const fullName = regFullName.trim();
-    const email = regEmail.trim();
-    const className = regClassName.trim();
-    const pass = regPassword.trim();
-    const confirmPass = regConfirmPassword.trim();
-
-    if (!mssv || !/^\d{8}$/.test(mssv)) {
-      showToast('Vui lòng nhập Mã số sinh viên (gồm đúng 8 chữ số)', 'error');
-      return;
-    }
-    if (!fullName) {
-      showToast('Vui lòng nhập Họ và tên sinh viên', 'error');
-      return;
-    }
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      showToast('Vui lòng nhập địa chỉ Email hợp lệ', 'error');
-      return;
-    }
-    if (!className) {
-      showToast('Vui lòng nhập Lớp danh nghĩa', 'error');
-      return;
-    }
-    if (!pass || pass.length < 6) {
-      showToast('Mật khẩu phải có ít nhất 6 ký tự', 'error');
-      return;
-    }
-    if (pass !== confirmPass) {
-      showToast('Xác nhận mật khẩu không khớp', 'error');
-      return;
-    }
-
-    setRegLoading(true);
-    try {
-      const res = await authApi.register({
-        studentCode: mssv,
-        fullName,
-        email,
-        className,
-        password: pass,
-        confirmPassword: confirmPass,
-      });
-
-      if (res?.success) {
-        showToast('Đăng ký tài khoản Sinh viên thành công! Vui lòng nhập mã CAPTCHA để đăng nhập.', 'success');
-        setAccountCode(mssv);
-        setPassword(pass);
-        setActiveFormMode('LOGIN');
-        loadCaptcha();
-      }
-    } catch (err) {
-      showToast(err.message || 'Đăng ký không thành công. Vui lòng kiểm tra lại.', 'error');
-    } finally {
-      setRegLoading(false);
-    }
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -487,7 +419,7 @@ const HomePage = () => {
                     <span>Đăng xuất tài khoản</span>
                   </button>
                 </div>
-              ) : activeFormMode === 'LOGIN' ? (
+              ) : (
                 /* ================= FORM ĐĂNG NHẬP TRỰC TIẾP ================= */
                 <form onSubmit={handleLogin} className="mt-5 space-y-3.5">
                   {/* Tên đăng nhập / Mã tài khoản */}
@@ -583,112 +515,11 @@ const HomePage = () => {
                     </button>
                   </div>
 
-                  {/* Nút chuyển sang đăng ký tài khoản sinh viên */}
+                  {/* Hướng dẫn khi chưa có tài khoản */}
                   <div className="pt-2 text-center border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setActiveFormMode('REGISTER')}
-                      className="text-xs text-[#1B4DA1] hover:text-[#ECA124] font-semibold transition cursor-pointer"
-                    >
-                      Chưa có tài khoản sinh viên? <span className="underline font-bold">Đăng ký ngay</span>
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                /* ================= FORM ĐĂNG KÝ TÀI KHOẢN SINH VIÊN ================= */
-                <form onSubmit={handleRegister} className="mt-5 space-y-3">
-                  <div className="p-2.5 bg-blue-50 rounded-xl border border-blue-100 text-[11px] text-[#123891] font-medium flex items-center gap-1.5">
-                    <GraduationCap className="w-4 h-4 shrink-0" />
-                    <span>Cổng đăng ký Sinh viên làm TTDN & KLTN</span>
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      value={regStudentCode}
-                      onChange={(e) => setRegStudentCode(e.target.value.trim())}
-                      placeholder="Mã số sinh viên"
-                      maxLength={8}
-                      required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#123891]"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      value={regFullName}
-                      onChange={(e) => setRegFullName(e.target.value)}
-                      placeholder="Họ và tên sinh viên"
-                      required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#123891]"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="email"
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      placeholder="Email"
-                      required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#123891]"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="text"
-                      value={regClassName}
-                      onChange={(e) => setRegClassName(e.target.value)}
-                      placeholder="Lớp danh nghĩa"
-                      required
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#123891]"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="password"
-                      value={regPassword}
-                      onChange={(e) => setRegPassword(e.target.value)}
-                      placeholder="Mật khẩu"
-                      required
-                      minLength={6}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#123891]"
-                    />
-                  </div>
-
-                  <div>
-                    <input
-                      type="password"
-                      value={regConfirmPassword}
-                      onChange={(e) => setRegConfirmPassword(e.target.value)}
-                      placeholder="Xác nhận lại mật khẩu"
-                      required
-                      minLength={6}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#123891]"
-                    />
-                  </div>
-
-                  <div className="pt-1">
-                    <button
-                      type="submit"
-                      disabled={regLoading}
-                      className="w-full py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wide text-white bg-[#123891] hover:bg-[#1B4DA1] hover:text-[#ECA124] active:scale-[0.99] shadow-md shadow-blue-900/20 transition duration-150 cursor-pointer disabled:opacity-60"
-                    >
-                      {regLoading ? 'ĐANG TẠO TÀI KHOẢN...' : 'HOÀN TẤT ĐĂNG KÝ'}
-                    </button>
-                  </div>
-
-                  <div className="text-center pt-2 border-t border-slate-100">
-                    <button
-                      type="button"
-                      onClick={() => setActiveFormMode('LOGIN')}
-                      className="text-xs text-slate-600 hover:text-[#ECA124] font-semibold transition cursor-pointer"
-                    >
-                      Đã có tài khoản? <span className="underline font-bold text-[#1B4DA1] hover:text-[#ECA124]">Đăng nhập ngay</span>
-                    </button>
+                    <p className="text-xs text-slate-500 font-medium">
+                      Nếu chưa có tài khoản, vui lòng liên hệ Quản trị viên để được cấp tài khoản.
+                    </p>
                   </div>
                 </form>
               )}
