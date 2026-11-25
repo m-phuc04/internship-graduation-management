@@ -7,6 +7,7 @@ import { logActivity, getDistinctActions } from "./logService.js";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import ExcelJS from "exceljs";
+import * as XLSX from "xlsx";
 import AppError from "../utils/AppError.js";
 import {
   sendPasswordResetEmail,
@@ -16,30 +17,37 @@ import {
 const VALID_PERMISSIONS = ["GVHD", "GVPB_KIN", "GVPB_HOIDONG"];
 
 /**
- * Tạo mật khẩu ngẫu nhiên an toàn (độ dài mặc định 10 ký tự gồm hoa, thường, số, ký tự đặc biệt)
+ * Tạo mật khẩu ngẫu nhiên an toàn (tối thiểu 12 ký tự, mặc định 16 ký tự gồm hoa, thường, số, ký tự đặc biệt)
  */
-const generateSecurePassword = (length = 10) => {
+const generateSecurePassword = (length = 16) => {
+  const safeLength = Math.max(12, length);
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnpqrstuvwxyz";
   const digits = "23456789";
-  const special = "@#$&!";
+  const special = "@#$&*!%?";
   const all = upper + lower + digits + special;
 
   let pwd = "";
-  pwd += upper[crypto.randomInt(0, upper.length)];
-  pwd += lower[crypto.randomInt(0, lower.length)];
-  pwd += digits[crypto.randomInt(0, digits.length)];
-  pwd += special[crypto.randomInt(0, special.length)];
+  // Đảm bảo có ít nhất 2 ký tự của mỗi loại
+  for (let i = 0; i < 2; i++) {
+    pwd += upper[crypto.randomInt(0, upper.length)];
+    pwd += lower[crypto.randomInt(0, lower.length)];
+    pwd += digits[crypto.randomInt(0, digits.length)];
+    pwd += special[crypto.randomInt(0, special.length)];
+  }
 
-  for (let i = 4; i < length; i++) {
+  for (let i = pwd.length; i < safeLength; i++) {
     pwd += all[crypto.randomInt(0, all.length)];
   }
 
-  // Trộn ngẫu nhiên các ký tự
-  return pwd
-    .split("")
-    .sort(() => crypto.randomInt(-1, 2))
-    .join("");
+  // Xáo trộn ngẫu nhiên an toàn (Fisher-Yates shuffle)
+  const arr = pwd.split("");
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = crypto.randomInt(0, i + 1);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr.join("");
 };
 
 /**
@@ -424,65 +432,185 @@ const generateExcelTemplate = async () => {
 };
 
 /**
+ * Đọc file Excel từ buffer hỗ trợ cả .xlsx, .xls, .xlsm, csv
+ * Sử dụng XLSX (SheetJS) làm engine chính và ExcelJS làm fallback
+ */
+const parseExcelBufferToRows = async (fileBuffer) => {
+  if (!fileBuffer || !Buffer.isBuffer(fileBuffer) || fileBuffer.length === 0) {
+    throw new AppError("Không nhận được dữ liệu file hoặc file tải lên bị rỗng.", 400);
+  }
+
+  // 1. Thử đọc với XLSX (SheetJS) - hỗ trợ .xlsx, .xls (BIFF8 binary), .xlsm, HTML-as-xls
+  try {
+    const workbook = XLSX.read(fileBuffer, {
+      type: "buffer",
+      cellDates: true,
+      raw: false,
+      dateNF: "yyyy-mm-dd",
+    });
+
+    if (!workbook.SheetNames || workbook.SheetNames.length === 0) {
+      throw new AppError("File Excel không tìm thấy sheet dữ liệu nào (bảng tính trống).", 400);
+    }
+
+    const firstSheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[firstSheetName];
+    if (!worksheet) {
+      throw new AppError("File Excel không có dữ liệu bảng tính hợp lệ.", 400);
+    }
+
+    // Chuyển worksheet thành mảng 2 chiều các dòng
+    const rawData = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: "",
+      blankrows: false,
+    });
+
+    if (Array.isArray(rawData) && rawData.length > 0) {
+      return rawData.map((row) =>
+        Array.isArray(row)
+          ? row.map((cell) => (cell !== null && cell !== undefined ? String(cell).trim() : ""))
+          : []
+      );
+    }
+  } catch (sheetJsErr) {
+    console.warn("[ExcelParser] SheetJS parse warning, attempting ExcelJS fallback:", sheetJsErr.message);
+  }
+
+  // 2. Fallback sang ExcelJS (cho một số file .xlsx chuẩn)
+  try {
+    const excelJsWb = new ExcelJS.Workbook();
+    await excelJsWb.xlsx.load(fileBuffer);
+
+    const worksheet = excelJsWb.worksheets[0];
+    if (!worksheet) {
+      throw new AppError("File Excel không tìm thấy sheet dữ liệu nào.", 400);
+    }
+
+    const rows = [];
+    worksheet.eachRow({ includeEmpty: false }, (row) => {
+      const rowValues = [];
+      row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+        rowValues[colNumber - 1] = (cell.text || "").trim();
+      });
+      rows.push(rowValues);
+    });
+
+    if (rows.length > 0) {
+      return rows;
+    }
+  } catch (excelJsErr) {
+    console.error("[ExcelParser] Both SheetJS and ExcelJS failed to load buffer:", excelJsErr.message);
+  }
+
+  throw new AppError(
+    "Định dạng file không hợp lệ hoặc bị lỗi không thể đọc được. Vui lòng tải lên file Excel (.xlsx, .xls).",
+    400
+  );
+};
+
+/**
  * Phân tích và xem trước dữ liệu file Excel sinh viên
  */
 const previewStudentExcel = async (fileBuffer) => {
-  if (!fileBuffer) {
-    throw new AppError("Không tìm thấy tệp tải lên", 400);
+  const rows = await parseExcelBufferToRows(fileBuffer);
+
+  if (!rows || rows.length === 0) {
+    throw new AppError("File Excel không chứa dòng dữ liệu nào.", 400);
   }
 
-  const workbook = new ExcelJS.Workbook();
-  try {
-    await workbook.xlsx.load(fileBuffer);
-  } catch (err) {
-    throw new AppError("Định dạng file không hợp lệ hoặc bị lỗi. Vui lòng tải lên file Excel (.xlsx, .xls)", 400);
-  }
-
-  const worksheet = workbook.worksheets[0];
-  if (!worksheet) {
-    throw new AppError("File Excel không có dữ liệu bảng tính (sheet trống)", 400);
-  }
-
-  // Tìm dòng tiêu đề
-  let headerRowIndex = 1;
+  // Tìm dòng tiêu đề (quét tối đa 15 dòng đầu tiên)
+  let headerRowIndex = -1;
   const colMap = { stt: -1, mssv: -1, fullName: -1, email: -1, className: -1 };
 
-  worksheet.eachRow((row, rowNumber) => {
-    if (Object.values(colMap).every((idx) => idx !== -1)) return;
-    row.eachCell((cell, colNumber) => {
-      const text = (cell.text || "").trim().toLowerCase();
-      if (text === "stt") colMap.stt = colNumber;
-      else if (text.includes("mssv") || text.includes("mã sinh viên") || text.includes("mã số sinh viên")) colMap.mssv = colNumber;
-      else if (text.includes("họ và tên") || text.includes("họ tên") || text.includes("tên sinh viên")) colMap.fullName = colNumber;
-      else if (text.includes("email") || text.includes("hộp thư")) colMap.email = colNumber;
-      else if (text.includes("lớp") || text.includes("tên lớp")) colMap.className = colNumber;
-    });
-    if (colMap.mssv !== -1 && colMap.fullName !== -1 && colMap.email !== -1 && colMap.className !== -1) {
-      headerRowIndex = rowNumber;
-    }
-  });
+  for (let r = 0; r < Math.min(15, rows.length); r++) {
+    const row = rows[r];
+    if (!Array.isArray(row)) continue;
 
-  if (colMap.mssv === -1 || colMap.fullName === -1 || colMap.email === -1 || colMap.className === -1) {
-    throw new AppError("File Excel thiếu các cột bắt buộc: MSSV, Họ và tên, Email, Lớp.", 400);
+    const tempMap = { stt: -1, mssv: -1, fullName: -1, email: -1, className: -1 };
+
+    row.forEach((cellVal, colIdx) => {
+      const text = (cellVal || "").trim().toLowerCase();
+      if (!text) return;
+
+      if (text === "stt" || text === "số tt" || text === "số thứ tự" || text === "no" || text === "no.") {
+        tempMap.stt = colIdx;
+      } else if (
+        text.includes("mssv") ||
+        text.includes("mã sinh viên") ||
+        text.includes("mã số sinh viên") ||
+        text.includes("mã sv") ||
+        text === "student code" ||
+        text === "studentcode" ||
+        text === "code"
+      ) {
+        tempMap.mssv = colIdx;
+      } else if (
+        text.includes("họ và tên") ||
+        text.includes("họ tên") ||
+        text.includes("tên sinh viên") ||
+        text.includes("họ và tên sv") ||
+        text === "full name" ||
+        text === "fullname" ||
+        text === "name"
+      ) {
+        tempMap.fullName = colIdx;
+      } else if (
+        text.includes("email") ||
+        text.includes("hộp thư") ||
+        text.includes("mail") ||
+        text.includes("địa chỉ email")
+      ) {
+        tempMap.email = colIdx;
+      } else if (
+        text.includes("lớp") ||
+        text.includes("tên lớp") ||
+        text.includes("lớp danh nghĩa") ||
+        text.includes("mã lớp") ||
+        text === "class" ||
+        text === "classname"
+      ) {
+        tempMap.className = colIdx;
+      }
+    });
+
+    // Nếu tìm thấy đầy đủ 4 cột cốt lõi
+    if (tempMap.mssv !== -1 && tempMap.fullName !== -1 && tempMap.email !== -1 && tempMap.className !== -1) {
+      headerRowIndex = r;
+      Object.assign(colMap, tempMap);
+      break;
+    }
+  }
+
+  if (headerRowIndex === -1) {
+    const missing = [];
+    if (colMap.mssv === -1) missing.push("MSSV");
+    if (colMap.fullName === -1) missing.push("Họ và tên");
+    if (colMap.email === -1) missing.push("Email");
+    if (colMap.className === -1) missing.push("Lớp");
+    throw new AppError(
+      `File Excel thiếu các cột bắt buộc: ${missing.join(", ")}. Vui lòng kiểm tra lại dòng tiêu đề trong file.`,
+      400
+    );
   }
 
   const rawRows = [];
   const seenMssvsInFile = new Map();
   const seenEmailsInFile = new Map();
 
-  for (let r = headerRowIndex + 1; r <= worksheet.rowCount; r++) {
-    const row = worksheet.getRow(r);
-    const mssvRaw = (row.getCell(colMap.mssv).text || "").trim();
-    const nameRaw = (row.getCell(colMap.fullName).text || "").trim();
-    const emailRaw = (row.getCell(colMap.email).text || "").trim().toLowerCase();
-    const classRaw = (row.getCell(colMap.className).text || "").trim();
-    const sttRaw = colMap.stt !== -1 ? (row.getCell(colMap.stt).text || "").trim() : String(rawRows.length + 1);
+  for (let r = headerRowIndex + 1; r < rows.length; r++) {
+    const row = rows[r] || [];
+    const mssvRaw = (row[colMap.mssv] || "").trim();
+    const nameRaw = (row[colMap.fullName] || "").trim();
+    const emailRaw = (row[colMap.email] || "").trim().toLowerCase();
+    const classRaw = (row[colMap.className] || "").trim();
+    const sttRaw = colMap.stt !== -1 && row[colMap.stt] ? String(row[colMap.stt]).trim() : String(rawRows.length + 1);
 
     // Bỏ qua dòng hoàn toàn trống
     if (!mssvRaw && !nameRaw && !emailRaw && !classRaw) continue;
 
     rawRows.push({
-      rowNumber: r,
+      rowNumber: r + 1, // Số dòng thực tế trong file Excel (1-indexed)
       stt: sttRaw || String(rawRows.length + 1),
       mssv: mssvRaw,
       fullName: nameRaw,
@@ -494,7 +622,7 @@ const previewStudentExcel = async (fileBuffer) => {
   }
 
   if (rawRows.length === 0) {
-    throw new AppError("File Excel không chứa dòng dữ liệu nào", 400);
+    throw new AppError("File Excel không chứa bất kỳ dòng dữ liệu sinh viên nào sau dòng tiêu đề.", 400);
   }
 
   // 1. Kiểm tra cấu trúc từng dòng & trùng lặp nội bộ trong file
@@ -520,7 +648,7 @@ const previewStudentExcel = async (fileBuffer) => {
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(item.email)) {
-        item.errors.push("Email không đúng định dạng");
+        item.errors.push("Email không đúng định dạng chuẩn");
       } else if (!item.email.endsWith("@student.iuh.edu.vn")) {
         item.errors.push("Email phải có tên miền @student.iuh.edu.vn");
       } else if (item.mssv && /^\d{8}$/.test(item.mssv)) {
@@ -564,10 +692,14 @@ const previewStudentExcel = async (fileBuffer) => {
   const [existingUsers, existingStudents] = await Promise.all([
     User.find({
       $or: [{ code: { $in: candidateMssvs } }, { email: { $in: candidateEmails } }],
-    }).select("code email fullName role").lean(),
+    })
+      .select("code email fullName role")
+      .lean(),
     Student.find({
       studentCode: { $in: candidateMssvs },
-    }).select("studentCode").lean(),
+    })
+      .select("studentCode")
+      .lean(),
   ]);
 
   const existingCodesSet = new Set([
@@ -610,7 +742,7 @@ const previewStudentExcel = async (fileBuffer) => {
 };
 
 /**
- * Xác nhận tạo tài khoản sinh viên từ các dòng hợp lệ
+ * Xác nhận tạo tài khoản sinh viên từ các dòng hợp lệ và gửi thông tin đăng nhập qua Email
  */
 const importStudentExcel = async (validRows, adminUser, req = null) => {
   if (!Array.isArray(validRows) || validRows.length === 0) {
@@ -618,7 +750,11 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
   }
 
   let createdCount = 0;
+  let emailSuccessCount = 0;
+  let emailFailCount = 0;
   let skippedCount = 0;
+  const createdStudents = [];
+  const failedEmailStudents = [];
   const errorsList = [];
 
   for (const row of validRows) {
@@ -645,10 +781,11 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
         continue;
       }
 
-      // Tạo mật khẩu ngẫu nhiên riêng biệt cho từng sinh viên
-      const plainPassword = generateSecurePassword(10);
+      // 1. Tạo mật khẩu ngẫu nhiên riêng biệt cho từng sinh viên (16 ký tự mạnh)
+      const plainPassword = generateSecurePassword(16);
       const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
+      // 2. Tạo tài khoản User (role: STUDENT, mustChangePassword: true)
       const newUser = await User.create({
         fullName,
         code: mssv,
@@ -659,29 +796,59 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
         isActive: true,
       });
 
+      // 3. Khởi tạo hồ sơ Sinh viên liên kết
       await Student.create({
         userId: newUser._id,
         studentCode: mssv,
         className,
         major: "Công nghệ Thông tin",
         prerequisiteCompleted: true,
+        internshipRegistered: false,
+        thesisRegistered: false,
         isActive: true,
       });
 
       createdCount++;
 
-      // Gửi email bất đồng bộ không chặn luồng
-      sendAccountCreationEmail({
+      // 4. Gửi email thông tin tài khoản cho sinh viên
+      const emailRes = await sendAccountCreationEmail({
         to: email,
         recipientName: fullName,
         studentCode: mssv,
         password: plainPassword,
         className,
-      }).catch((err) =>
-        console.error(`[EmailService] Lỗi gửi email tạo tài khoản cho ${mssv}:`, err.message)
-      );
+      });
+
+      if (emailRes && emailRes.success) {
+        emailSuccessCount++;
+        createdStudents.push({
+          mssv,
+          fullName,
+          email,
+          className,
+          emailSent: true,
+        });
+      } else {
+        emailFailCount++;
+        const errMsg = emailRes?.error || "Gửi email thất bại";
+        failedEmailStudents.push({
+          mssv,
+          fullName,
+          email,
+          className,
+          error: errMsg,
+        });
+        createdStudents.push({
+          mssv,
+          fullName,
+          email,
+          className,
+          emailSent: false,
+          emailError: errMsg,
+        });
+      }
     } catch (err) {
-      console.error(`Lỗi khi tạo tài khoản cho sinh viên ${mssv}:`, err.message);
+      console.error(`[ImportExcel] Lỗi khi tạo tài khoản cho sinh viên ${mssv}:`, err.message);
       errorsList.push({ mssv, error: err.message });
       skippedCount++;
     }
@@ -695,7 +862,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
       role: "ADMIN",
       action: "Import sinh viên Excel",
       module: "USER",
-      description: `Quản trị viên ${adminUser.fullName || "Admin"} đã import ${createdCount} tài khoản sinh viên thành công (${skippedCount} bị bỏ qua/lỗi) từ Excel`,
+      description: `Quản trị viên đã import: Tạo thành công ${createdCount} tài khoản (Gửi email: ${emailSuccessCount} thành công, ${emailFailCount} thất bại). Bỏ qua ${skippedCount} dòng.`,
       status: isSuccess ? "SUCCESS" : "FAILED",
       errorMessage: errorsList.length > 0 ? `Có ${errorsList.length} lỗi khi import` : null,
     });
@@ -703,14 +870,110 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
 
   return {
     success: true,
-    message: `Đã tạo thành công ${createdCount} tài khoản sinh viên. Bỏ qua ${skippedCount} dòng không hợp lệ hoặc đã tồn tại.`,
+    message: `Đã tạo thành công ${createdCount} tài khoản sinh viên (${emailSuccessCount} email gửi thành công, ${emailFailCount} email gửi thất bại). Bỏ qua ${skippedCount} dòng đã tồn tại hoặc không hợp lệ.`,
     summary: {
-      created: createdCount,
-      skipped: skippedCount,
       totalRequested: validRows.length,
+      created: createdCount,
+      emailSuccess: emailSuccessCount,
+      emailFailed: emailFailCount,
+      skipped: skippedCount,
       errorsCount: errorsList.length,
     },
+    createdStudents,
+    failedEmails: failedEmailStudents,
     errors: errorsList,
+  };
+};
+
+/**
+ * Gửi lại thông tin đăng nhập qua Email cho sinh viên (khi gửi lần đầu thất bại hoặc cần cấp lại)
+ */
+const resendStudentCredentials = async ({ mssv, mssvs }, adminUser, req = null) => {
+  const codes = [];
+  if (mssv) codes.push(String(mssv).trim());
+  if (Array.isArray(mssvs)) {
+    mssvs.forEach((c) => {
+      const codeStr = String(c).trim();
+      if (codeStr && !codes.includes(codeStr)) codes.push(codeStr);
+    });
+  }
+
+  if (codes.length === 0) {
+    throw new AppError("Vui lòng cung cấp mã sinh viên để gửi lại thông tin đăng nhập", 400);
+  }
+
+  let successCount = 0;
+  let failCount = 0;
+  const results = [];
+
+  for (const code of codes) {
+    try {
+      const user = await User.findOne({ code, role: "STUDENT" });
+      if (!user) {
+        failCount++;
+        results.push({ mssv: code, success: false, error: "Không tìm thấy tài khoản sinh viên" });
+        continue;
+      }
+
+      const student = await Student.findOne({ studentCode: code });
+
+      // Sinh mật khẩu mới an toàn 16 ký tự
+      const newPlainPassword = generateSecurePassword(16);
+      const hashedPassword = await bcrypt.hash(newPlainPassword, 12);
+
+      // Cập nhật User và thu hồi token cũ
+      user.password = hashedPassword;
+      user.mustChangePassword = true;
+      user.refreshToken = null;
+      await user.save();
+
+      // Gửi email mới
+      const emailRes = await sendAccountCreationEmail({
+        to: user.email,
+        recipientName: user.fullName,
+        studentCode: code,
+        password: newPlainPassword,
+        className: student?.className || "—",
+      });
+
+      if (emailRes && emailRes.success) {
+        successCount++;
+        results.push({ mssv: code, email: user.email, success: true });
+      } else {
+        failCount++;
+        results.push({
+          mssv: code,
+          email: user.email,
+          success: false,
+          error: emailRes?.error || "Gửi email thất bại",
+        });
+      }
+    } catch (err) {
+      failCount++;
+      results.push({ mssv: code, success: false, error: err.message });
+    }
+  }
+
+  if (adminUser) {
+    await logActivity(req, {
+      userId: adminUser._id || adminUser.userId || adminUser,
+      role: "ADMIN",
+      action: "Gửi lại email đăng nhập",
+      module: "USER",
+      description: `Quản trị viên gửi lại email thông tin đăng nhập cho ${codes.length} sinh viên: ${successCount} thành công, ${failCount} thất bại`,
+      status: successCount > 0 ? "SUCCESS" : "FAILED",
+    });
+  }
+
+  return {
+    success: true,
+    message: `Đã gửi lại email cho ${successCount}/${codes.length} sinh viên thành công (${failCount} thất bại).`,
+    summary: {
+      total: codes.length,
+      successCount,
+      failCount,
+    },
+    results,
   };
 };
 
@@ -851,5 +1114,6 @@ export default {
   generateExcelTemplate,
   previewStudentExcel,
   importStudentExcel,
+  resendStudentCredentials,
   getSystemLogs,
 };

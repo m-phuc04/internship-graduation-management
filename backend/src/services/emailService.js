@@ -462,7 +462,7 @@ export const sendAccountCreationEmail = async ({
       await activeTransporter.sendMail({
         from: fromAddress,
         to: targetEmail,
-        subject: `[Hệ thống KLTN/TTDN] Thông tin tài khoản sinh viên ${studentCode}`,
+        subject: `[Cổng thông tin TTDN & KLTN] Thông tin tài khoản sinh viên`,
         html: htmlContent,
       });
       return { success: true };

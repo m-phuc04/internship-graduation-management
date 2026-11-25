@@ -165,11 +165,17 @@ const excelFileFilter = (req, file, cb) => {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
     "application/octet-stream",
+    "application/x-excel",
+    "application/x-msexcel",
+    "application/excel",
+    "application/wps-office.xlsx",
+    "application/wps-office.xls",
+    "application/zip",
   ];
   if (validExts.includes(ext) || validMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new AppError("Chỉ chấp nhận các tệp bảng tính Excel: .xlsx, .xls", 400), false);
+    cb(new AppError("Định dạng file không hợp lệ. Vui lòng tải lên tệp bảng tính Excel (.xlsx, .xls).", 400), false);
   }
 };
 

@@ -1,4 +1,5 @@
 import academicTermService from "../services/academicTermService.js";
+import exportService from "../services/exportService.js";
 import { logActivity } from "../services/logService.js";
 
 // ====================
@@ -235,6 +236,72 @@ const toggleThesisRegistrationLock = async (req, res, next) => {
   }
 };
 
+// ====================
+// Xuất danh sách sinh viên TTDN theo học kỳ (ADMIN)
+// ====================
+const exportTermStudentsTTDN = async (req, res, next) => {
+  try {
+    const { buffer, filename, totalRecords } = await exportService.exportTermStudentsTTDN(
+      req.params.id
+    );
+
+    await logActivity(req, {
+      action: "Xuất danh sách sinh viên TTDN",
+      module: "SCHEDULE",
+      description: `Đã xuất danh sách ${totalRecords} sinh viên TTDN của học kỳ ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(filename)}"`
+    );
+
+    return res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// ====================
+// Xuất danh sách sinh viên KLTN theo học kỳ (ADMIN)
+// ====================
+const exportTermStudentsKLTN = async (req, res, next) => {
+  try {
+    const { buffer, filename, totalRecords } = await exportService.exportTermStudentsKLTN(
+      req.params.id
+    );
+
+    await logActivity(req, {
+      action: "Xuất danh sách sinh viên KLTN",
+      module: "SCHEDULE",
+      description: `Đã xuất danh sách ${totalRecords} sinh viên KLTN của học kỳ ${req.params.id}`,
+      targetId: req.params.id,
+      targetModel: "AcademicTerm",
+      status: "SUCCESS",
+    });
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(filename)}"`
+    );
+
+    return res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getAllTerms,
   getCurrentTerm,
@@ -246,4 +313,6 @@ export default {
   closeTerm,
   deleteTerm,
   toggleThesisRegistrationLock,
+  exportTermStudentsTTDN,
+  exportTermStudentsKLTN,
 };

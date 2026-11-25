@@ -170,6 +170,20 @@ const getSystemLogs = async (req, res, next) => {
   }
 };
 
+const resendStudentCredentials = async (req, res, next) => {
+  try {
+    const { mssv, mssvs } = req.body;
+    const result = await adminService.resendStudentCredentials({ mssv, mssvs }, req.user, req);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getPermissionsList,
   updateLecturerPermissions,
@@ -179,5 +193,6 @@ export default {
   getExcelTemplate,
   previewStudentExcel,
   importStudentExcel,
+  resendStudentCredentials,
   getSystemLogs,
 };

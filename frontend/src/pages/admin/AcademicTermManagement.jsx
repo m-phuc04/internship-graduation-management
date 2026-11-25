@@ -20,6 +20,7 @@ import {
   Briefcase,
   Layers,
   X,
+  Loader2,
 } from 'lucide-react';
 
 import {
@@ -73,6 +74,7 @@ const AcademicTermManagement = () => {
   const [editingTerm, setEditingTerm] = useState(null);
   const [viewingTerm, setViewingTerm] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [exportingId, setExportingId] = useState(null);
 
   // Trạng thái Form
   const [formData, setFormData] = useState({
@@ -214,6 +216,64 @@ const AcademicTermManagement = () => {
       showError(err.response?.data?.message || err.message || 'Không thể xóa học kỳ');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  // Tải danh sách sinh viên theo học kỳ (TTDN hoặc KLTN)
+  const handleExportStudentList = async (term, type) => {
+    // 1. Kiểm tra trạng thái học kỳ cho phép
+    const allowedStatuses = ['ACTIVE', 'UPCOMING', 'CLOSED'];
+    if (!allowedStatuses.includes(term.status)) {
+      showError('Chỉ cho phép tải danh sách sinh viên đối với học kỳ Sắp diễn ra, Đang diễn ra hoặc Đã đóng.');
+      return;
+    }
+
+    // 2. Kiểm tra số lượng sinh viên tham gia
+    const count = type === 'TTDN' ? term.internshipCount : term.thesisCount;
+    if (!count || count === 0) {
+      showError(
+        `Học kỳ ${term.code} hiện không có sinh viên tham gia ${
+          type === 'TTDN' ? 'thực tập doanh nghiệp (TTDN)' : 'khóa luận tốt nghiệp (KLTN)'
+        }.`
+      );
+      return;
+    }
+
+    const key = `${term._id}-${type.toLowerCase()}`;
+    try {
+      setExportingId(key);
+      const blob =
+        type === 'TTDN'
+          ? await academicTermApi.exportTermStudentsTTDN(term._id)
+          : await academicTermApi.exportTermStudentsKLTN(term._id);
+
+      const cleanCode = (term.code || 'HocKy').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `Danh_sach_${type}_${cleanCode}.xlsx`;
+
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      showSuccess(`Tải danh sách sinh viên ${type} học kỳ ${term.code} thành công!`);
+    } catch (err) {
+      let message = err.message || `Lỗi khi xuất danh sách sinh viên ${type}`;
+      if (err.data instanceof Blob) {
+        try {
+          const text = await err.data.text();
+          const json = JSON.parse(text);
+          if (json.message) message = json.message;
+        } catch {
+          // Bỏ qua nếu không parse được json
+        }
+      }
+      showError(message);
+    } finally {
+      setExportingId(null);
     }
   };
 
@@ -363,21 +423,54 @@ const AcademicTermManagement = () => {
                           </div>
                         </td>
 
-                        {/* Số lượng đính kèm */}
+                        {/* Số lượng đính kèm / Nút tải danh sách sinh viên */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-2">
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium text-[11px] border border-blue-100"
-                              title="Số hồ sơ thực tập"
+                            <button
+                              type="button"
+                              onClick={() => handleExportStudentList(term, 'TTDN')}
+                              disabled={exportingId === `${term._id}-ttdn` || term.status === 'DRAFT'}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[11px] border transition-all ${
+                                term.status === 'DRAFT'
+                                  ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                                  : 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800 active:scale-95 cursor-pointer shadow-2xs'
+                              }`}
+                              title={
+                                term.status === 'DRAFT'
+                                  ? 'Chưa thể tải danh sách khi học kỳ ở trạng thái Nháp'
+                                  : 'Tải danh sách sinh viên TTDN'
+                              }
                             >
-                              <Briefcase className="w-3 h-3" /> {term.internshipCount || 0} TTDN
-                            </span>
-                            <span
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] font-medium text-[11px] border border-blue-100"
-                              title="Số đề tài khóa luận"
+                              {exportingId === `${term._id}-ttdn` ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-blue-700 shrink-0" />
+                              ) : (
+                                <Briefcase className="w-3 h-3 shrink-0" />
+                              )}
+                              <span>{term.internshipCount || 0} TTDN</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => handleExportStudentList(term, 'KLTN')}
+                              disabled={exportingId === `${term._id}-kltn` || term.status === 'DRAFT'}
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[11px] border transition-all ${
+                                term.status === 'DRAFT'
+                                  ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                                  : 'bg-blue-50 text-[#102d7d] border-blue-100 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-900 active:scale-95 cursor-pointer shadow-2xs'
+                              }`}
+                              title={
+                                term.status === 'DRAFT'
+                                  ? 'Chưa thể tải danh sách khi học kỳ ở trạng thái Nháp'
+                                  : 'Tải danh sách sinh viên KLTN'
+                              }
                             >
-                              <Layers className="w-3 h-3" /> {term.thesisCount || 0} KLTN
-                            </span>
+                              {exportingId === `${term._id}-kltn` ? (
+                                <Loader2 className="w-3 h-3 animate-spin text-[#102d7d] shrink-0" />
+                              ) : (
+                                <Layers className="w-3 h-3 shrink-0" />
+                              )}
+                              <span>{term.thesisCount || 0} KLTN</span>
+                            </button>
                           </div>
                         </td>
 
@@ -505,16 +598,51 @@ const AcademicTermManagement = () => {
                       </div>
 
                       <div className="flex items-center gap-2 pt-1">
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 font-medium text-[10.5px] border border-blue-100"
+                        <button
+                          type="button"
+                          onClick={() => handleExportStudentList(term, 'TTDN')}
+                          disabled={exportingId === `${term._id}-ttdn` || term.status === 'DRAFT'}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[10.5px] border transition-all ${
+                            term.status === 'DRAFT'
+                              ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                              : 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-800 active:scale-95 cursor-pointer shadow-2xs'
+                          }`}
+                          title={
+                            term.status === 'DRAFT'
+                              ? 'Chưa thể tải danh sách khi học kỳ ở trạng thái Nháp'
+                              : 'Tải danh sách sinh viên TTDN'
+                          }
                         >
-                          <Briefcase className="w-3 h-3" /> {term.internshipCount || 0} TTDN
-                        </span>
-                        <span
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-[#102d7d] font-medium text-[10.5px] border border-blue-100"
+                          {exportingId === `${term._id}-ttdn` ? (
+                            <Loader2 className="w-3 h-3 animate-spin text-blue-700 shrink-0" />
+                          ) : (
+                            <Briefcase className="w-3 h-3 shrink-0" />
+                          )}
+                          <span>{term.internshipCount || 0} TTDN</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleExportStudentList(term, 'KLTN')}
+                          disabled={exportingId === `${term._id}-kltn` || term.status === 'DRAFT'}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-medium text-[10.5px] border transition-all ${
+                            term.status === 'DRAFT'
+                              ? 'bg-slate-50 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                              : 'bg-blue-50 text-[#102d7d] border-blue-100 hover:bg-blue-100 hover:border-blue-300 hover:text-blue-900 active:scale-95 cursor-pointer shadow-2xs'
+                          }`}
+                          title={
+                            term.status === 'DRAFT'
+                              ? 'Chưa thể tải danh sách khi học kỳ ở trạng thái Nháp'
+                              : 'Tải danh sách sinh viên KLTN'
+                          }
                         >
-                          <Layers className="w-3 h-3" /> {term.thesisCount || 0} KLTN
-                        </span>
+                          {exportingId === `${term._id}-kltn` ? (
+                            <Loader2 className="w-3 h-3 animate-spin text-[#102d7d] shrink-0" />
+                          ) : (
+                            <Layers className="w-3 h-3 shrink-0" />
+                          )}
+                          <span>{term.thesisCount || 0} KLTN</span>
+                        </button>
                       </div>
                     </div>
 

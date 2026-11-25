@@ -47,6 +47,11 @@ const adminApi = {
     return response;
   },
 
+  resendStudentCredentials: async (payload) => {
+    const response = await axiosClient.post('/admin/students/resend-credentials', payload);
+    return response;
+  },
+
   getSystemLogs: async (params = {}) => {
     const response = await axiosClient.get('/admin/logs', { params });
     return response;

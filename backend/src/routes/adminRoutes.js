@@ -26,6 +26,7 @@ router.post(
   adminController.previewStudentExcel
 );
 router.post("/students/import-confirm", adminController.importStudentExcel);
+router.post("/students/resend-credentials", adminController.resendStudentCredentials);
 
 // Nhật ký hoạt động hệ thống
 router.get("/logs", adminController.getSystemLogs);
