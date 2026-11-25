@@ -21,8 +21,29 @@ const adminApi = {
     return response;
   },
 
-  resetPassword: async (userId, newPassword = '1111') => {
-    const response = await axiosClient.post(`/admin/users/${userId}/reset-password`, { newPassword });
+  resetPassword: async (userId) => {
+    const response = await axiosClient.post(`/admin/users/${userId}/reset-password`);
+    return response;
+  },
+
+  getStudentExcelTemplate: async () => {
+    const response = await axiosClient.get('/admin/students/excel-template', {
+      responseType: 'blob',
+    });
+    return response;
+  },
+
+  previewStudentExcel: async (formData) => {
+    const response = await axiosClient.post('/admin/students/import-preview', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response;
+  },
+
+  confirmImportStudents: async (validRows) => {
+    const response = await axiosClient.post('/admin/students/import-confirm', { validRows });
     return response;
   },
 

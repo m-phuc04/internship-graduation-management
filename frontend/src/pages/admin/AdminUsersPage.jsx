@@ -5,6 +5,8 @@ import Modal from '../../components/common/Modal';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
+import ImportStudentExcelModal from '../../components/admin/ImportStudentExcelModal';
+import ResetPasswordModal from '../../components/admin/ResetPasswordModal';
 import {
   Users,
   KeyRound,
@@ -15,6 +17,7 @@ import {
   Building,
   User,
   GraduationCap,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 const ROLE_OPTIONS = [
@@ -30,6 +33,8 @@ const AdminUsersPage = () => {
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [search, setSearch] = useState('');
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [resetTargetUser, setResetTargetUser] = useState(null);
   const { showToast } = useToast();
 
   const fetchUsers = useCallback(async () => {
@@ -62,18 +67,12 @@ const AdminUsersPage = () => {
     }
   };
 
-  const handleResetPassword = async (user) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn đặt lại mật khẩu cho ${user.fullName} về mặc định (1111)?`)) {
+  const handleOpenResetPassword = (user) => {
+    if (user.role !== 'STUDENT' && user.role !== 'LECTURER') {
+      showToast('Chức năng đặt lại mật khẩu chỉ áp dụng cho tài khoản Sinh viên hoặc Giảng viên', 'warning');
       return;
     }
-    try {
-      const res = await adminApi.resetPassword(user._id);
-      if (res.success) {
-        showToast(`Đã đặt lại mật khẩu cho ${user.fullName} thành 1111!`, 'success');
-      }
-    } catch (err) {
-      showToast(err.message || 'Lỗi khi đặt lại mật khẩu', 'error');
-    }
+    setResetTargetUser(user);
   };
 
   const getRoleBadge = (role) => {
@@ -107,6 +106,18 @@ const AdminUsersPage = () => {
               Xem danh sách tài khoản, trạng thái hoạt động, khóa/mở khóa và đặt lại mật khẩu
             </p>
           </div>
+        </div>
+
+        {/* Nút Import Excel Sinh viên */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Import Excel Sinh viên</span>
+          </button>
         </div>
       </div>
 
@@ -202,14 +213,17 @@ const AdminUsersPage = () => {
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <div className="inline-flex items-center justify-end gap-2 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => handleResetPassword(item)}
-                            className="inline-flex items-center justify-center px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold transition cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
-                            title="Đặt lại mật khẩu về 1111"
-                          >
-                            Reset PW
-                          </button>
+                          {(item.role === 'STUDENT' || item.role === 'LECTURER') && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenResetPassword(item)}
+                              className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 font-bold transition cursor-pointer whitespace-nowrap shrink-0 shadow-2xs"
+                              title="Đặt lại mật khẩu & gửi email"
+                            >
+                              <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                              <span>Reset PW</span>
+                            </button>
+                          )}
 
                           {item.role !== 'ADMIN' && (
                             <button
@@ -290,14 +304,17 @@ const AdminUsersPage = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleResetPassword(item)}
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition active:scale-95 cursor-pointer"
-                        title="Đặt lại mật khẩu về 1111"
-                      >
-                        Reset PW
-                      </button>
+                      {(item.role === 'STUDENT' || item.role === 'LECTURER') && (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenResetPassword(item)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-bold transition active:scale-95 cursor-pointer"
+                          title="Đặt lại mật khẩu & gửi email"
+                        >
+                          <KeyRound className="w-3.5 h-3.5 text-amber-600" />
+                          <span>Reset PW</span>
+                        </button>
+                      )}
 
                       {item.role !== 'ADMIN' && (
                         <button
@@ -320,6 +337,21 @@ const AdminUsersPage = () => {
           </>
         )}
       </div>
+
+      {/* Modal Import danh sách sinh viên bằng Excel */}
+      <ImportStudentExcelModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={fetchUsers}
+      />
+
+      {/* Modal Reset mật khẩu tài khoản an toàn */}
+      <ResetPasswordModal
+        isOpen={Boolean(resetTargetUser)}
+        onClose={() => setResetTargetUser(null)}
+        targetUser={resetTargetUser}
+        onSuccess={fetchUsers}
+      />
     </div>
   );
 };

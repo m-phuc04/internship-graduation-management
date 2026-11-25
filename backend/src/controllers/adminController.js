@@ -60,11 +60,65 @@ const toggleUserStatus = async (req, res, next) => {
 const resetPassword = async (req, res, next) => {
   try {
     const { userId } = req.params;
-    const { newPassword } = req.body;
-    const result = await adminService.resetPassword(userId, newPassword);
+    const result = await adminService.resetPassword(userId, req.user);
     res.status(200).json({
       success: true,
       ...result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getExcelTemplate = async (req, res, next) => {
+  try {
+    const buffer = await adminService.generateExcelTemplate();
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="Template_Import_SinhVien_IUH.xlsx"'
+    );
+    res.send(buffer);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const previewStudentExcel = async (req, res, next) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({
+        success: false,
+        message: "Vui lòng chọn file Excel để tải lên.",
+      });
+    }
+    const result = await adminService.previewStudentExcel(req.file.buffer);
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const importStudentExcel = async (req, res, next) => {
+  try {
+    const { validRows } = req.body;
+    if (!validRows || !Array.isArray(validRows) || validRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Không có dòng dữ liệu hợp lệ nào để tạo tài khoản.",
+      });
+    }
+    const result = await adminService.importStudentExcel(validRows, req.user);
+    res.status(200).json({
+      success: true,
+      message: result.message,
+      data: result,
     });
   } catch (error) {
     next(error);
@@ -90,5 +144,8 @@ export default {
   getAllUsers,
   toggleUserStatus,
   resetPassword,
+  getExcelTemplate,
+  previewStudentExcel,
+  importStudentExcel,
   getSystemLogs,
 };

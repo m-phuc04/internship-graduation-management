@@ -425,6 +425,16 @@ const updateProfile = async (userId, updateData = {}) => {
 
   // 1. Xử lý email (Kiểm tra định dạng và trùng lặp nếu có cập nhật)
   if (updateData.email !== undefined) {
+    if (user.role === "STUDENT") {
+      const trimmedNew = (updateData.email || "").trim().toLowerCase();
+      const currentEmail = (user.email || "").toLowerCase();
+      if (trimmedNew && trimmedNew !== currentEmail) {
+        const error = new Error("Sinh viên không được phép tự thay đổi email trường đã xác thực");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+
     const emailVal = updateData.email ? updateData.email.trim().toLowerCase() : "";
     if (emailVal === "") {
       user.email = null;
@@ -557,6 +567,7 @@ const changePassword = async (userId, { currentPassword, newPassword, confirmPas
   }
 
   user.password = await bcrypt.hash(newPassword, 12);
+  user.mustChangePassword = false;
   user.refreshToken = null; // Invalidate other sessions
   await user.save();
 
