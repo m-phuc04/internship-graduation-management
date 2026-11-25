@@ -6,6 +6,7 @@ import authApi from '../api/authApi';
 import newsApi from '../api/newsApi';
 import NewsDetailModal from '../components/news/NewsDetailModal';
 import IUHLogo from '../components/common/IUHLogo';
+import Footer from '../components/layout/Footer';
 import {
   KeyRound,
   Lock,
@@ -565,34 +566,8 @@ const HomePage = () => {
         </div>
       </main>
 
-      {/* 3. Chân trang hiện đại */}
-      <footer className="bg-white border-t border-slate-200 mt-auto py-6 sm:py-8 text-xs text-slate-600">
-        <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <IUHLogo className="h-8 w-auto object-contain" />
-            <div>
-              <div className="font-bold text-slate-900">TRƯỜNG ĐẠI HỌC CÔNG NGHIỆP TP. HỒ CHÍ MINH</div>
-              <div className="text-slate-500">KHOA CÔNG NGHỆ THÔNG TIN - HỆ THỐNG QUẢN LÝ TTDN & KLTN</div>
-            </div>
-          </div>
-          <div className="text-slate-500 text-center md:text-right">
-            <div>
-              <span>Mọi thắc mắc hoặc cần hỗ trợ, vui lòng liên hệ: </span>
-              <a
-                href="mailto:admin.it.fit@gmail.com"
-                className="font-semibold text-[#123891] hover:underline hover:text-[#0e2c73] transition-colors"
-              >
-                admin.it.fit@gmail.com
-              </a>
-            </div>
-            <div className="mt-0.5">Địa chỉ: Số 12 Nguyễn Văn Bảo, Phường Hạnh Thông, TP. Hồ Chí Minh</div>
-            <div className="mt-0.5">Bản quyền © 2026 IUH. Tất cả các quyền được bảo lưu.</div>
-            <div className="mt-1 text-[11px] text-slate-500 italic">
-              Đây là website chỉ phục vụ cho mục đích đồ án, không đại diện cho Trường Đại học Công nghiệp TP. Hồ Chí Minh.
-            </div>
-          </div>
-        </div>
-      </footer>
+      {/* 3. Chân trang hệ thống */}
+      <Footer />
 
       {/* Modal chi tiết tin tức */}
       <NewsDetailModal
