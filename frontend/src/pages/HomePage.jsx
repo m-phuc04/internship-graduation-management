@@ -750,8 +750,11 @@ const HomePage = () => {
                 admin.it.fit@gmail.com
               </a>
             </div>
-            <div className="mt-0.5">Địa chỉ: Số 12 Nguyễn Văn Bảo, Phường 4, Quận Gò Vấp, TP. Hồ Chí Minh</div>
+            <div className="mt-0.5">Địa chỉ: Số 12 Nguyễn Văn Bảo, Phường Hạnh Thông, TP. Hồ Chí Minh</div>
             <div className="mt-0.5">Bản quyền © 2026 IUH. Tất cả các quyền được bảo lưu.</div>
+            <div className="mt-1 text-[11px] text-slate-500 italic">
+              Đây là website chỉ phục vụ cho mục đích đồ án, không đại diện cho Trường Đại học Công nghiệp TP. Hồ Chí Minh.
+            </div>
           </div>
         </div>
       </footer>

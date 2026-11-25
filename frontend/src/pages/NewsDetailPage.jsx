@@ -326,7 +326,7 @@ const NewsDetailPage = () => {
 
               {/* Đoạn trích tóm tắt (nếu có) */}
               {news.summary && (
-                <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/70 border-l-4 border-[#123891] text-slate-700 text-xs sm:text-sm font-medium leading-relaxed shadow-2xs">
+                <div className="p-4 sm:p-5 rounded-2xl bg-blue-50/70 text-slate-700 text-xs sm:text-sm font-medium leading-relaxed shadow-2xs">
                   {news.summary}
                 </div>
               )}
