@@ -49,7 +49,9 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
       if (res.success && res.data) {
         setResultData(res.data);
         if (res.data.emailSent) {
-          showToast(`Đặt lại mật khẩu thành công! Email đã được máy chủ SMTP tiếp nhận.`, 'success');
+          showToast('Đặt lại mật khẩu thành công. Mật khẩu sẽ được gửi qua mail.', 'success');
+        } else if (res.data.emailDisabled || res.data.emailError?.includes('tắt')) {
+          showToast('Đặt lại mật khẩu thành công nhưng không gửi qua mail do người quản trị đã tắt tính năng này.', 'warning');
         } else {
           showToast(`Đặt lại mật khẩu thành công nhưng gửi email thất bại: ${res.data.emailError || 'Lỗi máy chủ SMTP'}`, 'warning');
         }
@@ -88,8 +90,8 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
           ? resultData.emailSent
             ? `Mật khẩu mới đã được khởi tạo thành công và đã gửi email đến ${roleTitle.toLowerCase()}.`
             : resultData.emailDisabled
-            ? `Mật khẩu mới đã được cập nhật thành công (Email tự động đang tắt). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
-            : `Mật khẩu mới đã được cập nhật thành công (Gửi email thất bại). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
+              ? `Mật khẩu mới đã được cập nhật thành công (Email tự động đang tắt). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
+              : `Mật khẩu mới đã được cập nhật thành công (Gửi email thất bại). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
           : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới (8 ký tự), cập nhật vào cơ sở dữ liệu và gửi thông tin qua email (nếu được bật).`
       }
       maxWidth="max-w-lg"
@@ -116,13 +118,12 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
                 <div className="flex items-center justify-between py-1 border-b border-slate-200/60">
                   <span className="text-slate-500">Vai trò:</span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                      user.role === 'TBM'
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${user.role === 'TBM'
                         ? 'bg-amber-100 text-amber-800'
                         : user.role === 'LECTURER'
-                        ? 'bg-blue-100 text-[#102d7d]'
-                        : 'bg-blue-100 text-blue-700'
-                    }`}
+                          ? 'bg-blue-100 text-[#102d7d]'
+                          : 'bg-blue-100 text-blue-700'
+                      }`}
                   >
                     {roleTitle}
                   </span>

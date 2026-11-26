@@ -732,7 +732,7 @@ const exportTermStudentsTTDN = async (academicTermId) => {
 
   if (!internships || internships.length === 0) {
     throw new AppError(
-      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia thực tập doanh nghiệp (TTDN).`,
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia thực tập doanh nghiệp.`,
       400,
       "NO_STUDENTS_IN_TERM"
     );
@@ -813,7 +813,7 @@ const exportTermStudentsTTDN = async (academicTermId) => {
 
   if (studentRows.length === 0) {
     throw new AppError(
-      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia thực tập doanh nghiệp (TTDN).`,
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia thực tập doanh nghiệp.`,
       400,
       "NO_STUDENTS_IN_TERM"
     );
@@ -993,7 +993,7 @@ const exportTermStudentsKLTN = async (academicTermId) => {
 
   if (!theses || theses.length === 0) {
     throw new AppError(
-      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia khóa luận tốt nghiệp (KLTN).`,
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia khóa luận tốt nghiệp.`,
       400,
       "NO_STUDENTS_IN_TERM"
     );
@@ -1082,7 +1082,7 @@ const exportTermStudentsKLTN = async (academicTermId) => {
 
   if (studentRows.length === 0) {
     throw new AppError(
-      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia khóa luận tốt nghiệp (KLTN).`,
+      `Học kỳ "${term.name} (${term.academicYear})" hiện không có sinh viên tham gia khóa luận tốt nghiệp.`,
       400,
       "NO_STUDENTS_IN_TERM"
     );
