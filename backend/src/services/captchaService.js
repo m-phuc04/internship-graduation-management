@@ -8,7 +8,7 @@ const CHAR_SET = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
 const CAPTCHA_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 // Dọn dẹp định kỳ các mã CAPTCHA đã hết hạn mỗi 60 giây
-setInterval(() => {
+const cleanupInterval = setInterval(() => {
   const now = Date.now();
   for (const [id, data] of captchaStore.entries()) {
     if (data.expiresAt < now) {
@@ -16,6 +16,7 @@ setInterval(() => {
     }
   }
 }, 60 * 1000);
+if (cleanupInterval?.unref) cleanupInterval.unref();
 
 /**
  * Tạo một chuỗi ngẫu nhiên từ tập ký tự an toàn
@@ -185,4 +186,5 @@ export const verifyCaptcha = (captchaId, answer) => {
 export default {
   createCaptcha,
   verifyCaptcha,
+  _getCaptchaTextForTesting: (id) => captchaStore.get(id)?.text,
 };

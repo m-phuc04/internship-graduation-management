@@ -49,12 +49,13 @@ const login = async (req, res, next) => {
   try {
     const result = await authService.login(req.body);
 
+    const identifier = result.user.code || result.user.studentCode || result.user.lecturerCode || result.user._id;
     await logActivity(req, {
       userId: result.user._id,
       role: result.user.role,
       action: "Đăng nhập hệ thống",
       module: "AUTH",
-      description: `Người dùng ${result.user.fullName} (${result.user.email || result.user.code}) đăng nhập thành công`,
+      description: `Người dùng ${result.user.fullName} (${identifier}) đăng nhập thành công`,
       targetId: result.user._id,
       targetModel: "User",
       status: "SUCCESS",
@@ -66,7 +67,7 @@ const login = async (req, res, next) => {
       data: result,
     });
   } catch (error) {
-    const accountAttempt = req.body?.email || req.body?.username || req.body?.code || "Không xác định";
+    const accountAttempt = req.body?.accountCode || req.body?.code || req.body?.username || req.body?.email || "Không xác định";
     await logActivity(req, {
       userId: null,
       role: null,

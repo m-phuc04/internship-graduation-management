@@ -23,17 +23,27 @@ const register = async () => {
 };
 
 // ====================
-// Đăng nhập (Xác thực qua mã tài khoản: studentCode, lecturerCode, companyCode)
+// Đăng nhập (Chỉ cho phép đăng nhập bằng mã tài khoản: MSSV, mã giảng viên, mã ADMIN, mã TBM)
 // ====================
 
 const login = async ({ accountCode, username, code, email, password, captchaId, captchaAnswer }) => {
   // 0. Bắt buộc xác thực CAPTCHA server-side trước khi kiểm tra tài khoản & mật khẩu
   captchaService.verifyCaptcha(captchaId, captchaAnswer);
 
-  const loginIdentifier = (accountCode || username || code || "").trim();
+  const rawIdentifier = (accountCode || username || code || email || "").trim();
+
+  // 1. Nếu người dùng nhập Email thay vì mã tài khoản, từ chối đăng nhập và hiển thị thông báo
+  const isEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawIdentifier) || rawIdentifier.includes("@");
+  if (isEmailPattern) {
+    const error = new Error("Mã đăng nhập không hợp lệ");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const loginIdentifier = rawIdentifier;
 
   if (!loginIdentifier || !password) {
-    const error = new Error("Mã tài khoản hoặc mật khẩu không chính xác.");
+    const error = new Error("Mã đăng nhập hoặc mật khẩu không chính xác.");
     error.statusCode = 401;
     throw error;
   }
@@ -41,7 +51,8 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
   let user = null;
   let extraInfo = {};
 
-  // 1. Kiểm tra sinh viên theo mã sinh viên (studentCode/MSSV)
+  // 2. Xác định tài khoản dựa trên mã định danh tương ứng:
+  // 2.1. Sinh viên: Đăng nhập bằng MSSV (studentCode trong hồ sơ Sinh viên)
   const student = await Student.findOne({ studentCode: loginIdentifier });
   if (student && student.userId) {
     user = await User.findById(student.userId);
@@ -54,7 +65,7 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     }
   }
 
-  // 2. Kiểm tra giảng viên / TBM theo mã giảng viên (lecturerCode)
+  // 2.2. Giảng viên / TBM: Đăng nhập bằng mã giảng viên (lecturerCode trong hồ sơ Giảng viên)
   if (!user) {
     const lecturer = await Lecturer.findOne({ lecturerCode: loginIdentifier });
     if (lecturer && lecturer.userId) {
@@ -70,42 +81,49 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     }
   }
 
-  // 3. Kiểm tra người dùng theo mã (ví dụ ADMIN001) hoặc email
+  // 2.3. ADMIN / TBM: Đăng nhập bằng mã tài khoản hệ thống (code trong User)
   if (!user) {
-    user = await User.findOne({
-      $or: [
-        { code: loginIdentifier },
-        { email: loginIdentifier.toLowerCase() },
-      ],
-    });
-    if (user && (user.role === "LECTURER" || user.role === "TBM")) {
-      const lecturer = await Lecturer.findOne({ userId: user._id });
-      if (lecturer) {
-        extraInfo = {
-          lecturerId: lecturer._id,
-          lecturerCode: lecturer.lecturerCode,
-          academicTitle: lecturer.academicTitle,
-          permissions: lecturer.permissions || ["GVHD", "GVPB_KIN", "GVPB_HOIDONG"],
-        };
+    user = await User.findOne({ code: loginIdentifier });
+    if (user) {
+      if (user.role === "LECTURER" || user.role === "TBM") {
+        const lecturer = await Lecturer.findOne({ userId: user._id });
+        if (lecturer) {
+          extraInfo = {
+            lecturerId: lecturer._id,
+            lecturerCode: lecturer.lecturerCode,
+            academicTitle: lecturer.academicTitle,
+            permissions: lecturer.permissions || ["GVHD", "GVPB_KIN", "GVPB_HOIDONG"],
+          };
+        }
+      } else if (user.role === "STUDENT") {
+        const studentDoc = await Student.findOne({ userId: user._id });
+        if (studentDoc) {
+          extraInfo = {
+            studentId: studentDoc._id,
+            studentCode: studentDoc.studentCode,
+            className: studentDoc.className,
+          };
+        }
       }
     }
   }
 
   if (!user) {
-    const error = new Error("Mã tài khoản hoặc mật khẩu không chính xác.");
+    const error = new Error("Mã đăng nhập hoặc mật khẩu không chính xác.");
     error.statusCode = 401;
     throw error;
   }
 
-  // Gắn quyền đang kích hoạt từ collection Permission cho LECTURER / TBM
-  if (user.role === "LECTURER" || user.role === "TBM") {
-    const activePermDocs = await Permission.find({
-      userId: user._id,
-      isActive: true,
-    }).select("permission");
-    extraInfo.permissions = activePermDocs.map((p) => p.permission);
+  // 3. Kiểm tra mật khẩu bằng cơ chế bcrypt hiện tại
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+
+  if (!isPasswordValid) {
+    const error = new Error("Mã đăng nhập hoặc mật khẩu không chính xác.");
+    error.statusCode = 401;
+    throw error;
   }
 
+  // 4. Kiểm tra trạng thái tài khoản và các điều kiện xác thực hiện có
   if (!user.isActive) {
     const msg =
       user.role === "LECTURER"
@@ -116,18 +134,19 @@ const login = async ({ accountCode, username, code, email, password, captchaId, 
     throw error;
   }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-
-  if (!isPasswordValid) {
-    const error = new Error("Mã tài khoản hoặc mật khẩu không chính xác.");
-    error.statusCode = 401;
-    throw error;
+  // Gắn quyền đang kích hoạt từ collection Permission cho LECTURER / TBM
+  if (user.role === "LECTURER" || user.role === "TBM") {
+    const activePermDocs = await Permission.find({
+      userId: user._id,
+      isActive: true,
+    }).select("permission");
+    if (activePermDocs.length > 0) {
+      extraInfo.permissions = activePermDocs.map((p) => p.permission);
+    }
   }
 
-  // Tạo Access Token
+  // 5. Cấp Access Token và Refresh Token như hiện tại
   const accessToken = generateAccessToken(user);
-
-  // Tạo Refresh Token
   const refreshToken = generateRefreshToken(user);
 
   // Lưu Refresh Token vào database
