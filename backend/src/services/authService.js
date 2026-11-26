@@ -311,7 +311,7 @@ const getProfile = async (userId) => {
 };
 
 // ====================
-// Cập nhật hồ sơ (Chỉ cho phép: Email, Số điện thoại, Thông tin công ty & Giảng viên)
+// Cập nhật hồ sơ (Chỉ cho phép: Email, Số điện thoại, Thông tin học vụ Sinh viên, Thông tin Giảng viên)
 // ====================
 
 const updateProfile = async (userId, updateData = {}) => {
@@ -324,23 +324,21 @@ const updateProfile = async (userId, updateData = {}) => {
 
   // 1. Xử lý email (Kiểm tra định dạng và trùng lặp nếu có cập nhật)
   if (updateData.email !== undefined) {
-    if (user.role === "STUDENT") {
-      const trimmedNew = (updateData.email || "").trim().toLowerCase();
-      const currentEmail = (user.email || "").toLowerCase();
-      if (trimmedNew && trimmedNew !== currentEmail) {
-        const error = new Error("Sinh viên không được phép tự thay đổi email trường đã xác thực");
-        error.statusCode = 400;
-        throw error;
-      }
+    const emailVal = updateData.email ? updateData.email.trim().toLowerCase() : "";
+
+    // Sinh viên bắt buộc phải có email để phục vụ thông báo và đăng nhập
+    if (user.role === "STUDENT" && !emailVal) {
+      const error = new Error("Địa chỉ email không được để trống");
+      error.statusCode = 400;
+      throw error;
     }
 
-    const emailVal = updateData.email ? updateData.email.trim().toLowerCase() : "";
     if (emailVal === "") {
       user.email = null;
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(emailVal)) {
-        const error = new Error("Email không hợp lệ");
+        const error = new Error("Định dạng email không hợp lệ");
         error.statusCode = 400;
         throw error;
       }
@@ -351,7 +349,7 @@ const updateProfile = async (userId, updateData = {}) => {
       });
 
       if (existingUser) {
-        const error = new Error("Email đã được sử dụng.");
+        const error = new Error("Email đã được sử dụng bởi tài khoản khác.");
         error.statusCode = 400;
         throw error;
       }
@@ -368,7 +366,7 @@ const updateProfile = async (userId, updateData = {}) => {
     } else {
       const phoneRegex = /^[0-9+\-\s()]{8,20}$/;
       if (!phoneRegex.test(phoneVal)) {
-        const error = new Error("Số điện thoại không hợp lệ");
+        const error = new Error("Số điện thoại không hợp lệ (từ 8-20 ký tự số)");
         error.statusCode = 400;
         throw error;
       }
@@ -378,7 +376,54 @@ const updateProfile = async (userId, updateData = {}) => {
 
   await user.save();
 
-  // 3. Cập nhật giới hạn số lượng sinh viên hướng dẫn của giảng viên
+  // 3. Xử lý hồ sơ sinh viên (Cho phép sinh viên chỉnh sửa: Lớp danh nghĩa, GPA, Tín chỉ tích lũy)
+  if (user.role === "STUDENT") {
+    const student = await Student.findOne({ userId });
+    if (student) {
+      // 3.1. Lớp danh nghĩa (className)
+      if (updateData.className !== undefined) {
+        const classNameVal = updateData.className ? updateData.className.trim() : "";
+        if (!classNameVal) {
+          const error = new Error("Lớp danh nghĩa không được để trống");
+          error.statusCode = 400;
+          throw error;
+        }
+        student.className = classNameVal;
+      }
+
+      // 3.2. Điểm trung bình (GPA: 0.0 đến 4.0)
+      if (updateData.gpa !== undefined && updateData.gpa !== null && updateData.gpa !== "") {
+        const gpaNum = Number(updateData.gpa);
+        if (isNaN(gpaNum) || gpaNum < 0 || gpaNum > 4) {
+          const error = new Error("Điểm trung bình (GPA) phải từ 0 đến 4.0");
+          error.statusCode = 400;
+          throw error;
+        }
+        student.gpa = Math.round(gpaNum * 100) / 100;
+      }
+
+      // 3.3. Tín chỉ tích lũy (accumulatedCredits: số nguyên không âm)
+      if (
+        updateData.accumulatedCredits !== undefined &&
+        updateData.accumulatedCredits !== null &&
+        updateData.accumulatedCredits !== ""
+      ) {
+        const credNum = Number(updateData.accumulatedCredits);
+        if (isNaN(credNum) || !Number.isInteger(credNum) || credNum < 0) {
+          const error = new Error("Số tín chỉ tích lũy phải là số nguyên không âm");
+          error.statusCode = 400;
+          throw error;
+        }
+        student.accumulatedCredits = credNum;
+      }
+
+      // Bảo toàn các trường quản trị và chỉ đọc:
+      // studentCode, prerequisiteCompleted, internshipRegistered, thesisRegistered, isActive
+      await student.save();
+    }
+  }
+
+  // 4. Cập nhật giới hạn số lượng sinh viên hướng dẫn của giảng viên
   if (user.role === "LECTURER" || user.role === "TBM") {
     const lecturer = await Lecturer.findOne({ userId });
     if (lecturer) {

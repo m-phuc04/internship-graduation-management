@@ -7,6 +7,7 @@ import Thesis from "../models/Thesis.js";
 import AppError from "../utils/AppError.js";
 import { generateSecurePassword } from "../utils/passwordGenerator.js";
 import emailService from "./emailService.js";
+import emailSettingService from "./emailSettingService.js";
 
 // ====================
 // Lấy danh sách giảng viên kèm tìm kiếm, lọc và phân trang
@@ -281,7 +282,7 @@ const createLecturer = async (lecturerData) => {
     throw new AppError("Mã giảng viên này đã tồn tại", 409);
   }
 
-  // Mật khẩu khởi tạo (nếu không nhập hoặc rỗng, sinh mật khẩu ngẫu nhiên an toàn 16 ký tự)
+  // Mật khẩu khởi tạo (nếu không nhập hoặc rỗng, sinh mật khẩu ngẫu nhiên an toàn 8 ký tự)
   let plainPassword;
   if (password && typeof password === "string" && password.trim().length > 0) {
     if (password.trim().length < 6) {
@@ -289,7 +290,7 @@ const createLecturer = async (lecturerData) => {
     }
     plainPassword = password.trim();
   } else {
-    plainPassword = generateSecurePassword(16);
+    plainPassword = generateSecurePassword(8);
   }
 
   // Băm mật khẩu (Hash password bằng bcrypt cost 12)
@@ -340,33 +341,42 @@ const createLecturer = async (lecturerData) => {
       select: "fullName email phone isActive",
     });
 
-    // Gửi email thông tin tài khoản qua SMTP (lỗi SMTP không làm hủy tài khoản)
+    // Gửi email thông tin tài khoản qua SMTP (lỗi SMTP hoặc tắt cấu hình không làm hủy tài khoản)
     let emailSent = false;
+    let emailDisabled = false;
     let emailError = null;
-    try {
-      const emailResult = await emailService.sendAccountCreationEmail({
-        to: normalizedEmail,
-        recipientName: user.fullName,
-        lecturerCode: normalizedCode,
-        password: plainPassword,
-        role: "LECTURER",
-      });
 
-      if (emailResult && emailResult.success) {
-        emailSent = true;
-      } else {
+    const canSendEmail = await emailSettingService.isEmailTypeEnabled("createLecturer");
+    if (!canSendEmail) {
+      emailDisabled = true;
+      emailError = "Tính năng gửi email khi tạo giảng viên đã bị tạm tắt trong Cấu hình Email hệ thống.";
+    } else {
+      try {
+        const emailResult = await emailService.sendAccountCreationEmail({
+          to: normalizedEmail,
+          recipientName: user.fullName,
+          lecturerCode: normalizedCode,
+          password: plainPassword,
+          role: "LECTURER",
+        });
+
+        if (emailResult && emailResult.success) {
+          emailSent = true;
+        } else {
+          emailSent = false;
+          emailError = emailResult?.error || "Máy chủ SMTP không tiếp nhận email";
+        }
+      } catch (mailErr) {
         emailSent = false;
-        emailError = emailResult?.error || "Máy chủ SMTP không tiếp nhận email";
+        emailError = mailErr.message || "Lỗi máy chủ email khi gửi qua SMTP";
       }
-    } catch (mailErr) {
-      emailSent = false;
-      emailError = mailErr.message || "Lỗi máy chủ email khi gửi qua SMTP";
     }
 
     return {
       ...populatedLecturer.toObject(),
       initialPassword: plainPassword,
       emailSent,
+      emailDisabled,
       emailError,
     };
   } catch (error) {

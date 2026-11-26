@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Briefcase,
   ShieldCheck,
+  MailX,
 } from 'lucide-react';
 
 const AccountCreatedModal = ({ isOpen, onClose, data }) => {
@@ -26,6 +27,7 @@ const AccountCreatedModal = ({ isOpen, onClose, data }) => {
     email = '',
     initialPassword = '',
     emailSent = false,
+    emailDisabled = false,
     emailError = null,
   } = data;
 
@@ -49,20 +51,33 @@ const AccountCreatedModal = ({ isOpen, onClose, data }) => {
       title={`Khởi tạo tài khoản ${roleTitle} thành công`}
       subtitle={
         emailSent
-          ? `Tài khoản đã được tạo và máy chủ SMTP đã tiếp nhận email gửi thông tin đăng nhập.`
-          : `Tài khoản đã được lưu vào cơ sở dữ liệu. Máy chủ SMTP gặp lỗi khi gửi email.`
+          ? `Tài khoản đã được tạo thành công và đã gửi email thông tin đăng nhập.`
+          : emailDisabled
+          ? `Tài khoản đã được tạo thành công (Tính năng gửi email đang tắt theo cấu hình).`
+          : `Tài khoản đã được lưu vào cơ sở dữ liệu. Không gửi được email thông báo.`
       }
       maxWidth="max-w-lg"
     >
       <div className="p-4 sm:p-6 space-y-4">
-        {/* Banner trạng thái email SMTP */}
+        {/* Banner trạng thái email */}
         {emailSent ? (
           <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-3">
             <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
             <div className="text-xs text-emerald-900">
-              <p className="font-bold">Máy chủ SMTP đã tiếp nhận email gửi thông tin đăng nhập</p>
+              <p className="font-bold">Đã gửi email thông tin đăng nhập</p>
               <p className="text-emerald-700 mt-0.5 text-[11px]">
-                Email thông tin tài khoản đã được chuyển tới máy chủ gửi thư để chuyển đến địa chỉ <strong className="font-mono">{email}</strong>.
+                Email thông tin tài khoản đã được gửi đến địa chỉ <strong className="font-mono">{email}</strong>.
+              </p>
+            </div>
+          </div>
+        ) : emailDisabled ? (
+          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
+            <MailX className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
+            <div className="text-xs text-blue-950">
+              <p className="font-bold">Tạo tài khoản thành công (Email tự động đang tắt)</p>
+              <p className="text-blue-800 mt-0.5 text-[11px]">
+                Tính năng gửi email tự động đang được tạm tắt trong Cấu hình Email hệ thống.
+                Vui lòng sao chép mật khẩu bên dưới để bàn giao trực tiếp cho {roleTitle.toLowerCase()}.
               </p>
             </div>
           </div>
@@ -72,7 +87,7 @@ const AccountCreatedModal = ({ isOpen, onClose, data }) => {
             <div className="text-xs text-amber-900">
               <p className="font-bold">Tạo tài khoản thành công (Gửi email thất bại)</p>
               <p className="text-amber-700 mt-0.5 text-[11px]">
-                Máy chủ SMTP chưa tiếp nhận được email: {emailError || 'Lỗi kết nối máy chủ thư'}.
+                Chưa gửi được email: {emailError || 'Lỗi kết nối máy chủ thư'}.
                 Vui lòng sao chép mật khẩu bên dưới để cung cấp trực tiếp cho {roleTitle.toLowerCase()}.
               </p>
             </div>

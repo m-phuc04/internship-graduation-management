@@ -86,7 +86,7 @@ const LecturerFormModal = ({
       setFormData({
         fullName: '',
         email: '',
-        password: generateSecurePassword(16),
+        password: generateSecurePassword(8),
         phone: '',
         lecturerCode: '',
         academicTitle: 'ThS.',
@@ -178,7 +178,7 @@ const LecturerFormModal = ({
   };
 
   const handleGeneratePassword = () => {
-    const newPass = generateSecurePassword(16);
+    const newPass = generateSecurePassword(8);
     setFormData((prev) => ({ ...prev, password: newPass }));
     if (errors.password) {
       setErrors((prev) => ({ ...prev, password: null }));

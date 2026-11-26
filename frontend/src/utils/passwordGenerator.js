@@ -1,9 +1,9 @@
 /**
- * Tạo mật khẩu ngẫu nhiên an toàn trên client (tối thiểu 12 ký tự, mặc định 16 ký tự)
+ * Tạo mật khẩu ngẫu nhiên an toàn trên client (tối thiểu 8 ký tự, mặc định 8 ký tự)
  * Bao gồm: Chữ hoa, chữ thường, chữ số và ký tự đặc biệt
  */
-export const generateSecurePassword = (length = 16) => {
-  const safeLength = Math.max(12, length);
+export const generateSecurePassword = (length = 8) => {
+  const safeLength = Math.max(8, length);
   const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   const lower = 'abcdefghijkmnpqrstuvwxyz';
   const numbers = '23456789';

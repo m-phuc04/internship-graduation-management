@@ -2,6 +2,7 @@ import Notification from "../models/Notification.js";
 import User from "../models/User.js";
 import AppError from "../utils/AppError.js";
 import emailService from "./emailService.js";
+import emailSettingService from "./emailSettingService.js";
 
 // ====================
 // 1. Tạo một thông báo đơn lẻ
@@ -125,6 +126,15 @@ const createNotification = async ({
           if (!recipientUser.emailNewsEnabled) {
             return;
           }
+        }
+
+        // Kiểm tra Cấu hình Email hệ thống của ADMIN
+        const isEmailAllowed = isNewsNotification
+          ? await emailSettingService.isEmailTypeEnabled("news")
+          : await emailSettingService.isEmailTypeEnabled("notification");
+
+        if (!isEmailAllowed) {
+          return;
         }
 
         await emailService.sendNotificationEmail({

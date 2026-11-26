@@ -216,6 +216,7 @@ const LecturerManagement = () => {
         setSelectedLecturer(null);
 
         const emailSent = res?.emailSent !== undefined ? res.emailSent : (res?.data?.emailSent ?? true);
+        const emailDisabled = Boolean(res?.emailDisabled || res?.data?.emailDisabled);
         const emailError = res?.emailError || res?.data?.emailError || null;
         const initialPassword = res?.data?.initialPassword || formData.password;
 
@@ -226,12 +227,15 @@ const LecturerManagement = () => {
           email: res?.data?.userId?.email || formData.email,
           initialPassword,
           emailSent,
+          emailDisabled,
           emailError,
         });
         setCreatedModalOpen(true);
 
         if (emailSent) {
-          showToast('Tạo giảng viên mới thành công! Email đã được máy chủ SMTP tiếp nhận.', 'success');
+          showToast('Tạo giảng viên thành công!', 'success');
+        } else if (emailDisabled) {
+          showToast('Tạo giảng viên thành công (Email tự động đang tắt theo cấu hình)', 'info');
         } else {
           showToast(`Tạo giảng viên thành công (Gửi email thất bại: ${emailError || 'Lỗi SMTP'})`, 'warning');
         }

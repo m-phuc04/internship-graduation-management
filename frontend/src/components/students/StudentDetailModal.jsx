@@ -54,7 +54,7 @@ const StudentDetailModal = ({ isOpen, onClose, student }) => {
             </div>
 
             <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80 text-center">
-              <div className="text-xs text-slate-500 mb-0.5">Lớp sinh hoạt</div>
+              <div className="text-xs text-slate-500 mb-0.5">Lớp danh nghĩa</div>
               <div className="text-sm font-bold text-slate-900">
                 {student.className}
               </div>

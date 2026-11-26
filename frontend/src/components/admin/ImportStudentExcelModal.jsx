@@ -618,14 +618,18 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               <h4 className="text-lg font-bold text-slate-900 mt-3">
-                {(importResult.summary?.emailFailed || 0) > 0
+                {importResult.summary?.emailDisabled
+                  ? 'Khởi tạo tài khoản thành công (Email tự động đang tắt)'
+                  : (importResult.summary?.emailFailed || 0) > 0
                   ? 'Tạo tài khoản thành công (Có email chưa gửi được)'
                   : 'Khởi tạo tài khoản & Gửi email thành công!'}
               </h4>
               <p className="text-xs text-slate-500 mt-1 max-w-xl mx-auto">
-                {(importResult.summary?.emailFailed || 0) > 0
+                {importResult.summary?.emailDisabled
+                  ? 'Tất cả tài khoản sinh viên đã được khởi tạo và lưu an toàn vào cơ sở dữ liệu. Tính năng gửi email thông tin đăng nhập đang tắt trong Cấu hình Email hệ thống. Quản trị viên có thể sao chép mật khẩu bên dưới để bàn giao.'
+                  : (importResult.summary?.emailFailed || 0) > 0
                   ? 'Tất cả tài khoản sinh viên đã được lưu an toàn trong cơ sở dữ liệu. Máy chủ SMTP gặp lỗi khi gửi một số email. Quản trị viên có thể sao chép mật khẩu bên dưới hoặc bấm gửi lại.'
-                  : 'Tất cả tài khoản sinh viên đã được khởi tạo và máy chủ SMTP đã tiếp nhận email gửi thông tin đăng nhập.'}
+                  : 'Tất cả tài khoản sinh viên đã được khởi tạo và email thông tin đăng nhập đã được chuyển đến máy chủ thư.'}
               </p>
             </div>
 
@@ -901,7 +905,12 @@ const ImportStudentExcelModal = ({ isOpen, onClose, onSuccess }) => {
                             {student.emailSent ? (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
                                 <MailCheck className="w-3 h-3" />
-                                SMTP đã nhận
+                                Đã gửi
+                              </span>
+                            ) : student.emailDisabled ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700" title="Email tự động đang tắt theo cấu hình hệ thống">
+                                <MailX className="w-3 h-3" />
+                                Tắt gửi
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">

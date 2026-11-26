@@ -2,6 +2,7 @@ import LecturerInternshipGradingModal from '../../components/lecturers/LecturerI
 import React, { useState, useEffect, useCallback } from 'react';
 import internshipApi from '../../api/internshipApi';
 import evaluationApi from '../../api/evaluationApi';
+import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { getInternshipGradingWindowStatus } from '../../utils/dateUtils';
@@ -31,6 +32,7 @@ import {
 } from 'lucide-react';
 
 const LecturerInternshipPage = () => {
+  const { user } = useAuth();
   const { currentTerm, terms, setCurrentTerm } = useAcademicTerm();
 
   // Check grading window status for Giảng viên Giám sát based on TBM configuration
@@ -394,39 +396,49 @@ const LecturerInternshipPage = () => {
               <BookOpen className="w-7 h-7" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold text-slate-900 leading-tight">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base sm:text-xl font-bold text-slate-900 leading-snug">
                   Sinh Viên Thực Tập Đang Giám Sát
                 </h2>
+                <span className="inline-block text-[10px] sm:text-[11px] font-extrabold px-2 sm:px-2.5 py-0.5 rounded-full border uppercase tracking-wider shrink-0 bg-blue-50 text-[#102d7d] border-blue-200">
+                  {stats?.totalAssigned ?? pagination?.total ?? stats?.activeCount ?? internships.length ?? 0} SV ĐANG GIÁM SÁT
+                </span>
               </div>
               <div className="text-xs text-slate-500 font-medium mt-1 flex flex-wrap items-center gap-2">
-                <span>Giảng viên: <strong className="text-slate-800">{lecturerInfo?.academicTitle} {lecturerInfo?.userId?.fullName}</strong></span>
-
+                <span>
+                  Giảng viên:{' '}
+                  <strong className="text-slate-800">
+                    {lecturerInfo?.academicTitle ? `${lecturerInfo.academicTitle} ` : ''}
+                    {lecturerInfo?.userId?.fullName || user?.fullName}
+                  </strong>
+                </span>
+                {(lecturerInfo?.lecturerCode || user?.username) && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      Mã GV:{' '}
+                      <strong className="font-mono text-[#102d7d]">
+                        {lecturerInfo?.lecturerCode || user?.username}
+                      </strong>
+                    </span>
+                  </>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Huy hiệu thao tác và thống kê tải công việc */}
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Button Xuất danh sách sinh viên */}
+          {/* Thao tác xuất file */}
+          <div className="flex items-center gap-2.5 self-end sm:self-auto">
             <button
+              type="button"
               onClick={handleExportExcel}
               disabled={exporting || loading || internships.length === 0}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm shadow-emerald-600/20 transition disabled:opacity-50 cursor-pointer"
-              title="Xuất danh sách sinh viên thực tập ra file Excel (.xlsx)"
+              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              title="Xuất file"
+              aria-label="Xuất file danh sách sinh viên thực tập"
             >
-              <FileSpreadsheet className={`w-4 h-4 ${exporting ? 'animate-spin' : ''}`} />
-              <span>{exporting ? 'Đang xuất danh sách...' : 'Xuất danh sách'}</span>
+              <FileSpreadsheet className={`w-4 h-4 ${exporting ? 'animate-bounce text-[#123891]' : ''}`} />
             </button>
-
-            <div className="p-3.5 rounded-2xl bg-blue-50/80 border border-blue-200/80 text-right">
-              <div className="text-[11px] font-semibold text-[#102d7d] uppercase tracking-wider">
-                SV đang giám sát
-              </div>
-              <div className="text-lg font-extrabold text-[#123891] mt-0.5">
-                {stats?.totalAssigned ?? pagination?.total ?? stats?.activeCount ?? internships.length ?? 0} <span className="text-xs font-semibold text-[#123891]">SV</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

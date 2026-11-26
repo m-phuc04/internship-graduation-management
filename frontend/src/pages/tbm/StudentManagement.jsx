@@ -11,6 +11,7 @@ import StudentFormModal from '../../components/students/StudentFormModal';
 import StudentDetailModal from '../../components/students/StudentDetailModal';
 import UserNameClickable from '../../components/common/UserNameClickable';
 import AccountCreatedModal from '../../components/common/AccountCreatedModal';
+import ImportStudentExcelModal from '../../components/admin/ImportStudentExcelModal';
 import {
   Users,
   Plus,
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 const StudentManagement = () => {
@@ -45,6 +47,7 @@ const StudentManagement = () => {
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [createdModalOpen, setCreatedModalOpen] = useState(false);
   const [createdAccountData, setCreatedAccountData] = useState(null);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   const { showToast } = useToast();
@@ -103,6 +106,7 @@ const StudentManagement = () => {
         setSelectedStudent(null);
 
         const emailSent = res?.emailSent !== undefined ? res.emailSent : (res?.data?.emailSent ?? true);
+        const emailDisabled = Boolean(res?.emailDisabled || res?.data?.emailDisabled);
         const emailError = res?.emailError || res?.data?.emailError || null;
         const initialPassword = res?.data?.initialPassword || formData.password;
 
@@ -113,12 +117,15 @@ const StudentManagement = () => {
           email: res?.data?.userId?.email || formData.email,
           initialPassword,
           emailSent,
+          emailDisabled,
           emailError,
         });
         setCreatedModalOpen(true);
 
         if (emailSent) {
-          showToast('Tạo sinh viên mới thành công! Email đã được máy chủ SMTP tiếp nhận.', 'success');
+          showToast('Tạo sinh viên thành công!', 'success');
+        } else if (emailDisabled) {
+          showToast('Tạo sinh viên thành công (Email tự động đang tắt theo cấu hình)', 'info');
         } else {
           showToast(`Tạo sinh viên thành công (Gửi email thất bại: ${emailError || 'Lỗi SMTP'})`, 'warning');
         }
@@ -200,16 +207,28 @@ const StudentManagement = () => {
           </div>
         </div>
 
-        <button
-          onClick={() => {
-            setSelectedStudent(null);
-            setFormModalOpen(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer w-full sm:w-auto"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Thêm sinh viên mới</span>
-        </button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 shrink-0 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setIsImportModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer w-full sm:w-auto"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Import Excel Sinh viên</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedStudent(null);
+              setFormModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#123891] hover:bg-[#093e94] text-white font-bold text-xs shadow-sm transition hover:shadow-md shrink-0 cursor-pointer w-full sm:w-auto"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Thêm sinh viên mới</span>
+          </button>
+        </div>
       </div>
 
       {/* Thanh tìm kiếm và bộ lọc */}
@@ -314,7 +333,7 @@ const StudentManagement = () => {
                           />
                         </td>
 
-                        {/* Lớp sinh hoạt */}
+                        {/* Lớp danh nghĩa */}
                         <td className="py-3.5 px-4 font-medium text-slate-700 text-xs">
                           <span className="px-2 py-1 bg-slate-100 rounded-md font-mono">
                             {st.className}
@@ -664,6 +683,13 @@ const StudentManagement = () => {
           setCreatedAccountData(null);
         }}
         data={createdAccountData}
+      />
+
+      {/* Modal Import danh sách sinh viên bằng Excel */}
+      <ImportStudentExcelModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        onSuccess={fetchStudents}
       />
     </div>
   );
