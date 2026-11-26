@@ -13,7 +13,6 @@ import {
   Shield,
   Sliders,
   Newspaper,
-  Menu,
   FolderOpen,
   X,
 } from 'lucide-react';

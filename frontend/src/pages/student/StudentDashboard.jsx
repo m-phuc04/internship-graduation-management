@@ -9,10 +9,8 @@ import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 
 import {
-  GraduationCap,
   Briefcase,
   BookOpen,
-  Award,
   CheckCircle2,
   Clock,
   AlertCircle,
@@ -20,12 +18,9 @@ import {
   ArrowRight,
   PlusCircle,
   FileText,
-  Building2,
-  Calendar,
   Bell,
   RefreshCw,
   User,
-  ShieldCheck,
   Sparkles,
   ChevronRight,
   XCircle,

@@ -5,7 +5,6 @@ import { useToast } from '../../context/ToastContext';
 import notificationApi from '../../api/notificationApi';
 import {
   Mail,
-  BellRing,
   BellOff,
   CheckCircle2,
   AlertCircle,

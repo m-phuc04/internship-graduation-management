@@ -19,18 +19,12 @@ import UserNameClickable from '../../components/common/UserNameClickable';
 
 import {
   Briefcase,
-  Building2,
-  Calendar,
   CheckCircle2,
   XCircle,
   BookOpen,
   Eye,
   Clock,
-  Filter,
-  UserCheck,
   FileSpreadsheet,
-  Download,
-  AlertCircle,
 } from 'lucide-react';
 
 const STATUS_FILTERS = [

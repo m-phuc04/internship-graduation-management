@@ -12,9 +12,6 @@ import {
   CheckCircle2,
   XCircle,
   Clock,
-  Shield,
-  Layers,
-  Filter,
   FilterX,
   Calendar,
 } from 'lucide-react';

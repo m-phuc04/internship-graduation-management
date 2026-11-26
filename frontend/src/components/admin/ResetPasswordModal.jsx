@@ -9,8 +9,6 @@ import {
   Copy,
   Check,
   ShieldAlert,
-  Mail,
-  User,
   GraduationCap,
   Briefcase,
   RefreshCw,

@@ -6,11 +6,8 @@ import {
   AlertTriangle,
   Copy,
   Check,
-  Mail,
-  User,
   GraduationCap,
   Briefcase,
-  KeyRound,
   ShieldCheck,
 } from 'lucide-react';
 

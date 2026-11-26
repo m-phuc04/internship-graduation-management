@@ -9,7 +9,6 @@ import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import {
   FileText,
-  Plus,
   Trash2,
   Download,
   Upload,

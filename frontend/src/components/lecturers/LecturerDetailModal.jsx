@@ -1,7 +1,7 @@
 import React from 'react';
 import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
-import { User, BookOpen, Briefcase, Award, CheckCircle2, XCircle, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 const LecturerDetailModal = ({ isOpen, onClose, lecturer }) => {
   if (!lecturer) return null;

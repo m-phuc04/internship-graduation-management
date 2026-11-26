@@ -3,13 +3,10 @@ import Modal from '../common/Modal';
 import reportApi from '../../api/reportApi';
 import { useToast } from '../../context/ToastContext';
 import {
-  BookOpen,
   Send,
   Save,
   AlertCircle,
-  Paperclip,
   Upload,
-  CheckCircle2,
   X,
   FileCheck,
   Calendar,

@@ -7,11 +7,6 @@ import {
   Building2,
   Calendar,
   UserCheck,
-  MapPin,
-  Mail,
-  Phone,
-  Globe,
-  FileText,
   Info,
   BookOpen,
 } from 'lucide-react';

@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
 import LoadingSkeleton from '../common/LoadingSkeleton';
-import EmptyState from '../common/EmptyState';
 import StudentReportDetailModal from './StudentReportDetailModal';
 import reportApi from '../../api/reportApi';
 import getFileUrl from '../../utils/fileUrlHelper';
@@ -11,16 +10,9 @@ import { useToast } from '../../context/ToastContext';
 import {
   BookOpen,
   Calendar,
-  Building2,
-  GraduationCap,
   Paperclip,
   Eye,
   RefreshCw,
-  Award,
-  AlertCircle,
-  Clock,
-  CheckCircle2,
-  XCircle,
 } from 'lucide-react';
 
 const StudentInternshipDiaryModal = ({ isOpen, onClose, internship }) => {

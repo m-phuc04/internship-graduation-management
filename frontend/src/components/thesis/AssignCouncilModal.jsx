@@ -4,7 +4,7 @@ import lecturerApi from '../../api/lecturerApi';
 import notificationApi from '../../api/notificationApi';
 import { useToast } from '../../context/ToastContext';
 import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
-import { AlertCircle, Users, Award, Clock } from 'lucide-react';
+import { AlertCircle, Users, Clock } from 'lucide-react';
 
 const AssignCouncilModal = ({
   isOpen,

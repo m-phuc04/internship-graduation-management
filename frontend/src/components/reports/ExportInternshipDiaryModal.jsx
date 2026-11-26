@@ -1,6 +1,6 @@
 import React from 'react';
 import Modal from '../common/Modal';
-import { Printer, Download, BookOpen, Calendar, Building2, User, Award, CheckCircle2 } from 'lucide-react';
+import { Printer, BookOpen, User } from 'lucide-react';
 
 const ExportInternshipDiaryModal = ({
   isOpen,

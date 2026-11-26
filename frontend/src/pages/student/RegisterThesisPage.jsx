@@ -15,8 +15,6 @@ import {
   Users,
   User,
   CheckCircle2,
-  AlertCircle,
-  Clock,
   BookOpen,
   ShieldAlert,
   Check,

@@ -4,13 +4,10 @@ import ConfirmDialog from '../common/ConfirmDialog';
 import { useToast } from '../../context/ToastContext';
 import {
   EyeOff,
-  Check,
   Paperclip,
-  GraduationCap,
   ExternalLink,
   Search,
   AlertCircle,
-  FileText,
 } from 'lucide-react';
 
 const HideScoresModal = ({

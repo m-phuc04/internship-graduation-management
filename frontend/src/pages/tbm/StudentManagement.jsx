@@ -14,7 +14,6 @@ import AccountCreatedModal from '../../components/common/AccountCreatedModal';
 import {
   Users,
   Plus,
-  Filter,
   Eye,
   Edit2,
   Trash2,

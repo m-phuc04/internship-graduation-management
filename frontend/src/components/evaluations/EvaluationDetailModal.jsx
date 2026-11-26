@@ -5,11 +5,8 @@ import IUHLogo from '../common/IUHLogo';
 import InternshipEvaluationDoc from '../documents/InternshipEvaluationDoc';
 import {
   Building2,
-  GraduationCap,
   Award,
-  Calendar,
   CheckCircle2,
-  FileCheck,
   Users,
   Printer,
   FileText,

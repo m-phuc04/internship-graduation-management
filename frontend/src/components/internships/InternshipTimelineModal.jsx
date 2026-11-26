@@ -11,12 +11,10 @@ import {
   calculateInternshipGradingDates,
 } from '../../utils/dateUtils';
 import {
-  Calendar,
   Clock,
   Briefcase,
   Sparkles,
   CheckCircle2,
-  AlertCircle,
   X,
   Lock,
   CalendarCheck,

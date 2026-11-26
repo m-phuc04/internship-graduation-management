@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import thesisApi from '../../api/thesisApi';
 import { useToast } from '../../context/ToastContext';
-import { BookOpen, UserCheck, AlertCircle } from 'lucide-react';
+import { UserCheck, AlertCircle } from 'lucide-react';
 
 const AssignSupervisorModal = ({ isOpen, onClose, thesis, onSuccess }) => {
   const [supervisors, setSupervisors] = useState([]);

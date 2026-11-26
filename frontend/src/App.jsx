@@ -10,8 +10,6 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 import TbmLayout from './components/layout/TbmLayout';
 import StudentLayout from './components/layout/StudentLayout';
 import LecturerLayout from './components/layout/LecturerLayout';
-import AdminLayout from './components/layout/AdminLayout';
-import LoginPage from './pages/LoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AdminPermissionsPage from './pages/admin/AdminPermissionsPage';

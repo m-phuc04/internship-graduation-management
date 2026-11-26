@@ -12,10 +12,6 @@ import LecturerReviewReportModal from '../../components/reports/LecturerReviewRe
 
 import {
   BookOpen,
-  FileText,
-  CheckCircle2,
-  Eye,
-  Filter,
   Paperclip,
   Award,
 } from 'lucide-react';

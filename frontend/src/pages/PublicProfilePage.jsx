@@ -8,12 +8,10 @@ import {
   Mail,
   GraduationCap,
   BookOpen,
-  Building2,
   ShieldCheck,
   ArrowLeft,
   Copy,
   Check,
-  ExternalLink,
 } from 'lucide-react';
 
 const PublicProfilePage = () => {

@@ -9,19 +9,15 @@ import {
   parseLocalDate,
 } from '../../utils/dateUtils';
 import {
-  Calendar,
   Clock,
-  Layers,
   Sparkles,
   CheckCircle2,
-  AlertCircle,
   X,
   Lock,
   Unlock,
   CalendarCheck,
   RotateCcw,
   GraduationCap,
-  Users,
 } from 'lucide-react';
 
 const ThesisTimelineModal = ({ isOpen, onClose, targetTerm }) => {

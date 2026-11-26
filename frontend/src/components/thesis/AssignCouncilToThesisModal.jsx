@@ -3,7 +3,7 @@ import Modal from '../common/Modal';
 import { useToast } from '../../context/ToastContext';
 import notificationApi from '../../api/notificationApi';
 import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
-import { BookOpen, Users, Clock, Check, AlertCircle, Sparkles } from 'lucide-react';
+import { BookOpen, Clock, Check, AlertCircle, Sparkles } from 'lucide-react';
 
 const AssignCouncilToThesisModal = ({
   isOpen,

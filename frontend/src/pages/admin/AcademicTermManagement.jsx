@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { useToast } from '../../context/ToastContext';
 import academicTermApi from '../../api/academicTermApi';
@@ -6,7 +6,6 @@ import {
   GraduationCap,
   Plus,
   Search,
-  Filter,
   CheckCircle2,
   Lock,
   Edit,
@@ -16,7 +15,6 @@ import {
   Sparkles,
   Clock,
   FileEdit,
-  AlertCircle,
   Briefcase,
   Layers,
   X,
@@ -27,7 +25,6 @@ import {
   formatDateVN,
   formatFullDateVN,
   formatDateForInput,
-  parseLocalDate,
 } from '../../utils/dateUtils';
 
 const STATUS_CONFIG = {

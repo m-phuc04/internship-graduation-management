@@ -8,7 +8,6 @@ import Pagination from '../../components/common/Pagination';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
-import Modal from '../../components/common/Modal';
 import LecturerFormModal from '../../components/lecturers/LecturerFormModal';
 import LecturerDetailModal from '../../components/lecturers/LecturerDetailModal';
 import UserNameClickable from '../../components/common/UserNameClickable';
@@ -16,13 +15,10 @@ import AccountCreatedModal from '../../components/common/AccountCreatedModal';
 import {
   BookOpen,
   Plus,
-  Filter,
   Eye,
   Edit2,
   CheckCircle2,
   XCircle,
-  Users,
-  ShieldAlert,
   UserCheck,
   UserX,
   Clock,

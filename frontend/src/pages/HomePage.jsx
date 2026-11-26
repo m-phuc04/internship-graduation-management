@@ -19,9 +19,7 @@ import {
   Tag,
   Newspaper,
   Sparkles,
-  ChevronRight,
   ExternalLink,
-  BookOpen,
   CheckCircle2,
 } from 'lucide-react';
 

@@ -4,7 +4,6 @@ import reportApi from '../../api/reportApi';
 import internshipApi from '../../api/internshipApi';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
-import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import StudentReportModal from '../../components/reports/StudentReportModal';
@@ -17,23 +16,19 @@ import {
   Calendar,
   Building2,
   Briefcase,
-  User,
   Users,
   CheckCircle2,
   Check,
   Clock,
   AlertTriangle,
-  FileText,
   Paperclip,
   Download,
   ExternalLink,
   Eye,
   Edit3,
-  ShieldCheck,
   Printer,
   RefreshCw,
   Award,
-  ChevronRight,
   Lock,
   PlusCircle,
   ArrowUpDown,

@@ -8,7 +8,6 @@ import {
   X,
   BookOpen,
   Newspaper,
-  Menu,
   History,
 } from 'lucide-react';
 import IUHLogo from '../common/IUHLogo';

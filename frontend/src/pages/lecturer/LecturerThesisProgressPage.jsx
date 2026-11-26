@@ -16,7 +16,6 @@ import {
   CheckCircle2,
   Paperclip,
   Eye,
-  RefreshCw,
   Search,
   Filter,
   ExternalLink,
@@ -25,9 +24,7 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
-  Calendar,
   Edit3,
-  Check,
 } from 'lucide-react';
 
 // Helper to calculate weeks
