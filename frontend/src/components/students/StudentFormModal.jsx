@@ -52,8 +52,8 @@ const StudentFormModal = ({
         phone: '',
         studentCode: '',
         className: '',
-        gpa: 3.0,
-        accumulatedCredits: 100,
+        gpa: 0,
+        accumulatedCredits: 0,
         prerequisiteCompleted: true,
         isActive: true,
       });
@@ -112,7 +112,11 @@ const StudentFormModal = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!validate()) return;
-    onSubmit(formData);
+    onSubmit({
+      ...formData,
+      gpa: formData.gpa === '' ? 0 : Number(formData.gpa),
+      accumulatedCredits: formData.accumulatedCredits === '' ? 0 : Number(formData.accumulatedCredits),
+    });
   };
 
   return (
@@ -139,7 +143,6 @@ const StudentFormModal = ({
               name="fullName"
               value={formData.fullName}
               onChange={handleChange}
-              placeholder="VD: Nguyễn Văn A"
               className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.fullName ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
@@ -158,7 +161,6 @@ const StudentFormModal = ({
               name="studentCode"
               value={formData.studentCode}
               onChange={handleChange}
-              placeholder="VD: 22635271"
               maxLength={8}
               className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition font-mono ${
                 errors.studentCode ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
@@ -181,7 +183,6 @@ const StudentFormModal = ({
               name="email"
               value={formData.email}
               onChange={handleChange}
-              placeholder="VD: student@gmail.com"
               className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                 errors.email ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
               }`}
@@ -200,7 +201,6 @@ const StudentFormModal = ({
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              placeholder="VD: 0912345678"
               className="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition"
             />
           </div>
@@ -218,7 +218,6 @@ const StudentFormModal = ({
                 name="className"
                 value={formData.className}
                 onChange={handleChange}
-                placeholder="VD: DHCNTT18A"
                 className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                   errors.className ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
                 }`}
@@ -272,7 +271,6 @@ const StudentFormModal = ({
                   name="className"
                   value={formData.className}
                   onChange={handleChange}
-                  placeholder="VD: DHCNTT18A"
                   className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                     errors.className ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
                   }`}
@@ -349,7 +347,6 @@ const StudentFormModal = ({
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Nhập mật khẩu khởi tạo hoặc bấm Tạo mật khẩu"
                 className={`w-full pl-3.5 pr-20 py-2 text-sm bg-slate-50 border rounded-xl font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
                   errors.password ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
                 }`}
@@ -387,8 +384,8 @@ const StudentFormModal = ({
               <p className="text-xs text-rose-500 mt-1">{errors.password}</p>
             )}
 
-            {/* Nút Tạo mật khẩu và hướng dẫn */}
-            <div className="flex flex-wrap items-center justify-between gap-2 mt-1.5">
+            {/* Nút Tạo mật khẩu */}
+            <div className="mt-1.5">
               <button
                 type="button"
                 onClick={handleGeneratePassword}
@@ -398,9 +395,6 @@ const StudentFormModal = ({
                 <RefreshCw className="w-3.5 h-3.5" />
                 <span>Tạo mật khẩu</span>
               </button>
-              <span className="text-[11px] text-slate-400">
-                Gồm chữ hoa, thường, số, ký tự đặc biệt (tự nhập hoặc bấm Tạo mật khẩu).
-              </span>
             </div>
           </div>
         )}
