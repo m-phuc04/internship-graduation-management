@@ -20,7 +20,6 @@ import {
   Trash2,
   CheckCircle2,
   XCircle,
-  RefreshCw,
   FileSpreadsheet,
 } from 'lucide-react';
 
@@ -44,7 +43,6 @@ const StudentManagement = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
-  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [createdModalOpen, setCreatedModalOpen] = useState(false);
   const [createdAccountData, setCreatedAccountData] = useState(null);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -167,23 +165,6 @@ const StudentManagement = () => {
       fetchStudents();
     } catch (err) {
       showToast(err.message || 'Không thể kích hoạt lại sinh viên', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  // Xử lý đặt lại mật khẩu
-  const handleResetPasswordConfirm = async () => {
-    if (!selectedStudent) return;
-    setActionLoading(true);
-    try {
-      await studentApi.resetPassword(selectedStudent._id);
-      showToast(`Đặt lại mật khẩu cho sinh viên ${selectedStudent.userId?.fullName || ''} về mật khẩu mặc định (1111) thành công!`, 'success');
-      setResetPasswordDialogOpen(false);
-      setSelectedStudent(null);
-      fetchStudents();
-    } catch (err) {
-      showToast(err.message || 'Không thể đặt lại mật khẩu', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -398,7 +379,7 @@ const StudentManagement = () => {
 
                         {/* Thao tác */}
                         <td className="py-3.5 px-4 pr-6 text-right">
-                          <div className="flex items-center justify-end gap-1">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => {
                                 setSelectedStudent(st);
@@ -419,18 +400,6 @@ const StudentManagement = () => {
                               title="Chỉnh sửa"
                             >
                               <Edit2 className="w-4 h-4" />
-                            </button>
-
-                            {/* Nút đặt lại mật khẩu */}
-                            <button
-                              onClick={() => {
-                                setSelectedStudent(st);
-                                setResetPasswordDialogOpen(true);
-                              }}
-                              className="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition"
-                              title="Reset mật khẩu về mặc định (1111)"
-                            >
-                              <RefreshCw className="w-4 h-4" />
                             </button>
 
                             {/* Nút Bật / Khóa tài khoản */}
@@ -539,7 +508,7 @@ const StudentManagement = () => {
                     </div>
 
                     {/* Hàng thao tác */}
-                    <div className="flex items-center justify-end gap-1.5 pt-1">
+                    <div className="flex items-center justify-end gap-2 pt-1">
                       <button
                         onClick={() => {
                           setSelectedStudent(st);
@@ -560,17 +529,6 @@ const StudentManagement = () => {
                         title="Chỉnh sửa"
                       >
                         <Edit2 className="w-4 h-4" />
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          setSelectedStudent(st);
-                          setResetPasswordDialogOpen(true);
-                        }}
-                        className="p-2 text-sky-600 hover:bg-sky-50 border border-sky-200 rounded-xl transition active:scale-95 cursor-pointer"
-                        title="Reset mật khẩu về mặc định (1111)"
-                      >
-                        <RefreshCw className="w-4 h-4" />
                       </button>
 
                       {isStudentActive ? (
@@ -658,20 +616,6 @@ const StudentManagement = () => {
         title="Xác nhận kích hoạt lại sinh viên"
         message={`Bạn có chắc chắn muốn kích hoạt lại sinh viên ${selectedStudent?.userId?.fullName} - ${selectedStudent?.studentCode} không?`}
         confirmText="Kích hoạt lại"
-        loading={actionLoading}
-      />
-
-      {/* Hộp thoại xác nhận đặt lại mật khẩu */}
-      <ConfirmDialog
-        isOpen={resetPasswordDialogOpen}
-        onClose={() => {
-          setResetPasswordDialogOpen(false);
-          setSelectedStudent(null);
-        }}
-        onConfirm={handleResetPasswordConfirm}
-        title="Xác nhận đặt lại mật khẩu"
-        message={`Bạn có chắc chắn muốn đặt lại mật khẩu cho sinh viên ${selectedStudent?.userId?.fullName} - ${selectedStudent?.studentCode} về mật khẩu mặc định (1111) không?`}
-        confirmText="Reset mật khẩu"
         loading={actionLoading}
       />
 

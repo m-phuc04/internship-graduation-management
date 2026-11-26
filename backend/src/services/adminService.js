@@ -355,9 +355,9 @@ const resetPassword = async (userId, adminUser, req = null) => {
     emailDisabled,
     emailError,
     message: emailSent
-      ? `Đã đặt lại mật khẩu thành công. Thông tin mật khẩu mới đã được máy chủ SMTP tiếp nhận.`
+      ? `Đặt lại mật khẩu thành công. Mật khẩu sẽ được gửi qua mail`
       : emailDisabled
-      ? `Đã đặt lại mật khẩu thành công (Email tự động đang tắt theo cấu hình hệ thống). Vui lòng sao chép mật khẩu bên dưới để cung cấp cho người dùng.`
+      ? `Đặt lại mật khẩu thành công nhưng không gửi qua mail do người quản trị đã tắt tính năng này.`
       : `Đã đặt lại mật khẩu thành công, nhưng máy chủ SMTP gửi email thất bại: ${emailError}. Vui lòng sao chép mật khẩu bên dưới để cung cấp cho người dùng.`,
     data: {
       fullName: user.fullName,

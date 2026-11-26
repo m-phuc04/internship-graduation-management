@@ -230,7 +230,7 @@ const AcademicTermManagement = () => {
     if (!count || count === 0) {
       showError(
         `Học kỳ ${term.code} hiện không có sinh viên tham gia ${
-          type === 'TTDN' ? 'thực tập doanh nghiệp (TTDN)' : 'khóa luận tốt nghiệp (KLTN)'
+          type === 'TTDN' ? 'thực tập doanh nghiệp' : 'khóa luận tốt nghiệp'
         }.`
       );
       return;
