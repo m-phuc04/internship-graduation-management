@@ -17,12 +17,15 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
   const [profile, setProfile] = useState(initialData);
   const [loading, setLoading] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
       setProfile(null);
+      setAvatarError(false);
       return;
     }
+    setAvatarError(false);
 
     if (initialData) {
       setProfile(initialData);
@@ -129,11 +132,12 @@ const UserProfileModal = ({ isOpen, onClose, userId, initialData = null }) => {
           <div className="flex flex-col items-center text-center p-5 rounded-2xl bg-gradient-to-b from-blue-50/70 to-slate-50 border border-slate-200/80 shadow-2xs">
             {/* Ảnh đại diện */}
             <div className="relative mb-3">
-              {user.avatar ? (
+              {user.avatar && !avatarError ? (
                 <img
                   src={user.avatar}
                   alt={displayName}
                   className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md"
+                  onError={() => setAvatarError(true)}
                 />
               ) : (
                 <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#123891] flex items-center justify-center text-white text-2xl font-bold border-4 border-white shadow-md">

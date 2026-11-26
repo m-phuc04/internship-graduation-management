@@ -5,6 +5,7 @@ import StudentSidebar from './StudentSidebar';
 import NotificationDropdown from '../common/NotificationDropdown';
 import EmailNotificationModal from '../common/EmailNotificationModal';
 import Footer from './Footer';
+import IUHLogo from '../common/IUHLogo';
 import {
   GraduationCap,
   LogOut,
@@ -138,11 +139,7 @@ const StudentLayout = () => {
                 {/* Tiêu đề thương hiệu cho Mobile / Tablet */}
                 <Link to="/" className="flex items-center gap-2 student-hamburger-btn cursor-pointer group min-w-0 shrink">
                   <div className="p-1 bg-white rounded-lg border border-slate-100 flex items-center justify-center shadow-xs shrink-0">
-                    <img
-                      src="https://iuh.edu.vn/assets/images/iuh.png?v=51"
-                      alt="IUH Logo"
-                      className="h-5 w-auto object-contain"
-                    />
+                    <IUHLogo className="h-5 w-auto object-contain" alt="IUH Logo" />
                   </div>
                   <div className="min-w-0 truncate">
                     <div className="text-xs font-bold text-slate-900 leading-tight truncate">

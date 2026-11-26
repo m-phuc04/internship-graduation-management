@@ -25,8 +25,10 @@ const PublicProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
+    setAvatarError(false);
     if (currentUser?._id && id && String(currentUser._id) === String(id)) {
       navigate('/profile', { replace: true });
       return;
@@ -143,11 +145,12 @@ const PublicProfilePage = () => {
               {/* Đầu trang / Ảnh đại diện */}
               <div className="flex flex-col items-center text-center">
                 <div className="relative mb-4">
-                  {user.avatar ? (
+                  {user.avatar && !avatarError ? (
                     <img
                       src={user.avatar}
                       alt={displayName}
                       className="w-24 h-24 rounded-full object-cover border-4 border-blue-50 shadow-md"
+                      onError={() => setAvatarError(true)}
                     />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-gradient-to-tr from-[#0d2a75] to-[#123891] flex items-center justify-center text-white text-3xl font-bold border-4 border-blue-50 shadow-md">
