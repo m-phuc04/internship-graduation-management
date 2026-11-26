@@ -433,11 +433,12 @@ const LecturerInternshipPage = () => {
               type="button"
               onClick={handleExportExcel}
               disabled={exporting || loading || internships.length === 0}
-              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 rounded-xl transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-200 rounded-xl transition cursor-pointer shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
               title="Xuất file"
               aria-label="Xuất file danh sách sinh viên thực tập"
             >
               <FileSpreadsheet className={`w-4 h-4 ${exporting ? 'animate-bounce text-[#123891]' : ''}`} />
+              <span>Xuất file</span>
             </button>
           </div>
         </div>

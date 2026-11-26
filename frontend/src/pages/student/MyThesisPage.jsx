@@ -1004,28 +1004,16 @@ const MyThesisPage = () => {
 
       {/* 4. Pending Approval Notice Banner */}
       {thesis && isPendingApproval && (
-        <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col gap-3.5 shadow-2xs">
-          <div className="flex items-start gap-3">
-            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5 animate-pulse" />
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-sm text-amber-900">
-                Đang chờ Giảng viên hướng dẫn duyệt đăng ký
-              </div>
-              <div className="mt-1 leading-relaxed text-slate-700">
-                Đề tài <strong>"{thesisTitle}"</strong> vừa được gửi đăng ký thành công và đang chờ{' '}
-                <strong>
-                  {formatLecturerDisplay(
-                    thesis.supervisorId?.academicTitle,
-                    thesis.supervisorId?.userId?.fullName,
-                  )}
-                </strong>{' '}
-                xác nhận tiếp nhận hướng dẫn. Các chức năng nộp báo cáo tiến độ và chấm điểm sẽ mở sau khi Giảng viên duyệt.
-              </div>
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 animate-pulse" />
+            <div className="font-bold text-sm text-amber-900">
+              Đang chờ Giảng viên hướng dẫn duyệt đăng ký
             </div>
           </div>
 
           {canCancelRegistration && isStudent1 && (
-            <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 onClick={handleCancelGroupRegistration}
                 disabled={cancelingGroup}
