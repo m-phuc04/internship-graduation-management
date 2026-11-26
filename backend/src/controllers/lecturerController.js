@@ -33,8 +33,8 @@ const createLecturer = async (req, res, next) => {
     const emailSent = lecturer.emailSent;
     const emailError = lecturer.emailError;
     const message = emailSent
-      ? "Tạo giảng viên mới thành công. Máy chủ SMTP đã tiếp nhận email gửi thông tin đăng nhập."
-      : `Tạo giảng viên mới thành công (Gửi email thất bại: ${emailError || 'Lỗi kết nối SMTP'}). Vui lòng sao chép mật khẩu để cung cấp cho giảng viên.`;
+      ? "Tạo giảng viên thành công."
+      : `Tạo giảng viên thành công (Gửi email thất bại: ${emailError || 'Lỗi kết nối SMTP'}). Vui lòng sao chép mật khẩu để cung cấp cho giảng viên.`;
 
     res.status(201).json({
       success: true,

@@ -231,7 +231,7 @@ const LecturerManagement = () => {
         setCreatedModalOpen(true);
 
         if (emailSent) {
-          showToast('Tạo giảng viên mới thành công! Email đã được máy chủ SMTP tiếp nhận.', 'success');
+          showToast('Tạo giảng viên thành công!', 'success');
         } else {
           showToast(`Tạo giảng viên thành công (Gửi email thất bại: ${emailError || 'Lỗi SMTP'})`, 'warning');
         }

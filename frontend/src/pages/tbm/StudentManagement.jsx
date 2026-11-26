@@ -118,7 +118,7 @@ const StudentManagement = () => {
         setCreatedModalOpen(true);
 
         if (emailSent) {
-          showToast('Tạo sinh viên mới thành công! Email đã được máy chủ SMTP tiếp nhận.', 'success');
+          showToast('Tạo sinh viên thành công!', 'success');
         } else {
           showToast(`Tạo sinh viên thành công (Gửi email thất bại: ${emailError || 'Lỗi SMTP'})`, 'warning');
         }

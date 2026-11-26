@@ -34,8 +34,8 @@ const createStudent = async (req, res, next) => {
     const emailSent = student.emailSent;
     const emailError = student.emailError;
     const message = emailSent
-      ? "Tạo sinh viên mới thành công. Máy chủ SMTP đã tiếp nhận email gửi thông tin đăng nhập."
-      : `Tạo sinh viên mới thành công (Gửi email thất bại: ${emailError || 'Lỗi kết nối SMTP'}). Vui lòng sao chép mật khẩu để cung cấp cho sinh viên.`;
+      ? "Tạo sinh viên thành công."
+      : `Tạo sinh viên thành công (Gửi email thất bại: ${emailError || 'Lỗi kết nối SMTP'}). Vui lòng sao chép mật khẩu để cung cấp cho sinh viên.`;
 
     res.status(201).json({
       success: true,
