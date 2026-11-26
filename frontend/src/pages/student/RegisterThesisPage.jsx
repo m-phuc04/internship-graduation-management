@@ -756,8 +756,8 @@ const RegisterThesisPage = () => {
                   </div>
                 )}
 
-                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11px] text-amber-950 leading-relaxed">
-                  <strong>Quy trình đăng ký nhóm 2 người:</strong> Sau khi đăng ký, hệ thống sẽ gửi lời mời đến Sinh viên 2. Đề tài sẽ ở trạng thái <em>"Chờ SV2 xác nhận"</em> (chưa gửi đến GVHD). Sau khi Sinh viên 2 xác nhận tham gia, bạn mới có thể gửi yêu cầu chính thức đến Giảng viên hướng dẫn.
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl text-[11px] text-amber-950 leading-relaxed flex items-center gap-2">
+                  <span><strong>Lưu ý:</strong> Sau khi xác nhận đăng ký, vui lòng đợi SV2 xác nhận.</span>
                 </div>
               </div>
             )}
