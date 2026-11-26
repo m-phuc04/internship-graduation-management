@@ -12,6 +12,7 @@ import Modal from '../../components/common/Modal';
 import LecturerFormModal from '../../components/lecturers/LecturerFormModal';
 import LecturerDetailModal from '../../components/lecturers/LecturerDetailModal';
 import UserNameClickable from '../../components/common/UserNameClickable';
+import AccountCreatedModal from '../../components/common/AccountCreatedModal';
 import {
   BookOpen,
   Plus,
@@ -46,6 +47,8 @@ const LecturerManagement = () => {
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
+  const [createdModalOpen, setCreatedModalOpen] = useState(false);
+  const [createdAccountData, setCreatedAccountData] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Trạng thái yêu cầu thay đổi hướng nghiên cứu
@@ -209,12 +212,34 @@ const LecturerManagement = () => {
       if (selectedLecturer) {
         await lecturerApi.update(selectedLecturer._id, formData);
         showToast('Cập nhật thông tin giảng viên thành công!', 'success');
+        setFormModalOpen(false);
+        setSelectedLecturer(null);
       } else {
-        await lecturerApi.create(formData);
-        showToast('Thêm mới giảng viên thành công!', 'success');
+        const res = await lecturerApi.create(formData);
+        setFormModalOpen(false);
+        setSelectedLecturer(null);
+
+        const emailSent = res?.emailSent !== undefined ? res.emailSent : (res?.data?.emailSent ?? true);
+        const emailError = res?.emailError || res?.data?.emailError || null;
+        const initialPassword = res?.data?.initialPassword || formData.password;
+
+        setCreatedAccountData({
+          role: 'LECTURER',
+          fullName: res?.data?.userId?.fullName || formData.fullName,
+          lecturerCode: res?.data?.lecturerCode || formData.lecturerCode,
+          email: res?.data?.userId?.email || formData.email,
+          initialPassword,
+          emailSent,
+          emailError,
+        });
+        setCreatedModalOpen(true);
+
+        if (emailSent) {
+          showToast('Tạo giảng viên mới thành công! Email đã được máy chủ SMTP tiếp nhận.', 'success');
+        } else {
+          showToast(`Tạo giảng viên thành công (Gửi email thất bại: ${emailError || 'Lỗi SMTP'})`, 'warning');
+        }
       }
-      setFormModalOpen(false);
-      setSelectedLecturer(null);
       fetchLecturers();
     } catch (err) {
       showToast(err.message || 'Thao tác không thành công', 'error');
@@ -944,6 +969,16 @@ const LecturerManagement = () => {
         cancelText="Hủy"
         type={fieldConfirmDialog.type}
         loading={actionLoading}
+      />
+
+      {/* Modal hiển thị kết quả tạo tài khoản giảng viên */}
+      <AccountCreatedModal
+        isOpen={createdModalOpen}
+        onClose={() => {
+          setCreatedModalOpen(false);
+          setCreatedAccountData(null);
+        }}
+        data={createdAccountData}
       />
     </div>
   );

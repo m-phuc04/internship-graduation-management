@@ -10,6 +10,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import StudentFormModal from '../../components/students/StudentFormModal';
 import StudentDetailModal from '../../components/students/StudentDetailModal';
 import UserNameClickable from '../../components/common/UserNameClickable';
+import AccountCreatedModal from '../../components/common/AccountCreatedModal';
 import {
   Users,
   Plus,
@@ -43,6 +44,8 @@ const StudentManagement = () => {
   const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
   const [activateDialogOpen, setActivateDialogOpen] = useState(false);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [createdModalOpen, setCreatedModalOpen] = useState(false);
+  const [createdAccountData, setCreatedAccountData] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   const { showToast } = useToast();
@@ -92,13 +95,35 @@ const StudentManagement = () => {
         // Chỉnh sửa
         await studentApi.update(selectedStudent._id, formData);
         showToast('Cập nhật thông tin sinh viên thành công!', 'success');
+        setFormModalOpen(false);
+        setSelectedStudent(null);
       } else {
         // Tạo mới
-        await studentApi.create(formData);
-        showToast('Thêm mới sinh viên thành công!', 'success');
+        const res = await studentApi.create(formData);
+        setFormModalOpen(false);
+        setSelectedStudent(null);
+
+        const emailSent = res?.emailSent !== undefined ? res.emailSent : (res?.data?.emailSent ?? true);
+        const emailError = res?.emailError || res?.data?.emailError || null;
+        const initialPassword = res?.data?.initialPassword || formData.password;
+
+        setCreatedAccountData({
+          role: 'STUDENT',
+          fullName: res?.data?.userId?.fullName || formData.fullName,
+          studentCode: res?.data?.studentCode || formData.studentCode,
+          email: res?.data?.userId?.email || formData.email,
+          initialPassword,
+          emailSent,
+          emailError,
+        });
+        setCreatedModalOpen(true);
+
+        if (emailSent) {
+          showToast('Tạo sinh viên mới thành công! Email đã được máy chủ SMTP tiếp nhận.', 'success');
+        } else {
+          showToast(`Tạo sinh viên thành công (Gửi email thất bại: ${emailError || 'Lỗi SMTP'})`, 'warning');
+        }
       }
-      setFormModalOpen(false);
-      setSelectedStudent(null);
       fetchStudents();
     } catch (err) {
       showToast(err.message || 'Thao tác không thành công', 'error');
@@ -630,6 +655,16 @@ const StudentManagement = () => {
         message={`Bạn có chắc chắn muốn đặt lại mật khẩu cho sinh viên ${selectedStudent?.userId?.fullName} - ${selectedStudent?.studentCode} về mật khẩu mặc định (1111) không?`}
         confirmText="Reset mật khẩu"
         loading={actionLoading}
+      />
+
+      {/* Modal hiển thị kết quả tạo tài khoản sinh viên */}
+      <AccountCreatedModal
+        isOpen={createdModalOpen}
+        onClose={() => {
+          setCreatedModalOpen(false);
+          setCreatedAccountData(null);
+        }}
+        data={createdAccountData}
       />
     </div>
   );

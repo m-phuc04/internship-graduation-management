@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import researchFieldApi from '../../api/researchFieldApi';
 import { useToast } from '../../context/ToastContext';
-import { Plus, X, Check, Tag } from 'lucide-react';
+import { generateSecurePassword } from '../../utils/passwordGenerator';
+import { Plus, X, Check, Tag, Eye, EyeOff, Copy, RefreshCw } from 'lucide-react';
 
 const LecturerFormModal = ({
   isOpen,
@@ -17,7 +18,7 @@ const LecturerFormModal = ({
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
-    password: 'Password@123',
+    password: '',
     phone: '',
     lecturerCode: '',
     academicTitle: 'ThS.',
@@ -28,6 +29,8 @@ const LecturerFormModal = ({
   });
 
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   // Trạng thái danh mục hướng nghiên cứu
   const [allFields, setAllFields] = useState([]);
@@ -83,7 +86,7 @@ const LecturerFormModal = ({
       setFormData({
         fullName: '',
         email: '',
-        password: 'Password@123',
+        password: generateSecurePassword(16),
         phone: '',
         lecturerCode: '',
         academicTitle: 'ThS.',
@@ -96,6 +99,8 @@ const LecturerFormModal = ({
     setErrors({});
     setShowAddField(false);
     setNewFieldName('');
+    setShowPassword(false);
+    setCopiedPassword(false);
   }, [initialData, isOpen]);
 
   const handleChange = (e) => {
@@ -172,11 +177,32 @@ const LecturerFormModal = ({
     }
   };
 
+  const handleGeneratePassword = () => {
+    const newPass = generateSecurePassword(16);
+    setFormData((prev) => ({ ...prev, password: newPass }));
+    if (errors.password) {
+      setErrors((prev) => ({ ...prev, password: null }));
+    }
+  };
+
+  const handleCopyPassword = () => {
+    if (!formData.password) return;
+    navigator.clipboard.writeText(formData.password);
+    setCopiedPassword(true);
+    setTimeout(() => setCopiedPassword(false), 2000);
+  };
+
   const validate = () => {
     const errs = {};
     if (!formData.fullName.trim()) errs.fullName = 'Họ tên là bắt buộc';
     if (!formData.email.trim()) errs.email = 'Email là bắt buộc';
-    if (!isEdit && !formData.password) errs.password = 'Mật khẩu là bắt buộc';
+    if (!isEdit) {
+      if (!formData.password || !formData.password.trim()) {
+        errs.password = 'Mật khẩu là bắt buộc';
+      } else if (formData.password.trim().length < 6) {
+        errs.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      }
+    }
 
     setErrors(errs);
     return Object.keys(errs).length === 0;
@@ -493,19 +519,64 @@ const LecturerFormModal = ({
             <label className="block text-xs font-semibold text-slate-700 mb-1">
               Mật khẩu khởi tạo <span className="text-rose-500">*</span>
             </label>
-            <input
-              type="text"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Mật khẩu"
-              className={`w-full px-3.5 py-2 text-sm bg-slate-50 border rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
-                errors.password ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
-              }`}
-            />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Mật khẩu khởi tạo"
+                  className={`w-full pl-3.5 pr-16 py-2 text-sm bg-slate-50 border rounded-xl font-mono focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition ${
+                    errors.password ? 'border-rose-300 bg-rose-50/50' : 'border-slate-200'
+                  }`}
+                />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                  {formData.password && (
+                    <button
+                      type="button"
+                      onClick={handleCopyPassword}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+                      title={copiedPassword ? 'Đã sao chép' : 'Sao chép mật khẩu'}
+                    >
+                      {copiedPassword ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 rounded-lg transition cursor-pointer"
+                    title={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="w-3.5 h-3.5" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGeneratePassword}
+                className="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-[#123891] border border-blue-200 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer"
+                title="Tạo mật khẩu ngẫu nhiên đủ mạnh"
+              >
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tạo mật khẩu</span>
+              </button>
+            </div>
             {errors.password && (
               <p className="text-xs text-rose-500 mt-1">{errors.password}</p>
             )}
+            <p className="text-[10px] text-slate-400 mt-1">
+              Gồm chữ hoa, thường, số, ký tự đặc biệt. Tự nhập hoặc bấm Tạo mật khẩu.
+            </p>
           </div>
         ) : (
           <div>
