@@ -19,6 +19,7 @@ const Header = ({ onOpenMobile, isCollapsed = false, onToggleCollapse }) => {
     if (location.pathname.includes('/admin/permissions')) return 'Phân quyền Giảng viên & Bộ môn';
     if (location.pathname.includes('/tbm/dashboard') || location.pathname.includes('/admin/dashboard')) return 'Bảng Tổng quan';
     if (location.pathname.includes('/admin/users')) return 'Quản lý Người dùng';
+    if (location.pathname.includes('/admin/email-settings')) return 'Cấu hình Email';
     if (location.pathname.includes('/admin/logs')) return 'Nhật ký hệ thống';
     if (location.pathname.includes('/admin/news') || location.pathname.includes('/tbm/news')) return 'Quản lý Bản tin';
     if (location.pathname.includes('/profile')) return 'Hồ sơ cá nhân';

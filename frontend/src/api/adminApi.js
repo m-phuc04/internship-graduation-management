@@ -56,6 +56,16 @@ const adminApi = {
     const response = await axiosClient.get('/admin/logs', { params });
     return response;
   },
+
+  getEmailSettings: async () => {
+    const response = await axiosClient.get('/admin/email-settings');
+    return response;
+  },
+
+  updateEmailSettings: async (payload) => {
+    const response = await axiosClient.patch('/admin/email-settings', payload);
+    return response;
+  },
 };
 
 export default adminApi;

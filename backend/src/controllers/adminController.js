@@ -1,4 +1,5 @@
 import adminService from "../services/adminService.js";
+import emailSettingService from "../services/emailSettingService.js";
 import { logActivity } from "../services/logService.js";
 
 const getPermissionsList = async (req, res, next) => {
@@ -184,6 +185,31 @@ const resendStudentCredentials = async (req, res, next) => {
   }
 };
 
+const getEmailSettings = async (req, res, next) => {
+  try {
+    const settings = await emailSettingService.getEmailSettings(true);
+    res.status(200).json({
+      success: true,
+      settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateEmailSettings = async (req, res, next) => {
+  try {
+    const settings = await emailSettingService.updateEmailSettings(req.body, req.user, req);
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật cấu hình email hệ thống thành công",
+      settings,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export default {
   getPermissionsList,
   updateLecturerPermissions,
@@ -195,4 +221,6 @@ export default {
   importStudentExcel,
   resendStudentCredentials,
   getSystemLogs,
+  getEmailSettings,
+  updateEmailSettings,
 };

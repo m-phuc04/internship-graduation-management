@@ -31,15 +31,19 @@ const createLecturer = async (req, res, next) => {
   try {
     const lecturer = await lecturerService.createLecturer(req.body);
     const emailSent = lecturer.emailSent;
+    const emailDisabled = lecturer.emailDisabled;
     const emailError = lecturer.emailError;
     const message = emailSent
       ? "Tạo giảng viên thành công."
+      : emailDisabled
+      ? "Tạo giảng viên thành công (Email tự động đang tắt theo cấu hình hệ thống)."
       : `Tạo giảng viên thành công (Gửi email thất bại: ${emailError || 'Lỗi kết nối SMTP'}). Vui lòng sao chép mật khẩu để cung cấp cho giảng viên.`;
 
     res.status(201).json({
       success: true,
       message,
       emailSent,
+      emailDisabled: Boolean(emailDisabled),
       emailError,
       data: lecturer,
     });

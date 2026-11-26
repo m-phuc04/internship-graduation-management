@@ -14,6 +14,7 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import NotFoundPage from './pages/NotFoundPage';
 import AdminPermissionsPage from './pages/admin/AdminPermissionsPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
+import AdminEmailSettingsPage from './pages/admin/AdminEmailSettingsPage';
 import AdminLogsPage from './pages/admin/AdminLogsPage';
 import AcademicTermManagement from './pages/admin/AcademicTermManagement';
 import StudentManagement from './pages/tbm/StudentManagement';
@@ -220,6 +221,7 @@ function App() {
               <Route index element={<Navigate to="/admin/permissions" replace />} />
               <Route path="permissions" element={<AdminPermissionsPage />} />
               <Route path="users" element={<AdminUsersPage />} />
+              <Route path="email-settings" element={<AdminEmailSettingsPage />} />
               <Route path="academic-terms" element={<AcademicTermManagement />} />
               <Route path="students" element={<StudentManagement />} />
               <Route path="lecturers" element={<LecturerManagement />} />

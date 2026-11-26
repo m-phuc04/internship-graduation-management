@@ -32,15 +32,19 @@ const createStudent = async (req, res, next) => {
   try {
     const student = await studentService.createStudent(req.body);
     const emailSent = student.emailSent;
+    const emailDisabled = student.emailDisabled;
     const emailError = student.emailError;
     const message = emailSent
       ? "Tạo sinh viên thành công."
+      : emailDisabled
+      ? "Tạo sinh viên thành công (Email tự động đang tắt theo cấu hình hệ thống)."
       : `Tạo sinh viên thành công (Gửi email thất bại: ${emailError || 'Lỗi kết nối SMTP'}). Vui lòng sao chép mật khẩu để cung cấp cho sinh viên.`;
 
     res.status(201).json({
       success: true,
       message,
       emailSent,
+      emailDisabled: Boolean(emailDisabled),
       emailError,
       data: student,
     });

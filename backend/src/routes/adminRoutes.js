@@ -18,6 +18,10 @@ router.get("/users", authorizeRoles("ADMIN"), adminController.getAllUsers);
 router.patch("/users/:userId/status", authorizeRoles("ADMIN"), adminController.toggleUserStatus);
 router.post("/users/:userId/reset-password", authorizeRoles("ADMIN"), adminController.resetPassword);
 
+// Cấu hình Email hệ thống (CHỈ DÀNH CHO ADMIN)
+router.get("/email-settings", authorizeRoles("ADMIN"), adminController.getEmailSettings);
+router.patch("/email-settings", authorizeRoles("ADMIN"), adminController.updateEmailSettings);
+
 // Import Excel sinh viên (ADMIN và TBM)
 router.get("/students/excel-template", authorizeRoles("ADMIN", "TBM"), adminController.getExcelTemplate);
 router.post(

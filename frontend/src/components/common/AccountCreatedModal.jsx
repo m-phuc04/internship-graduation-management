@@ -9,6 +9,7 @@ import {
   GraduationCap,
   Briefcase,
   ShieldCheck,
+  MailX,
 } from 'lucide-react';
 
 const AccountCreatedModal = ({ isOpen, onClose, data }) => {
@@ -26,6 +27,7 @@ const AccountCreatedModal = ({ isOpen, onClose, data }) => {
     email = '',
     initialPassword = '',
     emailSent = false,
+    emailDisabled = false,
     emailError = null,
   } = data;
 
@@ -49,7 +51,9 @@ const AccountCreatedModal = ({ isOpen, onClose, data }) => {
       title={`Khởi tạo tài khoản ${roleTitle} thành công`}
       subtitle={
         emailSent
-          ? `Tài khoản đã được tạo thành công.`
+          ? `Tài khoản đã được tạo thành công và đã gửi email thông tin đăng nhập.`
+          : emailDisabled
+          ? `Tài khoản đã được tạo thành công (Tính năng gửi email đang tắt theo cấu hình).`
           : `Tài khoản đã được lưu vào cơ sở dữ liệu. Không gửi được email thông báo.`
       }
       maxWidth="max-w-lg"
@@ -63,6 +67,17 @@ const AccountCreatedModal = ({ isOpen, onClose, data }) => {
               <p className="font-bold">Đã gửi email thông tin đăng nhập</p>
               <p className="text-emerald-700 mt-0.5 text-[11px]">
                 Email thông tin tài khoản đã được gửi đến địa chỉ <strong className="font-mono">{email}</strong>.
+              </p>
+            </div>
+          </div>
+        ) : emailDisabled ? (
+          <div className="p-3.5 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-3">
+            <MailX className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
+            <div className="text-xs text-blue-950">
+              <p className="font-bold">Tạo tài khoản thành công (Email tự động đang tắt)</p>
+              <p className="text-blue-800 mt-0.5 text-[11px]">
+                Tính năng gửi email tự động đang được tạm tắt trong Cấu hình Email hệ thống.
+                Vui lòng sao chép mật khẩu bên dưới để bàn giao trực tiếp cho {roleTitle.toLowerCase()}.
               </p>
             </div>
           </div>

@@ -12,6 +12,7 @@ import {
   GraduationCap,
   Briefcase,
   RefreshCw,
+  MailX,
 } from 'lucide-react';
 
 const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSuccess }) => {
@@ -85,9 +86,11 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
       subtitle={
         resultData
           ? resultData.emailSent
-            ? `Mật khẩu mới đã được khởi tạo thành công và máy chủ SMTP đã tiếp nhận email gửi đến ${roleTitle.toLowerCase()}.`
+            ? `Mật khẩu mới đã được khởi tạo thành công và đã gửi email đến ${roleTitle.toLowerCase()}.`
+            : resultData.emailDisabled
+            ? `Mật khẩu mới đã được cập nhật thành công (Email tự động đang tắt). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
             : `Mật khẩu mới đã được cập nhật thành công (Gửi email thất bại). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
-          : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới (8 ký tự), cập nhật vào cơ sở dữ liệu và gửi thông tin qua máy chủ SMTP.`
+          : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới (8 ký tự), cập nhật vào cơ sở dữ liệu và gửi thông tin qua email (nếu được bật).`
       }
       maxWidth="max-w-lg"
     >
@@ -190,7 +193,17 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
                 <div>
                   <span className="font-bold text-emerald-800">Đặt lại mật khẩu thành công!</span>
                   <p className="text-[11px] text-emerald-700 mt-0.5">
-                    Máy chủ SMTP đã tiếp nhận email thông báo gửi đến địa chỉ <strong>{resultData.email}</strong>.
+                    Email thông báo mật khẩu mới đã được gửi đến địa chỉ <strong>{resultData.email}</strong>.
+                  </p>
+                </div>
+              </div>
+            ) : resultData.emailDisabled ? (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-start gap-2.5 text-xs text-blue-950 font-medium">
+                <MailX className="w-5 h-5 text-[#123891] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-blue-900">Đặt lại mật khẩu thành công (Email tự động đang tắt)</span>
+                  <p className="text-[11px] text-blue-800 mt-0.5">
+                    Tính năng gửi email khi Reset mật khẩu đang được tạm tắt trong Cấu hình Email hệ thống. Mật khẩu mới đã được lưu an toàn trong cơ sở dữ liệu. Vui lòng sao chép mật khẩu bên dưới để cung cấp cho người dùng.
                   </p>
                 </div>
               </div>
@@ -228,7 +241,11 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
                 <span className="text-slate-500">Trạng thái gửi email:</span>
                 {resultData.emailSent ? (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> SMTP đã tiếp nhận
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Đã gửi email
+                  </span>
+                ) : resultData.emailDisabled ? (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-600">
+                    <MailX className="w-3.5 h-3.5 text-slate-500" /> Tắt theo cấu hình
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600">

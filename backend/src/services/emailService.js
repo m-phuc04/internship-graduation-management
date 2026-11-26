@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import emailSettingService from "./emailSettingService.js";
 
 /**
  * Cấu hình Email Transporter
@@ -101,6 +102,12 @@ export const sendNotificationEmail = async ({
   if (!to || !to.trim() || !title || !message) {
     console.warn("[EmailService] Missing required email parameters (to, title, message).");
     return { success: false, reason: "Missing parameters" };
+  }
+
+  // Bảo vệ đa tầng: Kiểm tra công tắc tổng hệ thống
+  const settings = await emailSettingService.getEmailSettings().catch(() => null);
+  if (settings && !settings.isMasterEnabled) {
+    return { success: false, disabled: true, error: "Hệ thống đang tạm tắt toàn bộ email theo cấu hình của Quản trị viên." };
   }
 
   const targetEmail = to.trim();
@@ -273,6 +280,12 @@ export const sendPasswordResetEmail = async ({
     throw new Error("Email người nhận và mật khẩu mới không được để trống");
   }
 
+  // Bảo vệ đa tầng: Kiểm tra công tắc tổng hệ thống
+  const settings = await emailSettingService.getEmailSettings().catch(() => null);
+  if (settings && !settings.isMasterEnabled) {
+    return { success: false, disabled: true, error: "Hệ thống đang tạm tắt toàn bộ email theo cấu hình của Quản trị viên." };
+  }
+
   const codeDisplay = accountCode || studentCode || "—";
   const isStaff = role === "LECTURER" || role === "TBM";
   const defaultTitle = role === "TBM" ? "Trưởng bộ môn" : isStaff ? "Giảng viên" : "Sinh viên";
@@ -412,6 +425,12 @@ export const sendAccountCreationEmail = async ({
   role = "STUDENT",
 }) => {
   if (!to || !password) return { success: false, reason: "Missing parameters" };
+
+  // Bảo vệ đa tầng: Kiểm tra công tắc tổng hệ thống
+  const settings = await emailSettingService.getEmailSettings().catch(() => null);
+  if (settings && !settings.isMasterEnabled) {
+    return { success: false, disabled: true, error: "Hệ thống đang tạm tắt toàn bộ email theo cấu hình của Quản trị viên." };
+  }
 
   const isStaff = role === "LECTURER" || role === "TBM";
   const roleTitle = role === "TBM" ? "Trưởng bộ môn" : isStaff ? "Giảng viên" : "Sinh viên";
