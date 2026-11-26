@@ -28,6 +28,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
   const [savingKey, setSavingKey] = useState(null); // 'TTDN' | 'THESIS' | 'NEWS' | null
   const [email, setEmail] = useState(user?.email || '');
   const [hasValidEmail, setHasValidEmail] = useState(() => checkEmailValid(user?.email));
+  const [isMasterEnabled, setIsMasterEnabled] = useState(true);
 
   const [enabledTTDN, setEnabledTTDN] = useState(Boolean(user?.emailNotificationEnabled));
   const [enabledThesis, setEnabledThesis] = useState(Boolean(user?.emailThesisEnabled));
@@ -47,12 +48,15 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           const isEnabledThesis = Boolean(res.data.emailThesisEnabled);
           const isEnabledNews = Boolean(res.data.emailNewsEnabled);
           const isValid = res.data.hasValidEmail ?? checkEmailValid(currentEmail);
+          const masterEnabled =
+            res.data.isMasterEnabled !== undefined ? Boolean(res.data.isMasterEnabled) : true;
 
           setEmail(currentEmail);
           setEnabledTTDN(isEnabledTTDN);
           setEnabledThesis(isEnabledThesis);
           setEnabledNews(isEnabledNews);
           setHasValidEmail(isValid);
+          setIsMasterEnabled(masterEnabled);
         }
       } catch {
         if (isMounted) {
@@ -75,6 +79,12 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
 
   // Xử lý bật/tắt thông báo cho từng module
   const handleToggle = async (key) => {
+    // 0. Ngăn chặn nếu Quản trị viên đã tắt công tắc tổng hệ thống
+    if (!isMasterEnabled) {
+      showToast('Quản trị viên đã tắt chức năng gửi thông báo qua email.', 'warning');
+      return;
+    }
+
     if (savingKey) return;
 
     let currentVal = false;
@@ -125,10 +135,12 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
         );
       }
     } catch (err) {
-      showToast(
-        err.response?.data?.message || err.message || 'Lỗi khi cập nhật cài đặt nhận email',
-        'error'
-      );
+      const errMsg =
+        err.response?.data?.message || err.message || 'Lỗi khi cập nhật cài đặt nhận email';
+      showToast(errMsg, 'error');
+      if (errMsg.includes('Quản trị viên đã tắt')) {
+        setIsMasterEnabled(false);
+      }
     } finally {
       setSavingKey(null);
     }
@@ -186,6 +198,18 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
           )}
         </div>
 
+        {/* Banner cảnh báo nổi bật khi Quản trị viên tắt công tắc tổng */}
+        {!isMasterEnabled && (
+          <div className="p-3.5 sm:p-4 bg-amber-50 border border-amber-200/90 rounded-2xl flex items-center gap-3 text-amber-900 shadow-2xs animate-in fade-in duration-200">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+              <AlertCircle className="w-4.5 h-4.5 text-amber-600" />
+            </div>
+            <div className="text-xs font-bold text-amber-900 leading-relaxed">
+              Quản trị viên đã tắt chức năng gửi thông báo qua email.
+            </div>
+          </div>
+        )}
+
         {/* Thẻ 2: Danh sách cấu hình thông báo module */}
         <div className="space-y-3">
           {/* Nhóm 1: TTDN */}
@@ -229,12 +253,20 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   type="button"
                   role="switch"
                   aria-checked={enabledTTDN}
-                  disabled={savingKey !== null || (!enabledTTDN && !hasValidEmail)}
+                  disabled={!isMasterEnabled || savingKey !== null || (!enabledTTDN && !hasValidEmail)}
                   onClick={() => handleToggle('TTDN')}
-                  className={`relative inline-flex items-center h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    enabledTTDN ? 'bg-emerald-600' : 'bg-slate-300'
+                  className={`relative inline-flex items-center h-7 w-13 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 ${
+                    !isMasterEnabled
+                      ? 'cursor-not-allowed opacity-40 bg-slate-300'
+                      : 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ' + (enabledTTDN ? 'bg-emerald-600' : 'bg-slate-300')
                   }`}
-                  title={enabledTTDN ? 'Nhấn để tắt nhận email TTDN' : 'Nhấn để bật nhận email TTDN'}
+                  title={
+                    !isMasterEnabled
+                      ? 'Quản trị viên đã tắt chức năng gửi thông báo qua email'
+                      : enabledTTDN
+                      ? 'Nhấn để tắt nhận email TTDN'
+                      : 'Nhấn để bật nhận email TTDN'
+                  }
                 >
                   <span className="sr-only">Bật/tắt nhận email TTDN</span>
                   <span
@@ -297,12 +329,20 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   type="button"
                   role="switch"
                   aria-checked={enabledThesis}
-                  disabled={savingKey !== null || (!enabledThesis && !hasValidEmail)}
+                  disabled={!isMasterEnabled || savingKey !== null || (!enabledThesis && !hasValidEmail)}
                   onClick={() => handleToggle('THESIS')}
-                  className={`relative inline-flex items-center h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    enabledThesis ? 'bg-emerald-600' : 'bg-slate-300'
+                  className={`relative inline-flex items-center h-7 w-13 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 ${
+                    !isMasterEnabled
+                      ? 'cursor-not-allowed opacity-40 bg-slate-300'
+                      : 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ' + (enabledThesis ? 'bg-emerald-600' : 'bg-slate-300')
                   }`}
-                  title={enabledThesis ? 'Nhấn để tắt nhận email KLTN' : 'Nhấn để bật nhận email KLTN'}
+                  title={
+                    !isMasterEnabled
+                      ? 'Quản trị viên đã tắt chức năng gửi thông báo qua email'
+                      : enabledThesis
+                      ? 'Nhấn để tắt nhận email KLTN'
+                      : 'Nhấn để bật nhận email KLTN'
+                  }
                 >
                   <span className="sr-only">Bật/tắt nhận email KLTN</span>
                   <span
@@ -365,12 +405,20 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   type="button"
                   role="switch"
                   aria-checked={enabledNews}
-                  disabled={savingKey !== null || (!enabledNews && !hasValidEmail)}
+                  disabled={!isMasterEnabled || savingKey !== null || (!enabledNews && !hasValidEmail)}
                   onClick={() => handleToggle('NEWS')}
-                  className={`relative inline-flex items-center h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
-                    enabledNews ? 'bg-emerald-600' : 'bg-slate-300'
+                  className={`relative inline-flex items-center h-7 w-13 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 ${
+                    !isMasterEnabled
+                      ? 'cursor-not-allowed opacity-40 bg-slate-300'
+                      : 'cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 ' + (enabledNews ? 'bg-emerald-600' : 'bg-slate-300')
                   }`}
-                  title={enabledNews ? 'Nhấn để tắt nhận email Bản tin' : 'Nhấn để bật nhận email Bản tin'}
+                  title={
+                    !isMasterEnabled
+                      ? 'Quản trị viên đã tắt chức năng gửi thông báo qua email'
+                      : enabledNews
+                      ? 'Nhấn để tắt nhận email Bản tin'
+                      : 'Nhấn để bật nhận email Bản tin'
+                  }
                 >
                   <span className="sr-only">Bật/tắt nhận email Bản tin</span>
                   <span

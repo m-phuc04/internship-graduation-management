@@ -164,9 +164,15 @@ const notifyCouncilAssignment = async (req, res, next) => {
 const getEmailSettings = async (req, res, next) => {
   try {
     const User = (await import("../models/User.js")).default;
-    const user = await User.findById(req.user.userId)
-      .select("email emailNotificationEnabled emailThesisEnabled emailNewsEnabled fullName")
-      .lean();
+    const emailSettingService = (await import("../services/emailSettingService.js")).default;
+
+    const [user, systemSettings] = await Promise.all([
+      User.findById(req.user.userId)
+        .select("email emailNotificationEnabled emailThesisEnabled emailNewsEnabled fullName")
+        .lean(),
+      emailSettingService.getEmailSettings(),
+    ]);
+
     if (!user) {
       const error = new Error("Không tìm thấy thông tin tài khoản");
       error.statusCode = 404;
@@ -175,6 +181,7 @@ const getEmailSettings = async (req, res, next) => {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const hasValidEmail = Boolean(user.email && emailRegex.test(user.email.trim()));
+    const isMasterEnabled = systemSettings ? Boolean(systemSettings.isMasterEnabled) : true;
 
     res.status(200).json({
       success: true,
@@ -185,6 +192,7 @@ const getEmailSettings = async (req, res, next) => {
         emailThesisEnabled: Boolean(user.emailThesisEnabled),
         emailNewsEnabled: Boolean(user.emailNewsEnabled),
         hasValidEmail,
+        isMasterEnabled,
       },
     });
   } catch (error) {
@@ -194,6 +202,16 @@ const getEmailSettings = async (req, res, next) => {
 
 const updateEmailSettings = async (req, res, next) => {
   try {
+    const emailSettingService = (await import("../services/emailSettingService.js")).default;
+
+    // Kiểm tra công tắc tổng của Quản trị viên (ADMIN)
+    const systemSettings = await emailSettingService.getEmailSettings(true);
+    if (!systemSettings || !systemSettings.isMasterEnabled) {
+      const error = new Error("Quản trị viên đã tắt chức năng gửi thông báo qua email.");
+      error.statusCode = 400;
+      throw error;
+    }
+
     const { enabled, emailNotificationEnabled, emailThesisEnabled, emailNewsEnabled } = req.body;
     const User = (await import("../models/User.js")).default;
     const user = await User.findById(req.user.userId);

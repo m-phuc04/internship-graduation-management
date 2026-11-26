@@ -100,6 +100,19 @@ export const updateEmailSettings = async (payload = {}, adminUser, req = null) =
     });
   }
 
+  // Phát sự kiện realtime qua Socket.IO nếu có
+  try {
+    const { getIO } = await import("../socket/socketHandler.js");
+    const io = getIO();
+    if (io) {
+      io.emit("email_settings_updated", {
+        isMasterEnabled: settings.isMasterEnabled,
+      });
+    }
+  } catch (socketErr) {
+    // Bỏ qua lỗi socket
+  }
+
   return cachedSettings;
 };
 
