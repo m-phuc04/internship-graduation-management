@@ -438,7 +438,7 @@ const RegisterInternshipPage = () => {
             </div>
 
             <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80">
-              <span className="text-slate-400 block mb-0.5">Lớp sinh hoạt</span>
+              <span className="text-slate-400 block mb-0.5">Lớp danh nghĩa</span>
               <span className="font-bold text-slate-900 text-sm">
                 {student?.className}
               </span>

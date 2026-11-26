@@ -333,7 +333,7 @@ const StudentManagement = () => {
                           />
                         </td>
 
-                        {/* Lớp sinh hoạt */}
+                        {/* Lớp danh nghĩa */}
                         <td className="py-3.5 px-4 font-medium text-slate-700 text-xs">
                           <span className="px-2 py-1 bg-slate-100 rounded-md font-mono">
                             {st.className}

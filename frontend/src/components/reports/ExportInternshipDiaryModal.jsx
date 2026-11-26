@@ -91,7 +91,7 @@ const ExportInternshipDiaryModal = ({
                 <span className="font-mono">{internship.studentId?.studentCode || student?.studentCode}</span>
               </div>
               <div>
-                <strong>Lớp sinh hoạt:</strong>{' '}
+                <strong>Lớp danh nghĩa:</strong>{' '}
                 <span>{internship.studentId?.className || student?.className || '—'}</span>
               </div>
               <div>
