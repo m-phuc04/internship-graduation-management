@@ -14,37 +14,35 @@ import emailService from "./emailService.js";
 const VALID_PERMISSIONS = ["GVHD", "GVPB_KIN", "GVPB_HOIDONG"];
 
 /**
- * Tạo mật khẩu ngẫu nhiên an toàn (tối thiểu 12 ký tự, mặc định 16 ký tự gồm hoa, thường, số, ký tự đặc biệt)
+ * Tạo mật khẩu ngẫu nhiên an toàn (tối thiểu 8 ký tự, mặc định 8 ký tự gồm hoa, thường, số, ký tự đặc biệt)
  */
-const generateSecurePassword = (length = 16) => {
-  const safeLength = Math.max(12, length);
+const generateSecurePassword = (length = 8) => {
+  const safeLength = Math.max(8, length);
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghijkmnpqrstuvwxyz";
   const digits = "23456789";
   const special = "@#$&*!%?";
   const all = upper + lower + digits + special;
 
-  let pwd = "";
-  // Đảm bảo có ít nhất 2 ký tự của mỗi loại
-  for (let i = 0; i < 2; i++) {
-    pwd += upper[crypto.randomInt(0, upper.length)];
-    pwd += lower[crypto.randomInt(0, lower.length)];
-    pwd += digits[crypto.randomInt(0, digits.length)];
-    pwd += special[crypto.randomInt(0, special.length)];
-  }
+  // Đảm bảo có ít nhất 1 ký tự của mỗi loại
+  const passwordChars = [
+    upper[crypto.randomInt(0, upper.length)],
+    lower[crypto.randomInt(0, lower.length)],
+    digits[crypto.randomInt(0, digits.length)],
+    special[crypto.randomInt(0, special.length)],
+  ];
 
-  for (let i = pwd.length; i < safeLength; i++) {
-    pwd += all[crypto.randomInt(0, all.length)];
+  for (let i = passwordChars.length; i < safeLength; i++) {
+    passwordChars.push(all[crypto.randomInt(0, all.length)]);
   }
 
   // Xáo trộn ngẫu nhiên an toàn (Fisher-Yates shuffle)
-  const arr = pwd.split("");
-  for (let i = arr.length - 1; i > 0; i--) {
+  for (let i = passwordChars.length - 1; i > 0; i--) {
     const j = crypto.randomInt(0, i + 1);
-    [arr[i], arr[j]] = [arr[j], arr[i]];
+    [passwordChars[i], passwordChars[j]] = [passwordChars[j], passwordChars[i]];
   }
 
-  return arr.join("");
+  return passwordChars.join("");
 };
 
 /**
@@ -289,8 +287,8 @@ const resetPassword = async (userId, adminUser, req = null) => {
     throw new AppError(`Tài khoản ${roleLabel.toLowerCase()} này chưa có email xác thực để nhận mật khẩu.`, 400);
   }
 
-  // 1. Tạo mật khẩu ngẫu nhiên mới, riêng biệt và đủ độ mạnh (16 ký tự an toàn)
-  const newPlainPassword = generateSecurePassword(16);
+  // 1. Tạo mật khẩu ngẫu nhiên mới, riêng biệt và đủ độ mạnh (8 ký tự an toàn)
+  const newPlainPassword = generateSecurePassword(8);
 
   // 2. CẬP NHẬT MẬT KHẨU VÀO DATABASE TRƯỚC (mã hóa bcrypt chi phí 12, thu hồi token cũ)
   user.password = await bcrypt.hash(newPlainPassword, 12);
@@ -796,8 +794,8 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
         continue;
       }
 
-      // 1. Tạo mật khẩu ngẫu nhiên riêng biệt cho từng sinh viên (16 ký tự mạnh)
-      const plainPassword = generateSecurePassword(16);
+      // 1. Tạo mật khẩu ngẫu nhiên riêng biệt cho từng sinh viên (8 ký tự mạnh)
+      const plainPassword = generateSecurePassword(8);
       const hashedPassword = await bcrypt.hash(plainPassword, 12);
 
       // 2. Tạo tài khoản User (role: STUDENT, mustChangePassword: true)
@@ -941,8 +939,8 @@ const resendStudentCredentials = async ({ mssv, mssvs }, adminUser, req = null) 
 
       const student = await Student.findOne({ studentCode: code });
 
-      // Sinh mật khẩu mới an toàn 16 ký tự
-      const newPlainPassword = generateSecurePassword(16);
+      // Sinh mật khẩu mới an toàn 8 ký tự
+      const newPlainPassword = generateSecurePassword(8);
       const hashedPassword = await bcrypt.hash(newPlainPassword, 12);
 
       // Cập nhật User và thu hồi token cũ

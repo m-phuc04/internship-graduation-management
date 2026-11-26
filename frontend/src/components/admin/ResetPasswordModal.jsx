@@ -87,7 +87,7 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
           ? resultData.emailSent
             ? `Mật khẩu mới đã được khởi tạo thành công và máy chủ SMTP đã tiếp nhận email gửi đến ${roleTitle.toLowerCase()}.`
             : `Mật khẩu mới đã được cập nhật thành công (Gửi email thất bại). Vui lòng sao chép mật khẩu bên dưới để bàn giao.`
-          : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới (16 ký tự), cập nhật vào cơ sở dữ liệu và gửi thông tin qua máy chủ SMTP.`
+          : `Hệ thống sẽ tạo mật khẩu ngẫu nhiên mới (8 ký tự), cập nhật vào cơ sở dữ liệu và gửi thông tin qua máy chủ SMTP.`
       }
       maxWidth="max-w-lg"
     >
@@ -143,7 +143,7 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
               <div className="space-y-1 text-[11px]">
                 <p className="font-bold text-blue-950">Quy trình bảo mật & gửi email:</p>
                 <ul className="list-disc list-inside text-blue-800 space-y-0.5">
-                  <li>Mật khẩu mới được sinh ngẫu nhiên mạnh (16 ký tự) và mã hóa bcrypt trước khi lưu.</li>
+                  <li>Mật khẩu mới được sinh ngẫu nhiên mạnh (8 ký tự) và mã hóa bcrypt trước khi lưu.</li>
                   <li>Yêu cầu gửi email sẽ được chuyển đến máy chủ SMTP.</li>
                   <li>Nếu máy chủ SMTP gặp lỗi, thao tác reset vẫn được bảo lưu và mật khẩu mới hiển thị ngay cho ADMIN sao chép.</li>
                   <li>Tất cả phiên đăng nhập cũ bị thu hồi và người dùng bắt buộc đổi mật khẩu ở lần đăng nhập tiếp theo.</li>

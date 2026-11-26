@@ -281,7 +281,7 @@ const createLecturer = async (lecturerData) => {
     throw new AppError("Mã giảng viên này đã tồn tại", 409);
   }
 
-  // Mật khẩu khởi tạo (nếu không nhập hoặc rỗng, sinh mật khẩu ngẫu nhiên an toàn 16 ký tự)
+  // Mật khẩu khởi tạo (nếu không nhập hoặc rỗng, sinh mật khẩu ngẫu nhiên an toàn 8 ký tự)
   let plainPassword;
   if (password && typeof password === "string" && password.trim().length > 0) {
     if (password.trim().length < 6) {
@@ -289,7 +289,7 @@ const createLecturer = async (lecturerData) => {
     }
     plainPassword = password.trim();
   } else {
-    plainPassword = generateSecurePassword(16);
+    plainPassword = generateSecurePassword(8);
   }
 
   // Băm mật khẩu (Hash password bằng bcrypt cost 12)
