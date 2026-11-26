@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { formatTopicTitle } from "../utils/textUtils.js";
 
 const registeredGroupSchema = new mongoose.Schema(
   {
@@ -48,6 +49,7 @@ const thesisTopicSchema = new mongoose.Schema(
       type: String,
       required: [true, "Tên đề tài là bắt buộc"],
       trim: true,
+      set: formatTopicTitle,
       maxlength: [300, "Tên đề tài không được quá 300 ký tự"],
     },
 
@@ -119,7 +121,12 @@ const thesisTopicSchema = new mongoose.Schema(
     },
 
     editRequest: {
-      newTitle: { type: String, trim: true, default: null },
+      newTitle: {
+        type: String,
+        trim: true,
+        set: (v) => (v ? formatTopicTitle(v) : v),
+        default: null,
+      },
       newDescription: { type: String, trim: true, default: null },
       requestedAt: { type: Date, default: null },
       status: {

@@ -9,6 +9,7 @@ import thesisProgressApi from '../../api/thesisProgressApi';
 import thesisDocumentApi from '../../api/thesisDocumentApi';
 import councilApi from '../../api/councilApi';
 import getFileUrl from '../../utils/fileUrlHelper';
+import { formatTopicTitle } from '../../utils/textUtils';
 import {
   BookOpen,
   Calendar,
@@ -378,7 +379,7 @@ const ThesisDetailModal = ({
                   Tên đề tài khóa luận
                 </span>
                 <h3 className="text-base font-bold text-slate-900 leading-snug">
-                  {thesis.thesisTitle || thesis.topicName || thesis.title}
+                  {formatTopicTitle(thesis.thesisTitle || thesis.topicName || thesis.title)}
                 </h3>
                 <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[11px] text-slate-500 font-medium">
                   <span className="font-semibold text-slate-700">

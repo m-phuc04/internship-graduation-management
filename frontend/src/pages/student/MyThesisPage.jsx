@@ -8,6 +8,7 @@ import StatusBadge from '../../components/common/StatusBadge';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import UserNameClickable from '../../components/common/UserNameClickable';
+import { formatTopicTitle } from '../../utils/textUtils';
 
 import {
   GraduationCap,
@@ -722,12 +723,13 @@ const MyThesisPage = () => {
   }
 
   // Resolve actual registered thesis topic title directly from database (topicId.title or thesisTitle)
-  const thesisTitle =
+  const rawTitle =
     (typeof thesis?.topicId === 'object' && (thesis?.topicId?.title || thesis?.topicId?.vietnameseTitle)) ||
     thesis?.thesisTitle ||
     thesis?.title ||
     thesis?.vietnameseTitle ||
-    'Hồ Sơ Khóa Luận Tốt Nghiệp (KLTN)';
+    '';
+  const thesisTitle = rawTitle ? formatTopicTitle(rawTitle) : 'Hồ Sơ Khóa Luận Tốt Nghiệp (KLTN)';
 
   if (loading) {
     return (

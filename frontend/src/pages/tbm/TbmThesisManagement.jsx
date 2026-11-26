@@ -18,6 +18,7 @@ import ExportModal from '../../components/common/ExportModal';
 import CouncilManagementSection from '../../components/thesis/CouncilManagementSection';
 import AssignCouncilToThesisModal from '../../components/thesis/AssignCouncilToThesisModal';
 import { isCouncilReportTimeExpired } from '../../utils/dateUtils';
+import { formatTopicTitle } from '../../utils/textUtils';
 
 import {
   GraduationCap,
@@ -251,7 +252,7 @@ const TbmThesisManagement = () => {
     try {
       const res = await thesisApi.approveTopic(topic._id);
       if (res.success) {
-        showToast(`Đã phê duyệt đề tài "${topic.title}" thành công! Sinh viên có thể bắt đầu đăng ký.`, 'success');
+        showToast(`Đã phê duyệt đề tài "${formatTopicTitle(topic.title)}" thành công! Sinh viên có thể bắt đầu đăng ký.`, 'success');
         fetchProposedTopics();
       }
     } catch (err) {
@@ -314,7 +315,7 @@ const TbmThesisManagement = () => {
     try {
       const res = await thesisApi.approveEditTopic(topic._id);
       if (res.success) {
-        showToast(`Đã duyệt yêu cầu chỉnh sửa đề tài "${topic.editRequest?.newTitle || topic.title}" thành công!`, 'success');
+        showToast(`Đã duyệt yêu cầu chỉnh sửa đề tài "${formatTopicTitle(topic.editRequest?.newTitle || topic.title)}" thành công!`, 'success');
         fetchProposedTopics();
       }
     } catch (err) {
@@ -472,7 +473,7 @@ const TbmThesisManagement = () => {
 
     const topicAsThesis = {
       _id: topic._id,
-      thesisTitle: topic.title,
+      thesisTitle: formatTopicTitle(topic.title),
       description: topic.description,
       objectives: topic.objectives,
       status: topic.status === 'APPROVED' ? 'APPROVED' : topic.status === 'REJECTED' ? 'REJECTED' : 'PENDING_TBM_APPROVAL',
@@ -1689,7 +1690,7 @@ const TbmThesisManagement = () => {
                                         onClick={() => handleOpenTopicDetail(topic)}
                                         className="font-bold text-slate-900 leading-snug hover:text-[#123891] cursor-pointer transition"
                                       >
-                                        {topic.title}
+                                        {formatTopicTitle(topic.title)}
                                       </div>
                                       <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                                         Ngày gửi: {formatDate(topic.createdAt)}
@@ -1703,7 +1704,7 @@ const TbmThesisManagement = () => {
                                             <span>Yêu cầu chỉnh sửa tên đề tài:</span>
                                           </div>
                                           <div className="font-semibold text-slate-900 bg-white p-2 rounded-xl border border-amber-200 text-xs">
-                                            "{topic.editRequest?.newTitle}"
+                                            "{formatTopicTitle(topic.editRequest?.newTitle)}"
                                           </div>
                                           <div className="flex items-center gap-1.5 pt-0.5">
                                             <button
@@ -1932,7 +1933,7 @@ const TbmThesisManagement = () => {
                                 onClick={() => handleOpenTopicDetail(topic)}
                                 className="font-bold text-slate-900 leading-snug hover:text-[#123891] cursor-pointer transition"
                               >
-                                {topic.title}
+                                {formatTopicTitle(topic.title)}
                               </div>
                               <div className="text-[10px] text-slate-400 font-mono mt-0.5">
                                 Ngày gửi: {formatDate(topic.createdAt)}
@@ -1946,7 +1947,7 @@ const TbmThesisManagement = () => {
                                     <span>Yêu cầu chỉnh sửa tên đề tài:</span>
                                   </div>
                                   <div className="font-semibold text-slate-900 bg-white p-2 rounded-xl border border-amber-200 text-xs">
-                                    "{topic.editRequest?.newTitle}"
+                                    "{formatTopicTitle(topic.editRequest?.newTitle)}"
                                   </div>
                                   <div className="flex items-center gap-1.5 pt-0.5">
                                     <button
@@ -2136,7 +2137,7 @@ const TbmThesisManagement = () => {
                                 onClick={() => handleOpenTopicDetail(topic)}
                                 className="font-bold text-slate-900 leading-snug hover:text-[#123891] cursor-pointer transition text-sm line-clamp-2"
                               >
-                                {topic.title}
+                                {formatTopicTitle(topic.title)}
                               </div>
                               <div className="text-[10.5px] text-slate-400 font-mono mt-0.5">
                                 Ngày gửi: {formatDate(topic.createdAt)}

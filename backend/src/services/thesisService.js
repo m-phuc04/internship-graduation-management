@@ -10,6 +10,7 @@ import AcademicTerm from "../models/AcademicTerm.js";
 import academicTermService from "./academicTermService.js";
 import notificationService from "./notificationService.js";
 import AppError from "../utils/AppError.js";
+import { formatTopicTitle } from "../utils/textUtils.js";
 
 // ====================
 // Active Thesis Statuses
@@ -267,7 +268,7 @@ const createThesis = async ({
     secondStudentId: isTwoStudents ? student2._id : null,
     studentCount: isTwoStudents ? 2 : 1,
     student2Status,
-    thesisTitle: thesisTitle.trim(),
+    thesisTitle: formatTopicTitle(thesisTitle),
     supervisorId: supervisor._id,
     description: description ? description.trim() : null,
     objectives: objectives ? objectives.trim() : null,
@@ -3667,7 +3668,8 @@ const batchCreateTopicsByLecturer = async ({
   // 1. Process array of topic objects if provided
   if (Array.isArray(topics) && topics.length > 0) {
     for (const item of topics) {
-      const title = (typeof item === "string" ? item : item.title || "").trim();
+      const rawTitle = (typeof item === "string" ? item : item.title || "").trim();
+      const title = formatTopicTitle(rawTitle);
       if (!title) continue;
 
       const desc = (typeof item === "object" ? item.description : "") || defaultDescription || null;
@@ -3692,7 +3694,8 @@ const batchCreateTopicsByLecturer = async ({
       : topicListRaw.split(/[,;\n]/);
 
     for (const line of rawLines) {
-      const title = line.trim().replace(/^[-*•\d.)\s]+/, "").trim();
+      const cleanedLine = line.trim().replace(/^[-*•\d.)\s]+/, "").trim();
+      const title = formatTopicTitle(cleanedLine);
       if (!title || title.length < 3) continue;
 
       topicDocs.push({
@@ -3938,7 +3941,7 @@ const updateTopic = async (topicId, userId, updateData = {}) => {
   }
 
   if (updateData.title && updateData.title.trim()) {
-    topic.title = updateData.title.trim();
+    topic.title = formatTopicTitle(updateData.title);
   }
   if (updateData.description !== undefined) {
     topic.description = updateData.description ? updateData.description.trim() : null;
@@ -3981,7 +3984,7 @@ const requestEditTopicByLecturer = async (topicId, userId, { title, description 
   }
 
   topic.editRequest = {
-    newTitle: title.trim(),
+    newTitle: formatTopicTitle(title),
     newDescription: description !== undefined ? (description ? description.trim() : null) : topic.description,
     requestedAt: new Date(),
     status: "PENDING",
@@ -4082,7 +4085,7 @@ const approveEditTopicByTbm = async (topicId, tbmUserId) => {
   }
 
   const oldTitle = topic.title;
-  const newTitle = topic.editRequest.newTitle;
+  const newTitle = formatTopicTitle(topic.editRequest.newTitle);
   const newDesc = topic.editRequest.newDescription;
 
   topic.title = newTitle;

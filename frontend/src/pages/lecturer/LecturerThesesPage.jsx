@@ -18,6 +18,7 @@ import ConfirmDialog from '../../components/common/ConfirmDialog';
 import Pagination from '../../components/common/Pagination';
 
 import getFileUrl from '../../utils/fileUrlHelper';
+import { formatTopicTitle, formatRawTopicInput } from '../../utils/textUtils';
 
 import {
   Award,
@@ -592,7 +593,8 @@ const LecturerThesesPage = () => {
 
   const handleBatchCreateTopics = async (e) => {
     if (e) e.preventDefault();
-    if (!batchTitleInput.trim()) {
+    const formattedInput = formatRawTopicInput(batchTitleInput);
+    if (!formattedInput.trim()) {
       showToast('Vui lòng nhập ít nhất một tên đề tài', 'error');
       return;
     }
@@ -606,7 +608,7 @@ const LecturerThesesPage = () => {
     setCreateTopicLoading(true);
     try {
       const res = await thesisApi.batchCreateTopics({
-        topicListRaw: batchTitleInput.trim(),
+        topicListRaw: formattedInput.trim(),
         defaultDescription: batchDescription.trim() || '',
         academicTermId: targetTermId,
         fields: selectedTopicFields,
@@ -629,17 +631,19 @@ const LecturerThesesPage = () => {
 
   const handleOpenEditTopic = (topic) => {
     setSelectedTopicForEdit(topic);
-    setEditTopicTitle(topic.title || '');
+    setEditTopicTitle(formatTopicTitle(topic.title || ''));
     setEditTopicDescription(topic.description || '');
     setEditTopicModalOpen(true);
   };
 
   const handleSubmitEditTopicForm = (e) => {
     if (e) e.preventDefault();
-    if (!editTopicTitle.trim()) {
+    const formatted = formatTopicTitle(editTopicTitle);
+    if (!formatted.trim()) {
       showToast('Vui lòng nhập tên đề tài', 'warning');
       return;
     }
+    setEditTopicTitle(formatted);
     setConfirmEditTopicDialogOpen(true);
   };
 
@@ -648,7 +652,7 @@ const LecturerThesesPage = () => {
     try {
       setActionLoading(true);
       const res = await thesisApi.requestEditTopic(selectedTopicForEdit._id, {
-        title: editTopicTitle.trim(),
+        title: formatTopicTitle(editTopicTitle),
         description: editTopicDescription.trim(),
       });
       if (res.success) {
@@ -2529,7 +2533,7 @@ const LecturerThesesPage = () => {
                                   title="Bấm để xem chi tiết đề tài"
                                 >
                                   <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
-                                    {topic.title}
+                                    {formatTopicTitle(topic.title)}
                                   </span>
                                 </button>
                               </td>
@@ -2607,7 +2611,7 @@ const LecturerThesesPage = () => {
                                 onClick={() => setSelectedTopicDetail(topic)}
                                 className="text-left font-bold text-sm text-slate-900 hover:text-[#123891] leading-snug line-clamp-2 transition cursor-pointer"
                               >
-                                {topic.title}
+                                {formatTopicTitle(topic.title)}
                               </button>
                             </div>
                           </div>
@@ -2742,7 +2746,7 @@ const LecturerThesesPage = () => {
                                   title="Bấm để xem chi tiết đề tài"
                                 >
                                   <span className="text-slate-900 group-hover:text-[#123891] font-bold block leading-snug transition">
-                                    {topic.title}
+                                    {formatTopicTitle(topic.title)}
                                   </span>
                                 </button>
                               </td>
@@ -2820,7 +2824,7 @@ const LecturerThesesPage = () => {
                                 onClick={() => setSelectedTopicDetail(topic)}
                                 className="text-left font-bold text-sm text-slate-900 hover:text-[#123891] leading-snug line-clamp-2 transition cursor-pointer"
                               >
-                                {topic.title}
+                                {formatTopicTitle(topic.title)}
                               </button>
                             </div>
                           </div>
@@ -5655,6 +5659,18 @@ const LecturerThesesPage = () => {
                   rows={1}
                   value={batchTitleInput}
                   onChange={(e) => setBatchTitleInput(e.target.value)}
+                  onBlur={() => setBatchTitleInput((prev) => formatRawTopicInput(prev))}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const text = e.clipboardData.getData('text');
+                    const formatted = formatRawTopicInput(text);
+                    const target = e.target;
+                    const start = target.selectionStart;
+                    const end = target.selectionEnd;
+                    const cur = batchTitleInput || '';
+                    const newVal = cur.slice(0, start) + formatted + cur.slice(end);
+                    setBatchTitleInput(newVal);
+                  }}
                   placeholder="Nhập tên đề tài"
                   required
                   className="w-full min-h-[42px] p-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition resize-y"
@@ -5789,7 +5805,7 @@ const LecturerThesesPage = () => {
             <div className="space-y-4">
               <div>
                 <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tên đề tài</label>
-                <div className="text-sm font-bold text-slate-900 mt-1">{selectedTopicDetail.title}</div>
+                <div className="text-sm font-bold text-slate-900 mt-1">{formatTopicTitle(selectedTopicDetail.title)}</div>
               </div>
 
               {/* Lĩnh vực */}
@@ -6126,6 +6142,18 @@ const LecturerThesesPage = () => {
                   required
                   value={editTopicTitle}
                   onChange={(e) => setEditTopicTitle(e.target.value)}
+                  onBlur={() => setEditTopicTitle((prev) => formatTopicTitle(prev))}
+                  onPaste={(e) => {
+                    e.preventDefault();
+                    const text = e.clipboardData.getData('text');
+                    const formatted = formatTopicTitle(text);
+                    const target = e.target;
+                    const start = target.selectionStart;
+                    const end = target.selectionEnd;
+                    const cur = editTopicTitle || '';
+                    const newVal = cur.slice(0, start) + formatted + cur.slice(end);
+                    setEditTopicTitle(newVal);
+                  }}
                   placeholder="Nhập tên đề tài khóa luận..."
                   className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition resize-none"
                 />
@@ -6194,7 +6222,7 @@ const LecturerThesesPage = () => {
       <ConfirmDialog
         isOpen={deleteTopicDialogOpen}
         title="Xác nhận yêu cầu xóa đề tài"
-        message={`Bạn có chắc chắn muốn gửi yêu cầu xóa đề tài "${selectedTopicForDelete?.title}" đến Trưởng Bộ Môn để xét duyệt không?`}
+        message={`Bạn có chắc chắn muốn gửi yêu cầu xóa đề tài "${formatTopicTitle(selectedTopicForDelete?.title)}" đến Trưởng Bộ Môn để xét duyệt không?`}
         confirmText="Xác nhận"
         cancelText="Hủy bỏ"
         isDanger={false}

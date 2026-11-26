@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { formatTopicTitle } from "../utils/textUtils.js";
 
 const thesisSchema = new mongoose.Schema(
   {
@@ -43,6 +44,7 @@ const thesisSchema = new mongoose.Schema(
       type: String,
       required: [true, "Tên đề tài là bắt buộc"],
       trim: true,
+      set: formatTopicTitle,
       maxlength: [300, "Tên đề tài không được quá 300 ký tự"],
     },
 
