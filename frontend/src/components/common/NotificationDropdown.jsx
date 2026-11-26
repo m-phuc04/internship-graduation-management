@@ -529,11 +529,11 @@ const NotificationDropdown = () => {
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
+        className="relative flex items-center justify-center w-10 h-10 p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition cursor-pointer"
         title="Thông báo"
         aria-label="Thông báo"
       >
-        <Bell className="w-5 h-5" />
+        <Bell className="w-5 h-5 shrink-0" />
         {displayUnreadCount > 0 && (
           <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] px-1 items-center justify-center rounded-full bg-rose-500 text-white text-[10px] font-black shadow-sm ring-2 ring-white z-10 pointer-events-none animate-in zoom-in-75 duration-150">
             {displayUnreadCount > 99 ? '99+' : displayUnreadCount}

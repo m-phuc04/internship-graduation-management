@@ -231,7 +231,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   aria-checked={enabledTTDN}
                   disabled={savingKey !== null || (!enabledTTDN && !hasValidEmail)}
                   onClick={() => handleToggle('TTDN')}
-                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+                  className={`relative inline-flex items-center h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                     enabledTTDN ? 'bg-emerald-600' : 'bg-slate-300'
                   }`}
                   title={enabledTTDN ? 'Nhấn để tắt nhận email TTDN' : 'Nhấn để bật nhận email TTDN'}
@@ -299,7 +299,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   aria-checked={enabledThesis}
                   disabled={savingKey !== null || (!enabledThesis && !hasValidEmail)}
                   onClick={() => handleToggle('THESIS')}
-                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+                  className={`relative inline-flex items-center h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                     enabledThesis ? 'bg-emerald-600' : 'bg-slate-300'
                   }`}
                   title={enabledThesis ? 'Nhấn để tắt nhận email KLTN' : 'Nhấn để bật nhận email KLTN'}
@@ -367,7 +367,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   aria-checked={enabledNews}
                   disabled={savingKey !== null || (!enabledNews && !hasValidEmail)}
                   onClick={() => handleToggle('NEWS')}
-                  className={`relative inline-flex h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
+                  className={`relative inline-flex items-center h-7 w-13 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#123891] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 ${
                     enabledNews ? 'bg-emerald-600' : 'bg-slate-300'
                   }`}
                   title={enabledNews ? 'Nhấn để tắt nhận email Bản tin' : 'Nhấn để bật nhận email Bản tin'}
