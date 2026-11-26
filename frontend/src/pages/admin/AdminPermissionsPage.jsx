@@ -446,11 +446,10 @@ const AdminPermissionsPage = () => {
                   <button
                     type="button"
                     onClick={() => handlePageChange(page - 1)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                    className="inline-flex items-center justify-center w-8 h-8 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
                     title="Trang trước"
                   >
                     <ChevronLeft className="w-4 h-4" />
-                    <span className="hidden sm:inline">Trước</span>
                   </button>
                 )}
 
@@ -486,10 +485,9 @@ const AdminPermissionsPage = () => {
                   <button
                     type="button"
                     onClick={() => handlePageChange(page + 1)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                    className="inline-flex items-center justify-center w-8 h-8 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
                     title="Trang sau"
                   >
-                    <span className="hidden sm:inline">Sau</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 )}
