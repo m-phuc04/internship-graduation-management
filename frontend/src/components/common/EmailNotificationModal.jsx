@@ -94,11 +94,11 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
     if (key === 'TTDN') {
       currentVal = enabledTTDN;
       payloadKey = 'emailNotificationEnabled';
-      label = 'Thực tập Doanh nghiệp (TTDN)';
+      label = 'Thực tập Doanh nghiệp';
     } else if (key === 'THESIS') {
       currentVal = enabledThesis;
       payloadKey = 'emailThesisEnabled';
-      label = 'Khóa luận Tốt nghiệp (KLTN)';
+      label = 'Khóa luận Tốt nghiệp';
     } else if (key === 'NEWS') {
       currentVal = enabledNews;
       payloadKey = 'emailNewsEnabled';
@@ -224,7 +224,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-sm">
-                      1. Thực tập Doanh nghiệp (TTDN)
+                      1. Thực tập Doanh nghiệp
                     </h4>
                     <div className="mt-0.5">
                       {enabledTTDN ? (
@@ -300,7 +300,7 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   </div>
                   <div>
                     <h4 className="font-bold text-slate-900 text-sm">
-                      2. Khóa luận Tốt nghiệp (KLTN)
+                      2. Khóa luận Tốt nghiệp
                     </h4>
                     <div className="mt-0.5">
                       {enabledThesis ? (
