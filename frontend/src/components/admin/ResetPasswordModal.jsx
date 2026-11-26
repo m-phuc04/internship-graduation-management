@@ -140,18 +140,10 @@ const ResetPasswordModal = ({ isOpen, onClose, targetUser, studentUser, onSucces
               </div>
             </div>
 
-            {/* Cảnh báo quy trình an toàn */}
-            <div className="p-3.5 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-start gap-2.5 text-xs text-blue-900">
-              <AlertTriangle className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-              <div className="space-y-1 text-[11px]">
-                <p className="font-bold text-blue-950">Quy trình bảo mật & gửi email:</p>
-                <ul className="list-disc list-inside text-blue-800 space-y-0.5">
-                  <li>Mật khẩu mới được sinh ngẫu nhiên mạnh (8 ký tự) và mã hóa bcrypt trước khi lưu.</li>
-                  <li>Yêu cầu gửi email sẽ được chuyển đến máy chủ SMTP.</li>
-                  <li>Nếu máy chủ SMTP gặp lỗi, thao tác reset vẫn được bảo lưu và mật khẩu mới hiển thị ngay cho ADMIN sao chép.</li>
-                  <li>Tất cả phiên đăng nhập cũ bị thu hồi và người dùng bắt buộc đổi mật khẩu ở lần đăng nhập tiếp theo.</li>
-                </ul>
-              </div>
+            {/* Thông báo gửi email */}
+            <div className="p-3 bg-blue-50/80 border border-blue-200 rounded-2xl flex items-center gap-2.5 text-xs text-blue-900">
+              <AlertTriangle className="w-4 h-4 text-blue-600 shrink-0" />
+              <p className="font-medium text-blue-950 text-xs">Mật khẩu sẽ được gửi qua email</p>
             </div>
 
             {/* Nút thao tác */}
