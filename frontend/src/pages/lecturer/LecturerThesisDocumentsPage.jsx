@@ -21,6 +21,7 @@ import {
   FolderOpen,
   X,
   FileCheck,
+  Plus,
 } from 'lucide-react';
 
 const formatFileSize = (bytes) => {
@@ -296,6 +297,17 @@ const LecturerThesisDocumentsPage = () => {
               </div>
             </div>
           </div>
+
+          {activeTab === 'GUIDES' && (
+            <button
+              type="button"
+              onClick={handleOpenAddModal}
+              className="w-fit self-start sm:self-auto inline-flex items-center gap-2 px-4 py-2.5 sm:px-5 sm:py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer shrink-0"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Thêm tài liệu</span>
+            </button>
+          )}
         </div>
 
         {/* Navigation Tabs */}
@@ -389,18 +401,6 @@ const LecturerThesisDocumentsPage = () => {
           )}
         </div>
 
-        {/* Nút + Thêm tài liệu (Chỉ hiển thị ở tab "Tài liệu") */}
-        {activeTab === 'GUIDES' && (
-          <div className="flex items-center justify-start">
-            <button
-              type="button"
-              onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white text-xs font-bold rounded-xl shadow-xs transition cursor-pointer"
-            >
-              <span>Thêm tài liệu</span>
-            </button>
-          </div>
-        )}
 
         {/* ================= TAB 1: TÀI LIỆU HƯỚNG DẪN ================= */}
         {activeTab === 'GUIDES' && (
