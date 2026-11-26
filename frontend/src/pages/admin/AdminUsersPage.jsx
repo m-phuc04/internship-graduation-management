@@ -4,14 +4,12 @@ import { useToast } from '../../context/ToastContext';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
-import ImportStudentExcelModal from '../../components/admin/ImportStudentExcelModal';
 import ResetPasswordModal from '../../components/admin/ResetPasswordModal';
 import {
   Users,
   KeyRound,
   CheckCircle2,
   XCircle,
-  FileSpreadsheet,
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
@@ -24,10 +22,17 @@ const ROLE_OPTIONS = [
   { value: 'STUDENT', label: 'Sinh viên' },
 ];
 
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả trạng thái' },
+  { value: 'ACTIVE', label: 'Hoạt động' },
+  { value: 'LOCKED', label: 'Đã khóa' },
+];
+
 const AdminUsersPage = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState('ALL');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -37,14 +42,13 @@ const AdminUsersPage = () => {
     limit: 10,
     totalPages: 1,
   });
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [resetTargetUser, setResetTargetUser] = useState(null);
   const { showToast } = useToast();
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminApi.getAllUsers({ role: roleFilter, search, page, limit });
+      const res = await adminApi.getAllUsers({ role: roleFilter, status: statusFilter, search, page, limit });
       if (res.success) {
         setUsers(res.users || []);
         const meta = res.pagination || {
@@ -60,7 +64,7 @@ const AdminUsersPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [roleFilter, search, page, limit, showToast]);
+  }, [roleFilter, statusFilter, search, page, limit, showToast]);
 
   useEffect(() => {
     fetchUsers();
@@ -73,6 +77,11 @@ const AdminUsersPage = () => {
 
   const handleRoleFilterChange = (val) => {
     setRoleFilter(val);
+    setPage(1);
+  };
+
+  const handleStatusFilterChange = (val) => {
+    setStatusFilter(val);
     setPage(1);
   };
 
@@ -156,23 +165,11 @@ const AdminUsersPage = () => {
             </p>
           </div>
         </div>
-
-        {/* Nút Import Excel Sinh viên */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-[#123891] hover:bg-[#102d7d] text-white rounded-xl text-xs font-bold shadow-xs transition cursor-pointer"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            <span>Import Excel Sinh viên</span>
-          </button>
-        </div>
       </div>
 
       {/* Thanh tìm kiếm và bộ lọc */}
-      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
-        <div className="w-full md:w-96">
+      <div className="p-3.5 sm:p-4 rounded-2xl sm:rounded-3xl bg-white border border-slate-200/80 shadow-2xs flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+        <div className="w-full lg:w-80">
           <SearchInput
             value={search}
             onChange={handleSearchChange}
@@ -180,13 +177,25 @@ const AdminUsersPage = () => {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 w-full md:w-auto justify-end">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3 w-full lg:w-auto justify-end">
           <select
             value={roleFilter}
             onChange={(e) => handleRoleFilterChange(e.target.value)}
             className="w-full sm:w-auto px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
           >
             {ROLE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={statusFilter}
+            onChange={(e) => handleStatusFilterChange(e.target.value)}
+            className="w-full sm:w-auto px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 focus:border-[#123891] transition cursor-pointer"
+          >
+            {STATUS_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
@@ -473,13 +482,6 @@ const AdminUsersPage = () => {
           </>
         )}
       </div>
-
-      {/* Modal Import danh sách sinh viên bằng Excel */}
-      <ImportStudentExcelModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onSuccess={fetchUsers}
-      />
 
       {/* Modal Reset mật khẩu tài khoản an toàn */}
       <ResetPasswordModal

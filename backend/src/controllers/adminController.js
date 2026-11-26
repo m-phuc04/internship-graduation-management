@@ -43,8 +43,8 @@ const updateLecturerPermissions = async (req, res, next) => {
 
 const getAllUsers = async (req, res, next) => {
   try {
-    const { role, search, page, limit } = req.query;
-    const data = await adminService.getAllUsers({ role, search, page, limit });
+    const { role, search, page, limit, status } = req.query;
+    const data = await adminService.getAllUsers({ role, search, page, limit, status });
     res.status(200).json({
       success: true,
       ...data,

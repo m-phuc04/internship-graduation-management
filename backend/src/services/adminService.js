@@ -158,10 +158,15 @@ const updateLecturerPermissions = async (lecturerId, { permissions, role }) => {
 /**
  * Lấy danh sách tất cả người dùng cho trang quản trị tổng quan kèm phân trang, tìm kiếm và lọc
  */
-const getAllUsers = async ({ role = "", search = "", page = 1, limit = 10 }) => {
+const getAllUsers = async ({ role = "", search = "", page = 1, limit = 10, status = "ALL" }) => {
   const query = {};
   if (role && role !== "ALL") {
     query.role = role;
+  }
+  if (status === "ACTIVE") {
+    query.isActive = { $ne: false };
+  } else if (status === "LOCKED" || status === "INACTIVE") {
+    query.isActive = false;
   }
   if (search && search.trim()) {
     const searchTrimmed = search.trim();
@@ -878,7 +883,7 @@ const importStudentExcel = async (validRows, adminUser, req = null) => {
     const isSuccess = createdCount > 0;
     await logActivity(req, {
       userId: adminUser._id || adminUser.userId || adminUser,
-      role: "ADMIN",
+      role: adminUser.role || "ADMIN",
       action: "Import sinh viên Excel",
       module: "USER",
       description: `Quản trị viên đã import: Tạo thành công ${createdCount} tài khoản (SMTP tiếp nhận email: ${emailSuccessCount} thành công, ${emailFailCount} thất bại). Bỏ qua ${skippedCount} dòng.`,
@@ -987,7 +992,7 @@ const resendStudentCredentials = async ({ mssv, mssvs }, adminUser, req = null) 
   if (adminUser) {
     await logActivity(req, {
       userId: adminUser._id || adminUser.userId || adminUser,
-      role: "ADMIN",
+      role: adminUser.role || "ADMIN",
       action: "Gửi lại email đăng nhập",
       module: "USER",
       description: `Quản trị viên gửi lại email thông tin đăng nhập cho ${codes.length} sinh viên: ${successCount} thành công, ${failCount} thất bại`,
