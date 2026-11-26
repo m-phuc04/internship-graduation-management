@@ -19,7 +19,6 @@ import {
   Newspaper,
   Clock,
   User,
-  Info,
 } from 'lucide-react';
 
 const FEATURE_CONFIGS = [
@@ -293,9 +292,6 @@ const AdminEmailSettingsPage = () => {
                     <h2 className="text-base sm:text-lg font-bold text-slate-900">
                       Cho phép gửi email hệ thống
                     </h2>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase tracking-wider bg-slate-900 text-white">
-                      Công tắc tổng
-                    </span>
                   </div>
                   <p className="text-xs text-slate-600 mt-1 max-w-2xl leading-relaxed">
                     {settings.isMasterEnabled ? (
@@ -343,7 +339,7 @@ const AdminEmailSettingsPage = () => {
               <div className="mt-4 p-3.5 bg-rose-100/70 border border-rose-200 rounded-2xl flex items-start gap-3 text-xs text-rose-900">
                 <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
                 <div className="space-y-0.5">
-                  <p className="font-bold">Lưu ý khi công tắc tổng TẮT:</p>
+                  <p className="font-bold">Lưu ý khi tạm dừng gửi email:</p>
                   <p className="text-rose-800 text-[11px] leading-relaxed">
                     Tất cả chức năng tạo tài khoản, Import Excel, Reset mật khẩu vẫn hoạt động bình thường và lưu dữ liệu an toàn vào cơ sở dữ liệu. Mật khẩu mới sẽ hiển thị trực tiếp cho Quản trị viên để sao chép bàn giao cho người dùng thay vì gửi qua email.
                   </p>
@@ -360,7 +356,7 @@ const AdminEmailSettingsPage = () => {
                   Cấu hình Bật / Tắt theo từng Chức năng
                 </h3>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Email chỉ được gửi khi cả Công tắc tổng VÀ công tắc của chức năng tương ứng đều BẬT
+                  Email chỉ được gửi khi chức năng tương ứng được BẬT
                 </p>
               </div>
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 font-medium">
@@ -397,9 +393,6 @@ const AdminEmailSettingsPage = () => {
                           <h4 className="text-xs sm:text-sm font-bold text-slate-900">
                             {feature.label}
                           </h4>
-                          <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-600">
-                            {feature.category}
-                          </span>
                           {/* Trạng thái thực tế khi gửi */}
                           {isActuallyActive ? (
                             <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -448,53 +441,25 @@ const AdminEmailSettingsPage = () => {
             </div>
           </div>
 
-          {/* 4. Thông tin nhật ký và nguyên tắc hoạt động */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Thẻ nguyên tắc hoạt động */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <Info className="w-4 h-4 text-[#123891]" />
-                <span>Quy tắc hoạt động bắt buộc</span>
-              </div>
-              <ul className="text-xs text-slate-600 space-y-1.5 list-disc list-inside leading-relaxed">
-                <li>
-                  Email chỉ được gửi đi khi thỏa mãn <strong>đồng thời 2 điều kiện</strong>: Công tắc tổng BẬT và Công tắc chức năng BẬT.
-                </li>
-                <li>
-                  Khi tắt gửi email, toàn bộ các nghiệp vụ tạo tài khoản, sinh mật khẩu và Import Excel vẫn hoạt động bình thường.
-                </li>
-                <li>
-                  Cấu hình được lưu bền vững trong cơ sở dữ liệu MongoDB và áp dụng ngay lập tức mà không cần khởi động lại server.
-                </li>
-              </ul>
+          {/* 4. Thông tin cập nhật lần cuối */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2.5">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+              <Clock className="w-4 h-4 text-[#123891]" />
+              <span>Thông tin lần cập nhật gần nhất</span>
             </div>
-
-            {/* Thẻ thông tin cập nhật lần cuối */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-2xs space-y-2.5">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <Clock className="w-4 h-4 text-[#123891]" />
-                <span>Thông tin lần cập nhật gần nhất</span>
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between py-1 border-b border-slate-100">
+                <span className="text-slate-500">Thời gian cập nhật:</span>
+                <span className="font-semibold text-slate-800">
+                  {formatDateTime(settings.updatedAt)}
+                </span>
               </div>
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Thời gian cập nhật:</span>
-                  <span className="font-semibold text-slate-800">
-                    {formatDateTime(settings.updatedAt)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1 border-b border-slate-100">
-                  <span className="text-slate-500">Người thực hiện:</span>
-                  <span className="font-bold text-[#123891] flex items-center gap-1.5">
-                    <User className="w-3.5 h-3.5" />
-                    {settings.updatedBy?.fullName || 'Hệ thống (Mặc định)'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-500">Bảo mật thông tin:</span>
-                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> SMTP credentials được bảo vệ an toàn
-                  </span>
-                </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-slate-500">Người thực hiện:</span>
+                <span className="font-bold text-[#123891] flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5" />
+                  {settings.updatedBy?.fullName || 'Hệ thống (Mặc định)'}
+                </span>
               </div>
             </div>
           </div>
