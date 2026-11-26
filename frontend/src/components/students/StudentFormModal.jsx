@@ -22,7 +22,7 @@ const StudentFormModal = ({
     className: '',
     gpa: 0,
     accumulatedCredits: 0,
-    prerequisiteCompleted: false,
+    prerequisiteCompleted: true,
     isActive: true,
   });
 
@@ -51,10 +51,10 @@ const StudentFormModal = ({
         password: generateSecurePassword(16),
         phone: '',
         studentCode: '',
-        className: availableClasses[0] || 'DHCNTT18A',
+        className: '',
         gpa: 3.0,
         accumulatedCredits: 100,
-        prerequisiteCompleted: false,
+        prerequisiteCompleted: true,
         isActive: true,
       });
     }
@@ -96,7 +96,7 @@ const StudentFormModal = ({
     if (!formData.studentCode.trim()) errs.studentCode = 'Mã sinh viên là bắt buộc';
     else if (!/^\d{8}$/.test(formData.studentCode.trim()))
       errs.studentCode = 'Mã sinh viên phải gồm đúng 8 chữ số';
-    if (!formData.className.trim()) errs.className = 'Lớp là bắt buộc';
+    if (!formData.className.trim()) errs.className = 'Lớp danh nghĩa là bắt buộc';
     if (!isEdit) {
       if (!formData.password || !formData.password.trim()) {
         errs.password = 'Mật khẩu là bắt buộc';
@@ -206,12 +206,12 @@ const StudentFormModal = ({
           </div>
         </div>
 
-        {/* Lớp sinh hoạt & GPA / Tín chỉ (hoặc Trạng thái nếu là Chỉnh sửa) */}
+        {/* Lớp danh nghĩa & GPA / Tín chỉ (hoặc Trạng thái nếu là Chỉnh sửa) */}
         {!isEdit ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Lớp sinh hoạt <span className="text-rose-500">*</span>
+                Lớp danh nghĩa <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -265,7 +265,7 @@ const StudentFormModal = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Lớp sinh hoạt <span className="text-rose-500">*</span>
+                  Lớp danh nghĩa <span className="text-rose-500">*</span>
                 </label>
                 <input
                   type="text"
