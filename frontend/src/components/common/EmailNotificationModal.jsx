@@ -9,7 +9,6 @@ import {
   CheckCircle2,
   AlertCircle,
   RefreshCw,
-  Info,
   Briefcase,
   GraduationCap,
   Newspaper,
@@ -240,16 +239,16 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   <span className="sr-only">Bật/tắt nhận email TTDN</span>
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
+                    className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                       enabledTTDN ? 'translate-x-6' : 'translate-x-0'
                     }`}
                   >
                     {savingKey === 'TTDN' ? (
-                      <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
+                      <RefreshCw className="w-3.5 h-3.5 text-slate-500 animate-spin shrink-0" />
                     ) : enabledTTDN ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     ) : (
-                      <BellOff className="w-3 h-3 text-slate-400" />
+                      <BellOff className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     )}
                   </span>
                 </button>
@@ -308,16 +307,16 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   <span className="sr-only">Bật/tắt nhận email KLTN</span>
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
+                    className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                       enabledThesis ? 'translate-x-6' : 'translate-x-0'
                     }`}
                   >
                     {savingKey === 'THESIS' ? (
-                      <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
+                      <RefreshCw className="w-3.5 h-3.5 text-slate-500 animate-spin shrink-0" />
                     ) : enabledThesis ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     ) : (
-                      <BellOff className="w-3 h-3 text-slate-400" />
+                      <BellOff className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     )}
                   </span>
                 </button>
@@ -376,29 +375,21 @@ const EmailNotificationModal = ({ isOpen, onClose }) => {
                   <span className="sr-only">Bật/tắt nhận email Bản tin</span>
                   <span
                     aria-hidden="true"
-                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
+                    className={`pointer-events-none flex items-center justify-center h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
                       enabledNews ? 'translate-x-6' : 'translate-x-0'
                     }`}
                   >
                     {savingKey === 'NEWS' ? (
-                      <RefreshCw className="w-3 h-3 text-slate-500 animate-spin" />
+                      <RefreshCw className="w-3.5 h-3.5 text-slate-500 animate-spin shrink-0" />
                     ) : enabledNews ? (
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
                     ) : (
-                      <BellOff className="w-3 h-3 text-slate-400" />
+                      <BellOff className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     )}
                   </span>
                 </button>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Thẻ 3: Lưu ý quan trọng */}
-        <div className="p-3.5 bg-blue-50/60 border border-blue-200/80 rounded-2xl flex items-start gap-2.5 text-blue-950">
-          <Info className="w-4 h-4 text-[#123891] shrink-0 mt-0.5" />
-          <div className="text-[11px] leading-relaxed">
-            <strong>Phân biệt thông báo nội bộ và email:</strong> Bật hoặc tắt chức năng này chỉ quyết định việc có gửi thêm thư điện tử hay không. Các thông báo nội bộ (biểu tượng chuông trên góc phải) vẫn luôn hoạt động bình thường trên tài khoản của bạn.
           </div>
         </div>
 

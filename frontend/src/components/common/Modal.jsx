@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 const Modal = ({
@@ -29,11 +30,11 @@ const Modal = ({
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+  const modalContent = (
+    <div className="fixed inset-0 z-[9990] overflow-y-auto">
       {/* Lớp phủ nền (Backdrop) */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm transition-opacity"
         onClick={onClose}
       />
 
@@ -70,6 +71,10 @@ const Modal = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 };
 
 export default Modal;
