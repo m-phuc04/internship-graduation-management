@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { LogOut, User, ChevronDown, ArrowLeft, ExternalLink, BookOpen, Menu, Mail } from 'lucide-react';
+import { LogOut, User, ChevronDown, ExternalLink, BookOpen, Menu, Mail } from 'lucide-react';
 import NotificationDropdown from '../common/NotificationDropdown';
 import AcademicTermSelector from '../common/AcademicTermSelector';
 import EmailNotificationModal from '../common/EmailNotificationModal';

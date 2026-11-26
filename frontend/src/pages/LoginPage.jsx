@@ -77,17 +77,26 @@ const LoginPage = () => {
     if (e) e.preventDefault();
 
     if (!accountCode.trim()) {
-      showToast('Vui lòng nhập Mã tài khoản hoặc MSSV', 'error');
+      showToast('Vui lòng nhập Mã đăng nhập', 'error');
+      loadCaptcha();
+      return;
+    }
+
+    if (accountCode.trim().includes('@')) {
+      showToast('Mã đăng nhập không hợp lệ', 'error');
+      loadCaptcha();
       return;
     }
 
     if (!password) {
       showToast('Vui lòng nhập mật khẩu', 'error');
+      loadCaptcha();
       return;
     }
 
     if (!captchaInput.trim()) {
       showToast('Vui lòng nhập mã bảo vệ (CAPTCHA)', 'error');
+      loadCaptcha();
       return;
     }
 
@@ -101,7 +110,7 @@ const LoginPage = () => {
       );
       showToast(`Đăng nhập thành công! Xin chào ${loggedUser.fullName}`, 'success');
     } catch (err) {
-      showToast(err.message || 'Mã tài khoản, mật khẩu hoặc mã CAPTCHA không chính xác', 'error');
+      showToast(err.message || 'Mã đăng nhập, mật khẩu hoặc mã CAPTCHA không chính xác', 'error');
       loadCaptcha();
       setLoading(false);
     }
@@ -138,10 +147,10 @@ const LoginPage = () => {
 
           {/* ================= FORM ĐĂNG NHẬP ================= */}
           <form onSubmit={handleLogin} className="space-y-4">
-            {/* Tên đăng nhập / Mã tài khoản */}
+            {/* Mã đăng nhập */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Mã tài khoản
+                Mã đăng nhập
               </label>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -149,7 +158,7 @@ const LoginPage = () => {
                   type="text"
                   value={accountCode}
                   onChange={(e) => setAccountCode(e.target.value)}
-                  placeholder="MSSV / Mã đăng nhập / Mã doanh nghiệp"
+                  placeholder="Nhập MSSV hoặc mã tài khoản"
                   required
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-[#123891] transition"
                 />

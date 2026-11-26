@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../context/AuthContext';
 import { useAcademicTerm } from '../../context/AcademicTermContext';
 import { formatDateVN, formatFullDateVN } from '../../utils/dateUtils';
+import { formatTopicTitle } from '../../utils/textUtils';
 import LoadingSkeleton from '../../components/common/LoadingSkeleton';
 import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
@@ -14,8 +15,6 @@ import {
   Users,
   User,
   CheckCircle2,
-  AlertCircle,
-  Clock,
   BookOpen,
   ShieldAlert,
   Check,
@@ -342,7 +341,7 @@ const RegisterThesisPage = () => {
                           {idx + 1}
                         </span>
                         <h4 className="font-bold text-slate-900 text-sm leading-snug break-words flex-1">
-                          {topic.title}
+                          {formatTopicTitle(topic.title)}
                         </h4>
                       </div>
 
@@ -447,7 +446,7 @@ const RegisterThesisPage = () => {
 
                           <td className="py-3.5 px-4 min-w-[240px] max-w-sm">
                             <div className="font-bold text-slate-900 leading-snug">
-                              {topic.title}
+                              {formatTopicTitle(topic.title)}
                             </div>
                           </td>
 

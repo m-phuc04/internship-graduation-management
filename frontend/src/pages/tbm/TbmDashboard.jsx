@@ -10,14 +10,9 @@ import {
   LayoutDashboard,
   Briefcase,
   GraduationCap,
-  Award,
   CheckCircle2,
   Clock,
-  ArrowRight,
   RefreshCw,
-  TrendingUp,
-  Calendar,
-  Sparkles,
   Tag,
 } from 'lucide-react';
 

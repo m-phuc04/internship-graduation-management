@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import internshipApi from '../../api/internshipApi';
 import { useToast } from '../../context/ToastContext';
-import { CheckCircle2, BookOpen, AlertCircle } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 const ApproveModal = ({ isOpen, onClose, internship, onApproved }) => {
   const [availableLecturers, setAvailableLecturers] = useState([]);

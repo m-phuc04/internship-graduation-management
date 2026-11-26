@@ -9,10 +9,7 @@ import crypto from "crypto";
 import ExcelJS from "exceljs";
 import * as XLSX from "xlsx";
 import AppError from "../utils/AppError.js";
-import emailService, {
-  sendPasswordResetEmail,
-  sendAccountCreationEmail,
-} from "./emailService.js";
+import emailService from "./emailService.js";
 
 const VALID_PERMISSIONS = ["GVHD", "GVPB_KIN", "GVPB_HOIDONG"];
 

@@ -9,9 +9,6 @@ import Footer from './Footer';
 
 import {
   Menu,
-  X,
-  Bell,
-  BookOpen,
   User,
   LogOut,
   ChevronDown,

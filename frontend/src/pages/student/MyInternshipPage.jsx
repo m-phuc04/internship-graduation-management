@@ -23,13 +23,10 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
-  ShieldCheck,
   FileText,
-  Printer,
   Award,
   UploadCloud,
   ExternalLink,
-  File,
   Check,
   Trash2,
 } from 'lucide-react';

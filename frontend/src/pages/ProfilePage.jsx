@@ -6,7 +6,6 @@ import { useToast } from '../context/ToastContext';
 import LoadingSkeleton from '../components/common/LoadingSkeleton';
 import Modal from '../components/common/Modal';
 import {
-  User,
   Mail,
   Phone,
   Lock,
@@ -15,18 +14,10 @@ import {
   X,
   Key,
   Shield,
-  GraduationCap,
-  Briefcase,
-  Building,
   CheckCircle2,
   AlertCircle,
   Eye,
   EyeOff,
-  BookOpen,
-  Award,
-  Globe,
-  MapPin,
-  FileText,
   Tag,
   Sparkles,
   Clock,

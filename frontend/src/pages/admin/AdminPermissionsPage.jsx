@@ -7,15 +7,10 @@ import EmptyState from '../../components/common/EmptyState';
 import SearchInput from '../../components/common/SearchInput';
 import {
   KeyRound,
-  ShieldCheck,
   CheckCircle2,
   XCircle,
-  Award,
-  UserCheck,
   Building,
   User,
-  Shield,
-  Layers,
 } from 'lucide-react';
 
 const PERMISSION_OPTIONS = [

@@ -9,16 +9,11 @@ import EmptyState from '../../components/common/EmptyState';
 import LecturerInternshipDetailModal from '../../components/lecturers/LecturerInternshipDetailModal';
 import {
   FileText,
-  Download,
   ExternalLink,
   CheckCircle2,
   Clock,
   Eye,
   Building2,
-  Users,
-  Search,
-  AlertCircle,
-  FileSpreadsheet,
 } from 'lucide-react';
 
 const formatFileSize = (bytes) => {

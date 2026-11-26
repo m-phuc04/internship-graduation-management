@@ -8,7 +8,6 @@ import { formatDateVN, getInternshipGradingWindowStatus } from '../../utils/date
 import {
   Award,
   Building2,
-  Calendar,
   CheckCircle2,
   Clock,
   Lock,

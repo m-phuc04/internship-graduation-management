@@ -6,21 +6,15 @@ import {
   Newspaper,
   Plus,
   Search,
-  Filter,
   Edit,
   Trash2,
   Eye,
   EyeOff,
   Calendar,
   User,
-  Tag,
   CheckCircle2,
-  XCircle,
-  Clock,
   X,
-  FileText,
 } from 'lucide-react';
-import IUHLogo from '../../components/common/IUHLogo';
 
 const LecturerNewsManagement = () => {
   const { user } = useAuth();

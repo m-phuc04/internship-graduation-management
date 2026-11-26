@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../common/Modal';
 import internshipApi from '../../api/internshipApi';
 import { useToast } from '../../context/ToastContext';
-import { BookOpen, CheckCircle2, User, Users } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 const AssignLecturerModal = ({ isOpen, onClose, internship, onAssigned }) => {
   const [availableLecturers, setAvailableLecturers] = useState([]);

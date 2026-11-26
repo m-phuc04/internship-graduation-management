@@ -18,10 +18,7 @@ import InternshipEvaluationDoc from '../../components/documents/InternshipEvalua
 import DocumentViewerModal from '../../components/documents/DocumentViewerModal';
 
 import {
-  Users,
   BookOpen,
-  Building2,
-  Calendar,
   Eye,
   Award,
   FileSpreadsheet,
@@ -31,7 +28,6 @@ import {
   AlertCircle,
   Clock,
   Sliders,
-  Settings2,
 } from 'lucide-react';
 
 const LecturerInternshipPage = () => {

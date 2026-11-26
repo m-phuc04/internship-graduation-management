@@ -16,7 +16,6 @@ import {
   Clock,
   Sparkles,
   RefreshCw,
-  AlertCircle,
   HelpCircle,
   FileSpreadsheet,
 } from 'lucide-react';

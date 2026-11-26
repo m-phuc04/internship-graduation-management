@@ -10,14 +10,8 @@ import {
   Building2,
   Calendar,
   UserCheck,
-  MapPin,
-  Mail,
-  Phone,
-  Globe,
   AlertCircle,
   CheckCircle2,
-  ArrowRight,
-  Info,
   Lock,
 } from 'lucide-react';
 

@@ -399,16 +399,26 @@ Thời gian: ${sentTimeStr}
 };
 
 /**
- * Gửi email cấp tài khoản mới khi Import danh sách sinh viên
+ * Gửi email cấp tài khoản mới cho Sinh viên hoặc Giảng viên
  */
 export const sendAccountCreationEmail = async ({
   to,
-  recipientName = "Sinh viên",
+  recipientName,
   studentCode,
+  lecturerCode,
+  code,
   password,
   className,
+  role = "STUDENT",
 }) => {
   if (!to || !password) return { success: false, reason: "Missing parameters" };
+
+  const isStaff = role === "LECTURER" || role === "TBM";
+  const roleTitle = role === "TBM" ? "Trưởng bộ môn" : isStaff ? "Giảng viên" : "Sinh viên";
+  const finalRecipientName = recipientName || roleTitle;
+  const greeting = isStaff ? `Xin chào Quý Thầy/Cô ${finalRecipientName},` : `Xin chào ${finalRecipientName},`;
+  const codeLabel = isStaff ? "Mã giảng viên" : "Mã số sinh viên (MSSV)";
+  const codeValue = (isStaff ? (lecturerCode || code || studentCode) : (studentCode || code || lecturerCode)) || "—";
 
   const targetEmail = to.trim();
   const frontendBaseUrl = process.env.APP_FRONTEND_URL || "http://localhost:5173";
@@ -420,7 +430,7 @@ export const sendAccountCreationEmail = async ({
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Thông tin tài khoản Sinh viên mới</title>
+  <title>Thông tin tài khoản ${roleTitle} mới</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1e293b; background-color: #f8fafc; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 24px auto; background: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; }
@@ -438,11 +448,11 @@ export const sendAccountCreationEmail = async ({
       <p style="margin: 6px 0 0 0; font-size: 12px; color: #cbd5e1;">CỔNG QUẢN LÝ THỰC TẬP & KHÓA LUẬN TỐT NGHIỆP</p>
     </div>
     <div class="content">
-      <p>Xin chào <strong>${recipientName}</strong>,</p>
-      <p>Tài khoản sinh viên của bạn đã được khởi tạo trên Hệ thống Quản lý TTDN & KLTN:</p>
+      <p>${greeting}</p>
+      <p>Tài khoản ${roleTitle.toLowerCase()} của bạn đã được khởi tạo trên Hệ thống Quản lý TTDN & KLTN:</p>
       <div class="credential-box">
-        <p style="margin: 4px 0;"><strong>Mã số sinh viên (MSSV):</strong> <span style="font-family: monospace;">${studentCode}</span></p>
-        <p style="margin: 4px 0;"><strong>Lớp học:</strong> ${className || '—'}</p>
+        <p style="margin: 4px 0;"><strong>${codeLabel}:</strong> <span style="font-family: monospace;">${codeValue}</span></p>
+        ${!isStaff && className ? `<p style="margin: 4px 0;"><strong>Lớp học:</strong> ${className}</p>` : ''}
         <p style="margin: 4px 0;"><strong>Email đăng nhập:</strong> ${targetEmail}</p>
         <div style="margin-top: 10px;">
           <strong>Mật khẩu khởi tạo:</strong> <span class="password-badge">${password}</span>
@@ -462,13 +472,12 @@ export const sendAccountCreationEmail = async ({
   `;
 
   const textContent = `
-[KHOA CNTT - ĐH CÔNG NGHIỆP TP.HCM] THÔNG TIN TÀI KHOẢN SINH VIÊN MỚI
+[KHOA CNTT - ĐH CÔNG NGHIỆP TP.HCM] THÔNG TIN TÀI KHOẢN ${roleTitle.toUpperCase()} MỚI
 
-Xin chào ${recipientName},
-Tài khoản sinh viên của bạn đã được khởi tạo trên Hệ thống Quản lý TTDN & KLTN:
-- Mã số sinh viên (MSSV): ${studentCode}
-- Lớp học: ${className || '—'}
-- Email đăng nhập: ${targetEmail}
+${greeting}
+Tài khoản ${roleTitle.toLowerCase()} của bạn đã được khởi tạo trên Hệ thống Quản lý TTDN & KLTN:
+- ${codeLabel}: ${codeValue}
+${!isStaff && className ? `- Lớp học: ${className}\n` : ''}- Email đăng nhập: ${targetEmail}
 - Mật khẩu khởi tạo: ${password}
 
 * Lưu ý: Bạn sẽ được yêu cầu đổi mật khẩu ở lần đăng nhập đầu tiên.
@@ -482,13 +491,14 @@ Thời gian: ${sentTimeStr}
       const info = await activeTransporter.sendMail({
         from: fromAddress,
         to: targetEmail,
-        subject: `[Cổng thông tin TTDN & KLTN] Thông tin tài khoản sinh viên`,
+        subject: `[Cổng thông tin TTDN & KLTN] Thông tin tài khoản ${roleTitle}`,
         text: textContent,
         html: htmlContent,
       });
+      console.log(`[EmailService] Account creation email accepted by SMTP for ${targetEmail} (MessageId: ${info?.messageId})`);
       return { success: true, messageId: info?.messageId };
     } else {
-      console.log(`[EmailService Simulated] Account creation email sent to ${targetEmail} (MSSV: ${studentCode}, Pass: ${password})`);
+      console.log(`[EmailService Simulated] Account creation email sent to ${targetEmail} (${codeLabel}: ${codeValue}, Pass: ${password})`);
       return { success: true, simulated: true };
     }
   } catch (err) {

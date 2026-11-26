@@ -3,7 +3,6 @@ import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
 import {
   FileText,
-  Calendar,
   Award,
   CheckCircle2,
   XCircle,
@@ -13,9 +12,7 @@ import {
   Paperclip,
   FileCheck,
   ShieldCheck,
-  AlertTriangle,
   Clock,
-  User,
 } from 'lucide-react';
 import getFileUrl from '../../utils/fileUrlHelper';
 

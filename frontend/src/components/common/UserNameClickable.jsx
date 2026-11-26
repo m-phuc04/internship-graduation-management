@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useUserProfile } from '../../context/UserProfileContext';
 
 /**
@@ -24,6 +24,7 @@ const UserNameClickable = ({
 
   const avatarUrl = user?.avatar || user?.user?.avatar;
   const initial = displayName ? displayName.charAt(0).toUpperCase() : 'U';
+  const [imgError, setImgError] = useState(false);
 
   const handleClick = (e) => {
     e.stopPropagation();
@@ -53,8 +54,13 @@ const UserNameClickable = ({
         <div
           className={`${avatarSize} rounded-full bg-blue-50 text-[#102d7d] flex items-center justify-center font-bold text-xs shrink-0 group-hover:bg-blue-100 group-hover:text-[#0d2a75] transition border border-blue-100 shadow-2xs overflow-hidden`}
         >
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover" />
+          {avatarUrl && !imgError ? (
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              className="w-full h-full object-cover"
+              onError={() => setImgError(true)}
+            />
           ) : (
             <span>{initial}</span>
           )}

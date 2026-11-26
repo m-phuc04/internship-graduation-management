@@ -19,9 +19,7 @@ import {
   Tag,
   Newspaper,
   Sparkles,
-  ChevronRight,
   ExternalLink,
-  BookOpen,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -123,12 +121,20 @@ const HomePage = () => {
     if (e) e.preventDefault();
 
     if (!accountCode.trim() || !password) {
-      showToast('Vui lòng nhập đầy đủ Mã tài khoản và Mật khẩu', 'error');
+      showToast('Vui lòng nhập đầy đủ Mã đăng nhập và Mật khẩu', 'error');
+      loadCaptcha();
+      return;
+    }
+
+    if (accountCode.trim().includes('@')) {
+      showToast('Mã đăng nhập không hợp lệ', 'error');
+      loadCaptcha();
       return;
     }
 
     if (!captchaInput.trim()) {
       showToast('Vui lòng nhập mã CAPTCHA xác thực', 'error');
+      loadCaptcha();
       return;
     }
 
@@ -423,10 +429,10 @@ const HomePage = () => {
               ) : (
                 /* ================= FORM ĐĂNG NHẬP TRỰC TIẾP ================= */
                 <form onSubmit={handleLogin} className="mt-5 space-y-3.5">
-                  {/* Tên đăng nhập / Mã tài khoản */}
+                  {/* Mã đăng nhập */}
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                      MÃ TÀI KHOẢN / MSSV
+                      MÃ ĐĂNG NHẬP
                     </label>
                     <div className="relative">
                       <KeyRound className="w-4 h-4 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
@@ -434,7 +440,7 @@ const HomePage = () => {
                         type="text"
                         value={accountCode}
                         onChange={(e) => setAccountCode(e.target.value)}
-                        placeholder="Nhập MSSV / Mã cán bộ"
+                        placeholder="Nhập MSSV hoặc mã tài khoản"
                         required
                         className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50/70 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#123891] focus:ring-2 focus:ring-blue-200/50 transition"
                       />

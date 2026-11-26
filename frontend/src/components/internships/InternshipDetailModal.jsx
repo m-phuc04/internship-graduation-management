@@ -3,20 +3,12 @@ import Modal from '../common/Modal';
 import StatusBadge from '../common/StatusBadge';
 import StudentInternshipDiaryModal from '../reports/StudentInternshipDiaryModal';
 import {
-  Briefcase,
   Building2,
   Calendar,
   UserCheck,
   BookOpen,
-  MapPin,
-  Mail,
-  Phone,
-  Globe,
   Clock,
-  User,
   GraduationCap,
-  FileText,
-  AlertTriangle,
   CheckCircle2,
   XCircle,
 } from 'lucide-react';

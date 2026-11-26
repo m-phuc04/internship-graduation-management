@@ -5,6 +5,8 @@ import Permission from "../models/Permission.js";
 import Internship from "../models/Internship.js";
 import Thesis from "../models/Thesis.js";
 import AppError from "../utils/AppError.js";
+import { generateSecurePassword } from "../utils/passwordGenerator.js";
+import emailService from "./emailService.js";
 
 // ====================
 // Lấy danh sách giảng viên kèm tìm kiếm, lọc và phân trang
@@ -241,7 +243,7 @@ const createLecturer = async (lecturerData) => {
   const {
     fullName,
     email,
-    password = "1111",
+    password,
     phone,
     lecturerCode,
     academicTitle,
@@ -279,16 +281,29 @@ const createLecturer = async (lecturerData) => {
     throw new AppError("Mã giảng viên này đã tồn tại", 409);
   }
 
-  // Băm mật khẩu (Hash password)
-  const hashedPassword = await bcrypt.hash(password, 12);
+  // Mật khẩu khởi tạo (nếu không nhập hoặc rỗng, sinh mật khẩu ngẫu nhiên an toàn 16 ký tự)
+  let plainPassword;
+  if (password && typeof password === "string" && password.trim().length > 0) {
+    if (password.trim().length < 6) {
+      throw new AppError("Mật khẩu phải có ít nhất 6 ký tự", 400);
+    }
+    plainPassword = password.trim();
+  } else {
+    plainPassword = generateSecurePassword(16);
+  }
 
-  // Tạo tài khoản người dùng User
+  // Băm mật khẩu (Hash password bằng bcrypt cost 12)
+  const hashedPassword = await bcrypt.hash(plainPassword, 12);
+
+  // Tạo tài khoản người dùng User (bắt buộc đổi mật khẩu ở lần đầu đăng nhập)
   const user = await User.create({
     fullName: fullName.trim(),
+    code: normalizedCode,
     email: normalizedEmail,
     password: hashedPassword,
     phone: phone ? phone.trim() : null,
     role: "LECTURER",
+    mustChangePassword: true,
     isActive: true,
   });
 
@@ -320,10 +335,40 @@ const createLecturer = async (lecturerData) => {
       isAvailable: Boolean(isAvailable),
     });
 
-    return await Lecturer.findById(lecturer._id).populate({
+    const populatedLecturer = await Lecturer.findById(lecturer._id).populate({
       path: "userId",
       select: "fullName email phone isActive",
     });
+
+    // Gửi email thông tin tài khoản qua SMTP (lỗi SMTP không làm hủy tài khoản)
+    let emailSent = false;
+    let emailError = null;
+    try {
+      const emailResult = await emailService.sendAccountCreationEmail({
+        to: normalizedEmail,
+        recipientName: user.fullName,
+        lecturerCode: normalizedCode,
+        password: plainPassword,
+        role: "LECTURER",
+      });
+
+      if (emailResult && emailResult.success) {
+        emailSent = true;
+      } else {
+        emailSent = false;
+        emailError = emailResult?.error || "Máy chủ SMTP không tiếp nhận email";
+      }
+    } catch (mailErr) {
+      emailSent = false;
+      emailError = mailErr.message || "Lỗi máy chủ email khi gửi qua SMTP";
+    }
+
+    return {
+      ...populatedLecturer.toObject(),
+      initialPassword: plainPassword,
+      emailSent,
+      emailError,
+    };
   } catch (error) {
     await User.findByIdAndDelete(user._id);
     throw error;

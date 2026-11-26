@@ -2,7 +2,30 @@
 <html lang="vi">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="https://iuh.edu.vn/assets/images/iuh.png?v=51" />
+    <link id="app-favicon" rel="icon" type="image/png" href="https://iuh.edu.vn/assets/images/iuh.png?v=51" />
+    <script>
+      (function() {
+        var fav = document.getElementById('app-favicon');
+        var localFav = '/favicon.png';
+        var onlineFav = 'https://iuh.edu.vn/assets/images/iuh.png?v=51';
+        if (!navigator.onLine) {
+          if (fav) fav.href = localFav;
+          return;
+        }
+        var img = new Image();
+        var timer = setTimeout(function() {
+          if (fav && fav.href !== localFav) fav.href = localFav;
+        }, 2500);
+        img.onload = function() {
+          clearTimeout(timer);
+        };
+        img.onerror = function() {
+          clearTimeout(timer);
+          if (fav) fav.href = localFav;
+        };
+        img.src = onlineFav;
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

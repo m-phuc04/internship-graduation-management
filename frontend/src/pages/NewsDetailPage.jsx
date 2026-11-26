@@ -14,11 +14,9 @@ import {
   Share2,
   ExternalLink,
   AlertCircle,
-  Newspaper,
   LayoutDashboard,
   LogOut,
   ChevronRight,
-  ShieldCheck,
 } from 'lucide-react';
 
 const NewsDetailPage = () => {
