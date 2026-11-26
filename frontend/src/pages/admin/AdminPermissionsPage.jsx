@@ -11,6 +11,8 @@ import {
   XCircle,
   Building,
   User,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 const PERMISSION_OPTIONS = [
@@ -35,6 +37,8 @@ const AdminPermissionsPage = () => {
   const [lecturers, setLecturers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const { showToast } = useToast();
 
   // Trạng thái Modal
@@ -98,6 +102,35 @@ const AdminPermissionsPage = () => {
     }
   };
 
+  const handleSearchChange = (val) => {
+    setSearch(val);
+    setPage(1);
+  };
+
+  const handleLimitChange = (val) => {
+    setLimit(Number(val));
+    setPage(1);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages && newPage !== page) {
+      setPage(newPage);
+    }
+  };
+
+  const getPageNumbers = (curr, totalP) => {
+    if (totalP <= 7) {
+      return Array.from({ length: totalP }, (_, i) => i + 1);
+    }
+    if (curr <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalP];
+    }
+    if (curr >= totalP - 3) {
+      return [1, '...', totalP - 4, totalP - 3, totalP - 2, totalP - 1, totalP];
+    }
+    return [1, '...', curr - 1, curr, curr + 1, '...', totalP];
+  };
+
   // Lọc danh sách theo từ khóa tìm kiếm
   const filteredLecturers = lecturers.filter((l) => {
     if (!search.trim()) return true;
@@ -107,6 +140,20 @@ const AdminPermissionsPage = () => {
     const spec = l.specialization?.toLowerCase() || '';
     return name.includes(term) || code.includes(term) || spec.includes(term);
   });
+
+  // Tính toán phân trang dựa trên danh sách đã lọc
+  const total = filteredLecturers.length;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const startIndex = (page - 1) * limit;
+  const endIndex = Math.min(startIndex + limit, total);
+  const paginatedLecturers = filteredLecturers.slice(startIndex, endIndex);
+
+  // Tự động đưa về trang hợp lệ gần nhất nếu số lượng thay đổi
+  useEffect(() => {
+    if (page > totalPages) {
+      setPage(totalPages);
+    }
+  }, [page, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -132,7 +179,7 @@ const AdminPermissionsPage = () => {
         <div className="w-full sm:w-80 md:w-96">
           <SearchInput
             value={search}
-            onChange={setSearch}
+            onChange={handleSearchChange}
             placeholder="Tìm theo tên GV, email..."
           />
         </div>
@@ -171,7 +218,7 @@ const AdminPermissionsPage = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredLecturers.map((item, idx) => {
+                  {paginatedLecturers.map((item, idx) => {
                     const role = item.user?.role || 'LECTURER';
                     const perms = item.permissions || [];
                     const isTbm = role === 'TBM';
@@ -180,7 +227,7 @@ const AdminPermissionsPage = () => {
                       <tr key={item._id} className="hover:bg-slate-50/80 transition">
                         {/* STT */}
                         <td className="py-3.5 px-4 text-center font-medium text-slate-500 whitespace-nowrap">
-                          {idx + 1}
+                          {startIndex + idx + 1}
                         </td>
 
                         {/* Họ tên & Học hàm học vị */}
@@ -269,7 +316,7 @@ const AdminPermissionsPage = () => {
 
             {/* Hiển thị thẻ Mobile (< 768px) */}
             <div className="md:hidden divide-y divide-slate-100">
-              {filteredLecturers.map((item, idx) => {
+              {paginatedLecturers.map((item, idx) => {
                 const role = item.user?.role || 'LECTURER';
                 const perms = item.permissions || [];
                 const isTbm = role === 'TBM';
@@ -281,7 +328,7 @@ const AdminPermissionsPage = () => {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="w-5 h-5 rounded-md bg-slate-100 text-slate-500 font-mono text-[10px] font-bold flex items-center justify-center shrink-0">
-                            {idx + 1}
+                            {startIndex + idx + 1}
                           </span>
                           <span className="font-bold text-slate-900 text-sm">
                             {item.academicTitle ? `${item.academicTitle} ` : ''}
@@ -365,6 +412,88 @@ const AdminPermissionsPage = () => {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Khu vực phân trang (Pagination) */}
+            <div className="bg-slate-50/60 border-t border-slate-200/80 px-4 py-3.5 sm:px-6 sm:py-4 flex flex-col md:flex-row items-center justify-between gap-3.5 text-xs">
+              {/* Bên trái: Thông tin hiển thị & Bộ chọn số bản ghi/trang */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 text-slate-500 w-full md:w-auto justify-between sm:justify-start">
+                <div>
+                  Đang hiển thị{' '}
+                  <span className="font-bold text-slate-800">
+                    {total === 0 ? 0 : startIndex + 1}–{endIndex}
+                  </span>{' '}
+                  trên <span className="font-bold text-slate-800">{total}</span> giảng viên
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] text-slate-400">Hiển thị:</span>
+                  <select
+                    value={limit}
+                    onChange={(e) => handleLimitChange(e.target.value)}
+                    className="px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#123891]/20 cursor-pointer shadow-2xs"
+                  >
+                    <option value={10}>10 giảng viên / trang</option>
+                    <option value={20}>20 giảng viên / trang</option>
+                    <option value={50}>50 giảng viên / trang</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Bên phải: Nút Trước (chỉ hiển thị khi page > 1), Các số trang, Nút Sau (chỉ hiển thị khi page < totalPages) */}
+              <div className="flex items-center gap-1.5 w-full md:w-auto justify-center md:justify-end">
+                {page > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(page - 1)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                    title="Trang trước"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Trước</span>
+                  </button>
+                )}
+
+                {/* Danh sách các số trang */}
+                <div className="flex items-center gap-1">
+                  {getPageNumbers(page, totalPages).map((p, pIdx) => {
+                    if (p === '...') {
+                      return (
+                        <span key={`ellipsis-${pIdx}`} className="px-1.5 py-1 text-slate-400 font-bold select-none">
+                          ...
+                        </span>
+                      );
+                    }
+                    const isCurrent = p === page;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => handlePageChange(p)}
+                        className={`w-8 h-8 rounded-xl text-xs font-bold transition cursor-pointer ${
+                          isCurrent
+                            ? 'bg-[#123891] text-white shadow-xs'
+                            : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {page < totalPages && (
+                  <button
+                    type="button"
+                    onClick={() => handlePageChange(page + 1)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition cursor-pointer shadow-2xs"
+                    title="Trang sau"
+                  >
+                    <span className="hidden sm:inline">Sau</span>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
             </div>
           </>
         )}
